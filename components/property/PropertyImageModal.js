@@ -1,0 +1,259 @@
+'use client'
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
+
+export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [thumbnailIndex, setThumbnailIndex] = useState(0)
+
+  const [thumbnailsPerView, setThumbnailsPerView] = useState(8)
+
+  // Calculate how many thumbnails can fit based on container width
+  useEffect(() => {
+    if (!isOpen || !photos || photos.length === 0) return
+
+    const calculateThumbnailsPerView = () => {
+      if (typeof window === 'undefined') return 8
+      const containerWidth = window.innerWidth
+      const thumbnailWidth = 96 // w-24 = 96px
+      const gap = 8 // gap-2 = 8px
+      const padding = 96 // px-12 on each side = 96px total
+      const availableWidth = containerWidth - padding
+      const calculated = Math.floor(availableWidth / (thumbnailWidth + gap))
+      return Math.max(4, Math.min(calculated, photos.length))
+    }
+
+    const updateThumbnailsPerView = () => {
+      setThumbnailsPerView(calculateThumbnailsPerView())
+    }
+
+    updateThumbnailsPerView()
+    window.addEventListener('resize', updateThumbnailsPerView)
+    return () => window.removeEventListener('resize', updateThumbnailsPerView)
+  }, [isOpen, photos])
+
+  // Update current index when modal opens with new initialIndex
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentIndex(initialIndex)
+      // Scroll thumbnail to show current image
+      const newThumbnailIndex = Math.max(0, initialIndex - Math.floor(thumbnailsPerView / 2))
+      setThumbnailIndex(newThumbnailIndex)
+    }
+  }, [isOpen, initialIndex, thumbnailsPerView])
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') {
+        handlePrev()
+      } else if (e.key === 'ArrowRight') {
+        handleNext()
+      } else if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, currentIndex, photos.length])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
+  if (!isOpen || !photos || photos.length === 0) return null
+
+  const currentPhoto = photos[currentIndex]
+  const currentPhotoUrl = getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % photos.length)
+    // Auto-scroll thumbnails
+    if (currentIndex >= thumbnailIndex + thumbnailsPerView - 1) {
+      setThumbnailIndex((prev) => Math.min(prev + 1, photos.length - thumbnailsPerView))
+    }
+  }
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length)
+    // Auto-scroll thumbnails
+    if (currentIndex <= thumbnailIndex) {
+      setThumbnailIndex((prev) => Math.max(0, prev - 1))
+    }
+  }
+
+  const handleThumbnailClick = (index) => {
+    setCurrentIndex(index)
+    // Scroll thumbnails to show selected image
+    if (index < thumbnailIndex) {
+      setThumbnailIndex(Math.max(0, index - 2))
+    } else if (index >= thumbnailIndex + thumbnailsPerView) {
+      setThumbnailIndex(Math.min(index - thumbnailsPerView + 1, photos.length - thumbnailsPerView))
+    }
+  }
+
+  // Calculate visible thumbnails - show all if they fit, otherwise show scrollable set
+  const visibleThumbnails = photos.length <= thumbnailsPerView
+    ? photos
+    : photos.slice(
+        thumbnailIndex,
+        Math.min(thumbnailIndex + thumbnailsPerView, photos.length)
+      )
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={onClose}
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)'
+      }}
+    >
+      {/* Close Button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-50 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors"
+        aria-label="Close"
+      >
+        <X className="w-6 h-6" />
+      </button>
+
+      {/* Main Image Container */}
+      <div
+        className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Main Image */}
+        <div className="relative w-full max-w-6xl h-[calc(100vh-200px)] mb-4">
+          <Image
+            src={currentPhotoUrl}
+            alt={`Property photo ${currentIndex + 1} of ${photos.length}`}
+            fill
+            className="object-contain"
+            priority
+          />
+
+          {/* Navigation Arrows */}
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={handlePrev}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors z-10"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors z-10"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+
+              {/* Image Counter */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
+                {currentIndex + 1} / {photos.length}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnail Slider */}
+        {photos.length > 1 && (
+          <div className="w-full max-w-6xl mx-auto px-4">
+            <div className="relative flex items-center gap-2" style={{ maxWidth: 'calc(100vw - 80px)' }}>
+              {/* Left Scroll Button - Only show if there are more thumbnails to scroll */}
+              {photos.length > thumbnailsPerView && thumbnailIndex > 0 && (
+                <button
+                  onClick={() => setThumbnailIndex((prev) => Math.max(0, prev - 1))}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-10 flex-shrink-0"
+                  aria-label="Scroll thumbnails left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Thumbnail Container - Constrained width to prevent overflow */}
+              <div 
+                className="flex gap-2 flex-1 justify-center overflow-hidden"
+                style={{ 
+                  marginLeft: photos.length > thumbnailsPerView && thumbnailIndex > 0 ? '40px' : '0',
+                  marginRight: photos.length > thumbnailsPerView && thumbnailIndex + thumbnailsPerView < photos.length ? '40px' : '0'
+                }}
+              >
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide" style={{ 
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }}>
+                  <style jsx>{`
+                    div::-webkit-scrollbar {
+                      display: none;
+                    }
+                  `}</style>
+                  {visibleThumbnails.map((photo, idx) => {
+                    const actualIndex = photos.length <= thumbnailsPerView ? idx : thumbnailIndex + idx
+                    const thumbnailUrl = getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+                    const isActive = actualIndex === currentIndex
+
+                    return (
+                      <button
+                        key={photo.id || actualIndex}
+                        onClick={() => handleThumbnailClick(actualIndex)}
+                        className={`relative flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden border-2 transition-all ${
+                          isActive
+                            ? 'border-white scale-110'
+                            : 'border-white/30 hover:border-white/60'
+                        }`}
+                      >
+                        <Image
+                          src={thumbnailUrl}
+                          alt={`Thumbnail ${actualIndex + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                        {isActive && (
+                          <div className="absolute inset-0 bg-white/20" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Right Scroll Button - Only show if there are more thumbnails to scroll */}
+              {photos.length > thumbnailsPerView && thumbnailIndex + thumbnailsPerView < photos.length && (
+                <button
+                  onClick={() =>
+                    setThumbnailIndex((prev) =>
+                      Math.min(prev + 1, photos.length - thumbnailsPerView)
+                    )
+                  }
+                  className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-10 flex-shrink-0"
+                  aria-label="Scroll thumbnails right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

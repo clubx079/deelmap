@@ -1,0 +1,1510 @@
+query : 
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+Response: 
+
+[
+  {
+    "table_name": "admin"
+  },
+  {
+    "table_name": "properties"
+  },
+  {
+    "table_name": "property_images"
+  },
+  {
+    "table_name": "seller_applications"
+  },
+  {
+    "table_name": "settings"
+  },
+  {
+    "table_name": "user_favorites"
+  },
+  {
+    "table_name": "users"
+  }
+]
+
+
+
+query: 
+
+SELECT
+  c.table_name,
+  c.column_name,
+  c.ordinal_position,
+  c.data_type,
+  c.character_maximum_length,
+  c.numeric_precision,
+  c.numeric_scale,
+  c.is_nullable,
+  c.column_default
+FROM information_schema.columns c
+JOIN information_schema.tables t
+  ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+WHERE c.table_schema = 'public'
+  AND t.table_type = 'BASE TABLE'
+ORDER BY c.table_name, c.ordinal_position;
+
+Response:
+
+[
+  {
+    "table_name": "admin",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "is_nullable": "NO",
+    "column_default": "nextval('admin_id_seq'::regclass)"
+  },
+  {
+    "table_name": "admin",
+    "column_name": "name",
+    "ordinal_position": 2,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "admin",
+    "column_name": "email",
+    "ordinal_position": 3,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "admin",
+    "column_name": "password",
+    "ordinal_position": 4,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "admin",
+    "column_name": "created_at",
+    "ordinal_position": 5,
+    "data_type": "timestamp without time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "admin",
+    "column_name": "updated_at",
+    "ordinal_position": 6,
+    "data_type": "timestamp without time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "admin",
+    "column_name": "role",
+    "ordinal_position": 7,
+    "data_type": "character varying",
+    "character_maximum_length": 100,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "admin",
+    "column_name": "permissions",
+    "ordinal_position": 8,
+    "data_type": "ARRAY",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "ARRAY['view_properties'::text, 'view_inquiries'::text]"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "slug",
+    "ordinal_position": 2,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "address",
+    "ordinal_position": 3,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "latitude",
+    "ordinal_position": 4,
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "longitude",
+    "ordinal_position": 5,
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "price",
+    "ordinal_position": 6,
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "bedrooms",
+    "ordinal_position": 7,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "bathrooms",
+    "ordinal_position": 8,
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "floor_area",
+    "ordinal_position": 9,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "state",
+    "ordinal_position": 10,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "status",
+    "ordinal_position": 11,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "'draft'::text"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "description",
+    "ordinal_position": 12,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "repairs",
+    "ordinal_position": 13,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "additional_photos",
+    "ordinal_position": 14,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "feature_image_url",
+    "ordinal_position": 15,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "seo_title",
+    "ordinal_position": 16,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "seo_description",
+    "ordinal_position": 17,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "social_title",
+    "ordinal_position": 18,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "social_description",
+    "ordinal_position": 19,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "social_image_url",
+    "ordinal_position": 20,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "created_by",
+    "ordinal_position": 21,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "created_at",
+    "ordinal_position": 22,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "updated_at",
+    "ordinal_position": 23,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "property_status",
+    "ordinal_position": 24,
+    "data_type": "character varying",
+    "character_maximum_length": 20,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "'available'::character varying"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "inspection_report_url",
+    "ordinal_position": 25,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "inspection_report_key",
+    "ordinal_position": 26,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "properties",
+    "column_name": "seller_id",
+    "ordinal_position": 27,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "property_id",
+    "ordinal_position": 2,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "image_url",
+    "ordinal_position": 3,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "image_key",
+    "ordinal_position": 4,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "alt_text",
+    "ordinal_position": 5,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "sort_order",
+    "ordinal_position": 6,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "is_nullable": "YES",
+    "column_default": "0"
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "created_at",
+    "ordinal_position": 7,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "updated_at",
+    "ordinal_position": 8,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": "uuid_generate_v4()"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "business_name",
+    "ordinal_position": 2,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "contact_person_name",
+    "ordinal_position": 3,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "email",
+    "ordinal_position": 4,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "phone",
+    "ordinal_position": 5,
+    "data_type": "character varying",
+    "character_maximum_length": 50,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "business_type",
+    "ordinal_position": 6,
+    "data_type": "character varying",
+    "character_maximum_length": 50,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "deals_per_month",
+    "ordinal_position": 7,
+    "data_type": "character varying",
+    "character_maximum_length": 20,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "primary_markets",
+    "ordinal_position": 8,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "property_types",
+    "ordinal_position": 9,
+    "data_type": "ARRAY",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "website",
+    "ordinal_position": 10,
+    "data_type": "character varying",
+    "character_maximum_length": 500,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "linkedin",
+    "ordinal_position": 11,
+    "data_type": "character varying",
+    "character_maximum_length": 500,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "description",
+    "ordinal_position": 12,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "status",
+    "ordinal_position": 13,
+    "data_type": "character varying",
+    "character_maximum_length": 50,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "'pending'::character varying"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "admin_notes",
+    "ordinal_position": 14,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "reviewed_by",
+    "ordinal_position": 15,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "reviewed_at",
+    "ordinal_position": 16,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "user_id",
+    "ordinal_position": 17,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "created_at",
+    "ordinal_position": 18,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "updated_at",
+    "ordinal_position": 19,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "password",
+    "ordinal_position": 20,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "settings",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "is_nullable": "NO",
+    "column_default": "nextval('settings_id_seq'::regclass)"
+  },
+  {
+    "table_name": "settings",
+    "column_name": "user_id",
+    "ordinal_position": 2,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "settings",
+    "column_name": "name",
+    "ordinal_position": 3,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "settings",
+    "column_name": "logo",
+    "ordinal_position": 4,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "settings",
+    "column_name": "auto_approve_sellers",
+    "ordinal_position": 5,
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "false"
+  },
+  {
+    "table_name": "settings",
+    "column_name": "created_at",
+    "ordinal_position": 6,
+    "data_type": "timestamp without time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "settings",
+    "column_name": "updated_at",
+    "ordinal_position": 7,
+    "data_type": "timestamp without time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "user_id",
+    "ordinal_position": 2,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "property_id",
+    "ordinal_position": 3,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "created_at",
+    "ordinal_position": 4,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "users",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()"
+  },
+  {
+    "table_name": "users",
+    "column_name": "email",
+    "ordinal_position": 2,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "NO",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "password",
+    "ordinal_position": 3,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "google_id",
+    "ordinal_position": 4,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "facebook_id",
+    "ordinal_position": 5,
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "auth_provider",
+    "ordinal_position": 6,
+    "data_type": "character varying",
+    "character_maximum_length": 50,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "'email'::character varying"
+  },
+  {
+    "table_name": "users",
+    "column_name": "first_name",
+    "ordinal_position": 7,
+    "data_type": "character varying",
+    "character_maximum_length": 100,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "last_name",
+    "ordinal_position": 8,
+    "data_type": "character varying",
+    "character_maximum_length": 100,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "phone",
+    "ordinal_position": 9,
+    "data_type": "character varying",
+    "character_maximum_length": 20,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "states_of_interest",
+    "ordinal_position": 10,
+    "data_type": "jsonb",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "'[]'::jsonb"
+  },
+  {
+    "table_name": "users",
+    "column_name": "verified",
+    "ordinal_position": 11,
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "false"
+  },
+  {
+    "table_name": "users",
+    "column_name": "active",
+    "ordinal_position": 12,
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "true"
+  },
+  {
+    "table_name": "users",
+    "column_name": "created_at",
+    "ordinal_position": 13,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "users",
+    "column_name": "updated_at",
+    "ordinal_position": 14,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "now()"
+  },
+  {
+    "table_name": "users",
+    "column_name": "last_login_at",
+    "ordinal_position": 15,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "seller_status",
+    "ordinal_position": 16,
+    "data_type": "character varying",
+    "character_maximum_length": 50,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "NULL::character varying"
+  },
+  {
+    "table_name": "users",
+    "column_name": "seller_approved_at",
+    "ordinal_position": 17,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": null
+  },
+  {
+    "table_name": "users",
+    "column_name": "blocked",
+    "ordinal_position": 18,
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "is_nullable": "YES",
+    "column_default": "false"
+  }
+]
+
+
+
+Query: 
+
+SELECT
+  tc.table_name,
+  kcu.column_name,
+  tc.constraint_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+  AND tc.table_schema = kcu.table_schema
+WHERE tc.table_schema = 'public'
+  AND tc.constraint_type = 'PRIMARY KEY'
+ORDER BY tc.table_name, kcu.ordinal_position;
+
+
+Response: 
+
+[
+  {
+    "table_name": "admin",
+    "column_name": "id",
+    "constraint_name": "admin_pkey"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "id",
+    "constraint_name": "properties_pkey"
+  },
+  {
+    "table_name": "property_images",
+    "column_name": "id",
+    "constraint_name": "property_images_pkey"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "id",
+    "constraint_name": "seller_applications_pkey"
+  },
+  {
+    "table_name": "settings",
+    "column_name": "id",
+    "constraint_name": "settings_pkey"
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "id",
+    "constraint_name": "user_favorites_pkey"
+  },
+  {
+    "table_name": "users",
+    "column_name": "id",
+    "constraint_name": "users_pkey"
+  }
+]
+
+
+Query: 
+
+SELECT
+  tc.table_name AS from_table,
+  kcu.column_name AS from_column,
+  ccu.table_name AS to_table,
+  ccu.column_name AS to_column,
+  tc.constraint_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+  AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage ccu
+  ON tc.constraint_name = ccu.constraint_name
+  AND tc.table_schema = ccu.table_schema
+WHERE tc.table_schema = 'public'
+  AND tc.constraint_type = 'FOREIGN KEY'
+ORDER BY tc.table_name, kcu.ordinal_position;
+
+
+Response: 
+
+[
+  {
+    "from_table": "properties",
+    "from_column": "seller_id",
+    "to_table": "seller_applications",
+    "to_column": "id",
+    "constraint_name": "properties_seller_id_fkey"
+  },
+  {
+    "from_table": "property_images",
+    "from_column": "property_id",
+    "to_table": "properties",
+    "to_column": "id",
+    "constraint_name": "property_images_property_id_fkey"
+  },
+  {
+    "from_table": "seller_applications",
+    "from_column": "reviewed_by",
+    "to_table": "users",
+    "to_column": "id",
+    "constraint_name": "seller_applications_reviewed_by_fkey"
+  },
+  {
+    "from_table": "seller_applications",
+    "from_column": "user_id",
+    "to_table": "users",
+    "to_column": "id",
+    "constraint_name": "seller_applications_user_id_fkey"
+  },
+  {
+    "from_table": "settings",
+    "from_column": "user_id",
+    "to_table": "admin",
+    "to_column": "id",
+    "constraint_name": "settings_user_id_fkey"
+  }
+]
+
+Query: 
+
+SELECT
+  tc.table_name,
+  kcu.column_name,
+  tc.constraint_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+  AND tc.table_schema = kcu.table_schema
+WHERE tc.table_schema = 'public'
+  AND tc.constraint_type = 'UNIQUE'
+ORDER BY tc.table_name;
+
+Response: 
+
+[
+  {
+    "table_name": "admin",
+    "column_name": "email",
+    "constraint_name": "admin_email_key"
+  },
+  {
+    "table_name": "properties",
+    "column_name": "slug",
+    "constraint_name": "properties_slug_key"
+  },
+  {
+    "table_name": "seller_applications",
+    "column_name": "user_id",
+    "constraint_name": "seller_applications_user_id_key"
+  },
+  {
+    "table_name": "settings",
+    "column_name": "user_id",
+    "constraint_name": "settings_user_id_unique"
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "property_id",
+    "constraint_name": "user_favorites_unique"
+  },
+  {
+    "table_name": "user_favorites",
+    "column_name": "user_id",
+    "constraint_name": "user_favorites_unique"
+  },
+  {
+    "table_name": "users",
+    "column_name": "facebook_id",
+    "constraint_name": "users_facebook_id_key"
+  },
+  {
+    "table_name": "users",
+    "column_name": "email",
+    "constraint_name": "users_email_key"
+  },
+  {
+    "table_name": "users",
+    "column_name": "google_id",
+    "constraint_name": "users_google_id_key"
+  }
+]
+
+
+Query: 
+
+
+SELECT
+  schemaname,
+  tablename,
+  indexname,
+  indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+Response
+
+[
+  {
+    "schemaname": "public",
+    "tablename": "admin",
+    "indexname": "admin_email_key",
+    "indexdef": "CREATE UNIQUE INDEX admin_email_key ON public.admin USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin",
+    "indexname": "idx_admin_role",
+    "indexdef": "CREATE INDEX idx_admin_role ON public.admin USING btree (role)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin",
+    "indexname": "admin_pkey",
+    "indexdef": "CREATE UNIQUE INDEX admin_pkey ON public.admin USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "idx_properties_property_status",
+    "indexdef": "CREATE INDEX idx_properties_property_status ON public.properties USING btree (property_status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "idx_properties_status",
+    "indexdef": "CREATE INDEX idx_properties_status ON public.properties USING btree (status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "idx_properties_seller_id",
+    "indexdef": "CREATE INDEX idx_properties_seller_id ON public.properties USING btree (seller_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "properties_pkey",
+    "indexdef": "CREATE UNIQUE INDEX properties_pkey ON public.properties USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "properties_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX properties_slug_key ON public.properties USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "idx_properties_seller_status",
+    "indexdef": "CREATE INDEX idx_properties_seller_status ON public.properties USING btree (seller_id, status, property_status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "properties",
+    "indexname": "idx_properties_created_by",
+    "indexdef": "CREATE INDEX idx_properties_created_by ON public.properties USING btree (created_by)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "property_images",
+    "indexname": "idx_property_images_property_id",
+    "indexdef": "CREATE INDEX idx_property_images_property_id ON public.property_images USING btree (property_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "property_images",
+    "indexname": "idx_property_images_sort_order",
+    "indexdef": "CREATE INDEX idx_property_images_sort_order ON public.property_images USING btree (property_id, sort_order)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "property_images",
+    "indexname": "property_images_pkey",
+    "indexdef": "CREATE UNIQUE INDEX property_images_pkey ON public.property_images USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "seller_applications_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX seller_applications_user_id_key ON public.seller_applications USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "idx_seller_applications_email",
+    "indexdef": "CREATE INDEX idx_seller_applications_email ON public.seller_applications USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "idx_seller_applications_status",
+    "indexdef": "CREATE INDEX idx_seller_applications_status ON public.seller_applications USING btree (status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "idx_seller_applications_user_id",
+    "indexdef": "CREATE INDEX idx_seller_applications_user_id ON public.seller_applications USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "idx_seller_applications_created_at",
+    "indexdef": "CREATE INDEX idx_seller_applications_created_at ON public.seller_applications USING btree (created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "idx_seller_applications_password",
+    "indexdef": "CREATE INDEX idx_seller_applications_password ON public.seller_applications USING btree (password)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "seller_applications",
+    "indexname": "seller_applications_pkey",
+    "indexdef": "CREATE UNIQUE INDEX seller_applications_pkey ON public.seller_applications USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "settings",
+    "indexname": "settings_user_id_unique",
+    "indexdef": "CREATE UNIQUE INDEX settings_user_id_unique ON public.settings USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "settings",
+    "indexname": "settings_pkey",
+    "indexdef": "CREATE UNIQUE INDEX settings_pkey ON public.settings USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "settings",
+    "indexname": "idx_settings_auto_approve",
+    "indexdef": "CREATE INDEX idx_settings_auto_approve ON public.settings USING btree (auto_approve_sellers) WHERE (auto_approve_sellers = true)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_favorites",
+    "indexname": "user_favorites_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_favorites_pkey ON public.user_favorites USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_favorites",
+    "indexname": "user_favorites_unique",
+    "indexdef": "CREATE UNIQUE INDEX user_favorites_unique ON public.user_favorites USING btree (user_id, property_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_favorites",
+    "indexname": "idx_user_favorites_user_id",
+    "indexdef": "CREATE INDEX idx_user_favorites_user_id ON public.user_favorites USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_favorites",
+    "indexname": "idx_user_favorites_property_id",
+    "indexdef": "CREATE INDEX idx_user_favorites_property_id ON public.user_favorites USING btree (property_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_favorites",
+    "indexname": "idx_user_favorites_created_at",
+    "indexdef": "CREATE INDEX idx_user_favorites_created_at ON public.user_favorites USING btree (created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_email_key",
+    "indexdef": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_pkey",
+    "indexdef": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_seller_status",
+    "indexdef": "CREATE INDEX idx_users_seller_status ON public.users USING btree (seller_status)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_created_at",
+    "indexdef": "CREATE INDEX idx_users_created_at ON public.users USING btree (created_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_verified",
+    "indexdef": "CREATE INDEX idx_users_verified ON public.users USING btree (verified)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_facebook_id",
+    "indexdef": "CREATE INDEX idx_users_facebook_id ON public.users USING btree (facebook_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_email",
+    "indexdef": "CREATE INDEX idx_users_email ON public.users USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_google_id",
+    "indexdef": "CREATE INDEX idx_users_google_id ON public.users USING btree (google_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_active_blocked",
+    "indexdef": "CREATE INDEX idx_users_active_blocked ON public.users USING btree (active, blocked)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_blocked",
+    "indexdef": "CREATE INDEX idx_users_blocked ON public.users USING btree (blocked)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_google_id_key",
+    "indexdef": "CREATE UNIQUE INDEX users_google_id_key ON public.users USING btree (google_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_facebook_id_key",
+    "indexdef": "CREATE UNIQUE INDEX users_facebook_id_key ON public.users USING btree (facebook_id)"
+  }
+]

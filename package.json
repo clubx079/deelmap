@@ -1,0 +1,33 @@
+{
+  "name": "ableman-deals",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.933.0",
+    "@googlemaps/js-api-loader": "^1.16.10",
+    "@supabase/supabase-js": "^2.57.4",
+    "bcryptjs": "^3.0.3",
+    "emoji-picker-react": "^4.15.1",
+    "googleapis": "^160.0.0",
+    "jspdf": "^3.0.3",
+    "lucide-react": "^0.542.0",
+    "next": "^15.5.9",
+    "nodemailer": "^7.0.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "resend": "^6.5.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "^15.5.9",
+    "tailwindcss": "^4"
+  }
+}
