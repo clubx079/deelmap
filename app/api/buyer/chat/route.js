@@ -5,12 +5,28 @@ import { generateReplyToAddress } from '@/lib/emailReplyUtils';
 import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
 import { withTimeout, fireAndForget } from '@/lib/timeout';
 
-// Lender DB: conversations – lazy init so build succeeds without env
-function getLenderSupabase() {
-  const url = process.env.NEXT_PUBLIC_LENDER_SUPABASE_URL
-  const key = process.env.LENDER_SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return null
-  return createClient(url, key)
+// Marketplace (Deelmap) Supabase: conversations & messages – same DB as rest of site
+function getSupabase() {
+  const url =
+    process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+function getSupabaseConfigError() {
+  const url =
+    process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) return 'Set NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) in Railway env.';
+  if (!key) return 'Set MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE_KEY) in Railway env.';
+  return null;
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -77,7 +93,7 @@ function hashEmail(email) {
 
 // Helper function to check buyer authentication
 async function checkBuyerAuth(request, supabase) {
-  if (!supabase) return { authenticated: false, error: 'Lender DB not configured' };
+  if (!supabase) return { authenticated: false, error: 'Database not configured' };
   const authHeader = request.headers.get('authorization');
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -113,9 +129,12 @@ async function checkBuyerAuth(request, supabase) {
 
 // GET: Fetch conversations or messages
 export async function GET(request) {
-  const supabase = getLenderSupabase();
+  const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({ success: false, error: 'Lender DB not configured' }, { status: 503 });
+    return NextResponse.json(
+        { success: false, error: 'Database not configured', hint: getSupabaseConfigError() },
+        { status: 503 }
+      );
   }
   try {
     const authCheck = await checkBuyerAuth(request, supabase);
@@ -281,9 +300,12 @@ export async function GET(request) {
 
 // POST: Send message or mark as read
 export async function POST(request) {
-  const supabase = getLenderSupabase();
+  const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({ success: false, error: 'Lender DB not configured' }, { status: 503 });
+    return NextResponse.json(
+        { success: false, error: 'Database not configured', hint: getSupabaseConfigError() },
+        { status: 503 }
+      );
   }
   try {
     const authCheck = await checkBuyerAuth(request, supabase);

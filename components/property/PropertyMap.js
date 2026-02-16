@@ -336,10 +336,12 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapWidth = mapDiv.offsetWidth
       const mapHeight = mapDiv.offsetHeight
       
-      const cardWidth = 240
-      const cardHeight = 200
-      const padding = 16
-      const markerOffset = 20
+      // Extra large margin to ensure popups never appear near map edges
+      const padding = 80
+      // Use larger than visual card size so we always keep clear space around the popup
+      const cardWidth = 290
+      const cardHeight = 250
+      const markerOffset = 28
       
       // Calculate potential positions for all four sides
       const positions = {

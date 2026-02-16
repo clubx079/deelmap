@@ -17,11 +17,12 @@ import {
   Mail
 } from 'lucide-react';
 
-// Lender DB: conversations realtime (see ENV_CLEAN.md)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_LENDER_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_LENDER_SUPABASE_ANON_KEY
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 export default function ChatWindow({ conversation, lender, financingRequest, onBack }) {
   const { user } = useAuth();
@@ -101,6 +102,8 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   };
 
   const setupRealtimeSubscription = () => {
+    const supabase = getSupabase();
+    if (!supabase) return () => {};
     const channel = supabase
       .channel(`conversation-${conversation.id}`, {
         config: {
@@ -126,9 +129,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           });
           scrollToBottom();
 
-          // If the message is from the lender (not from us), mark it as read immediately
-          // since the chat window is open
-          if (payload.new.sender_type === 'lender') {
+          if (payload.new.sender_type === 'lender' || payload.new.sender_type === 'seller') {
             try {
               await fetch('/api/buyer/chat', {
                 method: 'POST',
@@ -152,7 +153,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       });
 
     return () => {
-      console.log('Cleaning up channel');
       supabase.removeChannel(channel);
     };
   };
@@ -187,8 +187,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const data = await response.json();
 
       if (data.success && data.message) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === data.message.id);
+          if (exists) return prev;
+          return [...prev, data.message];
+        });
         setNewMessage('');
         scrollToBottom();
+      } else {
+        const errMsg = data.error || 'Failed to send message. Please try again.';
+        alert(errMsg);
       }
     } catch (error) {
       console.error('Failed to send message:', error);

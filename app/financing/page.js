@@ -189,7 +189,7 @@ export default function FinancingPage() {
           <div className="text-center p-8 max-w-lg">
             <div className="w-12 h-1 bg-slate-900 mx-auto mb-6"></div>
             <h2 className="text-3xl font-bold text-slate-900 mb-3">Thank You</h2>
-            <p className="text-slate-600 mb-8">Your finance request has been submitted. Lenders will review it and reach out through DeelMap.</p>
+            <p className="text-slate-600 mb-8">Your financing request has been submitted. Lenders will review it and reach out through DeelMap.</p>
             <button
               onClick={() => setSubmitted(false)}
               className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 text-sm font-semibold transition-all"
@@ -212,10 +212,10 @@ export default function FinancingPage() {
         <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="text-center mb-4 sm:mb-6">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-normal text-slate-900 mb-3 sm:mb-4 tracking-tight">
-              Request Finance
+              Request Financing
             </h1>
             <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
-              Submit a finance request for your property. Lenders on our platform review every application and will reach out to you through DeelMap when there’s a match.
+              Submit a financing request for your property. Lenders on our platform review every application and will reach out to you through DeelMap when there’s a match.
             </p>
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function FinancingPage() {
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="bg-white border-2 border-slate-300 p-8 lg:p-10">
             <div className="mb-8 text-center">
-              <h2 className="text-3xl font-bold text-slate-900 mb-2">Finance application</h2>
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">Financing Application</h2>
               <p className="text-slate-600">Complete the form below. Lenders will view your application and contact you here.</p>
             </div>
 
@@ -430,7 +430,7 @@ export default function FinancingPage() {
                   value={formData.comments}
                   onChange={handleInputChange}
                   rows={5}
-                  placeholder="Tell us more about your finance needs..."
+                  placeholder="Tell us more about your financing needs..."
                   className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none resize-none"
                 />
               </div>

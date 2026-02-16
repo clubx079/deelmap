@@ -107,7 +107,7 @@ export async function POST(request) {
                     <table cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding-bottom: 10px;">
-                          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; text-align: center; margin-bottom: 15px;">Enter Code</label>
+                          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; text-align: center; margin-bottom: 15px;">Your Verification Code</label>
                         </td>
                       </tr>
                       <tr>
@@ -127,6 +127,15 @@ export async function POST(request) {
                               `).join('')}
                             </tr>
                           </table>
+                        </td>
+                      </tr>
+                      <!-- Copyable Code -->
+                      <tr>
+                        <td align="center" style="padding-top: 20px;">
+                          <div style="display: inline-block; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px 24px;">
+                            <p style="margin: 0; font-size: 12px; color: #6b7280; font-weight: 500; margin-bottom: 6px;">Copy code:</p>
+                            <p style="margin: 0; font-size: 24px; font-weight: 700; color: #1f2937; font-family: 'Courier New', monospace; letter-spacing: 2px; user-select: all; -webkit-user-select: all; -moz-user-select: all;">${otp}</p>
+                          </div>
                         </td>
                       </tr>
                     </table>

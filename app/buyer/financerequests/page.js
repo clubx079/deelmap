@@ -83,7 +83,7 @@ export default function FinanceRequestsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">My Applications</h1>
-          <p className="text-sm text-slate-500 mt-0.5">View and track your finance applications</p>
+          <p className="text-sm text-slate-500 mt-0.5">View and track your financing applications</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:flex-initial sm:w-52">
@@ -117,14 +117,14 @@ export default function FinanceRequestsPage() {
           </div>
           <p className="text-slate-600 font-medium mb-1">{searchQuery ? 'No applications found' : 'No applications yet'}</p>
           <p className="text-sm text-slate-500 mb-5">
-            {searchQuery ? 'Try a different search.' : 'Submit your first finance request to get started.'}
+            {searchQuery ? 'Try a different search.' : 'Submit your first financing request to get started.'}
           </p>
           {!searchQuery && (
             <Link
               href="/financing"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-colors"
             >
-              <FileText className="w-4 h-4" /> Apply for finance
+              <FileText className="w-4 h-4" /> Apply for Financing
             </Link>
           )}
         </div>
