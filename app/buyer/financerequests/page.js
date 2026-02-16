@@ -78,101 +78,92 @@ export default function FinanceRequestsPage() {
   };
 
   return (
-    <div className="px-4 py-4 pt-12 lg:pt-4 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">My Applications</h1>
-          <p className="text-sm text-slate-500 mt-0.5">View and track your financing applications</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:flex-initial sm:w-52">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by type, address, amount..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-52 pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-300 transition-shadow"
-            />
+    <div className="min-h-full bg-slate-50 pt-12 lg:pt-0">
+      {/* Consistent navbar header like other buyer portal pages */}
+      <div className="px-4 py-3 border-b border-slate-200 bg-white/80">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-semibold text-slate-900">My Applications</h1>
+            <p className="text-xs text-slate-500">View and track your financing applications</p>
           </div>
-          <Link
-            href="/financing"
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium transition-colors"
-          >
-            <FileText className="w-4 h-4" />
-            New application
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:flex-initial sm:w-48">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-48 pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900"
+              />
+            </div>
+            <Link
+              href="/financing"
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium"
+            >
+              <FileText className="w-4 h-4" />
+              New
+            </Link>
+          </div>
         </div>
       </div>
 
+      <div className="px-4 py-4">
+
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-9 w-9 border-2 border-slate-200 border-t-slate-700" />
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900" />
         </div>
       ) : filteredRequests.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-6 h-6 text-slate-400" />
-          </div>
-          <p className="text-slate-600 font-medium mb-1">{searchQuery ? 'No applications found' : 'No applications yet'}</p>
-          <p className="text-sm text-slate-500 mb-5">
-            {searchQuery ? 'Try a different search.' : 'Submit your first financing request to get started.'}
-          </p>
+        <div className="bg-white rounded-lg border border-slate-200 p-6 text-center">
+          <p className="text-sm text-slate-600 mb-3">{searchQuery ? 'No applications found' : 'No applications yet'}</p>
           {!searchQuery && (
-            <Link
-              href="/financing"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-colors"
-            >
+            <Link href="/financing" className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-lg">
               <FileText className="w-4 h-4" /> Apply for Financing
             </Link>
           )}
         </div>
       ) : (
-        <ul className="space-y-3">
-          {filteredRequests.map((request) => {
-            const isExpanded = expandedId === request.id;
-            return (
-              <li
-                key={request.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md"
-              >
-                {/* Summary row – clickable */}
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(request.id)}
-                  className="w-full flex items-center gap-3 sm:gap-4 p-4 sm:p-5 text-left focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:ring-inset rounded-2xl"
-                >
-                  <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Type</p>
-                      <p className="font-medium text-slate-900 truncate">{request.property_type || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Loan amount</p>
-                      <p className="font-semibold text-slate-900">{formatCurrency(request.loan_amount)}</p>
-                    </div>
-                    <div className="hidden sm:block">
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Property</p>
-                      <p className="text-slate-600 truncate" title={request.property_address}>{request.property_address || '—'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Submitted</p>
-                      <p className="text-slate-600">{formatDate(request.created_at)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200/60">
-                      Pending
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          {/* Table header — New order: Property, Loan Amount, Type, Submitted, Status */}
+          <div
+            className="hidden sm:grid grid-cols-[auto_minmax(180px,2fr)_minmax(140px,1.5fr)_minmax(140px,1.5fr)_minmax(120px,1fr)_minmax(100px,1fr)] gap-4 px-5 py-3 border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wide"
+          >
+            <span className="w-6"></span>
+            <span>Property</span>
+            <span>Loan Amount</span>
+            <span>Type</span>
+            <span>Submitted</span>
+            <span className="text-right">Status</span>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {filteredRequests.map((request) => {
+              const isExpanded = expandedId === request.id;
+              return (
+                <div key={request.id} className="border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(request.id)}
+                    className="w-full grid grid-cols-[auto_minmax(180px,2fr)_minmax(140px,1.5fr)_minmax(140px,1.5fr)_minmax(120px,1fr)_minmax(100px,1fr)] gap-4 px-5 py-4 text-left hover:bg-slate-50 focus:outline-none items-center"
+                  >
+                    {/* Dropdown icon at START */}
+                    <span className="text-slate-400 w-6 flex justify-center">
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </span>
-                    <span className="text-slate-400">
-                      {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </span>
-                  </div>
-                </button>
+                    {/* Property */}
+                    <span className="text-slate-700 text-sm truncate" title={request.property_address}>{request.property_address || 'N/A'}</span>
+                    {/* Loan Amount */}
+                    <span className="text-slate-900 font-semibold text-sm">{formatCurrency(request.loan_amount)}</span>
+                    {/* Type */}
+                    <span className="font-medium text-slate-900 text-sm truncate">{request.property_type || '—'}</span>
+                    {/* Submitted */}
+                    <span className="text-slate-500 text-sm">{formatDate(request.created_at)}</span>
+                    {/* Status */}
+                    <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 justify-end">Pending</span>
+                  </button>
 
-                {/* Expandable details */}
-                {isExpanded && (
+                  {/* Expandable details */}
+                  {isExpanded && (
                   <div className="border-t border-slate-100 bg-slate-50/50 px-4 sm:px-5 py-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Contact */}
@@ -271,12 +262,14 @@ export default function FinanceRequestsPage() {
                       </button>
                     </div>
                   </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
+      </div>
     </div>
   );
 }

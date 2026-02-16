@@ -60,15 +60,15 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       label: 'Dashboard'
     },
     {
-      href: '/buyer/financerequests',
-      icon: FileText,
-      label: 'My Applications'
-    },
-    {
       href: '/buyer/inbox',
       icon: MessageCircle,
       label: 'Messages',
       badge: unreadCount
+    },
+    {
+      href: '/buyer/financerequests',
+      icon: FileText,
+      label: 'My Applications'
     },
     {
       href: '/saved-properties',
@@ -97,8 +97,8 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         shadow-sm
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Header: Back, Logo, Badge — clean and minimal */}
-        <div className="px-4 pt-6 pb-6 border-b border-slate-200 bg-gradient-to-b from-slate-50/80 to-white">
+        {/* Header: Modern professional design */}
+        <div className="px-4 pt-6 pb-6 border-b border-slate-200">
           {/* Row 1: Back to Marketplace + Close (mobile) */}
           <div className="flex items-center justify-between gap-2 mb-6">
             <Link
@@ -117,23 +117,19 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
             </button>
           </div>
 
-          {/* Row 2: Logo — visual anchor */}
-          <div className="flex justify-center mb-4">
-            <Link href="/" className="block rounded-lg p-2 -m-2 hover:bg-slate-100/60 transition-colors duration-200">
+          {/* Row 2: Logo left + Buyer Portal text right */}
+          <div className="flex items-end gap-3">
+            <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
               <Image
                 src="/assets/logo copy.png"
                 alt="DeelMap"
-                width={128}
-                height={40}
-                className="h-10 w-auto object-contain"
+                width={120}
+                height={38}
+                className="h-9 w-auto object-contain"
                 priority
               />
             </Link>
-          </div>
-
-          {/* Row 3: Buyer Portal — refined pill */}
-          <div className="flex justify-center">
-            <span className="inline-flex items-center px-4 py-2 rounded-full bg-slate-900 text-white text-[11px] font-semibold tracking-widest uppercase">
+            <span className="text-[13px] text-slate-900 mb-0.5">
               Buyer Portal
             </span>
           </div>
