@@ -97,8 +97,8 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         shadow-sm
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Header: Modern professional design */}
-        <div className="px-4 pt-6 pb-6 border-b border-slate-200">
+        {/* Header: Enterprise professional design */}
+        <div className="px-4 pt-6 pb-6 border-b border-slate-200 bg-white">
           {/* Row 1: Back to Marketplace + Close (mobile) */}
           <div className="flex items-center justify-between gap-2 mb-6">
             <Link
@@ -117,21 +117,25 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
             </button>
           </div>
 
-          {/* Row 2: Logo left + Buyer Portal text right */}
-          <div className="flex items-end gap-3">
+          {/* Row 2: Logo + Portal Badge — enterprise layout */}
+          <div className="space-y-4">
             <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
               <Image
                 src="/assets/logo copy.png"
                 alt="DeelMap"
-                width={120}
-                height={38}
-                className="h-9 w-auto object-contain"
+                width={140}
+                height={42}
+                className="h-10 w-auto object-contain"
                 priority
               />
             </Link>
-            <span className="text-[13px] text-slate-900 mb-0.5">
-              Buyer Portal
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-slate-200"></div>
+              <span className="text-xs font-medium text-slate-600 tracking-wide">
+                BUYER PORTAL
+              </span>
+              <div className="h-px flex-1 bg-slate-200"></div>
+            </div>
           </div>
         </div>
 
@@ -151,17 +155,17 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
                     flex items-center gap-3 px-3 py-2.5 rounded-lg
                     transition-all duration-200
                     ${isActive
-                      ? 'bg-slate-900 text-white shadow-sm'
+                      ? 'bg-slate-200 text-slate-900 font-semibold'
                       : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
                     }
                   `}
                 >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                  <span className="text-sm">{item.label}</span>
                   {item.badge > 0 && (
                     <span className={`ml-auto inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 text-xs font-semibold rounded-full ${
                       isActive
-                        ? 'bg-white text-slate-900'
+                        ? 'bg-slate-900 text-white'
                         : 'bg-slate-900 text-white'
                     }`}>
                       {item.badge > 99 ? '99+' : item.badge}
@@ -182,13 +186,13 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
               flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
               transition-all duration-200
               ${pathname === '/profile' || pathname?.startsWith('/profile/')
-                ? 'bg-slate-900 text-white shadow-sm'
+                ? 'bg-slate-200 text-slate-900 font-semibold'
                 : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
               }
             `}
           >
-            <Settings className={`w-5 h-5 flex-shrink-0 ${pathname === '/profile' || pathname?.startsWith('/profile/') ? 'text-white' : 'text-slate-500'}`} />
-            <span className="text-sm font-medium">Settings</span>
+            <Settings className={`w-5 h-5 flex-shrink-0 ${pathname === '/profile' || pathname?.startsWith('/profile/') ? 'text-slate-900' : 'text-slate-500'}`} />
+            <span className="text-sm">Settings</span>
           </Link>
           <button
             onClick={handleLogout}

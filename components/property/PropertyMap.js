@@ -112,9 +112,17 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     const bounds = new window.google.maps.LatLngBounds()
 
     properties.forEach((p) => {
-      // Use Google verified coordinates from wholesale_deals; fallback to state centroid so list and map counts match
+      // Use Google verified coordinates from wholesale_deals; fallback chain for missing coords
       let lat = parseFloat(p.address_google_lat)
       let lng = parseFloat(p.address_google_lng)
+      
+      // Fallback 1: Try latitude/longitude fields
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        lat = parseFloat(p.latitude)
+        lng = parseFloat(p.longitude)
+      }
+      
+      // Fallback 2: Try state centroid
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         const state = (p.state || '').trim().toUpperCase().slice(0, 2)
         const centroid = state && STATE_CENTROIDS[state]
@@ -122,7 +130,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           lat = centroid[0]
           lng = centroid[1]
         } else {
-          return
+          // Fallback 3: Default US center as last resort
+          console.warn(`Property ${p.id} missing coordinates and state, using US center`)
+          lat = 39.8283
+          lng = -98.5795
         }
       }
 

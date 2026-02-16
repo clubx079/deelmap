@@ -159,106 +159,114 @@ export default function FinanceRequestsPage() {
                     {/* Submitted */}
                     <span className="text-slate-500 text-sm">{formatDate(request.created_at)}</span>
                     {/* Status */}
-                    <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 justify-end">Pending</span>
+                    <div className="flex justify-end">
+                      <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800">Pending</span>
+                    </div>
                   </button>
 
-                  {/* Expandable details */}
+                  {/* Expandable details - Modern enterprise design */}
                   {isExpanded && (
-                  <div className="border-t border-slate-100 bg-slate-50/50 px-4 sm:px-5 py-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Contact */}
-                      <div className="space-y-3">
-                        <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          <User className="w-3.5 h-3.5" /> Contact
-                        </h3>
-                        <dl className="space-y-2 text-sm">
-                          <div>
-                            <dt className="text-slate-400">Name</dt>
-                            <dd className="text-slate-900 font-medium">{[request.first_name, request.last_name].filter(Boolean).join(' ') || '—'}</dd>
+                  <div className="border-t border-slate-100 bg-gradient-to-br from-slate-50 to-white px-6 py-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {/* Contact Information */}
+                      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <User className="w-4 h-4 text-slate-600" />
                           </div>
-                          <div>
-                            <dt className="text-slate-400">Email</dt>
-                            <dd className="text-slate-900">{request.email || '—'}</dd>
+                          <h3 className="text-sm font-semibold text-slate-900">Contact Information</h3>
+                        </div>
+                        <dl className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Name</dt>
+                            <dd className="text-sm text-slate-900 font-medium text-right">{[request.first_name, request.last_name].filter(Boolean).join(' ') || '—'}</dd>
                           </div>
-                          <div>
-                            <dt className="text-slate-400">Phone</dt>
-                            <dd className="text-slate-900">{request.phone || '—'}</dd>
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Email</dt>
+                            <dd className="text-sm text-slate-900 text-right break-all">{request.email || '—'}</dd>
                           </div>
-                        </dl>
-                      </div>
-
-                      {/* Property & transaction */}
-                      <div className="space-y-3">
-                        <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          <MapPin className="w-3.5 h-3.5" /> Property & transaction
-                        </h3>
-                        <dl className="space-y-2 text-sm">
-                          <div>
-                            <dt className="text-slate-400">Property type</dt>
-                            <dd className="text-slate-900">{request.property_type || '—'}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-slate-400">Address</dt>
-                            <dd className="text-slate-900">{request.property_address || '—'}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-slate-400">Transaction type</dt>
-                            <dd className="text-slate-900">{request.transaction_type || '—'}</dd>
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Phone</dt>
+                            <dd className="text-sm text-slate-900 text-right">{request.phone || '—'}</dd>
                           </div>
                         </dl>
                       </div>
 
-                      {/* Financial */}
-                      <div className="space-y-3">
-                        <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          <DollarSign className="w-3.5 h-3.5" /> Financial
-                        </h3>
-                        <dl className="space-y-2 text-sm">
-                          <div>
-                            <dt className="text-slate-400">Loan amount</dt>
-                            <dd className="text-slate-900 font-semibold">{formatCurrency(request.loan_amount)}</dd>
+                      {/* Property Details */}
+                      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-slate-600" />
                           </div>
-                          <div>
-                            <dt className="text-slate-400">Credit score</dt>
-                            <dd className="text-slate-900">{request.credit_score || '—'}</dd>
+                          <h3 className="text-sm font-semibold text-slate-900">Property Details</h3>
+                        </div>
+                        <dl className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Type</dt>
+                            <dd className="text-sm text-slate-900 font-medium text-right">{request.property_type || '—'}</dd>
+                          </div>
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Address</dt>
+                            <dd className="text-sm text-slate-900 text-right">{request.property_address || '—'}</dd>
+                          </div>
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Transaction</dt>
+                            <dd className="text-sm text-slate-900 text-right">{request.transaction_type || '—'}</dd>
                           </div>
                         </dl>
                       </div>
 
-                      {/* Date & notes */}
-                      <div className="space-y-3">
-                        <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          <Calendar className="w-3.5 h-3.5" /> Dates
-                        </h3>
-                        <dl className="space-y-2 text-sm">
-                          <div>
-                            <dt className="text-slate-400">Submitted</dt>
-                            <dd className="text-slate-900">{formatDate(request.created_at)}</dd>
+                      {/* Financial Details */}
+                      <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <DollarSign className="w-4 h-4 text-slate-600" />
+                          </div>
+                          <h3 className="text-sm font-semibold text-slate-900">Financial Details</h3>
+                        </div>
+                        <dl className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Loan Amount</dt>
+                            <dd className="text-sm text-slate-900 font-semibold text-right">{formatCurrency(request.loan_amount)}</dd>
+                          </div>
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Credit Score</dt>
+                            <dd className="text-sm text-slate-900 text-right">{request.credit_score || '—'}</dd>
+                          </div>
+                          <div className="flex justify-between items-start">
+                            <dt className="text-xs font-medium text-slate-500">Submitted</dt>
+                            <dd className="text-sm text-slate-900 text-right">{formatDate(request.created_at)}</dd>
                           </div>
                           {request.updated_at && request.updated_at !== request.created_at && (
-                            <div>
-                              <dt className="text-slate-400">Last updated</dt>
-                              <dd className="text-slate-900">{formatDate(request.updated_at)}</dd>
+                            <div className="flex justify-between items-start">
+                              <dt className="text-xs font-medium text-slate-500">Updated</dt>
+                              <dd className="text-sm text-slate-900 text-right">{formatDate(request.updated_at)}</dd>
                             </div>
                           )}
                         </dl>
-                        {request.comments && (
-                          <>
-                            <h3 className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider pt-2">
-                              <MessageSquare className="w-3.5 h-3.5" /> Notes
-                            </h3>
-                            <p className="text-sm text-slate-700 bg-white rounded-lg p-3 border border-slate-100">{request.comments}</p>
-                          </>
-                        )}
                       </div>
+
+                      {/* Additional Notes - Full width if present */}
+                      {request.comments && (
+                        <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                              <MessageSquare className="w-4 h-4 text-slate-600" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-900">Additional Notes</h3>
+                          </div>
+                          <p className="text-sm text-slate-700 leading-relaxed">{request.comments}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-4 pt-4 border-t border-slate-200 flex justify-end">
+                    <div className="mt-6 pt-4 border-t border-slate-200 flex justify-center">
                       <button
                         type="button"
                         onClick={() => toggleExpand(request.id)}
-                        className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
                       >
-                        Close details
+                        <ChevronUp className="w-4 h-4" />
+                        Close Details
                       </button>
                     </div>
                   </div>
