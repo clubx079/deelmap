@@ -119,16 +119,18 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
 
           {/* Row 2: Logo + Portal Badge — enterprise layout */}
           <div className="space-y-4">
-            <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
-              <Image
-                src="/assets/logo copy.png"
-                alt="DeelMap"
-                width={140}
-                height={42}
-                className="h-10 w-auto object-contain"
-                priority
-              />
-            </Link>
+            <div className="flex justify-center">
+              <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
+                <Image
+                  src="/assets/logo copy.png"
+                  alt="DeelMap"
+                  width={140}
+                  height={42}
+                  className="h-10 w-auto object-contain"
+                  priority
+                />
+              </Link>
+            </div>
             <div className="flex items-center gap-2">
               <div className="h-px flex-1 bg-slate-200"></div>
               <span className="text-xs font-medium text-slate-600 tracking-wide">
