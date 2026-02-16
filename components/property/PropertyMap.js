@@ -347,12 +347,13 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapWidth = mapDiv.offsetWidth
       const mapHeight = mapDiv.offsetHeight
       
-      // Extra large margin to ensure popups never appear near map edges
-      const padding = 80
-      // Use larger than visual card size so we always keep clear space around the popup
-      const cardWidth = 290
-      const cardHeight = 250
-      const markerOffset = 28
+      // Balanced margin: popup stays fully visible without excessive space from marker
+      const padding = 50
+      // Card dimensions slightly larger than visual (240px actual) for safety
+      const cardWidth = 270
+      const cardHeight = 230
+      // Keep popup close to marker while maintaining visibility
+      const markerOffset = 16
       
       // Calculate potential positions for all four sides
       const positions = {
