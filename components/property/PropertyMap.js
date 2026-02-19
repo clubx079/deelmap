@@ -378,10 +378,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapHeight = mapDiv.offsetHeight
       
       // Screen edge padding: ensures popup doesn't touch screen edges
-      const edgePadding = 10
-      // Card dimensions match actual visual size (240px wide card)
-      const cardWidth = 200
-      const cardHeight = 200
+      const edgePadding = 30
+      // Card dimensions MUST match actual visual size (240px wide x ~185px tall)
+      const cardWidth = 250   // 240px actual + 10px safety margin
+      const cardHeight = 195  // 120px image + 65px content + 10px safety
       // Popup offset from marker: keeps popup close to marker
       const popupOffset = 15
       
