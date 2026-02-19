@@ -428,54 +428,57 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       Object.keys(positions).forEach(posName => {
         const pos = positions[posName];
         // Calculate actual edges based on position and transform
-        let actualLeft, actualRight, actualTop, actualBottom;
+        let actualLeft = 0, actualRight = 0, actualTop = 0, actualBottom = 0;
         
-        if (pos.transform.includes('-100%')) {
-          if (pos.transform.includes('translate(-100%, -100%)')) {
-            actualLeft = pos.left - cardWidth;
-            actualRight = pos.left;
-            actualTop = pos.top - cardHeight;
-            actualBottom = pos.top;
-          } else if (pos.transform.includes('translate(-100%, 0%)')) {
-            actualLeft = pos.left - cardWidth;
-            actualRight = pos.left;
-            actualTop = pos.top;
-            actualBottom = pos.top + cardHeight;
-          } else if (pos.transform.includes('translate(-100%, -50%)')) {
-            actualLeft = pos.left - cardWidth;
-            actualRight = pos.left;
-            actualTop = pos.top - cardHeight/2;
-            actualBottom = pos.top + cardHeight/2;
-          }
-        } else if (pos.transform.includes('-50%')) {
-          if (pos.transform.includes('translate(-50%, -100%)')) {
-            actualLeft = pos.left - cardWidth/2;
-            actualRight = pos.left + cardWidth/2;
-            actualTop = pos.top - cardHeight;
-            actualBottom = pos.top;
-          } else if (pos.transform.includes('translate(-50%, 0%)')) {
-            actualLeft = pos.left - cardWidth/2;
-            actualRight = pos.left + cardWidth/2;
-            actualTop = pos.top;
-            actualBottom = pos.top + cardHeight;
-          }
-        } else {
-          if (pos.transform.includes('translate(0%, -100%)')) {
-            actualLeft = pos.left;
-            actualRight = pos.left + cardWidth;
-            actualTop = pos.top - cardHeight;
-            actualBottom = pos.top;
-          } else if (pos.transform.includes('translate(0%, 0%)')) {
-            actualLeft = pos.left;
-            actualRight = pos.left + cardWidth;
-            actualTop = pos.top;
-            actualBottom = pos.top + cardHeight;
-          } else if (pos.transform.includes('translate(0%, -50%)')) {
-            actualLeft = pos.left;
-            actualRight = pos.left + cardWidth;
-            actualTop = pos.top - cardHeight/2;
-            actualBottom = pos.top + cardHeight/2;
-          }
+        // Parse the transform to calculate actual edges
+        if (pos.transform === 'translate(-50%, -100%)') {
+          // Top position
+          actualLeft = pos.left - cardWidth/2;
+          actualRight = pos.left + cardWidth/2;
+          actualTop = pos.top - cardHeight;
+          actualBottom = pos.top;
+        } else if (pos.transform === 'translate(-50%, 0%)') {
+          // Bottom position
+          actualLeft = pos.left - cardWidth/2;
+          actualRight = pos.left + cardWidth/2;
+          actualTop = pos.top;
+          actualBottom = pos.top + cardHeight;
+        } else if (pos.transform === 'translate(-100%, -50%)') {
+          // Right position
+          actualLeft = pos.left - cardWidth;
+          actualRight = pos.left;
+          actualTop = pos.top - cardHeight/2;
+          actualBottom = pos.top + cardHeight/2;
+        } else if (pos.transform === 'translate(0%, -50%)') {
+          // Left position
+          actualLeft = pos.left;
+          actualRight = pos.left + cardWidth;
+          actualTop = pos.top - cardHeight/2;
+          actualBottom = pos.top + cardHeight/2;
+        } else if (pos.transform === 'translate(-100%, -100%)') {
+          // TopRight position
+          actualLeft = pos.left - cardWidth;
+          actualRight = pos.left;
+          actualTop = pos.top - cardHeight;
+          actualBottom = pos.top;
+        } else if (pos.transform === 'translate(0%, -100%)') {
+          // TopLeft position
+          actualLeft = pos.left;
+          actualRight = pos.left + cardWidth;
+          actualTop = pos.top - cardHeight;
+          actualBottom = pos.top;
+        } else if (pos.transform === 'translate(-100%, 0%)') {
+          // BottomRight position
+          actualLeft = pos.left - cardWidth;
+          actualRight = pos.left;
+          actualTop = pos.top;
+          actualBottom = pos.top + cardHeight;
+        } else if (pos.transform === 'translate(0%, 0%)') {
+          // BottomLeft position
+          actualLeft = pos.left;
+          actualRight = pos.left + cardWidth;
+          actualTop = pos.top;
+          actualBottom = pos.top + cardHeight;
         }
         
         const fitsInfo = pos.fits ? '✅ FITS' : '❌ NO FIT';
