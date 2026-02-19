@@ -385,7 +385,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const cardWidth = 250   // 240px actual + 10px safety margin
       const cardHeight = 220  // 210px actual + 10px safety margin
       // Popup offset from marker: keeps popup close to marker
-      const popupOffset = 15
+      const popupOffset = -5
       
       console.log('🗺️ MAP POPUP CALCULATION START');
       console.log('📍 Raw Marker Position:', { x: pt.x, y: pt.y });
@@ -624,16 +624,36 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const finalLeft = mapWidth - selectedPosition.left
       const finalTop = mapHeight - selectedPosition.top
       
+      // ALSO invert the transform direction!
+      let finalTransform = selectedPosition.transform
+      if (selectedPosition.transform === 'translate(-50%, -100%)') {
+        finalTransform = 'translate(-50%, 0%)'  // top → bottom
+      } else if (selectedPosition.transform === 'translate(-50%, 0%)') {
+        finalTransform = 'translate(-50%, -100%)'  // bottom → top
+      } else if (selectedPosition.transform === 'translate(-100%, -50%)') {
+        finalTransform = 'translate(0%, -50%)'  // right → left
+      } else if (selectedPosition.transform === 'translate(0%, -50%)') {
+        finalTransform = 'translate(-100%, -50%)'  // left → right
+      } else if (selectedPosition.transform === 'translate(-100%, -100%)') {
+        finalTransform = 'translate(0%, 0%)'  // topRight → bottomLeft
+      } else if (selectedPosition.transform === 'translate(0%, -100%)') {
+        finalTransform = 'translate(-100%, 0%)'  // topLeft → bottomRight
+      } else if (selectedPosition.transform === 'translate(-100%, 0%)') {
+        finalTransform = 'translate(0%, -100%)'  // bottomRight → topLeft
+      } else if (selectedPosition.transform === 'translate(0%, 0%)') {
+        finalTransform = 'translate(-100%, -100%)'  // bottomLeft → topRight
+      }
+      
       console.log('🎉 FINAL POSITION (converted back to original):', {
         left: finalLeft,
         top: finalTop,
-        transform: selectedPosition.transform
+        transform: finalTransform
       });
       console.log('🗺️ MAP POPUP CALCULATION END\n');
       
       el.style.left = `${finalLeft}px`
       el.style.top = `${finalTop}px`
-      el.style.transform = selectedPosition.transform
+      el.style.transform = finalTransform
       el.style.position = 'absolute'
       el.style.zIndex = '1200'
     }
