@@ -348,12 +348,17 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapHeight = mapDiv.offsetHeight
       
       // Screen edge padding: ensures popup doesn't touch screen edges
-      const edgePadding = 20
+      const edgePadding = 30
       // Card dimensions match actual visual size (240px wide card)
       const cardWidth = 250
       const cardHeight = 210
       // Popup offset from marker: keeps popup close to marker
       const popupOffset = 15
+      
+      console.log('🗺️ MAP POPUP CALCULATION START');
+      console.log('📍 Marker Position:', { x: pt.x, y: pt.y });
+      console.log('📐 Map Dimensions:', { width: mapWidth, height: mapHeight });
+      console.log('⚙️ Settings:', { edgePadding, cardWidth, cardHeight, popupOffset });
       
       // Calculate potential positions for all four sides
       const positions = {
@@ -419,6 +424,11 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         }
       }
       
+      console.log('📊 Position Fits Check:');
+      Object.keys(positions).forEach(posName => {
+        console.log(`  ${posName}: ${positions[posName].fits ? '✅ FITS' : '❌ NO FIT'}`);
+      });
+      
       // Priority order: prefer top, then bottom, then sides, then corners
       const priority = ['top', 'bottom', 'right', 'left', 'topRight', 'topLeft', 'bottomRight', 'bottomLeft']
       
@@ -428,12 +438,15 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       for (const posName of priority) {
         if (positions[posName].fits) {
           selectedPosition = positions[posName]
+          console.log(`✅ Selected Position: ${posName} (first fit found)`);
           break
         }
       }
       
       // If none fit perfectly, choose the best compromise
       if (!selectedPosition.fits) {
+        console.log('⚠️ No position fits perfectly, calculating best compromise...');
+        
         // Calculate which position has the least overflow
         let bestPosition = positions.top
         let minOverflow = Infinity
@@ -453,13 +466,19 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           if (topEdge < edgePadding) overflow += edgePadding - topEdge
           if (bottomEdge > mapHeight - edgePadding) overflow += bottomEdge - (mapHeight - edgePadding)
           
+          console.log(`  ${posName}: overflow = ${overflow.toFixed(2)}px`);
+          
           if (overflow < minOverflow) {
             minOverflow = overflow
             bestPosition = pos
           }
         }
         
+        console.log(`🎯 Best compromise: overflow = ${minOverflow.toFixed(2)}px`);
+        
         selectedPosition = bestPosition
+        
+        console.log('🔧 Adjusting position to keep within bounds...');
         
         // Adjust position to keep within bounds
         const leftEdge = selectedPosition.left - (selectedPosition.transform.includes('-100%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : 0)
@@ -467,19 +486,35 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         const topEdge = selectedPosition.top - (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
         const bottomEdge = selectedPosition.top + (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
         
+        console.log('  Before adjustment:', { left: selectedPosition.left, top: selectedPosition.top });
+        console.log('  Edges:', { leftEdge, rightEdge, topEdge, bottomEdge });
+        
         if (leftEdge < edgePadding) {
           selectedPosition.left = edgePadding + (selectedPosition.transform.includes('-100%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : 0)
+          console.log('  ⬅️ Adjusted left edge');
         }
         if (rightEdge > mapWidth - edgePadding) {
           selectedPosition.left = mapWidth - edgePadding - (selectedPosition.transform.includes('0%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : cardWidth)
+          console.log('  ➡️ Adjusted right edge');
         }
         if (topEdge < edgePadding) {
           selectedPosition.top = edgePadding + (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
+          console.log('  ⬆️ Adjusted top edge');
         }
         if (bottomEdge > mapHeight - edgePadding) {
           selectedPosition.top = mapHeight - edgePadding - (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
+          console.log('  ⬇️ Adjusted bottom edge');
         }
+        
+        console.log('  After adjustment:', { left: selectedPosition.left, top: selectedPosition.top });
       }
+      
+      console.log('🎉 FINAL POSITION:', {
+        left: selectedPosition.left,
+        top: selectedPosition.top,
+        transform: selectedPosition.transform
+      });
+      console.log('🗺️ MAP POPUP CALCULATION END\n');
       
       el.style.left = `${selectedPosition.left}px`
       el.style.top = `${selectedPosition.top}px`
