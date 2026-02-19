@@ -60,7 +60,21 @@ const LIVE_TRACKING_DEBUG = process.env.LIVE_TRACKING_DEBUG === 'true'
 
 export async function POST(request) {
   try {
-    const body = await request.json()
+    // Safely parse JSON body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      console.error('Live tracking: Invalid JSON body:', jsonError.message)
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    
+    // Validate required fields
+    if (!body || !body.action || !body.sessionId) {
+      console.error('Live tracking: Missing required fields (action, sessionId)')
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+    
     if (LIVE_TRACKING_DEBUG) {
       console.log('=== LIVE TRACKING ===', body.action, body.sessionId, body.userEmail || 'Guest', body.currentPage)
     }
