@@ -347,75 +347,75 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapWidth = mapDiv.offsetWidth
       const mapHeight = mapDiv.offsetHeight
       
-      // Balanced margin: popup stays fully visible without excessive space from marker
-      const padding = 50
+      // Screen edge padding: ensures popup doesn't touch screen edges
+      const edgePadding = 40
       // Card dimensions slightly larger than visual (240px actual) for safety
-      const cardWidth = 270
-      const cardHeight = 230
-      // Keep popup close to marker while maintaining visibility
-      const markerOffset = 16
+      const cardWidth = 260
+      const cardHeight = 220
+      // Popup offset from marker: keeps popup close to marker
+      const popupOffset = 12
       
       // Calculate potential positions for all four sides
       const positions = {
         top: {
           left: pt.x,
-          top: pt.y - markerOffset,
+          top: pt.y - popupOffset,
           transform: 'translate(-50%, -100%)',
-          fits: pt.y - cardHeight >= padding && 
-                pt.x - cardWidth/2 >= padding && 
-                pt.x + cardWidth/2 <= mapWidth - padding
+          fits: pt.y - cardHeight >= edgePadding && 
+                pt.x - cardWidth/2 >= edgePadding && 
+                pt.x + cardWidth/2 <= mapWidth - edgePadding
         },
         bottom: {
           left: pt.x,
-          top: pt.y + markerOffset,
+          top: pt.y + popupOffset,
           transform: 'translate(-50%, 0%)',
-          fits: pt.y + cardHeight <= mapHeight - padding && 
-                pt.x - cardWidth/2 >= padding && 
-                pt.x + cardWidth/2 <= mapWidth - padding
+          fits: pt.y + cardHeight <= mapHeight - edgePadding && 
+                pt.x - cardWidth/2 >= edgePadding && 
+                pt.x + cardWidth/2 <= mapWidth - edgePadding
         },
         right: {
-          left: pt.x - padding,
+          left: pt.x - popupOffset,
           top: pt.y,
           transform: 'translate(-100%, -50%)',
-          fits: pt.x - cardWidth >= padding && 
-                pt.y - cardHeight/2 >= padding && 
-                pt.y + cardHeight/2 <= mapHeight - padding
+          fits: pt.x - cardWidth >= edgePadding && 
+                pt.y - cardHeight/2 >= edgePadding && 
+                pt.y + cardHeight/2 <= mapHeight - edgePadding
         },
         left: {
-          left: pt.x + padding,
+          left: pt.x + popupOffset,
           top: pt.y,
           transform: 'translate(0%, -50%)',
-          fits: pt.x + cardWidth <= mapWidth - padding && 
-                pt.y - cardHeight/2 >= padding && 
-                pt.y + cardHeight/2 <= mapHeight - padding
+          fits: pt.x + cardWidth <= mapWidth - edgePadding && 
+                pt.y - cardHeight/2 >= edgePadding && 
+                pt.y + cardHeight/2 <= mapHeight - edgePadding
         },
         topRight: {
-          left: pt.x - padding,
-          top: pt.y - markerOffset,
+          left: pt.x - popupOffset,
+          top: pt.y - popupOffset,
           transform: 'translate(-100%, -100%)',
-          fits: pt.x - cardWidth >= padding && 
-                pt.y - cardHeight >= padding
+          fits: pt.x - cardWidth >= edgePadding && 
+                pt.y - cardHeight >= edgePadding
         },
         topLeft: {
-          left: pt.x + padding,
-          top: pt.y - markerOffset,
+          left: pt.x + popupOffset,
+          top: pt.y - popupOffset,
           transform: 'translate(0%, -100%)',
-          fits: pt.x + cardWidth <= mapWidth - padding && 
-                pt.y - cardHeight >= padding
+          fits: pt.x + cardWidth <= mapWidth - edgePadding && 
+                pt.y - cardHeight >= edgePadding
         },
         bottomRight: {
-          left: pt.x - padding,
-          top: pt.y + markerOffset,
+          left: pt.x - popupOffset,
+          top: pt.y + popupOffset,
           transform: 'translate(-100%, 0%)',
-          fits: pt.x - cardWidth >= padding && 
-                pt.y + cardHeight <= mapHeight - padding
+          fits: pt.x - cardWidth >= edgePadding && 
+                pt.y + cardHeight <= mapHeight - edgePadding
         },
         bottomLeft: {
-          left: pt.x + padding,
-          top: pt.y + markerOffset,
+          left: pt.x + popupOffset,
+          top: pt.y + popupOffset,
           transform: 'translate(0%, 0%)',
-          fits: pt.x + cardWidth <= mapWidth - padding && 
-                pt.y + cardHeight <= mapHeight - padding
+          fits: pt.x + cardWidth <= mapWidth - edgePadding && 
+                pt.y + cardHeight <= mapHeight - edgePadding
         }
       }
       
@@ -448,10 +448,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           const topEdge = pos.top - (pos.transform.includes('-100%') || pos.transform.includes('-50%') ? cardHeight : pos.transform.includes('0%') ? 0 : cardHeight/2)
           const bottomEdge = pos.top + (pos.transform.includes('0%') || pos.transform.includes('-50%') ? cardHeight : pos.transform.includes('-100%') ? 0 : cardHeight/2)
           
-          if (leftEdge < padding) overflow += padding - leftEdge
-          if (rightEdge > mapWidth - padding) overflow += rightEdge - (mapWidth - padding)
-          if (topEdge < padding) overflow += padding - topEdge
-          if (bottomEdge > mapHeight - padding) overflow += bottomEdge - (mapHeight - padding)
+          if (leftEdge < edgePadding) overflow += edgePadding - leftEdge
+          if (rightEdge > mapWidth - edgePadding) overflow += rightEdge - (mapWidth - edgePadding)
+          if (topEdge < edgePadding) overflow += edgePadding - topEdge
+          if (bottomEdge > mapHeight - edgePadding) overflow += bottomEdge - (mapHeight - edgePadding)
           
           if (overflow < minOverflow) {
             minOverflow = overflow
@@ -467,17 +467,17 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         const topEdge = selectedPosition.top - (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
         const bottomEdge = selectedPosition.top + (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
         
-        if (leftEdge < padding) {
-          selectedPosition.left = padding + (selectedPosition.transform.includes('-100%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : 0)
+        if (leftEdge < edgePadding) {
+          selectedPosition.left = edgePadding + (selectedPosition.transform.includes('-100%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : 0)
         }
-        if (rightEdge > mapWidth - padding) {
-          selectedPosition.left = mapWidth - padding - (selectedPosition.transform.includes('0%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : cardWidth)
+        if (rightEdge > mapWidth - edgePadding) {
+          selectedPosition.left = mapWidth - edgePadding - (selectedPosition.transform.includes('0%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : cardWidth)
         }
-        if (topEdge < padding) {
-          selectedPosition.top = padding + (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
+        if (topEdge < edgePadding) {
+          selectedPosition.top = edgePadding + (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
         }
-        if (bottomEdge > mapHeight - padding) {
-          selectedPosition.top = mapHeight - padding - (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
+        if (bottomEdge > mapHeight - edgePadding) {
+          selectedPosition.top = mapHeight - edgePadding - (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
         }
       }
       
