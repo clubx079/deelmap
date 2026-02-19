@@ -27,12 +27,20 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
   const markersRef = useRef([])
   const infoOverlayRef = useRef(null)
   const router = useRouter()
+  const pendingMarkersUpdateRef = useRef(false)  // Track if we need to update markers
 
   useEffect(() => { initMap() }, [])
   useEffect(() => {
-    if (mapInstanceRef.current) {
+    if (mapInstanceRef.current && window.google) {
+      // Map is ready, update markers immediately
+      console.log('🔄 Updating markers: map ready, properties changed')
       updateMarkers()
       if (filters?.states?.length) zoomToStates(filters.states)
+      pendingMarkersUpdateRef.current = false
+    } else if (properties.length > 0) {
+      // Map not ready yet but we have properties - mark for later update
+      console.log('⏳ Markers update pending: waiting for map to initialize')
+      pendingMarkersUpdateRef.current = true
     }
   }, [properties, filters])
 
@@ -57,6 +65,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       })
 
       mapInstanceRef.current = map
+      
+      console.log('✅ Google Maps initialized, checking for pending markers...')
+      
       // Close popup when clicking anywhere on the map
       map.addListener('click', (e) => {
         // Only close if not clicking on a marker or info card
@@ -70,8 +81,15 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         hideInfoCard()
       })
       
+      // Update markers when map is ready
       window.google.maps.event.addListenerOnce(map, 'idle', () => {
-        updateMarkers()
+        console.log('🗺️ Map idle event fired')
+        // Check if we have properties or if there's a pending update
+        if (properties.length > 0 || pendingMarkersUpdateRef.current) {
+          console.log('📍 Rendering markers on map idle')
+          updateMarkers()
+          pendingMarkersUpdateRef.current = false
+        }
       })
     }
 
@@ -104,7 +122,17 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
   const updateMarkers = () => {
     const map = mapInstanceRef.current
-    if (!map || !window.google) return
+    if (!map || !window.google) {
+      console.warn('⚠️ Cannot update markers: map or Google Maps not ready')
+      return
+    }
+    
+    if (!properties || properties.length === 0) {
+      console.log('ℹ️ No properties to display on map')
+      return
+    }
+
+    console.log(`🎯 Updating ${properties.length} markers on map`)
 
     markersRef.current.forEach(({ overlay }) => overlay?.setMap(null))
     markersRef.current = []
@@ -191,6 +219,8 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       markersRef.current.push({ overlay })
       bounds.extend(anchor.getPosition())
     })
+
+    console.log(`✅ Successfully created ${markersRef.current.length} markers`)
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds)
@@ -348,10 +378,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapHeight = mapDiv.offsetHeight
       
       // Screen edge padding: ensures popup doesn't touch screen edges
-      const edgePadding = 30
+      const edgePadding = 10
       // Card dimensions match actual visual size (240px wide card)
-      const cardWidth = 250
-      const cardHeight = 210
+      const cardWidth = 200
+      const cardHeight = 200
       // Popup offset from marker: keeps popup close to marker
       const popupOffset = 15
       
