@@ -378,7 +378,8 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapHeight = mapDiv.offsetHeight
       
       // Screen edge padding: ensures popup doesn't touch screen edges
-      const edgePadding = 30
+      // Using smaller padding for better positioning flexibility
+      const edgePadding = 15
       // Card dimensions MUST match actual visual size accurately
       // Actual card: 240px wide × ~210px tall (120px img + 90px content/padding)
       const cardWidth = 250   // 240px actual + 10px safety margin
@@ -389,6 +390,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       console.log('🗺️ MAP POPUP CALCULATION START');
       console.log('📍 Marker Position:', { x: pt.x, y: pt.y });
       console.log('📐 Map Dimensions:', { width: mapWidth, height: mapHeight });
+      console.log('📊 Marker Location Analysis:');
+      console.log(`  Horizontal: ${pt.x}px / ${mapWidth}px = ${((pt.x/mapWidth)*100).toFixed(1)}% from left`);
+      console.log(`  Vertical: ${pt.y}px / ${mapHeight}px = ${((pt.y/mapHeight)*100).toFixed(1)}% from top`);
+      console.log(`  Position: ${pt.x < mapWidth/3 ? 'LEFT' : pt.x > mapWidth*2/3 ? 'RIGHT' : 'CENTER'} side, ${pt.y < mapHeight/3 ? 'TOP' : pt.y > mapHeight*2/3 ? 'BOTTOM' : 'MIDDLE'} area`);
       console.log('⚙️ Settings:', { edgePadding, cardWidth, cardHeight, popupOffset });
       
       // Calculate potential positions for all four sides
