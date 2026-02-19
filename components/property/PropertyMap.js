@@ -366,7 +366,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           left: pt.x,
           top: pt.y - popupOffset,
           transform: 'translate(-50%, -100%)',
-          fits: pt.y - cardHeight >= edgePadding && 
+          fits: pt.y - popupOffset - cardHeight >= edgePadding && 
                 pt.x - cardWidth/2 >= edgePadding && 
                 pt.x + cardWidth/2 <= mapWidth - edgePadding
         },
@@ -374,7 +374,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           left: pt.x,
           top: pt.y + popupOffset,
           transform: 'translate(-50%, 0%)',
-          fits: pt.y + cardHeight <= mapHeight - edgePadding && 
+          fits: pt.y + popupOffset + cardHeight <= mapHeight - edgePadding && 
                 pt.x - cardWidth/2 >= edgePadding && 
                 pt.x + cardWidth/2 <= mapWidth - edgePadding
         },
@@ -382,7 +382,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           left: pt.x - popupOffset,
           top: pt.y,
           transform: 'translate(-100%, -50%)',
-          fits: pt.x - cardWidth >= edgePadding && 
+          fits: pt.x - popupOffset - cardWidth >= edgePadding && 
                 pt.y - cardHeight/2 >= edgePadding && 
                 pt.y + cardHeight/2 <= mapHeight - edgePadding
         },
@@ -390,7 +390,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           left: pt.x + popupOffset,
           top: pt.y,
           transform: 'translate(0%, -50%)',
-          fits: pt.x + cardWidth <= mapWidth - edgePadding && 
+          fits: pt.x + popupOffset + cardWidth <= mapWidth - edgePadding && 
                 pt.y - cardHeight/2 >= edgePadding && 
                 pt.y + cardHeight/2 <= mapHeight - edgePadding
         },
@@ -398,35 +398,90 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           left: pt.x - popupOffset,
           top: pt.y - popupOffset,
           transform: 'translate(-100%, -100%)',
-          fits: pt.x - cardWidth >= edgePadding && 
-                pt.y - cardHeight >= edgePadding
+          fits: pt.x - popupOffset - cardWidth >= edgePadding && 
+                pt.y - popupOffset - cardHeight >= edgePadding
         },
         topLeft: {
           left: pt.x + popupOffset,
           top: pt.y - popupOffset,
           transform: 'translate(0%, -100%)',
-          fits: pt.x + cardWidth <= mapWidth - edgePadding && 
-                pt.y - cardHeight >= edgePadding
+          fits: pt.x + popupOffset + cardWidth <= mapWidth - edgePadding && 
+                pt.y - popupOffset - cardHeight >= edgePadding
         },
         bottomRight: {
           left: pt.x - popupOffset,
           top: pt.y + popupOffset,
           transform: 'translate(-100%, 0%)',
-          fits: pt.x - cardWidth >= edgePadding && 
-                pt.y + cardHeight <= mapHeight - edgePadding
+          fits: pt.x - popupOffset - cardWidth >= edgePadding && 
+                pt.y + popupOffset + cardHeight <= mapHeight - edgePadding
         },
         bottomLeft: {
           left: pt.x + popupOffset,
           top: pt.y + popupOffset,
           transform: 'translate(0%, 0%)',
-          fits: pt.x + cardWidth <= mapWidth - edgePadding && 
-                pt.y + cardHeight <= mapHeight - edgePadding
+          fits: pt.x + popupOffset + cardWidth <= mapWidth - edgePadding && 
+                pt.y + popupOffset + cardHeight <= mapHeight - edgePadding
         }
       }
       
-      console.log('📊 Position Fits Check:');
+      console.log('📊 Position Fits Check (with calculated edges):');
       Object.keys(positions).forEach(posName => {
-        console.log(`  ${posName}: ${positions[posName].fits ? '✅ FITS' : '❌ NO FIT'}`);
+        const pos = positions[posName];
+        // Calculate actual edges based on position and transform
+        let actualLeft, actualRight, actualTop, actualBottom;
+        
+        if (pos.transform.includes('-100%')) {
+          if (pos.transform.includes('translate(-100%, -100%)')) {
+            actualLeft = pos.left - cardWidth;
+            actualRight = pos.left;
+            actualTop = pos.top - cardHeight;
+            actualBottom = pos.top;
+          } else if (pos.transform.includes('translate(-100%, 0%)')) {
+            actualLeft = pos.left - cardWidth;
+            actualRight = pos.left;
+            actualTop = pos.top;
+            actualBottom = pos.top + cardHeight;
+          } else if (pos.transform.includes('translate(-100%, -50%)')) {
+            actualLeft = pos.left - cardWidth;
+            actualRight = pos.left;
+            actualTop = pos.top - cardHeight/2;
+            actualBottom = pos.top + cardHeight/2;
+          }
+        } else if (pos.transform.includes('-50%')) {
+          if (pos.transform.includes('translate(-50%, -100%)')) {
+            actualLeft = pos.left - cardWidth/2;
+            actualRight = pos.left + cardWidth/2;
+            actualTop = pos.top - cardHeight;
+            actualBottom = pos.top;
+          } else if (pos.transform.includes('translate(-50%, 0%)')) {
+            actualLeft = pos.left - cardWidth/2;
+            actualRight = pos.left + cardWidth/2;
+            actualTop = pos.top;
+            actualBottom = pos.top + cardHeight;
+          }
+        } else {
+          if (pos.transform.includes('translate(0%, -100%)')) {
+            actualLeft = pos.left;
+            actualRight = pos.left + cardWidth;
+            actualTop = pos.top - cardHeight;
+            actualBottom = pos.top;
+          } else if (pos.transform.includes('translate(0%, 0%)')) {
+            actualLeft = pos.left;
+            actualRight = pos.left + cardWidth;
+            actualTop = pos.top;
+            actualBottom = pos.top + cardHeight;
+          } else if (pos.transform.includes('translate(0%, -50%)')) {
+            actualLeft = pos.left;
+            actualRight = pos.left + cardWidth;
+            actualTop = pos.top - cardHeight/2;
+            actualBottom = pos.top + cardHeight/2;
+          }
+        }
+        
+        const fitsInfo = pos.fits ? '✅ FITS' : '❌ NO FIT';
+        console.log(`  ${posName}: ${fitsInfo}`);
+        console.log(`    Edges: L:${actualLeft.toFixed(0)} R:${actualRight.toFixed(0)} T:${actualTop.toFixed(0)} B:${actualBottom.toFixed(0)}`);
+        console.log(`    Within bounds? L:${actualLeft >= edgePadding} R:${actualRight <= mapWidth - edgePadding} T:${actualTop >= edgePadding} B:${actualBottom <= mapHeight - edgePadding}`);
       });
       
       // Priority order: prefer top, then bottom, then sides, then corners
