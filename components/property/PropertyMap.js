@@ -385,89 +385,77 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const cardWidth = 250   // 240px actual + 10px safety margin
       const cardHeight = 220  // 210px actual + 10px safety margin
       // Popup offset from marker: keeps popup close to marker
-      const popupOffset = -5
+      const popupOffset = 10
       
       console.log('🗺️ MAP POPUP CALCULATION START');
-      console.log('📍 Raw Marker Position:', { x: pt.x, y: pt.y });
-      
-      // INVERT COORDINATES - Google Maps coordinates appear to be inverted
-      // Converting to standard screen coordinates (0,0 at top-left)
-      const invertedX = mapWidth - pt.x
-      const invertedY = mapHeight - pt.y
-      
-      console.log('📍 Inverted Marker Position:', { x: invertedX, y: invertedY });
+      console.log('📍 Marker Position (Google Maps):', { x: pt.x, y: pt.y });
       console.log('📐 Map Dimensions:', { width: mapWidth, height: mapHeight });
-      console.log('📊 Marker Location Analysis (using inverted coords):');
-      console.log(`  Horizontal: ${invertedX}px / ${mapWidth}px = ${((invertedX/mapWidth)*100).toFixed(1)}% from left`);
-      console.log(`  Vertical: ${invertedY}px / ${mapHeight}px = ${((invertedY/mapHeight)*100).toFixed(1)}% from top`);
-      console.log(`  Position: ${invertedX < mapWidth/3 ? 'LEFT' : invertedX > mapWidth*2/3 ? 'RIGHT' : 'CENTER'} side, ${invertedY < mapHeight/3 ? 'TOP' : invertedY > mapHeight*2/3 ? 'BOTTOM' : 'MIDDLE'} area`);
       console.log('⚙️ Settings:', { edgePadding, cardWidth, cardHeight, popupOffset });
       
-      // Use inverted coordinates for all calculations
-      const calcX = invertedX
-      const calcY = invertedY
-      
-      // Calculate potential positions for all four sides (using inverted coords)
+      // Use coordinates as-is from Google Maps
+      const x = pt.x
+      const y = pt.y
+      // Calculate potential positions - simple and direct
       const positions = {
         top: {
-          left: calcX,
-          top: calcY - popupOffset,
+          left: x,
+          top: y - popupOffset,
           transform: 'translate(-50%, -100%)',
-          fits: calcY - popupOffset - cardHeight >= edgePadding && 
-                calcX - cardWidth/2 >= edgePadding && 
-                calcX + cardWidth/2 <= mapWidth - edgePadding
+          fits: y - popupOffset - cardHeight >= edgePadding && 
+                x - cardWidth/2 >= edgePadding && 
+                x + cardWidth/2 <= mapWidth - edgePadding
         },
         bottom: {
-          left: calcX,
-          top: calcY + popupOffset,
+          left: x,
+          top: y + popupOffset,
           transform: 'translate(-50%, 0%)',
-          fits: calcY + popupOffset + cardHeight <= mapHeight - edgePadding && 
-                calcX - cardWidth/2 >= edgePadding && 
-                calcX + cardWidth/2 <= mapWidth - edgePadding
-        },
-        right: {
-          left: calcX - popupOffset,
-          top: calcY,
-          transform: 'translate(-100%, -50%)',
-          fits: calcX - popupOffset - cardWidth >= edgePadding && 
-                calcY - cardHeight/2 >= edgePadding && 
-                calcY + cardHeight/2 <= mapHeight - edgePadding
+          fits: y + popupOffset + cardHeight <= mapHeight - edgePadding && 
+                x - cardWidth/2 >= edgePadding && 
+                x + cardWidth/2 <= mapWidth - edgePadding
         },
         left: {
-          left: calcX + popupOffset,
-          top: calcY,
-          transform: 'translate(0%, -50%)',
-          fits: calcX + popupOffset + cardWidth <= mapWidth - edgePadding && 
-                calcY - cardHeight/2 >= edgePadding && 
-                calcY + cardHeight/2 <= mapHeight - edgePadding
+          left: x - popupOffset,
+          top: y,
+          transform: 'translate(-100%, -50%)',
+          fits: x - popupOffset - cardWidth >= edgePadding && 
+                y - cardHeight/2 >= edgePadding && 
+                y + cardHeight/2 <= mapHeight - edgePadding
         },
-        topRight: {
-          left: calcX - popupOffset,
-          top: calcY - popupOffset,
-          transform: 'translate(-100%, -100%)',
-          fits: calcX - popupOffset - cardWidth >= edgePadding && 
-                calcY - popupOffset - cardHeight >= edgePadding
+        right: {
+          left: x + popupOffset,
+          top: y,
+          transform: 'translate(0%, -50%)',
+          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding && 
+                y - cardHeight/2 >= edgePadding && 
+                y + cardHeight/2 <= mapHeight - edgePadding
         },
         topLeft: {
-          left: calcX + popupOffset,
-          top: calcY - popupOffset,
-          transform: 'translate(0%, -100%)',
-          fits: calcX + popupOffset + cardWidth <= mapWidth - edgePadding && 
-                calcY - popupOffset - cardHeight >= edgePadding
+          left: x - popupOffset,
+          top: y - popupOffset,
+          transform: 'translate(-100%, -100%)',
+          fits: x - popupOffset - cardWidth >= edgePadding && 
+                y - popupOffset - cardHeight >= edgePadding
         },
-        bottomRight: {
-          left: calcX - popupOffset,
-          top: calcY + popupOffset,
-          transform: 'translate(-100%, 0%)',
-          fits: calcX - popupOffset - cardWidth >= edgePadding && 
-                calcY + popupOffset + cardHeight <= mapHeight - edgePadding
+        topRight: {
+          left: x + popupOffset,
+          top: y - popupOffset,
+          transform: 'translate(0%, -100%)',
+          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding && 
+                y - popupOffset - cardHeight >= edgePadding
         },
         bottomLeft: {
-          left: calcX + popupOffset,
-          top: calcY + popupOffset,
+          left: x - popupOffset,
+          top: y + popupOffset,
+          transform: 'translate(-100%, 0%)',
+          fits: x - popupOffset - cardWidth >= edgePadding && 
+                y + popupOffset + cardHeight <= mapHeight - edgePadding
+        },
+        bottomRight: {
+          left: x + popupOffset,
+          top: y + popupOffset,
           transform: 'translate(0%, 0%)',
-          fits: calcX + popupOffset + cardWidth <= mapWidth - edgePadding && 
-                calcY + popupOffset + cardHeight <= mapHeight - edgePadding
+          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding && 
+                y + popupOffset + cardHeight <= mapHeight - edgePadding
         }
       }
       
@@ -614,46 +602,16 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         console.log('  After adjustment:', { left: selectedPosition.left, top: selectedPosition.top });
       }
       
-      console.log('🎉 FINAL POSITION (inverted coords):', {
+      console.log('🎉 FINAL POSITION:', {
         left: selectedPosition.left,
         top: selectedPosition.top,
         transform: selectedPosition.transform
       });
-      
-      // Convert back to original coordinate system for actual positioning
-      const finalLeft = mapWidth - selectedPosition.left
-      const finalTop = mapHeight - selectedPosition.top
-      
-      // ALSO invert the transform direction!
-      let finalTransform = selectedPosition.transform
-      if (selectedPosition.transform === 'translate(-50%, -100%)') {
-        finalTransform = 'translate(-50%, 0%)'  // top → bottom
-      } else if (selectedPosition.transform === 'translate(-50%, 0%)') {
-        finalTransform = 'translate(-50%, -100%)'  // bottom → top
-      } else if (selectedPosition.transform === 'translate(-100%, -50%)') {
-        finalTransform = 'translate(0%, -50%)'  // right → left
-      } else if (selectedPosition.transform === 'translate(0%, -50%)') {
-        finalTransform = 'translate(-100%, -50%)'  // left → right
-      } else if (selectedPosition.transform === 'translate(-100%, -100%)') {
-        finalTransform = 'translate(0%, 0%)'  // topRight → bottomLeft
-      } else if (selectedPosition.transform === 'translate(0%, -100%)') {
-        finalTransform = 'translate(-100%, 0%)'  // topLeft → bottomRight
-      } else if (selectedPosition.transform === 'translate(-100%, 0%)') {
-        finalTransform = 'translate(0%, -100%)'  // bottomRight → topLeft
-      } else if (selectedPosition.transform === 'translate(0%, 0%)') {
-        finalTransform = 'translate(-100%, -100%)'  // bottomLeft → topRight
-      }
-      
-      console.log('🎉 FINAL POSITION (converted back to original):', {
-        left: finalLeft,
-        top: finalTop,
-        transform: finalTransform
-      });
       console.log('🗺️ MAP POPUP CALCULATION END\n');
       
-      el.style.left = `${finalLeft}px`
-      el.style.top = `${finalTop}px`
-      el.style.transform = finalTransform
+      el.style.left = `${selectedPosition.left}px`
+      el.style.top = `${selectedPosition.top}px`
+      el.style.transform = selectedPosition.transform
       el.style.position = 'absolute'
       el.style.zIndex = '1200'
     }
