@@ -581,33 +581,36 @@ export function PropertyDetail({ property }) {
                 </button>
               </div>
 
-              {/* Connect with Agent Card */}
-              <div className="bg-blue-600 text-white rounded-lg p-6 mb-4">
-                <h3 className="text-lg font-semibold mb-2">Connect with an agent</h3>
+              {/* Connect with Agent Card - Redesigned */}
+              <div className="bg-white border-2 border-black rounded-lg p-6 mb-4 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-lg font-bold text-black mb-3">Contact Agent</h3>
                 {property.agent?.name && (
-                  <p className="mb-1 font-medium">{property.agent.name}</p>
+                  <p className="mb-2 font-medium text-gray-900">{property.agent.name}</p>
                 )}
-                {property.agent?.phone ? (
+                {property.agent?.phone && (
+                  <p className="mb-4 text-gray-700">{property.agent.phone}</p>
+                )}
+                
+                {/* Message Button - Links directly to messages */}
+                <Link
+                  href={user && property.temp_seller_id 
+                    ? `/buyer/inbox?seller_id=${property.temp_seller_id}&deal_id=${property.id}`
+                    : user 
+                      ? '/buyer/inbox'
+                      : '/login'
+                  }
+                  className="block w-full bg-black text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-900 active:bg-gray-800 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md"
+                >
+                  Send Message
+                </Link>
+                
+                {property.agent?.phone && (
                   <a
                     href={`tel:${property.agent.phone.replace(/\D/g, '')}`}
-                    className="block mb-3 text-white/90 hover:text-white"
+                    className="block w-full mt-3 bg-white text-black font-medium py-3 px-4 rounded-lg border-2 border-black hover:bg-gray-50 active:bg-gray-100 text-center transition-all duration-200"
                   >
-                    {property.agent.phone}
+                    Call Agent
                   </a>
-                ) : property.agent?.name && (
-                  <p className="mb-3 text-white/80 text-sm">No phone on file</p>
-                )}
-                {property.agent?.phone ? (
-                  <a
-                    href={`tel:${property.agent.phone.replace(/\D/g, '')}`}
-                    className="block w-full bg-white text-blue-600 font-semibold py-3 rounded-lg hover:bg-gray-50 text-center"
-                  >
-                    Contact Agent
-                  </a>
-                ) : (
-                  <span className="block w-full bg-white/80 text-blue-600 font-semibold py-3 rounded-lg text-center cursor-default">
-                    Contact Agent
-                  </span>
                 )}
               </div>
 
