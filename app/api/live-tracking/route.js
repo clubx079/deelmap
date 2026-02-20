@@ -60,7 +60,38 @@ const LIVE_TRACKING_DEBUG = process.env.LIVE_TRACKING_DEBUG === 'true'
 
 export async function POST(request) {
   try {
-    const body = await request.json()
+    // Clone the request to read the body for debugging
+    const requestClone = request.clone()
+    
+    // Safely parse JSON body with error handling
+    let body
+    try {
+      body = await request.json()
+    } catch (jsonError) {
+      // Log the raw request details for debugging
+      console.error('❌ Live tracking: Invalid JSON body')
+      console.error('Error:', jsonError.message)
+      
+      try {
+        const rawText = await requestClone.text()
+        console.error('Raw request body:', rawText || '(empty)')
+        console.error('Body length:', rawText.length, 'bytes')
+        console.error('Content-Type:', requestClone.headers.get('content-type'))
+        console.error('Method:', requestClone.method)
+        console.error('URL:', requestClone.url)
+      } catch (debugError) {
+        console.error('Could not read raw body for debugging:', debugError.message)
+      }
+      
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    
+    // Validate required fields
+    if (!body || !body.action || !body.sessionId) {
+      console.error('Live tracking: Missing required fields (action, sessionId)')
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+    
     if (LIVE_TRACKING_DEBUG) {
       console.log('=== LIVE TRACKING ===', body.action, body.sessionId, body.userEmail || 'Guest', body.currentPage)
     }
