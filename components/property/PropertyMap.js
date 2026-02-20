@@ -385,16 +385,28 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const cardWidth = 250   // 240px actual + 10px safety margin
       const cardHeight = 220  // 210px actual + 10px safety margin
       // Popup offset from marker: keeps popup close to marker
-      const popupOffset = 10
+      const popupOffset = 15
       
       console.log('🗺️ MAP POPUP CALCULATION START');
-      console.log('📍 Marker Position (Google Maps):', { x: pt.x, y: pt.y });
+      console.log('📍 Marker Position (Centered coords):', { x: pt.x, y: pt.y });
       console.log('📐 Map Dimensions:', { width: mapWidth, height: mapHeight });
+      
+      // Convert from centered coordinates to screen coordinates
+      // Centered: (0,0) at map center, x: -width/2 to +width/2, y: -height/2 to +height/2
+      // Screen: (0,0) at top-left, x: 0 to width, y: 0 to height
+      const screenX = pt.x + (mapWidth / 2)
+      const screenY = pt.y + (mapHeight / 2)
+      
+      console.log('📍 Converted to Screen coords:', { x: screenX, y: screenY });
+      console.log('📊 Position Analysis:');
+      console.log(`  Horizontal: ${screenX.toFixed(0)}px / ${mapWidth}px = ${((screenX/mapWidth)*100).toFixed(1)}% from left`);
+      console.log(`  Vertical: ${screenY.toFixed(0)}px / ${mapHeight}px = ${((screenY/mapHeight)*100).toFixed(1)}% from top`);
+      console.log(`  Location: ${screenX < mapWidth/3 ? 'LEFT' : screenX > mapWidth*2/3 ? 'RIGHT' : 'CENTER'} side, ${screenY < mapHeight/3 ? 'TOP' : screenY > mapHeight*2/3 ? 'BOTTOM' : 'MIDDLE'} area`);
       console.log('⚙️ Settings:', { edgePadding, cardWidth, cardHeight, popupOffset });
       
-      // Use coordinates as-is from Google Maps
-      const x = pt.x
-      const y = pt.y
+      // Use screen coordinates for all calculations
+      const x = screenX
+      const y = screenY
       // Calculate potential positions - simple and direct
       const positions = {
         top: {
@@ -602,15 +614,25 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         console.log('  After adjustment:', { left: selectedPosition.left, top: selectedPosition.top });
       }
       
-      console.log('🎉 FINAL POSITION:', {
+      console.log('🎉 FINAL POSITION (screen coords):', {
         left: selectedPosition.left,
         top: selectedPosition.top,
         transform: selectedPosition.transform
       });
+      
+      // Convert back from screen coordinates to centered coordinates for DOM
+      const finalLeft = selectedPosition.left - (mapWidth / 2)
+      const finalTop = selectedPosition.top - (mapHeight / 2)
+      
+      console.log('🎉 FINAL POSITION (centered coords for DOM):', {
+        left: finalLeft,
+        top: finalTop,
+        transform: selectedPosition.transform
+      });
       console.log('🗺️ MAP POPUP CALCULATION END\n');
       
-      el.style.left = `${selectedPosition.left}px`
-      el.style.top = `${selectedPosition.top}px`
+      el.style.left = `${finalLeft}px`
+      el.style.top = `${finalTop}px`
       el.style.transform = selectedPosition.transform
       el.style.position = 'absolute'
       el.style.zIndex = '1200'
