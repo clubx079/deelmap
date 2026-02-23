@@ -130,7 +130,7 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
                     className="object-contain"
                   />
                 </div>
-                <span className="text-xs font-medium text-gray-500">Coming soon</span>
+                <span className="text-xs font-medium text-gray-500">Photos Coming Soon</span>
               </div>
             )}
 

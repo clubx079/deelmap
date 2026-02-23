@@ -54,6 +54,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
+        zoomControl: false,
+        rotateControl: false,
+        scaleControl: false,
         clickableIcons: false,
         gestureHandling: 'greedy', // Disable the "use ctrl+scroll" message
         styles: [

@@ -416,7 +416,7 @@ nav {
 
 /* Navbar and dropdown z-index hierarchy */
 nav {
-  z-index: 30 !important;
+  z-index: 50 !important;
   position: relative;
 }
 
