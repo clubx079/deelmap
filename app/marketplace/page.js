@@ -197,6 +197,9 @@ export default function DealsPage() {
           onSearchChange={setSearchQuery}
         />
 
+        {/* Add padding to account for fixed FilterBar */}
+        <div className="pt-[72px]"> {/* Adjust this value based on FilterBar height */}
+        
         {/* Mobile Layout */}
         <div className="lg:hidden">
           <MobileHeader />
@@ -290,6 +293,7 @@ export default function DealsPage() {
             </div>
           </div>
         </div>
+        </div> {/* Close padding div */}
       </div>
 
       {/* Auth Modal */}
