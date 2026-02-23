@@ -5,19 +5,25 @@ import { useAuth } from '@/hooks/useAuth'
 import { Navbar } from '@/components/layout/Navbar'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, ShieldAlert, CheckCircle, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
+// ── Login Form ────────────────────────────────────────────────────────────────
 function LoginForm() {
-  const { user, signIn, signInWithGoogle, signInWithFacebook } = useAuth()
+  const { user, signIn, signInWithGoogle, signInWithFacebook, submitReviewRequest } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
+  const [formData, setFormData] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [suspendedEmail, setSuspendedEmail] = useState('')
+
+  // Review request inline form state
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewMessage, setReviewMessage] = useState('')
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [reviewSuccess, setReviewSuccess] = useState(false)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -27,10 +33,22 @@ function LoginForm() {
     }
   }, [user, router, searchParams])
 
+  // Check if we were auto-logged out due to suspension
+  useEffect(() => {
+    const wasSuspended = localStorage.getItem('suspended_logout')
+    if (wasSuspended) {
+      localStorage.removeItem('suspended_logout')
+      const storedEmail = localStorage.getItem('suspended_email') || ''
+      localStorage.removeItem('suspended_email')
+      setSuspendedEmail(storedEmail)
+      setError('__suspended__')
+    }
+  }, [])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (error) setError('')
+    if (error && error !== '__suspended__') setError('')
   }
 
   const handleSubmit = async (e) => {
@@ -43,9 +61,28 @@ function LoginForm() {
       const redirect = searchParams.get('redirect')
       router.push(redirect || '/marketplace')
     } catch (err) {
-      setError(err.message || 'Invalid email or password')
+      if (err.suspended) {
+        setSuspendedEmail(formData.email)
+        setError('__suspended__')
+      } else {
+        setError(err.message || 'Invalid email or password')
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRequestReview = async (e) => {
+    e.preventDefault()
+    setReviewLoading(true)
+    setReviewError('')
+    try {
+      await submitReviewRequest(reviewMessage, suspendedEmail)
+      setReviewSuccess(true)
+    } catch (err) {
+      setReviewError(err.message || 'Failed to submit request')
+    } finally {
+      setReviewLoading(false)
     }
   }
 
@@ -54,8 +91,6 @@ function LoginForm() {
       setLoading(true)
       setError('')
       await signInWithGoogle()
-      const redirect = searchParams.get('redirect')
-      router.push(redirect || '/marketplace')
     } catch (err) {
       setError(err.message || 'Failed to sign in with Google')
     } finally {
@@ -68,8 +103,6 @@ function LoginForm() {
       setLoading(true)
       setError('')
       await signInWithFacebook()
-      const redirect = searchParams.get('redirect')
-      router.push(redirect || '/marketplace')
     } catch (err) {
       setError(err.message || 'Failed to sign in with Facebook')
     } finally {
@@ -77,42 +110,104 @@ function LoginForm() {
     }
   }
 
-  if (user) {
-    return null // Will redirect
-  }
+  if (user) return null
+
+  const isSuspended = error === '__suspended__'
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       <Navbar />
-      
-      {/* Spilling Background Effect */}
+
+      {/* Background blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-20 -right-20 w-96 h-96 bg-slate-200 rounded-full blur-3xl opacity-70"></div>
         <div className="absolute top-1/2 -left-32 w-80 h-80 bg-slate-300 rounded-full blur-3xl opacity-60"></div>
         <div className="absolute -bottom-24 right-1/4 w-72 h-72 bg-slate-200 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-slate-100 rounded-full blur-3xl opacity-40"></div>
       </div>
-      
+
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10 pb-20">
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              Welcome Back
-            </h1>
-            <p className="text-slate-600">
-              Sign in to your account to continue
-            </p>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h1>
+            <p className="text-slate-600">Sign in to your account to continue</p>
           </div>
 
+          {/* ── Suspended Banner + Inline Review Form ── */}
+          {isSuspended && (
+            <div className="mb-4 rounded-xl border border-amber-200 overflow-hidden">
+              {/* Banner header */}
+              <div className="bg-amber-50 px-4 py-3.5 flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-900">Account Suspended</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Your account has been suspended. Submit a review request to appeal.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setShowReviewForm(v => !v); setReviewSuccess(false); setReviewError(''); }}
+                  className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                >
+                  Request Review
+                  {showReviewForm ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              </div>
+
+              {/* Inline review form */}
+              {showReviewForm && (
+                <div className="bg-white border-t border-amber-200 px-4 py-4">
+                  {reviewSuccess ? (
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Request Submitted</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Our team will review it and contact you via email.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleRequestReview} className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Explain your situation</label>
+                        <textarea
+                          value={reviewMessage}
+                          onChange={(e) => setReviewMessage(e.target.value)}
+                          rows={3}
+                          placeholder="Why should your account be unsuspended?"
+                          required
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 resize-none"
+                        />
+                      </div>
+                      {reviewError && (
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                          {reviewError}
+                        </div>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={reviewLoading || !reviewMessage.trim()}
+                        className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                      >
+                        {reviewLoading ? 'Submitting...' : 'Submit Request'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Form Card */}
-          <div className="bg-white border-2 border-slate-200 rounded-xl p-8 shadow-lg relative z-10">
+          {!(isSuspended && showReviewForm) && <div className="bg-white border-2 border-slate-200 rounded-xl p-8 shadow-lg">
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
                 <Input
                   type="email"
                   name="email"
@@ -126,9 +221,7 @@ function LoginForm() {
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
@@ -150,7 +243,7 @@ function LoginForm() {
               </div>
 
               {/* Error Message */}
-              {error && (
+              {error && !isSuspended && (
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                   {error}
                 </div>
@@ -212,15 +305,12 @@ function LoginForm() {
             <div className="mt-6 text-center">
               <p className="text-slate-600 text-sm">
                 Don't have an account?{' '}
-                <a
-                  href="/signup"
-                  className="text-slate-900 font-semibold hover:underline"
-                >
+                <a href="/signup" className="text-slate-900 font-semibold hover:underline">
                   Sign up for free
                 </a>
               </p>
             </div>
-          </div>
+          </div>}
         </div>
       </main>
     </div>

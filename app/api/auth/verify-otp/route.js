@@ -136,6 +136,18 @@ async function insertToMonday(userData) {
   }
 }
 
+function getClientIP(request) {
+  const cf = request.headers.get('cf-connecting-ip')
+  if (cf) return cf
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  const realIP = request.headers.get('x-real-ip')
+  if (realIP) return realIP
+  const vercelIP = request.headers.get('x-vercel-forwarded-for')
+  if (vercelIP) return vercelIP.split(',')[0].trim()
+  return null
+}
+
 // Marketplace DB: users – service role for user creation
 const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
@@ -165,6 +177,9 @@ export async function POST(request) {
     console.log(`[VERIFY-OTP] Verifying OTP for ${email}: ${otp}`)
     console.log('[VERIFY-OTP] Received userData:', userData)
 
+    // Extract client IP for registration tracking
+    const clientIP = getClientIP(request)
+
     // Check if OTP exists and is valid
     const storedOtpData = otpStore.get(email)
     
@@ -187,6 +202,23 @@ export async function POST(request) {
     // Check if userData is provided (for new user registration)
     if (!userData || !userData.password || (!userData.firstName && !userData.lastName)) {
       return NextResponse.json({ message: 'User data with first name or last name is required' }, { status: 400 })
+    }
+
+    // Block signup if the IP belongs to a suspended account
+    const adminClient = supabaseService || supabase
+    if (clientIP && clientIP !== '::1' && clientIP !== '127.0.0.1') {
+      const { data: suspendedByIP } = await adminClient
+        .from('users')
+        .select('id')
+        .eq('registration_ip', clientIP)
+        .eq('suspended', true)
+        .limit(1)
+        .maybeSingle()
+
+      if (suspendedByIP) {
+        console.log('[VERIFY-OTP] Blocked signup from suspended IP:', clientIP)
+        return NextResponse.json({ message: 'Registration from this network is currently restricted.' }, { status: 403 })
+      }
     }
 
     // Check if user already exists in database (use service role when available to avoid RLS)
@@ -220,7 +252,8 @@ export async function POST(request) {
       password: hashedPassword,
       auth_provider: 'email',
       states_of_interest: userData.statesOfInterest || [],
-      verified: true
+      verified: true,
+      registration_ip: clientIP || null
     }
 
     console.log('[VERIFY-OTP] Attempting to create user with data:', {

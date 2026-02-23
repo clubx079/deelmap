@@ -18,13 +18,22 @@ export async function POST(request) {
     // Find user in database
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, password, first_name, last_name, phone, active, blocked')
+      .select('id, email, password, first_name, last_name, phone, active, blocked, suspended')
       .eq('email', email)
       .single()
 
     if (error || !user) {
       console.log('User not found:', email)
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 })
+    }
+
+    // Check if suspended (IP-based suspension with appeal process)
+    if (user.suspended) {
+      console.log('User account is suspended:', email)
+      return NextResponse.json({
+        message: 'Your account has been suspended. You can submit a review request to appeal.',
+        suspended: true
+      }, { status: 403 })
     }
 
     // Check if user is active and not blocked

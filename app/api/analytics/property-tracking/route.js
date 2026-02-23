@@ -618,92 +618,34 @@ export async function POST(request) {
     }
 
     if (action === 'update_active_time') {
-      // Update active time when user is actively viewing
-      const { data: session } = await supabase
-        .from('property_analytics')
-        .select('active_time_seconds, last_active_time')
-        .eq('property_id', propertyId)
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      // Atomic server-side active time increment via RPC (no race conditions)
+      const { error } = await supabase.rpc('update_property_active_time', {
+        p_property_id:    propertyId,
+        p_session_id:     sessionId,
+        p_is_tab_visible: true
+      })
 
-      if (session) {
-        const lastActive = session.last_active_time ? new Date(session.last_active_time) : new Date()
-        const now = new Date()
-        const timeDiff = Math.round((now - lastActive) / 1000)
-        
-        // Only add time if it's reasonable (less than 10 seconds since last update)
-        const additionalTime = timeDiff < 10 ? timeDiff : 0
-        const newActiveTime = (session.active_time_seconds || 0) + additionalTime
-
-        const { error } = await supabase
-          .from('property_analytics')
-          .update({
-            active_time_seconds: newActiveTime,
-            last_active_time: now.toISOString(),
-            updated_at: now.toISOString()
-          })
-          .eq('property_id', propertyId)
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-
-        if (error) {
-          console.error('Error updating active time:', error)
-        }
-
-        return NextResponse.json({ success: true, activeTime: newActiveTime })
-      }
+      if (error) console.error('Error updating active time:', error)
+      return NextResponse.json({ success: true })
     }
 
     if (action === 'update_behavior') {
-      const updateData = {
-        updated_at: new Date().toISOString(),
-        last_active_time: new Date().toISOString()
-      }
-
-      if (behaviorData.scrolledToBottom !== undefined) {
-        updateData.scrolled_to_bottom = behaviorData.scrolledToBottom
-      }
-      if (behaviorData.viewedDescription !== undefined) {
-        updateData.viewed_description = behaviorData.viewedDescription
-      }
-      if (behaviorData.viewedRepairs !== undefined) {
-        updateData.viewed_repairs = behaviorData.viewedRepairs
-      }
-      if (behaviorData.viewedPhotos !== undefined) {
-        updateData.viewed_photos = behaviorData.viewedPhotos
-      }
-      if (behaviorData.clickedInquiry !== undefined) {
-        updateData.clicked_inquiry = behaviorData.clickedInquiry
-      }
-      if (behaviorData.clickedInspectionReport !== undefined) {
-        updateData.clicked_inspection_report = behaviorData.clickedInspectionReport
-      }
-      if (behaviorData.clickedMorePhotos !== undefined) {
-        updateData.clicked_more_photos = behaviorData.clickedMorePhotos
-      }
-      if (behaviorData.clickedShare !== undefined) {
-        updateData.clicked_share = behaviorData.clickedShare
-      }
-      if (behaviorData.zoomedMap !== undefined) {
-        updateData.zoomed_map = behaviorData.zoomedMap
-      }
-      if (behaviorData.imagesViewed !== undefined) {
-        updateData.images_viewed = behaviorData.imagesViewed
-      }
-      if (behaviorData.fullViewAchieved !== undefined) {
-        updateData.full_view_achieved = behaviorData.fullViewAchieved
-      }
-
-      const { error } = await supabase
-        .from('property_analytics')
-        .update(updateData)
-        .eq('property_id', propertyId)
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: false })
-        .limit(1)
+      // Single atomic RPC — no partial updates, no .order().limit() workaround
+      const { error } = await supabase.rpc('update_property_behavior', {
+        p_property_id:              propertyId,
+        p_session_id:               sessionId,
+        p_scrolled_to_bottom:       behaviorData.scrolledToBottom      ?? null,
+        p_viewed_description:       behaviorData.viewedDescription      ?? null,
+        p_viewed_repairs:           behaviorData.viewedRepairs          ?? null,
+        p_viewed_photos:            behaviorData.viewedPhotos           ?? null,
+        p_clicked_inquiry:          behaviorData.clickedInquiry         ?? null,
+        p_clicked_inspection_report: behaviorData.clickedInspectionReport ?? null,
+        p_clicked_more_photos:      behaviorData.clickedMorePhotos      ?? null,
+        p_clicked_share:            behaviorData.clickedShare           ?? null,
+        p_zoomed_map:               behaviorData.zoomedMap              ?? null,
+        p_images_viewed:            behaviorData.imagesViewed           ?? null,
+        p_full_view_achieved:       behaviorData.fullViewAchieved       ?? null
+      })
 
       if (error) {
         console.error('Error updating behavior:', error)
@@ -714,41 +656,17 @@ export async function POST(request) {
     }
 
     if (action === 'end_view') {
-      const { data: session } = await supabase
-        .from('property_analytics')
-        .select('view_start_time, active_time_seconds')
-        .eq('property_id', propertyId)
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      const { error } = await supabase.rpc('end_property_view', {
+        p_property_id: propertyId,
+        p_session_id:  sessionId
+      })
 
-      if (session) {
-        const endTime = new Date()
-
-        const { error } = await supabase
-          .from('property_analytics')
-          .update({
-            view_end_time: endTime.toISOString(),
-            duration_seconds: session.active_time_seconds || 0,
-            updated_at: endTime.toISOString()
-          })
-          .eq('property_id', propertyId)
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-
-        if (error) {
-          console.error('Error ending session:', error)
-          return NextResponse.json({ error: 'Failed to end session' }, { status: 500 })
-        }
-
-        return NextResponse.json({ 
-          success: true, 
-          durationSeconds: session.active_time_seconds || 0,
-          message: 'Session ended'
-        })
+      if (error) {
+        console.error('Error ending session:', error)
+        return NextResponse.json({ error: 'Failed to end session' }, { status: 500 })
       }
+
+      return NextResponse.json({ success: true, message: 'Session ended' })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

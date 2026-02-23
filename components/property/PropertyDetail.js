@@ -18,7 +18,17 @@ export function PropertyDetail({ property }) {
   const { isFavorited, toggleFavorite, loadFavorites } = useFavorites()
 
   // Property analytics tracking
-  usePropertyAnalytics(property)
+  const {
+    trackMorePhotosClick,
+    trackMapZoom,
+    trackImageView,
+    trackCustomBehavior
+  } = usePropertyAnalytics(property)
+
+  // Stable ref so the Google Maps effect can access trackMapZoom
+  // without being listed as a dependency (prevents map re-init)
+  const trackMapZoomRef = useRef(null)
+  useEffect(() => { trackMapZoomRef.current = trackMapZoom }, [trackMapZoom])
 
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [purchasePrice, setPurchasePrice] = useState(property.price || property.purchase_price || 0)
@@ -131,6 +141,11 @@ export function PropertyDetail({ property }) {
           fullscreenControl: true,
         })
 
+        // Track when user zooms the map
+        map.addListener('zoom_changed', () => {
+          if (trackMapZoomRef.current) trackMapZoomRef.current()
+        })
+
         new window.google.maps.Marker({
           position: {
             lat: lat,
@@ -213,11 +228,19 @@ export function PropertyDetail({ property }) {
   const estNetCashFlow = property.est_net_cash_flow || monthlyNetCashFlow
 
   const nextPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev + 1) % photos.length)
+    setCurrentPhotoIndex((prev) => {
+      const next = (prev + 1) % photos.length
+      trackImageView(next + 1)
+      return next
+    })
   }
 
   const prevPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length)
+    setCurrentPhotoIndex((prev) => {
+      const next = (prev - 1 + photos.length) % photos.length
+      trackImageView(next + 1)
+      return next
+    })
   }
 
   return (
@@ -268,7 +291,7 @@ export function PropertyDetail({ property }) {
               <div 
                 className="relative bg-gray-100 rounded-lg overflow-hidden cursor-pointer group" 
                 style={{ height: '420px' }}
-                onClick={() => photos.length > 0 && setShowImageModal(true)}
+                onClick={() => { if (photos.length > 0) { setShowImageModal(true); trackMorePhotosClick() } }}
               >
                 {photos.length > 0 ? (
                   <>
@@ -601,12 +624,13 @@ export function PropertyDetail({ property }) {
                 
                 {/* Message Button - Links directly to messages */}
                 <Link
-                  href={user && property.temp_seller_id 
+                  href={user && property.temp_seller_id
                     ? `/buyer/inbox?seller_id=${property.temp_seller_id}&deal_id=${property.id}`
-                    : user 
+                    : user
                       ? '/buyer/inbox'
                       : '/login'
                   }
+                  onClick={() => trackCustomBehavior('clickedInquiry', true)}
                   className="block w-full bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-center text-sm transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] shadow-sm hover:shadow-md mb-2"
                 >
                   Send Message
