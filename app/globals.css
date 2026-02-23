@@ -620,3 +620,17 @@ nav {
     transform: scale(1);
   }
 }
+
+/* User avatar animations */
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: rotate-slow 3s linear infinite;
+}

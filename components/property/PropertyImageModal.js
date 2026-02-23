@@ -115,18 +115,13 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
       onClick={onClose}
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)'
-      }}
     >
       {/* Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-50 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors"
+        className="absolute top-4 right-4 z-50 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors"
         aria-label="Close"
       >
         <X className="w-6 h-6" />
@@ -152,21 +147,21 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors z-10"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-colors z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors z-10"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
 
               {/* Image Counter */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium">
                 {currentIndex + 1} / {photos.length}
               </div>
             </>
@@ -181,7 +176,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
               {photos.length > thumbnailsPerView && thumbnailIndex > 0 && (
                 <button
                   onClick={() => setThumbnailIndex((prev) => Math.max(0, prev - 1))}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-10 flex-shrink-0"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors z-10 flex-shrink-0"
                   aria-label="Scroll thumbnails left"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -244,7 +239,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
                       Math.min(prev + 1, photos.length - thumbnailsPerView)
                     )
                   }
-                  className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full transition-colors z-10 flex-shrink-0"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors z-10 flex-shrink-0"
                   aria-label="Scroll thumbnails right"
                 >
                   <ChevronRight className="w-4 h-4" />

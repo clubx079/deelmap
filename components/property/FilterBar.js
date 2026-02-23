@@ -178,7 +178,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
   return (
     <>
-      <div className="bg-slate-50 border-b border-gray-200 sticky top-16 z-40">
+      <div className="bg-slate-50 border-b border-gray-200 fixed top-0 lg:top-16 left-0 right-0 z-40">
         <div className="w-full px-6 py-3">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             {/* Left side - Search and Filters */}
