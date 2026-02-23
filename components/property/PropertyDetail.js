@@ -528,23 +528,9 @@ export function PropertyDetail({ property }) {
           {/* Right Column - Actions & Info */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              {/* Data Source & Save */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  {property.data_source_brokerage && (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">Data Source Brokerage:</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-semibold text-gray-900">
-                          {property.data_source_brokerage}
-                        </span>
-                        {property.mls_source_name && (
-                          <span className="text-sm text-gray-600">{property.mls_source_name}</span>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
+              {/* Action Buttons - Moved to Left */}
+              <div className="flex items-center gap-3 mb-4">
+                {/* Save Button */}
                 <button
                   onClick={async () => {
                     if (!user) {
@@ -555,7 +541,6 @@ export function PropertyDetail({ property }) {
                     setFavoriteLoading(true)
                     try {
                       await toggleFavorite(property.id)
-                      // Dispatch event to notify other components
                       window.dispatchEvent(new CustomEvent('favoriteChanged'))
                     } catch (error) {
                       console.error('Error toggling favorite:', error)
@@ -564,24 +549,55 @@ export function PropertyDetail({ property }) {
                       setFavoriteLoading(false)
                     }
                   }}
-                  className={`flex items-center gap-2 font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
                     isFav
-                      ? 'text-red-500 hover:text-red-600'
-                      : 'text-slate-600 hover:text-slate-700'
+                      ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
+                      : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
                   } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   disabled={favoriteLoading}
-                  title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                  title={isFav ? 'Remove from saved' : 'Save property'}
                 >
                   {isFav ? (
-                    <Heart className="h-5 w-5 fill-current text-red-500" />
+                    <Heart className="h-4 w-4 fill-current" />
                   ) : (
-                    <Heart className="h-5 w-5 text-slate-600" />
+                    <Heart className="h-4 w-4" />
                   )}
                   <span>{isFav ? 'Saved' : 'Save'}</span>
                 </button>
+
+                {/* Share Button */}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href)
+                    alert('Link copied to clipboard!')
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+                  title="Share property"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  <span>Share</span>
+                </button>
+
+                {/* Not Interested Button */}
+                <button
+                  onClick={() => {
+                    if (confirm('Mark this property as not interested?')) {
+                      alert('Property marked as not interested')
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+                  title="Not interested"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Not Interested</span>
+                </button>
               </div>
 
-              {/* Connect with Agent Card - Compact Professional Design */}
+              {/* Connect with Agent Card - Simplified */}
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-5 mb-4 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-base font-bold text-slate-900">Contact Agent</h3>
@@ -592,14 +608,7 @@ export function PropertyDetail({ property }) {
                   </div>
                 </div>
                 
-                {property.agent?.name && (
-                  <p className="text-sm font-medium text-slate-700 mb-1">{property.agent.name}</p>
-                )}
-                {property.agent?.phone && (
-                  <p className="text-sm text-slate-600 mb-4">{property.agent.phone}</p>
-                )}
-                
-                {/* Message Button - Links directly to messages */}
+                {/* Message Button Only */}
                 <Link
                   href={user && property.temp_seller_id 
                     ? `/buyer/inbox?seller_id=${property.temp_seller_id}&deal_id=${property.id}`
@@ -607,19 +616,10 @@ export function PropertyDetail({ property }) {
                       ? '/buyer/inbox'
                       : '/login'
                   }
-                  className="block w-full bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-center text-sm transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] shadow-sm hover:shadow-md mb-2"
+                  className="block w-full bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-center text-sm transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] shadow-sm hover:shadow-md"
                 >
                   Send Message
                 </Link>
-                
-                {property.agent?.phone && (
-                  <a
-                    href={`tel:${property.agent.phone.replace(/\D/g, '')}`}
-                    className="block w-full bg-white text-slate-700 font-medium py-2.5 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-center text-sm transition-all duration-200"
-                  >
-                    Call Agent
-                  </a>
-                )}
               </div>
 
               {/* Google Maps Preview */}
