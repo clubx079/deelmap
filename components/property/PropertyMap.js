@@ -57,6 +57,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         zoomControl: false,
         rotateControl: false,
         scaleControl: false,
+        panControl: false,
+        mapTypeId: 'roadmap',
+        disableDefaultUI: true, // Disable ALL default UI controls
         clickableIcons: false,
         gestureHandling: 'greedy', // Disable the "use ctrl+scroll" message
         styles: [

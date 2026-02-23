@@ -582,7 +582,7 @@ export function PropertyDetail({ property }) {
                 {/* Not Interested Button */}
                 <button
                   onClick={() => setShowNotInterestedModal(true)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium whitespace-nowrap"
                   title="Not interested"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -197,8 +197,8 @@ export default function DealsPage() {
           onSearchChange={setSearchQuery}
         />
 
-        {/* Add padding to account for fixed FilterBar */}
-        <div className="pt-[72px]"> {/* Adjust this value based on FilterBar height */}
+        {/* Add padding to account for fixed Navbar + FilterBar */}
+        <div className="pt-[144px]"> {/* 80px (navbar) + 64px (filterbar) */}
         
         {/* Mobile Layout */}
         <div className="lg:hidden">
