@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+  process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
 )
 
 // POST - Mark a magic link token as used

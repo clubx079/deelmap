@@ -26,6 +26,8 @@ export function PropertyDetail({ property }) {
   const [estimatedRent, setEstimatedRent] = useState(property.estimated_rent || 0)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showNotInterestedModal, setShowNotInterestedModal] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -430,11 +432,14 @@ export function PropertyDetail({ property }) {
             {property.description && (
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">About this property</h2>
-                <div className="text-gray-700 leading-relaxed">
-                  {showFullDescription || property.description.length <= 300
-                    ? property.description
-                    : `${property.description.substring(0, 300)}...`}
-                </div>
+                <div 
+                  className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{
+                    __html: showFullDescription || property.description.length <= 300
+                      ? property.description
+                      : `${property.description.substring(0, 300)}...`
+                  }}
+                />
                 {property.description.length > 300 && (
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
@@ -528,8 +533,8 @@ export function PropertyDetail({ property }) {
           {/* Right Column - Actions & Info */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
-              {/* Action Buttons - Moved to Left */}
-              <div className="flex items-center gap-3 mb-4">
+              {/* Action Buttons - Full Width */}
+              <div className="flex items-center gap-2 mb-4">
                 {/* Save Button */}
                 <button
                   onClick={async () => {
@@ -549,7 +554,7 @@ export function PropertyDetail({ property }) {
                       setFavoriteLoading(false)
                     }
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
                     isFav
                       ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
                       : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
@@ -567,11 +572,8 @@ export function PropertyDetail({ property }) {
 
                 {/* Share Button */}
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href)
-                    alert('Link copied to clipboard!')
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+                  onClick={() => setShowShareModal(true)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
                   title="Share property"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -582,12 +584,8 @@ export function PropertyDetail({ property }) {
 
                 {/* Not Interested Button */}
                 <button
-                  onClick={() => {
-                    if (confirm('Mark this property as not interested?')) {
-                      alert('Property marked as not interested')
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+                  onClick={() => setShowNotInterestedModal(true)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium whitespace-nowrap"
                   title="Not interested"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -610,8 +608,8 @@ export function PropertyDetail({ property }) {
                 
                 {/* Message Button Only */}
                 <Link
-                  href={user && property.temp_seller_id 
-                    ? `/buyer/inbox?seller_id=${property.temp_seller_id}&deal_id=${property.id}`
+                  href={user && (property.temp_seller_id || property.seller_id)
+                    ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
                     : user 
                       ? '/buyer/inbox'
                       : '/login'
@@ -635,6 +633,146 @@ export function PropertyDetail({ property }) {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-slate-900 mb-4">Share Property</h3>
+            <p className="text-sm text-slate-600 mb-4">Share this property with others</p>
+            
+            {/* Copy Link Section */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-slate-700 mb-1">Property Link</p>
+                  <p className="text-sm text-slate-600 truncate">{typeof window !== 'undefined' ? window.location.href : ''}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href)
+                    const btn = event.target.closest('button')
+                    const originalText = btn.textContent
+                    btn.textContent = 'Copied!'
+                    setTimeout(() => btn.textContent = originalText, 2000)
+                  }}
+                  className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  Copy Link
+                </button>
+              </div>
+            </div>
+
+            {/* Social Share Options */}
+            <div className="space-y-2 mb-4">
+              <p className="text-xs font-medium text-slate-700 mb-2">Or share via:</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href)
+                    const text = encodeURIComponent(`Check out this property: ${fullAddress}`)
+                    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank')
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  <span>Twitter</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href)
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank')
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 3.667h-3.533v7.98H9.101z"/></svg>
+                  <span>Facebook</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href)
+                    const text = encodeURIComponent(`Check out this property: ${fullAddress}`)
+                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank')
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  <span>LinkedIn</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(window.location.href)
+                    const text = encodeURIComponent(`Check out this property: ${fullAddress}`)
+                    if (navigator.share) {
+                      navigator.share({ title: fullAddress, text: text, url: window.location.href })
+                    } else {
+                      window.open(`mailto:?subject=${text}&body=${url}`, '_blank')
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  <span>Email</span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="w-full px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Not Interested Modal */}
+      {showNotInterestedModal && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowNotInterestedModal(false)}>
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                <svg className="h-6 w-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Not Interested</h3>
+              <p className="text-sm text-slate-600">We'll hide this property from your recommendations and won't show it to you again.</p>
+            </div>
+            
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-slate-700 font-medium mb-1">{fullAddress}</p>
+              <p className="text-xs text-slate-500">You can always view hidden properties in your settings.</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowNotInterestedModal(false)}
+                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implement hide property logic
+                  console.log('Property marked as not interested:', property.id)
+                  setShowNotInterestedModal(false)
+                  // Show success message
+                  const successDiv = document.createElement('div')
+                  successDiv.className = 'fixed top-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg z-[10000] text-sm font-medium'
+                  successDiv.textContent = 'Property hidden successfully'
+                  document.body.appendChild(successDiv)
+                  setTimeout(() => successDiv.remove(), 3000)
+                }}
+                className="flex-1 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

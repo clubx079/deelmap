@@ -19,46 +19,14 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState('')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
-  // Redirect if not logged in (for security, require login to reset password)
+  // If user is logged in, use their email automatically
   useEffect(() => {
-    if (!user) {
-      router.push('/login?redirect=/forgot-password')
+    if (user?.email && !email) {
+      setEmail(user.email)
     }
-  }, [user, router])
+  }, [user?.email, email])
 
-  if (!user) {
-    return null
-  }
-
-  // Auto-send OTP when page loads if user is logged in
-  useEffect(() => {
-    if (user?.email && step === 'request' && !loading) {
-      const autoSend = async () => {
-        setLoading(true)
-        try {
-          const response = await fetch('/api/auth/forgot-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email })
-          })
-          const data = await response.json()
-          if (response.ok) {
-            setShowSuccessModal(true)
-            setStep('verify')
-          } else {
-            setError(data.message || 'Failed to send reset code')
-          }
-        } catch (err) {
-          setError(err.message || 'Failed to send reset code')
-        } finally {
-          setLoading(false)
-        }
-      }
-      autoSend()
-    }
-  }, [user?.email]) // Only run once when user email is available
-
-  const handleRequestReset = async (e, autoSend = false) => {
+  const handleRequestReset = async (e) => {
     if (e) e.preventDefault()
     setLoading(true)
     setError('')
@@ -68,7 +36,7 @@ export default function ForgotPasswordPage() {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email || email })
+        body: JSON.stringify({ email: email })
       })
 
       const data = await response.json()
@@ -97,7 +65,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: user.email || email,
+          email: email,
           otp 
         })
       })
@@ -140,7 +108,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: user.email || email,
+          email: email,
           otp,
           newPassword,
           confirmPassword
@@ -170,11 +138,11 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-md mx-auto px-6 sm:px-8 py-12">
           <Link
-            href="/settings"
+            href="/login"
             className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Settings</span>
+            <span>Back to Login</span>
           </Link>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -210,10 +178,10 @@ export default function ForgotPasswordPage() {
                   </label>
                   <input
                     type="email"
-                    value={user?.email || email}
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={!!user?.email}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-slate-900 focus:border-slate-900 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
                     required
                   />
                   {user?.email && (

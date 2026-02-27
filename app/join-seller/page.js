@@ -31,6 +31,26 @@ export default function JoinSellerPage() {
     description: ''
   })
 
+  // Phone number formatter
+  const formatPhoneNumber = (value) => {
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '')
+    
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+    }
+  }
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value)
+    setFormData({ ...formData, phone: formatted })
+  }
+
   const propertyTypeOptions = [
     { value: 'single-family', label: 'Single-Family' },
     { value: 'multi-family', label: 'Multi-Family' },
@@ -252,9 +272,10 @@ export default function JoinSellerPage() {
                         type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={handlePhoneChange}
                         className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
                         placeholder="(555) 555-5555"
+                        maxLength={14}
                       />
                     </div>
                   </div>
