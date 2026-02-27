@@ -432,11 +432,14 @@ export function PropertyDetail({ property }) {
             {property.description && (
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">About this property</h2>
-                <div className="text-gray-700 leading-relaxed">
-                  {showFullDescription || property.description.length <= 300
-                    ? property.description
-                    : `${property.description.substring(0, 300)}...`}
-                </div>
+                <div 
+                  className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{
+                    __html: showFullDescription || property.description.length <= 300
+                      ? property.description
+                      : `${property.description.substring(0, 300)}...`
+                  }}
+                />
                 {property.description.length > 300 && (
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
@@ -605,8 +608,8 @@ export function PropertyDetail({ property }) {
                 
                 {/* Message Button Only */}
                 <Link
-                  href={user && property.temp_seller_id 
-                    ? `/buyer/inbox?seller_id=${property.temp_seller_id}&deal_id=${property.id}`
+                  href={user && (property.temp_seller_id || property.seller_id)
+                    ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
                     : user 
                       ? '/buyer/inbox'
                       : '/login'

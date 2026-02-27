@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
-import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut } from 'lucide-react'
+import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut, ChevronDown, ShieldBan } from 'lucide-react'
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -23,6 +23,9 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false)
+  const [blockedUsers, setBlockedUsers] = useState([])
+  const [blockedLoading, setBlockedLoading] = useState(false)
 
   useEffect(() => {
     if (user?.id) {
@@ -121,6 +124,45 @@ export default function SettingsPage() {
     setIsEditing(false)
     setError('')
     setSuccess('')
+  }
+
+  const fetchBlockedUsers = async () => {
+    if (!user?.id) return
+    try {
+      setBlockedLoading(true)
+      const res = await fetch('/api/buyer/chat?action=get_blocked_users', {
+        headers: { Authorization: `Bearer ${user.id}` }
+      })
+      const data = await res.json().catch(() => ({}))
+      setBlockedUsers(data?.blocked || [])
+    } catch {
+      setBlockedUsers([])
+    } finally {
+      setBlockedLoading(false)
+    }
+  }
+
+  const handleToggleBlockedUsers = () => {
+    const next = !showBlockedUsers
+    setShowBlockedUsers(next)
+    if (next) fetchBlockedUsers()
+  }
+
+  const handleUnblock = async (conversationId) => {
+    if (!user?.id || !conversationId) return
+    await fetch('/api/buyer/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${user.id}`
+      },
+      body: JSON.stringify({
+        action: 'update_conversation_pref',
+        conversationId,
+        is_blocked: false
+      })
+    }).catch(() => {})
+    fetchBlockedUsers()
   }
 
   if (!user) return null
@@ -332,6 +374,54 @@ export default function SettingsPage() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Sign Out Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+          <button
+            type="button"
+            onClick={handleToggleBlockedUsers}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                <ShieldBan className="w-5 h-5 text-slate-700" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-lg font-semibold text-slate-900">Blocked users</h2>
+                <p className="text-sm text-slate-600">View and unblock chat contacts</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${showBlockedUsers ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showBlockedUsers && (
+            <div className="border-t border-slate-200 px-6 py-4">
+              {blockedLoading ? (
+                <p className="text-sm text-slate-500">Loading blocked users...</p>
+              ) : blockedUsers.length === 0 ? (
+                <p className="text-sm text-slate-500">No blocked users</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {blockedUsers.map((row) => (
+                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-900 truncate">{row.name || 'User'}</p>
+                        <p className="text-xs text-slate-500">Blocked {row.blocked_at ? new Date(row.blocked_at).toLocaleString() : ''}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleUnblock(row.conversation_id)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+                      >
+                        Unblock
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sign Out Section */}

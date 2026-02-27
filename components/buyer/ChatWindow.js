@@ -113,23 +113,38 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       .on(
         'postgres_changes',
         {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversation.id}`
+        },
+        (payload) => {
+          const updated = payload.new;
+          if (updated?.id != null && updated.is_read) {
+            setMessages((prev) =>
+              prev.map((msg) => (String(msg.id) === String(updated.id) ? { ...msg, is_read: true } : msg))
+            );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
           filter: `conversation_id=eq.${conversation.id}`
         },
         async (payload) => {
-          console.log('New message received:', payload.new);
+          const newMsg = payload.new;
           setMessages((prev) => {
-            const messageExists = prev.some(msg => msg.id === payload.new.id);
-            if (messageExists) {
-              return prev;
-            }
-            return [...prev, payload.new];
+            const messageExists = prev.some(msg => String(msg.id) === String(newMsg?.id));
+            if (messageExists || !newMsg?.id) return prev;
+            return [...prev, newMsg];
           });
           scrollToBottom();
 
-          if (payload.new.sender_type === 'lender' || payload.new.sender_type === 'seller') {
+          if (newMsg?.sender_type === 'lender' || newMsg?.sender_type === 'seller') {
             try {
               await fetch('/api/buyer/chat', {
                 method: 'POST',
@@ -148,9 +163,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -395,11 +408,11 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
 
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-full bg-[#002A3A] flex items-center justify-center text-white font-semibold text-sm">
-              {lender?.business_name?.charAt(0)?.toUpperCase() || 'L'}
+              {lender?.business_name?.charAt(0)?.toUpperCase() || (financingRequest ? 'L' : 'S')}
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold text-slate-900 text-sm truncate">
-                {lender?.business_name || 'Lender'}
+                {lender?.business_name || (financingRequest ? 'Lender' : 'Seller')}
               </h2>
               {financingRequest && (
                 <div className="flex items-center gap-2 mt-0.5">

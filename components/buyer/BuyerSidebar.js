@@ -2,15 +2,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, FileText, MessageCircle, LogOut, X, ArrowLeft, Heart, Settings } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { LayoutDashboard, FileText, MessageCircle, X, ArrowLeft, Heart, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function BuyerSidebar({ mobileOpen, onClose }) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
-  const router = useRouter();
 
   useEffect(() => {
     if (user?.id) {
@@ -40,16 +39,6 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       }
     } catch (err) {
       console.error('Failed to fetch unread count:', err);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push('/');
-    } catch (err) {
-      console.error('Logout failed:', err);
-      router.push('/');
     }
   };
 
@@ -117,27 +106,21 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
             </button>
           </div>
 
-          {/* Row 2: Logo + Portal Badge — enterprise layout */}
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
-                <Image
-                  src="/assets/logo copy.png"
-                  alt="DeelMap"
-                  width={140}
-                  height={42}
-                  className="h-10 w-auto object-contain"
-                  priority
-                />
-              </Link>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-px flex-1 bg-slate-200"></div>
-              <span className="text-xs font-medium text-slate-600 tracking-wide">
-                BUYER PORTAL
-              </span>
-              <div className="h-px flex-1 bg-slate-200"></div>
-            </div>
+          {/* Row 2: Logo + Buyer Label — matching seller dashboard style */}
+          <div className="flex items-center gap-3 justify-center">
+            <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
+              <Image
+                src="/assets/logo copy.png"
+                alt="DeelMap"
+                width={120}
+                height={36}
+                className="h-9 w-auto object-contain"
+                priority
+              />
+            </Link>
+            <span className="text-xs font-medium text-slate-600 uppercase tracking-wider whitespace-nowrap">
+              Buyer
+            </span>
           </div>
         </div>
 
@@ -179,8 +162,8 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
           </div>
         </nav>
 
-        {/* Profile and Logout - Bottom */}
-        <div className="mt-auto px-3 pb-4 border-t border-slate-100 pt-4 space-y-1">
+        {/* Settings - Bottom */}
+        <div className="mt-auto px-3 pb-4 border-t border-slate-100 pt-4">
           <Link
             href="/profile"
             onClick={onClose}
@@ -196,13 +179,6 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
             <Settings className={`w-5 h-5 flex-shrink-0 ${pathname === '/profile' || pathname?.startsWith('/profile/') ? 'text-slate-900' : 'text-slate-500'}`} />
             <span className="text-sm">Settings</span>
           </Link>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors duration-200"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="text-sm font-medium">Logout</span>
-          </button>
         </div>
       </aside>
     </>
