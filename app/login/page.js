@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { Navbar } from '@/components/layout/Navbar'
 import { Input } from '@/components/ui/Input'
@@ -209,7 +210,7 @@ function LoginForm() {
             </div>
 
             {/* Sign Up Link */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-3">
               <p className="text-slate-600 text-sm">
                 Don't have an account?{' '}
                 <a
@@ -219,6 +220,12 @@ function LoginForm() {
                   Sign up for free
                 </a>
               </p>
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors inline-block"
+              >
+                Forgot Password?
+              </Link>
             </div>
           </div>
         </div>

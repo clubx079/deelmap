@@ -187,24 +187,24 @@ export default function DealsPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
+      {/* Fixed elements - outside scrollable container */}
+      <Navbar />
+      
+      <FilterBar
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-        <FilterBar
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
-
-        {/* Add padding to account for fixed FilterBar */}
-        <div className="pt-[72px]"> {/* Adjust this value based on FilterBar height */}
+      {/* Main content - with proper spacing for fixed elements */}
+      <div className="fixed inset-0 top-[140px] bg-slate-50 overflow-hidden">
         
         {/* Mobile Layout */}
-        <div className="lg:hidden">
+        <div className="lg:hidden h-full">
           <MobileHeader />
 
-          <div className="h-[calc(100vh-200px)] relative">
+          <div className="h-[calc(100%-60px)] relative">
             {mobileTab === 'list' ? (
               <div className="h-full bg-white">
                 {loading ? (
@@ -251,7 +251,7 @@ export default function DealsPage() {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden lg:block h-[calc(100vh-120px)] relative">
+        <div className="hidden lg:block h-full">
           <div className="flex h-full">
             <div className="flex-1 border-r border-gray-200 bg-gray-50 relative">
                 <PropertyMap
@@ -293,7 +293,6 @@ export default function DealsPage() {
             </div>
           </div>
         </div>
-        </div> {/* Close padding div */}
       </div>
 
       {/* Auth Modal */}

@@ -2,8 +2,17 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { MessageCircle, Search, DollarSign, Home } from 'lucide-react';
+import { MessageCircle, Search, DollarSign, Home, Pin } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
+
+const AVATAR_COLORS = ['#0F766E', '#2563EB', '#7C3AED', '#C2410C', '#BE185D', '#0369A1', '#047857', '#4F46E5'];
+
+function getAvatarColor(seed = '') {
+  const str = String(seed || 'chat');
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) hash = (hash * 31 + str.charCodeAt(i)) | 0;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 export default function InboxPage() {
   const { user } = useAuth();
@@ -12,13 +21,17 @@ export default function InboxPage() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [chatTab, setChatTab] = useState('all'); // all | unread | unresponded
+  const [contextMenu, setContextMenu] = useState(null); // {x,y,conversation}
   const searchParams = useSearchParams();
+
+  const sellerIdFromUrl = searchParams.get('seller_id');
+  const dealIdFromUrl = searchParams.get('deal_id');
 
   useEffect(() => {
     if (user?.id) {
       fetchConversations();
 
-      // Set up polling to refresh conversations every 5 seconds
       const interval = setInterval(() => {
         fetchConversations();
       }, 5000);
@@ -27,14 +40,45 @@ export default function InboxPage() {
     }
   }, [user]);
 
-  // Auto-select conversation from URL parameter
+  // Heartbeat for message presence: only when tab is visible, so we skip email if user is on messages
+  useEffect(() => {
+    if (!user?.id || typeof document === 'undefined') return;
+    let intervalId = null;
+    const sendHeartbeat = () => {
+      if (document.visibilityState === 'visible') {
+        fetch('/api/buyer/chat', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${user.id}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'heartbeat' })
+        }).catch(() => {});
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        sendHeartbeat();
+        intervalId = setInterval(sendHeartbeat, 25000);
+      } else {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+    if (document.visibilityState === 'visible') {
+      sendHeartbeat();
+      intervalId = setInterval(sendHeartbeat, 25000);
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [user?.id]);
+
+  // Auto-select conversation from URL: conversation id, or openConversationId from API (seller_id flow)
   useEffect(() => {
     const conversationId = searchParams.get('conversation');
     if (conversationId && conversations.length > 0) {
-      const conversation = conversations.find(c => c.id === parseInt(conversationId));
-      if (conversation) {
-        setSelectedConversation(conversation);
-      }
+      const conversation = conversations.find(c => c.id === parseInt(conversationId, 10));
+      if (conversation) setSelectedConversation(conversation);
     }
   }, [searchParams, conversations]);
 
@@ -56,24 +100,52 @@ export default function InboxPage() {
     }
   }, [searchQuery, conversations]);
 
-  const fetchConversations = async () => {
+  useEffect(() => {
+    const close = () => {
+      setContextMenu(null);
+    };
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, []);
+
+  const fetchConversations = async (openId = null) => {
+    if (!user?.id) return;
     try {
-      const response = await fetch('/api/buyer/chat?action=get_conversations', {
-        headers: {
-          'Authorization': `Bearer ${user.id}`
-        }
+      let url = '/api/buyer/chat?action=get_conversations';
+      if (sellerIdFromUrl) url += `&seller_id=${encodeURIComponent(sellerIdFromUrl)}`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${user.id}` }
       });
       const data = await response.json();
 
       if (response.ok) {
-        setConversations(data.conversations || []);
-        setFilteredConversations(data.conversations || []);
+        const list = data.conversations || [];
+        setConversations(list);
+        setFilteredConversations(list);
+        if (openId !== false && (data.openConversationId != null || openId != null)) {
+          const id = data.openConversationId ?? openId;
+          const conv = list.find(c => c.id === id);
+          if (conv) setSelectedConversation(conv);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateConversationPref = async (conversationId, patch) => {
+    if (!user?.id) return;
+    await fetch('/api/buyer/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user.id}`
+      },
+      body: JSON.stringify({ action: 'update_conversation_pref', conversationId, ...patch })
+    }).catch(() => {});
+    fetchConversations(false);
   };
 
   const handleSelectConversation = async (conversation) => {
@@ -114,6 +186,18 @@ export default function InboxPage() {
     }).format(amount);
   };
 
+  const displayedConversations = (filteredConversations || [])
+    .filter((c) => {
+      if (chatTab === 'all') return true;
+      if (chatTab === 'unread') return !!c.has_unread || (c.unread_count ?? 0) > 0;
+      if (chatTab === 'unresponded') return !!c.is_unresponded;
+      return true;
+    })
+    .sort((a, b) => {
+      if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1;
+      return new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0);
+    });
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 pt-12 lg:pt-0">
       {/* Left Panel - Conversation List */}
@@ -133,6 +217,11 @@ export default function InboxPage() {
               className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 transition-all"
             />
           </div>
+          <div className="mt-2 grid w-full grid-cols-3 rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+            <button type="button" onClick={() => setChatTab('all')} className={`w-full px-2.5 py-1 rounded-md ${chatTab === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>All</button>
+            <button type="button" onClick={() => setChatTab('unread')} className={`w-full px-2.5 py-1 rounded-md ${chatTab === 'unread' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>Unread</button>
+            <button type="button" onClick={() => setChatTab('unresponded')} className={`w-full px-2.5 py-1 rounded-md ${chatTab === 'unresponded' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>Unresponded</button>
+          </div>
         </div>
 
         {/* Conversation List */}
@@ -141,7 +230,7 @@ export default function InboxPage() {
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900"></div>
             </div>
-          ) : filteredConversations.length === 0 ? (
+          ) : displayedConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-600 p-8">
               <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <MessageCircle className="w-7 h-7 text-slate-400" />
@@ -157,10 +246,14 @@ export default function InboxPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredConversations.map((conversation) => (
+              {displayedConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   onClick={() => handleSelectConversation(conversation)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, conversation });
+                  }}
                   className={`p-3 cursor-pointer transition-all duration-200 rounded-xl ${
                     selectedConversation?.id === conversation.id
                       ? 'bg-[#002A3A]/10 border border-[#002A3A]/20'
@@ -170,8 +263,11 @@ export default function InboxPage() {
                   <div className="flex items-start gap-3">
                     {/* Avatar with unread indicator */}
                     <div className="relative flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-[#002A3A] flex items-center justify-center text-white font-semibold text-sm">
-                        {conversation.lenders?.business_name?.charAt(0)?.toUpperCase() || 'L'}
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                        style={{ backgroundColor: getAvatarColor(conversation.lenders?.business_name || conversation.seller_id || conversation.lender_id || conversation.id) }}
+                      >
+                        {conversation.lenders?.business_name?.charAt(0)?.toUpperCase() || (conversation.financing_requests ? 'L' : 'S')}
                       </div>
                       {conversation.unread_count > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#b29578] border-2 border-white rounded-full"></span>
@@ -185,8 +281,13 @@ export default function InboxPage() {
                           <h3 className={`truncate text-sm ${
                             conversation.unread_count > 0 ? 'font-bold text-slate-900' : 'font-medium text-slate-900'
                           }`}>
-                            {conversation.lenders?.business_name || 'Lender'}
+                            {conversation.lenders?.business_name || (conversation.financing_requests ? 'Lender' : 'Seller')}
                           </h3>
+                          {conversation.is_pinned && (
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700" title="Pinned">
+                              <Pin className="w-3 h-3" />
+                            </span>
+                          )}
                           {conversation.unread_count > 0 && (
                             <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-[#002A3A] rounded-full">
                               {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
@@ -254,6 +355,25 @@ export default function InboxPage() {
           </div>
         )}
       </div>
+      {contextMenu?.conversation && (
+        <div
+          className="fixed z-[90] w-44 rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-sm shadow-[0_12px_32px_rgba(15,23,42,0.18)] p-1.5"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Actions</div>
+          <button className="w-full text-left text-sm px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors" onClick={() => { updateConversationPref(contextMenu.conversation.id, { is_pinned: !contextMenu.conversation.is_pinned }); setContextMenu(null); }}>
+            {contextMenu.conversation.is_pinned ? 'Unpin user' : 'Pin user'}
+          </button>
+          <button className="w-full text-left text-sm px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors" onClick={() => { updateConversationPref(contextMenu.conversation.id, { mark_unread: true }); setContextMenu(null); }}>
+            Mark as unread
+          </button>
+          <div className="my-1 border-t border-slate-200" />
+          <button className="w-full text-left text-sm px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors" onClick={() => { updateConversationPref(contextMenu.conversation.id, { is_blocked: true }); setContextMenu(null); }}>
+            Block user
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,49 +1,97 @@
 //app/[slug]/page.js
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { supabaseMarketplace } from '@/lib/supabase'
 import { PropertyDetail } from '@/components/property/PropertyDetail'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
+import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers'
 
 async function getProperty(slug) {
-  // First, try to get the property by ID (slug is the ID)
-  const { data: property, error } = await supabase
+  // Try wholesale_deals first
+  const { data: wholesaleProperty, error: wholesaleError } = await supabaseMarketplace
     .from('wholesale_deals')
-    .select('*')
+    .select(`
+      *,
+      property_photos (
+        id,
+        photo_url,
+        optimized_url,
+        original_url,
+        display_order
+      )
+    `)
     .eq('id', slug)
     .single()
 
-  if (error || !property) {
-    return null
-  }
-
-  // Also fetch property photos
-  const { data: photos } = await supabase
-    .from('property_photos')
-    .select('id, photo_url, optimized_url, original_url, display_order')
-    .eq('deal_id', property.id)
-    .order('display_order', { ascending: true })
-
-  // Fetch agent (temp seller) when linked
-  let agent = null
-  if (property.temp_seller_id) {
-    const { data: tempSeller } = await supabase
-      .from('temp_seller_logins')
-      .select('seller_name, seller_phone')
-      .eq('id', property.temp_seller_id)
-      .single()
-    if (tempSeller) {
-      agent = {
-        name: tempSeller.seller_name || 'Agent',
-        phone: tempSeller.seller_phone || null
+  if (!wholesaleError && wholesaleProperty) {
+    // Fetch agent (temp seller) when linked
+    let agent = null
+    if (wholesaleProperty.temp_seller_id) {
+      const { data: tempSeller } = await supabaseMarketplace
+        .from('temp_seller_logins')
+        .select('seller_name, seller_phone')
+        .eq('id', wholesaleProperty.temp_seller_id)
+        .single()
+      if (tempSeller) {
+        agent = {
+          name: tempSeller.seller_name || 'Agent',
+          phone: tempSeller.seller_phone || null
+        }
       }
+    }
+
+    // Normalize and return
+    const normalized = normalizeWholesaleDeal(wholesaleProperty)
+    return {
+      ...normalized,
+      agent,
+      source: 'scraped'
     }
   }
 
-  return {
-    ...property,
-    property_photos: photos || [],
-    agent
+  // If not found in wholesale_deals, try properties (manual seller properties)
+  const { data: manualProperty, error: manualError } = await supabaseMarketplace
+    .from('properties')
+    .select(`
+      *,
+      property_images (
+        id,
+        image_url,
+        image_key,
+        sort_order
+      )
+    `)
+    .eq('id', slug)
+    .single()
+
+  if (!manualError && manualProperty) {
+    // Fetch seller info if seller_id exists
+    let agent = null
+    if (manualProperty.seller_id) {
+      const { data: seller } = await supabaseMarketplace
+        .from('users')
+        .select('full_name, phone')
+        .eq('id', manualProperty.seller_id)
+        .single()
+      if (seller) {
+        agent = {
+          name: seller.full_name || 'Seller',
+          phone: seller.phone || null
+        }
+      }
+    }
+
+    // Normalize and return
+    const normalized = normalizeManualProperty(manualProperty, manualProperty.property_images || [])
+    return {
+      ...normalized,
+      agent,
+      source: 'manual'
+    }
   }
+
+  // Not found in either table
+  return null
 }
 
 export async function generateMetadata({ params }) {
