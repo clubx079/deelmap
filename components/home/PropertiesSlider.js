@@ -92,7 +92,7 @@ export function PropertiesSlider() {
 
     return (
       <Link
-        href={`/${property.id}`}
+        href={`/${property.slug || property.id}`}
         className="group bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-900 transition-all duration-300 hover:shadow-lg block"
       >
         <div className="relative h-48 overflow-hidden bg-slate-100">

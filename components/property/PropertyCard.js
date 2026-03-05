@@ -72,9 +72,9 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
 
   const displayAddress = getDisplayAddress()
 
-  // Create slug from ID for URL
-  const slug = id
-  const shareUrl = `https://ableman.co/property/${id}`
+  // Use slug for URL when available (no Supabase ID in URL); fallback to id for backward compat
+  const slug = property.slug || id
+  const shareUrl = `https://ableman.co/${slug}`
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -102,6 +102,7 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
                   alt={fullAddressText || 'Property'}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   onError={(e) => {
                     // Hide image on error
                     e.target.style.display = 'none'
