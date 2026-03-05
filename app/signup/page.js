@@ -27,6 +27,7 @@ export default function SignupPage() {
   const [statesSearch, setStatesSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0) // seconds until Resend is allowed again
   const [error, setError] = useState('')
   const [phoneError, setPhoneError] = useState('')
   const [validatingPhone, setValidatingPhone] = useState(false)
@@ -49,6 +50,14 @@ export default function SignupPage() {
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // 30s resend cooldown timer (single interval, decrements every second when cooldown > 0)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 0 ? 0 : prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
   }, [])
 
   // Format phone number as user types
@@ -197,10 +206,12 @@ export default function SignupPage() {
 
   const handleResendCode = async (e) => {
     e.preventDefault()
+    if (resendCooldown > 0) return
     setResendLoading(true)
     setError('')
     try {
       await sendOTP(formData.email, `${formData.firstName} ${formData.lastName}`)
+      setResendCooldown(30) // 30s before next resend
     } catch (err) {
       setError(err.message || 'Failed to resend code')
     } finally {
@@ -507,10 +518,14 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={handleResendCode}
-                      disabled={resendLoading}
-                      className="font-medium text-slate-900 hover:underline disabled:opacity-50 focus:outline-none"
+                      disabled={resendLoading || resendCooldown > 0}
+                      className="font-medium text-slate-900 hover:underline disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
                     >
-                      {resendLoading ? 'Sending…' : 'Resend code'}
+                      {resendLoading
+                        ? 'Sending…'
+                        : resendCooldown > 0
+                          ? `Resend code in ${resendCooldown}s`
+                          : 'Resend code'}
                     </button>
                   </p>
                 </div>

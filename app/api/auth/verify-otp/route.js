@@ -204,7 +204,10 @@ export async function POST(request) {
 
     if (existingUser) {
       console.log('[VERIFY-OTP] User already exists:', existingUser.id)
-      return NextResponse.json({ message: 'User already exists' }, { status: 400 })
+      return NextResponse.json(
+        { message: 'This email is already registered. Please sign in.' },
+        { status: 409 }
+      )
     }
 
     // Hash password
