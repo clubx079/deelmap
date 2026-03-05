@@ -169,24 +169,24 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
           {/* Card Header */}
-          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-lg">
+              <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
                 {formData.firstName?.charAt(0)?.toUpperCase() || formData.lastName?.charAt(0)?.toUpperCase() || 'U'}
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-slate-900 truncate">
                   {formData.firstName || formData.lastName ? `${formData.firstName} ${formData.lastName}`.trim() : 'User'}
                 </h2>
-                <p className="text-sm text-slate-600">{formData.email}</p>
+                <p className="text-sm text-slate-500 truncate">{formData.email}</p>
               </div>
             </div>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors"
+                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
               >
-                <Edit2 className="w-4 h-4" />
+                <Edit2 className="w-3.5 h-3.5" />
                 Edit Profile
               </button>
             )}

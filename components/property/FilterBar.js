@@ -179,12 +179,10 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   return (
     <>
       <div className="bg-slate-50 border-b border-gray-200 fixed top-20 left-0 right-0 z-40 shadow-sm">
-        <div className="w-full px-6 py-3">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left side - Search and Filters */}
-            <div className="flex items-center gap-4 flex-wrap">
+        <div className="w-full px-4 lg:px-6 py-3">
+          <div className="flex flex-wrap items-center gap-y-2 gap-x-1 lg:gap-4">
               {/* Search Bar */}
-              <div className="w-80">
+              <div className="w-full lg:w-80">
                 <input
                   type="text"
                   placeholder="Search by address, market, or zip code"
@@ -195,7 +193,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               </div>
 
               {/* Price Range Dropdown */}
-              <div className="relative" ref={priceDropdownRef}>
+              <div className="flex-1 lg:flex-none relative" ref={priceDropdownRef}>
                 <button
                   onClick={() => {
                     setShowPriceDropdown(!showPriceDropdown)
@@ -203,14 +201,14 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                     setShowBedsBathsDropdown(false)
                     setTempPrice({ min: filters.minPrice || '', max: filters.maxPrice || '' })
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium whitespace-nowrap ${
+                  className={`w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
                     hasPriceFilter
                       ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   Price Range
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showPriceDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3 h-3 lg:w-4 lg:h-4 transition-transform ${showPriceDropdown ? 'rotate-180' : ''}`} />
                 </button>
                 {showPriceDropdown && (
                   <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80 z-50">
@@ -247,25 +245,25 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               </div>
 
               {/* Beds/Baths Dropdown */}
-              <div className="relative" ref={bedsBathsDropdownRef}>
+              <div className="flex-1 lg:flex-none relative" ref={bedsBathsDropdownRef}>
                 <button
                   onClick={() => {
                     setShowBedsBathsDropdown(!showBedsBathsDropdown)
                     setShowPriceDropdown(false)
                     setShowCapRateDropdown(false)
-                    setTempBedsBaths({ 
-                      minBeds: filters.minBeds || '', 
-                      minBaths: filters.minBaths || '' 
+                    setTempBedsBaths({
+                      minBeds: filters.minBeds || '',
+                      minBaths: filters.minBaths || ''
                     })
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium whitespace-nowrap ${
+                  className={`w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
                     hasBedsBathsFilter
                       ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   Beds / Baths
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showBedsBathsDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3 h-3 lg:w-4 lg:h-4 transition-transform ${showBedsBathsDropdown ? 'rotate-180' : ''}`} />
                 </button>
                 {showBedsBathsDropdown && (
                   <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80 z-50">
@@ -317,8 +315,8 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                 )}
               </div>
 
-              {/* Cap Rate Dropdown */}
-              <div className="relative" ref={capRateDropdownRef}>
+              {/* Cap Rate Dropdown - desktop only */}
+              <div className="hidden lg:block relative" ref={capRateDropdownRef}>
                 <button
                   onClick={() => {
                     setShowCapRateDropdown(!showCapRateDropdown)
@@ -372,16 +370,15 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               {/* All Filters */}
               <button
                 onClick={() => setShowAllFilters(true)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium whitespace-nowrap ${
+                className={`flex-1 lg:flex-none w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
                   hasActiveFilters
                     ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <SlidersHorizontal className="w-4 h-4" />
+                <SlidersHorizontal className="w-3 h-3 lg:w-4 lg:h-4" />
                 All Filters
               </button>
-            </div>
           </div>
         </div>
       </div>

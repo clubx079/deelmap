@@ -57,20 +57,17 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
   const fullAddressText = full_address ||
     `${address || ''}, ${city || ''}, ${state || ''} ${zip_code || ''}`.trim()
 
-  // Display address - only city and state (no zip code)
+  // Display address: full address when logged in, city/state only when not
   const getDisplayAddress = () => {
-    if (!city && !state) {
-      // Fallback to full address if city/state not available
-      if (isLoggedIn) return fullAddressText
-      
-      const firstCommaIndex = fullAddressText.indexOf(',')
-      if (firstCommaIndex === -1) return fullAddressText
-      return fullAddressText.substring(firstCommaIndex + 1).trim()
-    }
-    
-    // Show only city and state (no zip code)
     const cityState = [city, state].filter(Boolean).join(', ')
-    return cityState || (isLoggedIn ? full_address : '')
+    if (isLoggedIn) {
+      return fullAddressText || full_address || cityState || ''
+    }
+    return cityState || (() => {
+      const firstCommaIndex = (fullAddressText || '').indexOf(',')
+      if (firstCommaIndex === -1) return fullAddressText || ''
+      return (fullAddressText || '').substring(firstCommaIndex + 1).trim()
+    })()
   }
 
   const displayAddress = getDisplayAddress()

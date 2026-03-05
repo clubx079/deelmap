@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 
-export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }) {
+export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [thumbnailIndex, setThumbnailIndex] = useState(0)
 
@@ -80,7 +80,9 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
   const currentPhotoUrl = getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % photos.length)
+    const nextIndex = (currentIndex + 1) % photos.length
+    setCurrentIndex(nextIndex)
+    if (typeof onPhotoView === 'function') onPhotoView(nextIndex)
     // Auto-scroll thumbnails
     if (currentIndex >= thumbnailIndex + thumbnailsPerView - 1) {
       setThumbnailIndex((prev) => Math.min(prev + 1, photos.length - thumbnailsPerView))
@@ -88,7 +90,9 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
   }
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length)
+    const prevIndex = (currentIndex - 1 + photos.length) % photos.length
+    setCurrentIndex(prevIndex)
+    if (typeof onPhotoView === 'function') onPhotoView(prevIndex)
     // Auto-scroll thumbnails
     if (currentIndex <= thumbnailIndex) {
       setThumbnailIndex((prev) => Math.max(0, prev - 1))
@@ -97,6 +101,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0 }
 
   const handleThumbnailClick = (index) => {
     setCurrentIndex(index)
+    if (typeof onPhotoView === 'function') onPhotoView(index)
     // Scroll thumbnails to show selected image
     if (index < thumbnailIndex) {
       setThumbnailIndex(Math.max(0, index - 2))

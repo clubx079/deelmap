@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Map, LayoutGrid } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { FilterBar } from '@/components/property/FilterBar'
 import { PropertyMap } from '@/components/property/PropertyMap'
@@ -34,8 +33,6 @@ export default function DealsPage() {
   })
 
   const [selectedProperty, setSelectedProperty] = useState(null)
-  const [viewMode, setViewMode] = useState('list')
-  const [mobileTab, setMobileTab] = useState('list') // 'list' or 'map'
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
   const [searchQuery, setSearchQuery] = useState('')
   const {
@@ -98,57 +95,7 @@ export default function DealsPage() {
     </div>
   )
 
-  const MobileHeader = () => (
-    <div className="lg:hidden bg-white border-b border-gray-200">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-normal text-gray-900">Properties</h1>
-            <span className="text-sm font-semibold text-slate-900">
-              ({resultCount.toLocaleString()})
-            </span>
-          </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#b29578] focus:border-[#b29578] bg-white"
-          >
-            <option value="newest">Newest</option>
-            <option value="price-low">Low to High</option>
-            <option value="price-high">High to Low</option>
-          </select>
-        </div>
-      </div>
-      
-      {/* Mobile Tabs */}
-      <div className="flex">
-        <button
-          onClick={() => setMobileTab('list')}
-          className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 border-b-2 transition-colors ${
-            mobileTab === 'list'
-              ? 'border-[#b29578] text-[#b29578] bg-[#b29578]/5'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <LayoutGrid className="h-4 w-4" />
-          <span className="font-medium">List</span>
-        </button>
-        <button
-          onClick={() => setMobileTab('map')}
-          className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 border-b-2 transition-colors ${
-            mobileTab === 'map'
-              ? 'border-[#b29578] text-[#b29578] bg-[#b29578]/5'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Map className="h-4 w-4" />
-          <span className="font-medium">Map</span>
-        </button>
-      </div>
-    </div>
-  )
-
-  const LoadingState = () => (
+const LoadingState = () => (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#b29578' }}></div>
@@ -197,100 +144,96 @@ export default function DealsPage() {
         onSearchChange={setSearchQuery}
       />
 
-      {/* Main content - with proper spacing for fixed elements */}
-      <div className="fixed inset-0 top-[140px] bg-slate-50 overflow-hidden">
-        
-        {/* Mobile Layout */}
-        <div className="lg:hidden h-full">
-          <MobileHeader />
-
-          <div className="h-[calc(100%-60px)] relative">
-            {mobileTab === 'list' ? (
-              <div className="h-full bg-white">
-                {loading ? (
-                  <LoadingState />
-                ) : error ? (
-                  <ErrorState />
-                ) : (
-                  <div className="h-full overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
-                    <div className="space-y-4">
-                      {properties.map((p) => (
-                        <div key={p.id} className="w-full">
-                          <PropertyCard property={p} isLoggedIn={!!user} />
-                        </div>
-                      ))}
-                    </div>
-                    {properties.length === 0 && <EmptyState />}
-                    {hasMore && !loading && (
-                      <div className="pt-4">
-                        <Button
-                          onClick={loadMore}
-                          className="w-full"
-                          variant="secondary"
-                          disabled={loadingMore}
-                        >
-                          {loadingMore ? 'Loading more...' : 'Load more'}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="h-full relative">
-                <PropertyMap
-                  properties={properties}
-                  onMarkerClick={handleMarkerClick}
-                  selectedProperty={selectedProperty}
-                  filters={filters}
-                  isLoggedIn={!!user}
-                />
-              </div>
-            )}
-          </div>
+      {/* Mobile Layout - scrollable: map on top, listings below */}
+      {/* pt-[188px] = navbar (80px) + 2-row filterbar (~108px) */}
+      <div className="lg:hidden fixed inset-0 top-[180px] overflow-y-auto bg-white">
+        {/* Map */}
+        <div className="relative h-[45vh] overflow-hidden">
+          <PropertyMap
+            properties={properties}
+            onMarkerClick={handleMarkerClick}
+            selectedProperty={selectedProperty}
+            filters={filters}
+            isLoggedIn={!!user}
+          />
         </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden lg:block h-full">
-          <div className="flex h-full">
-            <div className="flex-1 border-r border-gray-200 bg-gray-50 relative">
-                <PropertyMap
-                  properties={properties}
-                onMarkerClick={handleMarkerClick}
-                selectedProperty={selectedProperty}
-                filters={filters}
-                isLoggedIn={!!user}
-              />
-            </div>
+        {/* Listings header */}
+        <div className="relative z-10 px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-normal text-gray-900">Properties</h1>
+            <span className="text-sm font-semibold text-slate-900">({resultCount.toLocaleString()})</span>
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-[#b29578] focus:border-[#b29578] bg-white"
+          >
+            <option value="newest">Newest</option>
+            <option value="price-low">Low to High</option>
+            <option value="price-high">High to Low</option>
+          </select>
+        </div>
 
-            <div className="w-[420px] flex flex-col bg-white">
-              <RightHeader />
-
-              {loading ? (
-                <LoadingState />
-              ) : error ? (
-                <ErrorState />
-              ) : (
-                <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
-                  <div className="space-y-4">
-                    {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />)}
-                  </div>
-                  {properties.length === 0 && <EmptyState />}
-                  {hasMore && !loading && (
-                    <div className="pt-4">
-                      <Button
-                        onClick={loadMore}
-                        className="w-full"
-                        variant="secondary"
-                        disabled={loadingMore}
-                      >
-                        {loadingMore ? 'Loading more...' : 'Load more'}
-                      </Button>
-                    </div>
-                  )}
+        {/* Listings */}
+        <div className="bg-white">
+          {loading ? (
+            <LoadingState />
+          ) : error ? (
+            <ErrorState />
+          ) : (
+            <div className="p-4 space-y-4">
+              {properties.map((p) => (
+                <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />
+              ))}
+              {properties.length === 0 && <EmptyState />}
+              {hasMore && !loading && (
+                <div className="pt-4">
+                  <Button onClick={loadMore} className="w-full" variant="secondary" disabled={loadingMore}>
+                    {loadingMore ? 'Loading more...' : 'Load more'}
+                  </Button>
                 </div>
               )}
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop Layout - fixed */}
+      <div className="hidden lg:block fixed inset-0 top-[140px] bg-slate-50 overflow-hidden">
+        <div className="flex h-full">
+          <div className="flex-1 border-r border-gray-200 bg-gray-50 relative">
+            <PropertyMap
+              properties={properties}
+              onMarkerClick={handleMarkerClick}
+              selectedProperty={selectedProperty}
+              filters={filters}
+              isLoggedIn={!!user}
+            />
+          </div>
+
+          <div className="w-[420px] flex flex-col bg-white">
+            <RightHeader />
+
+            {loading ? (
+              <LoadingState />
+            ) : error ? (
+              <ErrorState />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
+                <div className="space-y-4">
+                  {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />)}
+                </div>
+                {properties.length === 0 && <EmptyState />}
+                {hasMore && !loading && (
+                  <div className="pt-4">
+                    <Button onClick={loadMore} className="w-full" variant="secondary" disabled={loadingMore}>
+                      {loadingMore ? 'Loading more...' : 'Load more'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

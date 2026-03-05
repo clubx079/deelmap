@@ -1,6 +1,6 @@
 // /components/property/PropertyDetail.js
 'use client'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart } from 'lucide-react'
@@ -17,8 +17,9 @@ export function PropertyDetail({ property }) {
   const { user, loading } = useAuth()
   const { isFavorited, toggleFavorite, loadFavorites } = useFavorites()
 
-  // Property analytics tracking
-  usePropertyAnalytics(property)
+  // Property analytics tracking (trackImageView for photo view count)
+  const { trackImageView } = usePropertyAnalytics(property)
+  const viewedPhotoIndicesRef = useRef(new Set([0]))
 
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [purchasePrice, setPurchasePrice] = useState(property.price || property.purchase_price || 0)
@@ -70,6 +71,21 @@ export function PropertyDetail({ property }) {
       setShowLoginModal(false)
     }
   }, [user, showLoginModal, loading])
+
+  // Track unique photos viewed (main gallery + modal) for analytics
+  useEffect(() => {
+    if (photos.length === 0 || typeof trackImageView !== 'function') return
+    viewedPhotoIndicesRef.current.add(currentPhotoIndex)
+    trackImageView(viewedPhotoIndicesRef.current.size)
+  }, [currentPhotoIndex, photos.length, trackImageView])
+
+  // Callback for modal: when user views another photo in fullscreen, count it
+  const handlePhotoViewFromModal = useCallback((index) => {
+    viewedPhotoIndicesRef.current.add(index)
+    if (typeof trackImageView === 'function') {
+      trackImageView(viewedPhotoIndicesRef.current.size)
+    }
+  }, [trackImageView])
 
   // Load favorite status when component mounts
   useEffect(() => {
@@ -241,6 +257,7 @@ export function PropertyDetail({ property }) {
         onClose={() => setShowImageModal(false)}
         photos={photos}
         initialIndex={currentPhotoIndex}
+        onPhotoView={handlePhotoViewFromModal}
       />
       
       {/* Content */}
