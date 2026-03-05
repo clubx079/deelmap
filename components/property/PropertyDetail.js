@@ -284,6 +284,7 @@ export function PropertyDetail({ property }) {
         photos={photos}
         initialIndex={currentPhotoIndex}
         onPhotoView={handlePhotoViewFromModal}
+        preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[currentPhotoIndex]) || null : null}
       />
       
       {/* Content */}

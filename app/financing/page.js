@@ -36,42 +36,67 @@ export default function FinancingPage() {
     }
   }, [authLoading, user, router])
 
-  // Prefill from user when authenticated
+  // Format phone as (xxx) xxx-xxxx (same as signup)
+  const formatPhoneNumber = (value) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 10)
+    if (cleaned.length === 0) return ''
+    if (cleaned.length <= 3) return `(${cleaned}`
+    if (cleaned.length <= 6) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
+  }
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value)
+    setFormData(prev => ({ ...prev, phone: formatted }))
+  }
+
+  // Prefill from user when authenticated (format phone if it's raw digits)
   useEffect(() => {
     if (user) {
+      const rawPhone = (user.phone || '').replace(/\D/g, '')
+      const phoneDisplay = rawPhone.length === 10 ? formatPhoneNumber(rawPhone) : (user.phone || '')
       setFormData(prev => ({
         ...prev,
         firstName: user.first_name || prev.firstName,
         lastName: user.last_name || prev.lastName,
         email: user.email || prev.email,
-        phone: user.phone || prev.phone
+        phone: phoneDisplay || prev.phone
       }))
     }
   }, [user])
 
-  // Fetch property addresses for the dropdown (wholesale_deals)
+  // Fetch property addresses for the dropdown: wholesale_deals + manual seller properties
   useEffect(() => {
     let cancelled = false
     async function fetchProperties() {
       setLoadingProperties(true)
       try {
-        const { data, error: fetchError } = await supabaseMarketplace
-          .from('wholesale_deals')
-          .select('id, full_address, address, city, state, zip_code, price')
-          .in('status', ['available', 'Active', 'active'])
-        if (fetchError) throw fetchError
+        const [wholesaleRes, manualRes] = await Promise.all([
+          supabaseMarketplace
+            .from('wholesale_deals')
+            .select('id, full_address, address, city, state, zip_code, price')
+            .in('status', ['available', 'Active', 'active']),
+          supabaseMarketplace
+            .from('properties')
+            .select('id, address, city, state, zip_code, postal_code, price')
+            .in('status', ['active', 'published'])
+        ])
         if (cancelled) return
-        const list = (data || []).map((p) => {
+
+        const wholesaleList = (wholesaleRes.data || []).map((p) => {
           const addressLabel = p.full_address?.trim() ||
             [p.address, p.city, p.state, p.zip_code].filter(Boolean).join(', ') ||
             'Unknown address'
-          return {
-            id: p.id,
-            addressLabel,
-            price: p.price != null ? Number(p.price) : null
-          }
+          return { id: p.id, addressLabel, price: p.price != null ? Number(p.price) : null }
         })
-        setPropertyList(list)
+        const manualList = (manualRes.data || []).map((p) => {
+          const addressLabel = (p.address && p.address.trim()) ||
+            [p.address, p.city, p.state, p.zip_code || p.postal_code].filter(Boolean).join(', ') ||
+            'Unknown address'
+          return { id: p.id, addressLabel, price: p.price != null ? Number(p.price) : null }
+        })
+
+        setPropertyList([...wholesaleList, ...manualList])
       } catch (err) {
         if (!cancelled) {
           console.error('Error fetching properties for financing:', err)
@@ -293,9 +318,9 @@ export default function FinancingPage() {
                   type="tel"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleInputChange}
+                  onChange={handlePhoneChange}
                   required
-                  placeholder="+1 222 333 4444"
+                  placeholder="(555) 123-4567"
                   className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
                 />
               </div>

@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 
-export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView }) {
+export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView, preloadedUrl = null }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [thumbnailIndex, setThumbnailIndex] = useState(0)
   const [imageLoaded, setImageLoaded] = useState(false)
