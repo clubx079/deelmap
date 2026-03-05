@@ -135,12 +135,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     onFiltersChange({
       ...filters,
       states: tempFilters.states,
-      // Price, beds, baths, and cap rate are handled by main page dropdowns, so preserve existing values
       minFloorArea: tempFilters.minFloorArea ? parseInt(tempFilters.minFloorArea) : undefined,
       maxFloorArea: tempFilters.maxFloorArea ? parseInt(tempFilters.maxFloorArea) : undefined,
       minGrossYield: tempFilters.minGrossYield ? parseFloat(tempFilters.minGrossYield) : undefined,
       maxGrossYield: tempFilters.maxGrossYield ? parseFloat(tempFilters.maxGrossYield) : undefined,
-      // Cap rate is handled by main page dropdown, so preserve existing value
+      minCapRate: tempFilters.minCapRate ? parseFloat(tempFilters.minCapRate) : undefined,
+      maxCapRate: tempFilters.maxCapRate ? parseFloat(tempFilters.maxCapRate) : undefined,
       minCashOnCash: tempFilters.minCashOnCash ? parseFloat(tempFilters.minCashOnCash) : undefined,
       maxCashOnCash: tempFilters.maxCashOnCash ? parseFloat(tempFilters.maxCashOnCash) : undefined
     })
@@ -188,7 +188,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                   placeholder="Search by address, market, or zip code"
                   value={searchQuery}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2] focus:outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 focus:outline-none"
                 />
               </div>
 
@@ -203,7 +203,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                   }}
                   className={`w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
                     hasPriceFilter
-                      ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
+                      ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -220,7 +220,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           placeholder="$ 0"
                           value={tempPrice.min}
                           onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                         />
                       </div>
                       <div>
@@ -230,12 +230,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           placeholder="$ 10,000,000"
                           value={tempPrice.max}
                           onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                         />
                       </div>
                       <button
                         onClick={applyPriceFilter}
-                        className="w-full px-4 py-2 bg-[#4A90E2] text-white rounded-lg hover:bg-[#357ABD] transition-colors text-sm font-medium"
+                        className="w-full px-4 py-2 bg-sky-100 border border-sky-300 text-slate-800 rounded-lg hover:bg-sky-200 transition-colors text-sm font-medium"
                       >
                         Apply
                       </button>
@@ -258,7 +258,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                   }}
                   className={`w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
                     hasBedsBathsFilter
-                      ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
+                      ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -277,7 +277,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                               onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBeds: tempBedsBaths.minBeds === n.toString() ? '' : n.toString() })}
                               className={`flex-1 px-3 py-2 rounded-lg border transition-colors text-sm ${
                                 tempBedsBaths.minBeds === n.toString()
-                                  ? 'bg-[#4A90E2] text-white border-[#4A90E2]'
+                                  ? 'bg-sky-100 text-slate-800 border-sky-300'
                                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                               }`}
                             >
@@ -295,7 +295,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                               onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBaths: tempBedsBaths.minBaths === n.toString() ? '' : n.toString() })}
                               className={`flex-1 px-3 py-2 rounded-lg border transition-colors text-sm ${
                                 tempBedsBaths.minBaths === n.toString()
-                                  ? 'bg-[#4A90E2] text-white border-[#4A90E2]'
+                                  ? 'bg-sky-100 text-slate-800 border-sky-300'
                                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                               }`}
                             >
@@ -306,7 +306,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                       </div>
                       <button
                         onClick={applyBedsBathsFilter}
-                        className="w-full px-4 py-2 bg-[#4A90E2] text-white rounded-lg hover:bg-[#357ABD] transition-colors text-sm font-medium"
+                        className="w-full px-4 py-2 bg-sky-100 border border-sky-300 text-slate-800 rounded-lg hover:bg-sky-200 transition-colors text-sm font-medium"
                       >
                         Apply
                       </button>
@@ -326,7 +326,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                   }}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium whitespace-nowrap ${
                     hasCapRateFilter
-                      ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
+                      ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -343,7 +343,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           placeholder="0"
                           value={tempCapRate.min}
                           onChange={(e) => setTempCapRate({ ...tempCapRate, min: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                         />
                       </div>
                       <div>
@@ -353,12 +353,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           placeholder="25"
                           value={tempCapRate.max}
                           onChange={(e) => setTempCapRate({ ...tempCapRate, max: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                         />
                       </div>
                       <button
                         onClick={applyCapRateFilter}
-                        className="w-full px-4 py-2 bg-[#4A90E2] text-white rounded-lg hover:bg-[#357ABD] transition-colors text-sm font-medium"
+                        className="w-full px-4 py-2 bg-sky-100 border border-sky-300 text-slate-800 rounded-lg hover:bg-sky-200 transition-colors text-sm font-medium"
                       >
                         Apply
                       </button>
@@ -372,7 +372,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                 onClick={() => setShowAllFilters(true)}
                 className={`flex-1 lg:flex-none w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
                   hasActiveFilters
-                    ? 'bg-[#4A90E2] border-[#4A90E2] text-white hover:bg-[#357ABD]'
+                    ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -422,7 +422,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                             })
                           }
                         }}
-                        className="rounded border-gray-300 text-[#4A90E2] focus:ring-[#4A90E2]"
+                        className="rounded border-gray-300 text-slate-800 focus:ring-sky-400"
                       />
                       <span className="text-sm text-gray-700">{state.label}</span>
                     </label>
@@ -441,7 +441,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                       placeholder="0"
                       value={tempFilters.minFloorArea}
                       onChange={(e) => setTempFilters({ ...tempFilters, minFloorArea: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                     />
                   </div>
                   <div>
@@ -451,7 +451,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                       placeholder="No max"
                       value={tempFilters.maxFloorArea}
                       onChange={(e) => setTempFilters({ ...tempFilters, maxFloorArea: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                     />
                   </div>
                 </div>
@@ -469,14 +469,33 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                         placeholder="Min"
                         value={tempFilters.minGrossYield}
                         onChange={(e) => setTempFilters({ ...tempFilters, minGrossYield: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                       />
                       <input
                         type="number"
                         placeholder="Max"
                         value={tempFilters.maxGrossYield}
                         onChange={(e) => setTempFilters({ ...tempFilters, maxGrossYield: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cap rate (%)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={tempFilters.minCapRate}
+                        onChange={(e) => setTempFilters({ ...tempFilters, minCapRate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={tempFilters.maxCapRate}
+                        onChange={(e) => setTempFilters({ ...tempFilters, maxCapRate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                       />
                     </div>
                   </div>
@@ -488,14 +507,14 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                         placeholder="Min"
                         value={tempFilters.minCashOnCash}
                         onChange={(e) => setTempFilters({ ...tempFilters, minCashOnCash: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                       />
                       <input
                         type="number"
                         placeholder="Max"
                         value={tempFilters.maxCashOnCash}
                         onChange={(e) => setTempFilters({ ...tempFilters, maxCashOnCash: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4A90E2] focus:border-[#4A90E2]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                       />
                     </div>
                   </div>
@@ -503,24 +522,24 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+            {/* Footer - compact buttons, clear spacing between Clear all and actions */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between gap-4">
               <button
                 onClick={resetFilters}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                className="text-sm font-medium text-gray-700 hover:text-gray-900 shrink-0 px-3 py-2 rounded-lg hover:bg-gray-100 active:scale-[0.98] transition-all duration-200"
               >
                 Clear all
               </button>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setShowAllFilters(false)}
-                  className="px-6 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-all text-sm font-medium"
+                  className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:scale-[0.98] transition-all duration-200 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={applyFilters}
-                  className="px-6 py-2.5 rounded-lg bg-[#4A90E2] text-white hover:bg-[#357ABD] transition-all text-sm font-medium"
+                  className="px-4 py-2 rounded-lg bg-sky-100 border border-sky-300 text-slate-800 hover:bg-sky-200 hover:border-sky-400 active:scale-[0.98] transition-all duration-200 text-sm font-medium"
                 >
                   Show properties
                 </button>

@@ -235,30 +235,13 @@ export function Navbar() {
                     {getUserDisplayName(user)}
                   </span>
                   <div className="relative">
-                    {/* Animated background glow */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md scale-110"></div>
-                    
-                    {/* Rotating border effect */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-75 transition-opacity duration-300 animate-spin-slow" style={{ padding: '2px' }}>
-                      <div className="w-full h-full rounded-full bg-white"></div>
-                    </div>
-                    
-                    {/* User avatar */}
-                    <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-white text-sm font-semibold transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:from-blue-600 group-hover:to-purple-600 cursor-pointer">
+                    {/* User avatar: slate base, red ring on hover (professional, no purple) */}
+                    <div className="relative w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white text-sm font-semibold transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg cursor-pointer ring-2 ring-slate-200 group-hover:ring-red-600">
                       {getUserInitials(user)}
-                      
-                      {/* Shine effect */}
-                      <div className="absolute inset-0 rounded-full overflow-hidden">
-                        <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+                      {/* Shine on hover */}
+                      <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                        <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                       </div>
-                    </div>
-                  </div>
-                  
-                  {/* Hover tooltip */}
-                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                    <div className="bg-slate-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg">
-                      Go to Buyer Portal
-                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                     </div>
                   </div>
                 </Link>
