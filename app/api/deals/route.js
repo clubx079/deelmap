@@ -135,7 +135,7 @@ export async function GET(request) {
     }
 
     // ==================== FETCH MANUAL PROPERTIES ====================
-    // Only show seller-manual properties that are active/published on buyer site
+    // Only show seller-manual properties that are active or published (exclude draft, inactive, archived)
     let manualQuery = supabaseMarketplace
       .from('properties')
       .select(`
@@ -148,6 +148,7 @@ export async function GET(request) {
         )
       `)
       .in('status', ['active', 'published'])
+      .not('status', 'is', null)
       .order('created_at', { ascending: false });
 
     // Apply filters to manual properties

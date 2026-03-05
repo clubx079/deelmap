@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart, RotateCcw, X } from 'lucide-react'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
@@ -612,7 +612,7 @@ export function PropertyDetail({ property }) {
                   <span>Share</span>
                 </button>
 
-                {/* Not Interested / Undo Button */}
+                {/* Not Interested (cross icon) / Undo not interested */}
                 <button
                   onClick={async () => {
                     if (isNotInterested) {
@@ -644,13 +644,11 @@ export function PropertyDetail({ property }) {
                   title={isNotInterested ? 'Undo not interested' : 'Not interested'}
                 >
                   {isNotInterested ? (
-                    <RotateCcw className="h-4 w-4" />
+                    <RotateCcw className="h-4 w-4 shrink-0" />
                   ) : (
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <X className="h-4 w-4 shrink-0" />
                   )}
-                  <span>{notInterestedLoading ? '...' : isNotInterested ? 'Undo' : 'Not Interested'}</span>
+                  <span>{notInterestedLoading ? '...' : isNotInterested ? 'Undo not interested' : 'Not Interested'}</span>
                 </button>
               </div>
 

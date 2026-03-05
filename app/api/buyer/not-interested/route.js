@@ -34,10 +34,10 @@ export async function GET(request) {
 
     if (dealId) {
       const { data, error } = await client
-        .from('buyer_not_interested')
+        .from('user_hidden_deals')
         .select('id')
         .eq('user_id', userId)
-        .eq('deal_id', dealId)
+        .eq('property_id', dealId)
         .maybeSingle()
 
       if (error) {
@@ -53,17 +53,17 @@ export async function GET(request) {
         return NextResponse.json({ notInterestedMap: {} })
       }
       const { data, error } = await client
-        .from('buyer_not_interested')
-        .select('deal_id')
+        .from('user_hidden_deals')
+        .select('property_id')
         .eq('user_id', userId)
-        .in('deal_id', dealIds)
+        .in('property_id', dealIds)
 
       if (error) {
         console.error('[not-interested] GET batch error:', error)
         return NextResponse.json({ notInterestedMap: {} })
       }
       const notInterestedMap = {}
-      ;(data || []).forEach((row) => { notInterestedMap[row.deal_id] = true })
+      ;(data || []).forEach((row) => { notInterestedMap[row.property_id] = true })
       return NextResponse.json({ notInterestedMap })
     }
 
@@ -102,10 +102,10 @@ export async function POST(request) {
     }
 
     const { error } = await client
-      .from('buyer_not_interested')
+      .from('user_hidden_deals')
       .upsert(
-        { user_id: userId, deal_id: dealId },
-        { onConflict: 'user_id,deal_id' }
+        { user_id: userId, property_id: dealId },
+        { onConflict: 'user_id,property_id' }
       )
 
     if (error) {
@@ -138,10 +138,10 @@ export async function DELETE(request) {
     const client = supabaseService || supabase
 
     const { error } = await client
-      .from('buyer_not_interested')
+      .from('user_hidden_deals')
       .delete()
       .eq('user_id', userId)
-      .eq('deal_id', dealId)
+      .eq('property_id', dealId)
 
     if (error) {
       console.error('[not-interested] DELETE error:', error)
