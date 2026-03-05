@@ -3,14 +3,13 @@ import { useState, useEffect } from 'react'
 import PropertyCard from '@/components/property/PropertyCard'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
-import { supabaseMarketplace } from '@/lib/supabase'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
 import { Heart, Star, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SavedPropertiesPage() {
   const { user } = useAuth()
-  const { getUserFavorites, loadFavorites } = useFavorites()
+  const { loadFavorites } = useFavorites()
   const [favoriteProperties, setFavoriteProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -31,69 +30,22 @@ export default function SavedPropertiesPage() {
     setError(null)
 
     try {
-      // Get user's favorite property IDs
-      const favorites = await getUserFavorites()
-      const propertyIds = favorites.map(f => f.property_id)
-
-      if (propertyIds.length === 0) {
-        setFavoriteProperties([])
-        setLoading(false)
-        return
-      }
-
-      // Fetch property details from wholesale_deals (marketplace database)
-      const { data: properties, error: fetchError } = await supabaseMarketplace
-        .from('wholesale_deals')
-        .select(`
-          id,
-          price,
-          bedrooms,
-          bathrooms,
-          sqft,
-          full_address,
-          address,
-          city,
-          state,
-          zip_code,
-          status,
-          gross_yield,
-          cap_rate,
-          cash_on_cash,
-          price_per_square_foot,
-          year_built,
-          address_google_lat,
-          address_google_lng,
-          created_at,
-          property_photos (
-            id,
-            photo_url,
-            optimized_url,
-            original_url,
-            display_order
-          )
-        `)
-        .in('id', propertyIds)
-
-      if (fetchError) {
-        throw fetchError
-      }
-
-      // Maintain the order from favorites (most recent first)
-      const favoritesMap = new Map(
-        favorites.map(f => [f.property_id, f.created_at])
-      )
-      
-      const sortedProperties = (properties || []).sort((a, b) => {
-        const aDate = favoritesMap.get(a.id) || 0
-        const bDate = favoritesMap.get(b.id) || 0
-        return new Date(bDate) - new Date(aDate)
+      const res = await fetch('/api/favorites/list', {
+        headers: { Authorization: `Bearer ${user.id}` }
       })
 
-      setFavoriteProperties(sortedProperties)
-      
-      // Load favorite status for all properties
-      if (sortedProperties.length > 0) {
-        loadFavorites(sortedProperties.map(p => p.id))
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to load saved properties')
+      }
+
+      const data = await res.json()
+      const properties = data.properties || []
+
+      setFavoriteProperties(properties)
+
+      if (properties.length > 0) {
+        loadFavorites(properties.map(p => p.id))
       }
     } catch (err) {
       console.error('Error loading saved properties:', err)

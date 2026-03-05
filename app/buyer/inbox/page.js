@@ -73,25 +73,28 @@ export default function InboxPage() {
     };
   }, [user?.id]);
 
-  // Auto-select conversation from URL: conversation id, or openConversationId from API (seller_id flow)
+  // Auto-select conversation from URL: conversation id, or openConversationId from API (seller_id + deal_id flow)
   useEffect(() => {
     const conversationId = searchParams.get('conversation');
     if (conversationId && conversations.length > 0) {
-      const conversation = conversations.find(c => c.id === parseInt(conversationId, 10));
+      const conversation = conversations.find(c => String(c.id) === String(conversationId));
       if (conversation) setSelectedConversation(conversation);
     }
   }, [searchParams, conversations]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       const filtered = conversations.filter(conv => {
-        const businessName = conv.lenders?.business_name?.toLowerCase() || '';
-        const email = conv.lenders?.email?.toLowerCase() || '';
-        const lastMessage = conv.last_message_preview?.toLowerCase() || '';
-        const query = searchQuery.toLowerCase();
-
+        const businessName = (conv.lenders?.business_name || '').toLowerCase();
+        const contactName = (conv.lenders?.contact_person_name || '').toLowerCase();
+        const email = (conv.lenders?.email || '').toLowerCase();
+        const address = (conv.property_address || '').toLowerCase();
+        const lastMessage = (conv.last_message_preview || '').toLowerCase();
         return businessName.includes(query) ||
+               contactName.includes(query) ||
                email.includes(query) ||
+               address.includes(query) ||
                lastMessage.includes(query);
       });
       setFilteredConversations(filtered);
@@ -113,6 +116,7 @@ export default function InboxPage() {
     try {
       let url = '/api/buyer/chat?action=get_conversations';
       if (sellerIdFromUrl) url += `&seller_id=${encodeURIComponent(sellerIdFromUrl)}`;
+      if (dealIdFromUrl) url += `&deal_id=${encodeURIComponent(dealIdFromUrl)}`;
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${user.id}` }
       });
@@ -137,15 +141,54 @@ export default function InboxPage() {
 
   const updateConversationPref = async (conversationId, patch) => {
     if (!user?.id) return;
-    await fetch('/api/buyer/chat', {
+    const id = conversationId;
+    if (patch.is_blocked !== undefined && patch.is_blocked && selectedConversation?.id === id) {
+      setSelectedConversation(null);
+    }
+    // Optimistic update so UI responds immediately
+    setConversations((prev) => {
+      if (patch.is_blocked) return prev.filter((c) => c.id !== id);
+      return prev.map((c) => {
+        if (c.id !== id) return c;
+        if (patch.is_pinned !== undefined) return { ...c, is_pinned: !!patch.is_pinned };
+        if (patch.mark_unread !== undefined) return { ...c, mark_unread: !!patch.mark_unread, has_unread: true, unread_count: Math.max(c.unread_count || 0, 1) };
+        return c;
+      });
+    });
+    setFilteredConversations((prev) => {
+      if (patch.is_blocked) return prev.filter((c) => c.id !== id);
+      return prev.map((c) => {
+        if (c.id !== id) return c;
+        if (patch.is_pinned !== undefined) return { ...c, is_pinned: !!patch.is_pinned };
+        if (patch.mark_unread !== undefined) return { ...c, mark_unread: !!patch.mark_unread, has_unread: true, unread_count: Math.max(c.unread_count || 0, 1) };
+        return c;
+      });
+    });
+    const res = await fetch('/api/buyer/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${user.id}`
       },
-      body: JSON.stringify({ action: 'update_conversation_pref', conversationId, ...patch })
-    }).catch(() => {});
+      body: JSON.stringify({ action: 'update_conversation_pref', conversationId: id, ...patch })
+    });
     fetchConversations(false);
+  };
+
+  const deleteConversation = async (conversationId) => {
+    if (!user?.id) return;
+    const res = await fetch('/api/buyer/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user.id}`
+      },
+      body: JSON.stringify({ action: 'delete_conversation', conversationId })
+    });
+    if (res.ok) {
+      if (selectedConversation?.id === conversationId) setSelectedConversation(null);
+      fetchConversations(false);
+    }
   };
 
   const handleSelectConversation = async (conversation) => {
@@ -236,11 +279,17 @@ export default function InboxPage() {
                 <MessageCircle className="w-7 h-7 text-slate-400" />
               </div>
               <p className="text-sm font-medium text-slate-700 mb-1">
-                {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                {searchQuery
+                  ? 'No conversations found'
+                  : chatTab === 'unread'
+                    ? 'No unread conversations'
+                    : chatTab === 'unresponded'
+                      ? 'No unresponded conversations'
+                      : 'No conversations yet'}
               </p>
-              {!searchQuery && (
+              {!searchQuery && chatTab === 'all' && (
                 <p className="text-xs text-slate-600 text-center">
-                  Conversations will appear here when lenders contact you
+                  Conversations will appear here when you message agents or lenders
                 </p>
               )}
             </div>
@@ -261,14 +310,24 @@ export default function InboxPage() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Avatar with unread indicator */}
+                    {/* Avatar: property thumbnail or initial */}
                     <div className="relative flex-shrink-0">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
-                        style={{ backgroundColor: getAvatarColor(conversation.lenders?.business_name || conversation.seller_id || conversation.lender_id || conversation.id) }}
-                      >
-                        {conversation.lenders?.business_name?.charAt(0)?.toUpperCase() || (conversation.financing_requests ? 'L' : 'S')}
-                      </div>
+                      {conversation.property_thumbnail_url ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                          <img
+                            src={conversation.property_thumbnail_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                          style={{ backgroundColor: getAvatarColor(conversation.lenders?.business_name || conversation.seller_id || conversation.lender_id || conversation.id) }}
+                        >
+                          {conversation.lenders?.business_name?.charAt(0)?.toUpperCase() || (conversation.financing_requests ? 'L' : 'S')}
+                        </div>
+                      )}
                       {conversation.unread_count > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#b29578] border-2 border-white rounded-full"></span>
                       )}
@@ -279,16 +338,22 @@ export default function InboxPage() {
                       <div className="flex items-baseline justify-between gap-2 mb-1">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <h3 className={`truncate text-sm ${
-                            conversation.unread_count > 0 ? 'font-bold text-slate-900' : 'font-medium text-slate-900'
+                            (conversation.has_unread || (conversation.unread_count ?? 0) > 0) ? 'font-bold text-slate-900' : 'font-medium text-slate-900'
                           }`}>
-                            {conversation.lenders?.business_name || (conversation.financing_requests ? 'Lender' : 'Seller')}
+                            {conversation.financing_requests
+                              ? (conversation.lenders?.business_name || 'Lender')
+                              : (() => {
+                                  const first = (conversation.lenders?.contact_person_name || conversation.lenders?.business_name || 'Seller').trim().split(/\s+/)[0] || 'Seller';
+                                  const addr = conversation.property_address || 'Property';
+                                  return `${first} - ${addr}`;
+                                })()}
                           </h3>
                           {conversation.is_pinned && (
                             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700" title="Pinned">
                               <Pin className="w-3 h-3" />
                             </span>
                           )}
-                          {conversation.unread_count > 0 && (
+                          {((conversation.unread_count ?? 0) > 0) && (
                             <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-[#002A3A] rounded-full">
                               {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
                             </span>
@@ -369,7 +434,10 @@ export default function InboxPage() {
             Mark as unread
           </button>
           <div className="my-1 border-t border-slate-200" />
-          <button className="w-full text-left text-sm px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors" onClick={() => { updateConversationPref(contextMenu.conversation.id, { is_blocked: true }); setContextMenu(null); }}>
+          <button className="w-full text-left text-sm px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors" onClick={() => { deleteConversation(contextMenu.conversation.id); setContextMenu(null); }}>
+            Delete chat
+          </button>
+          <button className="w-full text-left text-sm px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors" onClick={() => { const id = contextMenu.conversation.id; updateConversationPref(id, { is_blocked: true }); setContextMenu(null); }}>
             Block user
           </button>
         </div>

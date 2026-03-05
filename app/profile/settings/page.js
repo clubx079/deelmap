@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
-import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut, ChevronDown, ShieldBan } from 'lucide-react'
+import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut, ChevronDown, ShieldBan, RefreshCw } from 'lucide-react'
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [showBlockedUsers, setShowBlockedUsers] = useState(false)
   const [blockedUsers, setBlockedUsers] = useState([])
   const [blockedLoading, setBlockedLoading] = useState(false)
+  const [unblockSuccessId, setUnblockSuccessId] = useState(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -149,20 +150,33 @@ export default function SettingsPage() {
   }
 
   const handleUnblock = async (conversationId) => {
-    if (!user?.id || !conversationId) return
-    await fetch('/api/buyer/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${user.id}`
-      },
-      body: JSON.stringify({
-        action: 'update_conversation_pref',
-        conversationId,
-        is_blocked: false
+    if (!user?.id || conversationId == null) return
+    if (unblockingId != null) return
+    setUnblockingId(conversationId)
+    try {
+      const res = await fetch('/api/buyer/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.id}`
+        },
+        body: JSON.stringify({
+          action: 'update_conversation_pref',
+          conversationId: Number(conversationId) || conversationId,
+          is_blocked: false
+        })
       })
-    }).catch(() => {})
-    fetchBlockedUsers()
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setBlockedUsers((prev) => prev.filter((b) => String(b.conversation_id) !== String(conversationId)))
+        setUnblockSuccessId(conversationId)
+        setTimeout(() => setUnblockSuccessId(null), 2500)
+      } else {
+        setError(data?.error || 'Failed to unblock')
+      }
+    } finally {
+      setUnblockingId(null)
+    }
   }
 
   if (!user) return null
@@ -376,7 +390,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Sign Out Section */}
+        {/* Blocked users */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
           <button
             type="button"
@@ -388,7 +402,14 @@ export default function SettingsPage() {
                 <ShieldBan className="w-5 h-5 text-slate-700" />
               </div>
               <div className="text-left">
-                <h2 className="text-lg font-semibold text-slate-900">Blocked users</h2>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Blocked users
+                  {!blockedLoading && blockedUsers.length > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-slate-200 text-slate-700 text-xs font-medium">
+                      {blockedUsers.length}
+                    </span>
+                  )}
+                </h2>
                 <p className="text-sm text-slate-600">View and unblock chat contacts</p>
               </div>
             </div>
@@ -396,25 +417,40 @@ export default function SettingsPage() {
           </button>
 
           {showBlockedUsers && (
-            <div className="border-t border-slate-200 px-6 py-4">
+            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50/50">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Blocked chat contacts</span>
+                <button
+                  type="button"
+                  onClick={fetchBlockedUsers}
+                  disabled={blockedLoading}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${blockedLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
               {blockedLoading ? (
                 <p className="text-sm text-slate-500">Loading blocked users...</p>
               ) : blockedUsers.length === 0 ? (
-                <p className="text-sm text-slate-500">No blocked users</p>
+                <p className="text-sm text-slate-500">No blocked users. Blocked contacts will appear here and you can unblock them from this dropdown.</p>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 max-h-64 overflow-y-auto">
                   {blockedUsers.map((row) => (
-                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200">
-                      <div className="min-w-0">
+                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 bg-white">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-900 truncate">{row.name || 'User'}</p>
-                        <p className="text-xs text-slate-500">Blocked {row.blocked_at ? new Date(row.blocked_at).toLocaleString() : ''}</p>
+                        <p className="text-xs text-slate-500">
+                          {row.blocked_at ? `Blocked ${new Date(row.blocked_at).toLocaleDateString()}` : 'Blocked'}
+                        </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleUnblock(row.conversation_id)}
-                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+                        disabled={unblockingId === row.conversation_id}
+                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Unblock
+                        {unblockSuccessId === row.conversation_id ? 'Unblocked' : unblockingId === row.conversation_id ? 'Unblocking…' : 'Unblock'}
                       </button>
                     </div>
                   ))}

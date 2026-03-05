@@ -636,19 +636,21 @@ export function PropertyDetail({ property }) {
                     }
                   }}
                   disabled={notInterestedLoading}
-                  className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+                  className={`flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border text-xs sm:text-sm font-medium transition-all ${
                     isNotInterested
                       ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
                       : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                   } ${notInterestedLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title={isNotInterested ? 'Undo not interested' : 'Not interested'}
                 >
-                  {isNotInterested ? (
-                    <RotateCcw className="h-4 w-4 shrink-0" />
-                  ) : (
-                    <X className="h-4 w-4 shrink-0" />
-                  )}
-                  <span>{notInterestedLoading ? '...' : isNotInterested ? 'Undo not interested' : 'Not Interested'}</span>
+                  <span className="shrink-0">
+                    {isNotInterested ? (
+                      <RotateCcw className="h-4 w-4" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </span>
+                  <span className="min-w-0">{notInterestedLoading ? '...' : isNotInterested ? 'Undo not interested' : 'Not Interested'}</span>
                 </button>
               </div>
 
