@@ -6,9 +6,16 @@ import { PropertyDetail } from '@/components/property/PropertyDetail'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers'
 
-async function getProperty(slug) {
-  // Try wholesale_deals first
-  const { data: wholesaleProperty, error: wholesaleError } = await supabaseMarketplace
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+async function getProperty(slugParam) {
+  const slug = typeof slugParam === 'string' ? slugParam.trim() : ''
+  if (!slug) return null
+
+  // 1) Resolve by slug first (SEO-friendly short code)
+  let wholesaleProperty = null
+  let wholesaleError = null
+  const { data: bySlug, error: slugErr } = await supabaseMarketplace
     .from('wholesale_deals')
     .select(`
       *,
@@ -20,10 +27,35 @@ async function getProperty(slug) {
         display_order
       )
     `)
-    .eq('id', slug)
-    .single()
+    .eq('slug', slug)
+    .maybeSingle()
+  if (!slugErr && bySlug) {
+    wholesaleProperty = bySlug
+  } else {
+    wholesaleError = slugErr
+  }
 
-  if (!wholesaleError && wholesaleProperty) {
+  // 2) If not found by slug and param looks like UUID, try by id (backward compatibility)
+  if (!wholesaleProperty && UUID_REGEX.test(slug)) {
+    const { data: byId, error: idErr } = await supabaseMarketplace
+      .from('wholesale_deals')
+      .select(`
+        *,
+        property_photos (
+          id,
+          photo_url,
+          optimized_url,
+          original_url,
+          display_order
+        )
+      `)
+      .eq('id', slug)
+      .maybeSingle()
+    if (!idErr && byId) wholesaleProperty = byId
+    else wholesaleError = idErr
+  }
+
+  if (wholesaleProperty) {
     // Fetch agent (temp seller) when linked
     let agent = null
     if (wholesaleProperty.temp_seller_id) {
@@ -49,8 +81,9 @@ async function getProperty(slug) {
     }
   }
 
-  // If not found in wholesale_deals, try properties (manual seller properties)
-  const { data: manualProperty, error: manualError } = await supabaseMarketplace
+  // 3) Try properties (manual) by slug first
+  let manualProperty = null
+  const { data: manualBySlug } = await supabaseMarketplace
     .from('properties')
     .select(`
       *,
@@ -61,10 +94,29 @@ async function getProperty(slug) {
         sort_order
       )
     `)
-    .eq('id', slug)
-    .single()
+    .eq('slug', slug)
+    .maybeSingle()
+  if (manualBySlug) manualProperty = manualBySlug
 
-  if (!manualError && manualProperty) {
+  // 4) If not found by slug and param looks like UUID, try by id
+  if (!manualProperty && UUID_REGEX.test(slug)) {
+    const { data: manualById } = await supabaseMarketplace
+      .from('properties')
+      .select(`
+        *,
+        property_images (
+          id,
+          image_url,
+          image_key,
+          sort_order
+        )
+      `)
+      .eq('id', slug)
+      .maybeSingle()
+    if (manualById) manualProperty = manualById
+  }
+
+  if (manualProperty) {
     // Fetch seller info if seller_id exists
     let agent = null
     if (manualProperty.seller_id) {
@@ -111,7 +163,8 @@ export async function generateMetadata({ params }) {
 
   const title = `${fullAddress} - ${formattedPrice}`
   const description = property.description || `${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath ${property.property_type || 'home'} for sale.`
-  const url = `https://ableman.co/${property.id}`
+  const pathSegment = property.slug || property.id
+  const url = `https://ableman.co/${pathSegment}`
 
   // Use first photo from property_photos if available
   const primaryImageUrl = getPreferredPhotoUrl(property.property_photos?.[0])

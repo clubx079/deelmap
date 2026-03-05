@@ -184,7 +184,7 @@ export function PropertiesSlider() {
                       return (
                         <Link
                           key={property.id}
-                          href={`/${property.id}`}
+                          href={`/${property.slug || property.id}`}
                           className="group bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-900 transition-all duration-300 hover:shadow-lg"
                         >
                           {/* Property Image */}
