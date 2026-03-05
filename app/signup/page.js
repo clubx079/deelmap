@@ -508,7 +508,7 @@ export default function SignupPage() {
                     onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
                     required
                     maxLength={6}
-                    className="h-12 text-center text-lg tracking-widest border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                    className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-slate-500 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
                   />
                   <p className="text-sm text-slate-500 mt-1.5">
                     Code sent to <strong className="text-slate-700">{formData.email}</strong>
