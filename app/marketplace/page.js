@@ -44,7 +44,12 @@ export default function DealsPage() {
     totalCount,
     loadMore,
     refetch
-  } = useProperties({ filters, sortBy, searchQuery })
+  } = useProperties({
+    filters,
+    sortBy,
+    searchQuery,
+    authToken: user?.id ? `Bearer ${user.id}` : undefined
+  })
   const [showAuth, setShowAuth] = useState(false)
   const [authInitialStep, setAuthInitialStep] = useState('signup')
 

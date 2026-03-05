@@ -7,7 +7,8 @@ export const useProperties = ({
   filters = {},
   sortBy = 'newest',
   searchQuery = '',
-  pageSize = DEFAULT_PAGE_SIZE
+  pageSize = DEFAULT_PAGE_SIZE,
+  authToken = null
 } = {}) => {
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
@@ -26,7 +27,7 @@ export const useProperties = ({
     setPage(0)
     fetchProperties({ nextPage: 0, replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify({ filters, sortBy, searchQuery, pageSize })])
+  }, [JSON.stringify({ filters, sortBy, searchQuery, pageSize }), authToken])
 
   const buildQueryParams = (currentPage) => {
     const params = new URLSearchParams()
@@ -120,7 +121,9 @@ export const useProperties = ({
       setError(null)
 
       const params = buildQueryParams(nextPage)
-      const response = await fetch(`/api/deals?${params.toString()}`)
+      const headers = {}
+      if (authToken) headers['Authorization'] = authToken
+      const response = await fetch(`/api/deals?${params.toString()}`, { headers })
       
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`)

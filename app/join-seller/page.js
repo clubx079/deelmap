@@ -203,7 +203,6 @@ export default function JoinSellerPage() {
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="bg-white border-2 border-slate-300 p-8 lg:p-10">
             <div className="mb-8 text-center">
-              <div className="w-12 h-1 bg-slate-900 mx-auto mb-4"></div>
               <h2 className="text-3xl font-bold text-slate-900 mb-2">Apply to Become a Seller</h2>
               <p className="text-slate-600">Complete the form below to get started</p>
             </div>

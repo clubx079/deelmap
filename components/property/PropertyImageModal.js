@@ -7,7 +7,7 @@ import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [thumbnailIndex, setThumbnailIndex] = useState(0)
-
+  const [imageLoaded, setImageLoaded] = useState(false)
   const [thumbnailsPerView, setThumbnailsPerView] = useState(8)
 
   // Calculate how many thumbnails can fit based on container width
@@ -38,11 +38,16 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex)
-      // Scroll thumbnail to show current image
+      setImageLoaded(false)
       const newThumbnailIndex = Math.max(0, initialIndex - Math.floor(thumbnailsPerView / 2))
       setThumbnailIndex(newThumbnailIndex)
     }
   }, [isOpen, initialIndex, thumbnailsPerView])
+
+  // Reset loaded state when current index changes (new image)
+  useEffect(() => {
+    setImageLoaded(false)
+  }, [currentIndex])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -120,31 +125,52 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+      className="fixed inset-0 z-[10000] flex flex-col bg-black overflow-hidden w-full max-w-[100vw]"
+      style={{ left: 0, right: 0, width: '100vw' }}
       onClick={onClose}
     >
-      {/* Close Button */}
+      {/* Close Button - z-[10001] so it stays above navbar and overlay */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-50 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors"
+        className="absolute top-4 right-4 z-[10001] bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors shrink-0"
         aria-label="Close"
       >
         <X className="w-6 h-6" />
       </button>
 
-      {/* Main Image Container */}
+      {/* Main Image Container - no horizontal scroll: constrain to viewport */}
       <div
-        className="relative w-full h-full flex flex-col items-center justify-center p-4 md:p-8"
+        className="relative flex-1 flex flex-col items-center justify-center p-3 sm:p-4 md:p-8 min-h-0 min-w-0 w-full max-w-full"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Main Image */}
-        <div className="relative w-full max-w-6xl h-[calc(100vh-200px)] mb-4">
+        {/* Main Image - fits within viewport, no horizontal scroll */}
+        <div className="relative w-full max-w-full flex-1 min-h-0 mb-2 sm:mb-4 overflow-hidden bg-black/80" style={{ height: 'calc(100vh - 140px)' }}>
+          {/* Instant preview from cache (same URL as detail page main image) or blur */}
+          {(preloadedUrl === currentPhotoUrl || !imageLoaded) && (
+            <>
+              {preloadedUrl === currentPhotoUrl ? (
+                <img
+                  src={currentPhotoUrl}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-contain object-center"
+                  aria-hidden
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
+                  <div className="w-16 h-16 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+            </>
+          )}
           <Image
             src={currentPhotoUrl}
             alt={`Property photo ${currentIndex + 1} of ${photos.length}`}
             fill
-            className="object-contain"
+            className="object-contain object-center transition-opacity duration-200"
+            style={{ opacity: imageLoaded ? 1 : 0 }}
             priority
+            sizes="(max-width: 1024px) 100vw, 1200px"
+            onLoad={() => setImageLoaded(true)}
           />
 
           {/* Navigation Arrows */}
@@ -175,8 +201,8 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
 
         {/* Thumbnail Slider */}
         {photos.length > 1 && (
-          <div className="w-full max-w-6xl mx-auto px-4">
-            <div className="relative flex items-center gap-2" style={{ maxWidth: 'calc(100vw - 80px)' }}>
+          <div className="w-full max-w-full mx-auto px-2 sm:px-4 shrink-0">
+            <div className="relative flex items-center gap-2 max-w-full overflow-hidden">
               {/* Left Scroll Button - Only show if there are more thumbnails to scroll */}
               {photos.length > thumbnailsPerView && thumbnailIndex > 0 && (
                 <button

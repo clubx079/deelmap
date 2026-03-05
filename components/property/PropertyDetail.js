@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart, RotateCcw } from 'lucide-react'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
@@ -22,13 +22,15 @@ export function PropertyDetail({ property }) {
   const viewedPhotoIndicesRef = useRef(new Set([0]))
 
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
-  const [purchasePrice, setPurchasePrice] = useState(property.price || property.purchase_price || 0)
+  const [purchasePrice, setPurchasePrice] = useState(property.price ?? property.purchase_price ?? null)
   const [downPaymentPercent, setDownPaymentPercent] = useState(25)
-  const [estimatedRent, setEstimatedRent] = useState(property.estimated_rent || 0)
+  const [estimatedRent, setEstimatedRent] = useState(property.estimated_rent ?? null)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showNotInterestedModal, setShowNotInterestedModal] = useState(false)
+  const [isNotInterested, setIsNotInterested] = useState(false)
+  const [notInterestedLoading, setNotInterestedLoading] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -100,6 +102,24 @@ export function PropertyDetail({ property }) {
       setIsFav(isFavorited(property.id))
     }
   }, [property?.id, isFavorited])
+
+  // Load not-interested status from API when user and property are available
+  useEffect(() => {
+    if (!user?.id || !property?.id) {
+      setIsNotInterested(false)
+      return
+    }
+    const controller = new AbortController()
+    const authHeader = `Bearer ${user.id}`
+    fetch(`/api/buyer/not-interested?dealId=${encodeURIComponent(property.id)}`, {
+      headers: { Authorization: authHeader },
+      signal: controller.signal
+    })
+      .then((res) => res.ok ? res.json() : { notInterested: false })
+      .then((data) => setIsNotInterested(!!data.notInterested))
+      .catch(() => setIsNotInterested(false))
+    return () => controller.abort()
+  }, [user?.id, property?.id])
 
   // Initialize Google Map - MOVED BEFORE EARLY RETURN TO FIX HOOKS ORDER
   useEffect(() => {
@@ -195,18 +215,24 @@ export function PropertyDetail({ property }) {
   }
 
   const formatPrice = (price) => {
-    if (!price) return '-'
-    return `$${Math.round(price).toLocaleString()}`
+    if (price == null || price === '' || (typeof price === 'number' && isNaN(price))) return '-'
+    const n = Number(price)
+    if (n === 0) return '-'
+    return `$${Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
   }
 
   const formatPercent = (value) => {
-    if (!value && value !== 0) return '-'
-    return `${value.toFixed(1)}%`
+    if (value == null || value === '' || (typeof value === 'number' && isNaN(value))) return '-'
+    return `${Number(value).toFixed(2)}%`
   }
 
+  // Numeric values for calculations (empty/null => 0)
+  const purchasePriceNum = (purchasePrice != null && purchasePrice !== '') ? Number(purchasePrice) : 0
+  const estimatedRentNum = (estimatedRent != null && estimatedRent !== '') ? Number(estimatedRent) : 0
+
   // Calculate financial metrics
-  const downPayment = purchasePrice * (downPaymentPercent / 100)
-  const loanAmount = purchasePrice - downPayment
+  const downPayment = purchasePriceNum * (downPaymentPercent / 100)
+  const loanAmount = purchasePriceNum - downPayment
   const monthlyInterestRate = 0.07 / 12 // 7% annual rate
   const numberOfPayments = 30 * 12 // 30 years
   const monthlyPayment = loanAmount > 0
@@ -214,10 +240,10 @@ export function PropertyDetail({ property }) {
       (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1)
     : 0
 
-  const annualRent = estimatedRent * 12
+  const annualRent = estimatedRentNum * 12
   const annualExpenses = (property.hoa_fees ? parseFloat(property.hoa_fees.replace(/[^0-9.]/g, '')) * 12 : 0) +
-    (purchasePrice * 0.01) + // Property tax estimate (1%)
-    (purchasePrice * 0.005) + // Insurance estimate (0.5%)
+    (purchasePriceNum * 0.01) + // Property tax estimate (1%)
+    (purchasePriceNum * 0.005) + // Insurance estimate (0.5%)
     (annualRent * 0.1) // Maintenance estimate (10% of rent)
   const netOperatingIncome = annualRent - annualExpenses
   const annualDebtService = monthlyPayment * 12
@@ -225,9 +251,9 @@ export function PropertyDetail({ property }) {
   const monthlyNetCashFlow = netCashFlow / 12
 
   // Financial metrics from DB or calculated
-  const grossYield = property.gross_yield || (purchasePrice > 0 ? (annualRent / purchasePrice) * 100 : 0)
-  const capRate = property.cap_rate || (purchasePrice > 0 ? (netOperatingIncome / purchasePrice) * 100 : 0)
-  const cashOnCash = property.cash_on_cash || (downPayment > 0 ? (netCashFlow / downPayment) * 100 : 0)
+  const grossYield = property.gross_yield ?? (purchasePriceNum > 0 ? (annualRent / purchasePriceNum) * 100 : null)
+  const capRate = property.cap_rate ?? (purchasePriceNum > 0 ? (netOperatingIncome / purchasePriceNum) * 100 : null)
+  const cashOnCash = property.cash_on_cash ?? (downPayment > 0 ? (netCashFlow / downPayment) * 100 : null)
   const estNetCashFlow = property.est_net_cash_flow || monthlyNetCashFlow
 
   const nextPhoto = () => {
@@ -239,7 +265,7 @@ export function PropertyDetail({ property }) {
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-white relative overflow-x-hidden">
       {/* Login Modal - Show when user is not authenticated */}
       <RegistrationModal
         isOpen={showLoginModal}
@@ -251,7 +277,7 @@ export function PropertyDetail({ property }) {
         preventClose={true}
       />
 
-      {/* Image Modal */}
+      {/* Image Modal - pass current photo URL so modal can show it immediately while full-res loads */}
       <PropertyImageModal
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
@@ -266,7 +292,7 @@ export function PropertyDetail({ property }) {
 
       {/* Back to All Listings */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <Link
             href="/marketplace"
             className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 font-medium transition-colors group"
@@ -278,15 +304,14 @@ export function PropertyDetail({ property }) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Photos */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 min-w-0">
             {/* Photo Gallery */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <div 
-                className="relative bg-gray-100 rounded-lg overflow-hidden cursor-pointer group" 
-                style={{ height: '420px' }}
+                className="relative bg-gray-100 rounded-lg overflow-hidden cursor-pointer group h-56 sm:h-72 md:h-[360px] lg:h-[420px]"
                 onClick={() => photos.length > 0 && setShowImageModal(true)}
               >
                 {photos.length > 0 ? (
@@ -296,6 +321,8 @@ export function PropertyDetail({ property }) {
                       alt={`Property photo ${currentPhotoIndex + 1}`}
                       fill
                       className="object-cover transition-transform group-hover:scale-105"
+                      priority
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 66vw"
                     />
                     {/* Click overlay hint */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -346,9 +373,9 @@ export function PropertyDetail({ property }) {
             </div>
 
             {/* Property Address & Basic Info */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{fullAddress}</h1>
-              <div className="text-4xl font-bold text-gray-900 mb-1">{formatPrice(property.price)}</div>
+            <div className="mb-4 sm:mb-6">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">{fullAddress}</h1>
+              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1">{formatPrice(property.price)}</div>
               {property.status && (
                 <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
                   {property.status}
@@ -357,60 +384,56 @@ export function PropertyDetail({ property }) {
             </div>
 
             {/* Basic Stats */}
-            <div className="flex items-center gap-6 mb-6 text-gray-700">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-4 sm:mb-6 text-gray-700 text-base sm:text-lg">
               {property.bedrooms && (
-                <div className="text-lg">
-                  <span className="font-semibold">{property.bedrooms}</span> beds
-                </div>
+                <div><span className="font-semibold">{property.bedrooms}</span> beds</div>
               )}
               {property.bathrooms && (
-                <div className="text-lg">
-                  <span className="font-semibold">{property.bathrooms}</span> baths
-                </div>
+                <div><span className="font-semibold">{property.bathrooms}</span> baths</div>
               )}
               {property.sqft && (
-                <div className="text-lg">
-                  <span className="font-semibold">{property.sqft.toLocaleString()}</span> sq ft
-                </div>
+                <div><span className="font-semibold">{property.sqft.toLocaleString()}</span> sq ft</div>
               )}
               {property.year_built && (
-                <div className="text-lg">
-                  Built in <span className="font-semibold">{property.year_built}</span>
-                </div>
+                <div>Built in <span className="font-semibold">{property.year_built}</span></div>
               )}
             </div>
 
             {/* Financial Metrics */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div>
-                <div className="text-2xl font-bold text-gray-900">{formatPercent(grossYield)}</div>
-                <div className="text-sm text-gray-600">Gross yield</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{formatPercent(grossYield)}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Gross yield</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{formatPercent(capRate)}</div>
-                <div className="text-sm text-gray-600">Cap rate</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{formatPercent(capRate)}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Cap rate</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{formatPercent(cashOnCash)}</div>
-                <div className="text-sm text-gray-600">Cash on cash</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{formatPercent(cashOnCash)}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Cash on cash</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{formatPrice(estNetCashFlow)}</div>
-                <div className="text-sm text-gray-600">Est. cash flow</div>
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate" title={formatPrice(estNetCashFlow)}>{formatPrice(estNetCashFlow)}</div>
+                <div className="text-xs sm:text-sm text-gray-600">Est. cash flow</div>
               </div>
             </div>
 
             {/* Purchase Calculator */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="bg-gray-50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Purchase price</label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
                     <input
                       type="number"
-                      value={purchasePrice}
-                      onChange={(e) => setPurchasePrice(parseFloat(e.target.value) || 0)}
+                      value={purchasePrice == null || purchasePrice === '' ? '' : purchasePrice}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        if (v === '') setPurchasePrice(null)
+                        else { const n = parseFloat(v); setPurchasePrice(!isNaN(n) ? n : null) }
+                      }}
                       className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg"
                     />
                   </div>
@@ -420,8 +443,11 @@ export function PropertyDetail({ property }) {
                   <div className="relative">
                     <input
                       type="number"
-                      value={downPaymentPercent}
-                      onChange={(e) => setDownPaymentPercent(parseFloat(e.target.value) || 0)}
+                      value={downPaymentPercent === 0 ? '' : downPaymentPercent}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setDownPaymentPercent(v === '' ? 0 : (parseFloat(e.target.value) || 0))
+                      }}
                       className="w-full pr-7 pl-3 py-2 border border-gray-300 rounded-lg"
                     />
                     <span className="absolute right-3 top-2.5 text-gray-500">%</span>
@@ -433,8 +459,12 @@ export function PropertyDetail({ property }) {
                     <span className="absolute left-3 top-2.5 text-gray-500">$</span>
                     <input
                       type="number"
-                      value={estimatedRent}
-                      onChange={(e) => setEstimatedRent(parseFloat(e.target.value) || 0)}
+                      value={estimatedRent == null || estimatedRent === '' ? '' : estimatedRent}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        if (v === '') setEstimatedRent(null)
+                        else { const n = parseFloat(v); setEstimatedRent(!isNaN(n) ? n : null) }
+                      }}
                       className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg"
                     />
                   </div>
@@ -447,10 +477,10 @@ export function PropertyDetail({ property }) {
 
             {/* About This Property */}
             {property.description && (
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">About this property</h2>
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">About this property</h2>
                 <div 
-                  className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                  className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap break-words"
                   dangerouslySetInnerHTML={{
                     __html: showFullDescription || property.description.length <= 300
                       ? property.description
@@ -476,51 +506,33 @@ export function PropertyDetail({ property }) {
               </div>
             )}
 
-            {/* Property Details Table */}
-            <div className="border-t border-gray-200 pt-6">
-              <div className="space-y-3">
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Days on market</span>
-                  <span className="font-medium text-gray-900">{property.days_on_market || '-'}</span>
+            {/* Property Details Table - only show rows that have data */}
+            {(() => {
+              const hasVal = (v) => v != null && v !== ''
+              const rows = [
+                hasVal(property.days_on_market) && { label: 'Days on market', value: property.days_on_market },
+                hasVal(property.property_type) && { label: 'Property type', value: property.property_type },
+                hasVal(property.price_per_square_foot) && { label: 'Price per square foot', value: `$${Number(property.price_per_square_foot).toFixed(2)}` },
+                hasVal(property.lot_size) && { label: 'Lot size', value: property.lot_size },
+                hasVal(property.hoa_fees) && { label: 'HOA fees', value: property.hoa_fees },
+                hasVal(property.neighborhood_score) && { label: 'Neighborhood score', value: `${Number(property.neighborhood_score).toFixed(2)} / 5` },
+                hasVal(property.school_score) && { label: 'School score', value: `${Number(property.school_score).toFixed(2)} / 10` },
+                hasVal(property.crime_score) && { label: 'Crime score', value: `${Number(property.crime_score).toFixed(2)} / 10` }
+              ].filter(Boolean)
+              if (rows.length === 0) return null
+              return (
+                <div className="border-t border-gray-200 pt-4 sm:pt-6">
+                  <div className="space-y-2 sm:space-y-3">
+                    {rows.map(({ label, value }) => (
+                      <div key={label} className="flex justify-between gap-2 py-2 text-sm sm:text-base min-w-0">
+                        <span className="text-gray-600 shrink-0">{label}</span>
+                        <span className="font-medium text-gray-900 text-right truncate">{value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Property type</span>
-                  <span className="font-medium text-gray-900">{property.property_type || '-'}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Price per square foot</span>
-                  <span className="font-medium text-gray-900">
-                    {property.price_per_square_foot ? `$${property.price_per_square_foot}` : '-'}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Lot size</span>
-                  <span className="font-medium text-gray-900">{property.lot_size || '-'}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">HOA fees</span>
-                  <span className="font-medium text-gray-900">{property.hoa_fees || '-'}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Neighborhood score</span>
-                  <span className="font-medium text-gray-900">
-                    {property.neighborhood_score ? `${property.neighborhood_score} / 5` : '-'}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">School score</span>
-                  <span className="font-medium text-gray-900">
-                    {property.school_score ? `${property.school_score} / 10` : '-'}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Crime score</span>
-                  <span className="font-medium text-gray-900">
-                    {property.crime_score ? `${property.crime_score} / 10` : '-'}
-                  </span>
-                </div>
-              </div>
-            </div>
+              )
+            })()}
 
             {/* MLS Information */}
             {(property.agent_name || property.mls_number) && (
@@ -548,10 +560,10 @@ export function PropertyDetail({ property }) {
           </div>
 
           {/* Right Column - Actions & Info */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-6">
+          <div className="lg:col-span-1 min-w-0">
+            <div className="sticky top-4 sm:top-6">
               {/* Action Buttons - Full Width */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 mb-4">
                 {/* Save Button */}
                 <button
                   onClick={async () => {
@@ -571,7 +583,7 @@ export function PropertyDetail({ property }) {
                       setFavoriteLoading(false)
                     }
                   }}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${
+                  className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg border transition-all text-xs sm:text-sm font-medium ${
                     isFav
                       ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
                       : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
@@ -590,7 +602,7 @@ export function PropertyDetail({ property }) {
                 {/* Share Button */}
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium"
+                  className="flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-xs sm:text-sm font-medium"
                   title="Share property"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -599,16 +611,45 @@ export function PropertyDetail({ property }) {
                   <span>Share</span>
                 </button>
 
-                {/* Not Interested Button */}
+                {/* Not Interested / Undo Button */}
                 <button
-                  onClick={() => setShowNotInterestedModal(true)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-sm font-medium whitespace-nowrap"
-                  title="Not interested"
+                  onClick={async () => {
+                    if (isNotInterested) {
+                      if (!user?.id) return
+                      setNotInterestedLoading(true)
+                      try {
+                        const res = await fetch(
+                          `/api/buyer/not-interested?dealId=${encodeURIComponent(property.id)}`,
+                          { method: 'DELETE', headers: { Authorization: `Bearer ${user.id}` } }
+                        )
+                        if (res.ok) setIsNotInterested(false)
+                        else alert((await res.json().catch(() => ({}))).error || 'Failed to undo')
+                      } catch (e) {
+                        alert(e.message || 'Failed to undo')
+                      } finally {
+                        setNotInterestedLoading(false)
+                      }
+                    } else {
+                      if (!user?.id) { setShowLoginModal(true); return }
+                      setShowNotInterestedModal(true)
+                    }
+                  }}
+                  disabled={notInterestedLoading}
+                  className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+                    isNotInterested
+                      ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  } ${notInterestedLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={isNotInterested ? 'Undo not interested' : 'Not interested'}
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span>Not Interested</span>
+                  {isNotInterested ? (
+                    <RotateCcw className="h-4 w-4" />
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  <span>{notInterestedLoading ? '...' : isNotInterested ? 'Undo' : 'Not Interested'}</span>
                 </button>
               </div>
 
@@ -638,11 +679,11 @@ export function PropertyDetail({ property }) {
               </div>
 
               {/* Google Maps Preview */}
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden min-w-0 w-full">
                 <div
                   ref={mapRef}
-                  className="w-full h-[400px]"
-                  style={{ minHeight: '400px' }}
+                  className="w-full h-[280px] sm:h-[340px] md:h-[400px]"
+                  style={{ minHeight: '280px' }}
                 />
               </div>
               </div>
@@ -771,20 +812,37 @@ export function PropertyDetail({ property }) {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  // TODO: Implement hide property logic
-                  console.log('Property marked as not interested:', property.id)
-                  setShowNotInterestedModal(false)
-                  // Show success message
-                  const successDiv = document.createElement('div')
-                  successDiv.className = 'fixed top-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg z-[10000] text-sm font-medium'
-                  successDiv.textContent = 'Property hidden successfully'
-                  document.body.appendChild(successDiv)
-                  setTimeout(() => successDiv.remove(), 3000)
+                onClick={async () => {
+                  if (!user?.id) { setShowNotInterestedModal(false); setShowLoginModal(true); return }
+                  setNotInterestedLoading(true)
+                  try {
+                    const res = await fetch('/api/buyer/not-interested', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+                      body: JSON.stringify({ dealId: property.id })
+                    })
+                    const data = await res.json().catch(() => ({}))
+                    if (res.ok) {
+                      setIsNotInterested(true)
+                      setShowNotInterestedModal(false)
+                      const successDiv = document.createElement('div')
+                      successDiv.className = 'fixed top-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg z-[10000] text-sm font-medium'
+                      successDiv.textContent = 'Marked not interested. Click Undo to revert.'
+                      document.body.appendChild(successDiv)
+                      setTimeout(() => successDiv.remove(), 3000)
+                    } else {
+                      alert(data.error || 'Failed to save')
+                    }
+                  } catch (e) {
+                    alert(e.message || 'Failed to save')
+                  } finally {
+                    setNotInterestedLoading(false)
+                  }
                 }}
-                className="flex-1 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium"
+                disabled={notInterestedLoading}
+                className="flex-1 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm
+                {notInterestedLoading ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           </div>
