@@ -34,6 +34,10 @@ export async function POST(request) {
 
     console.log(`Generated password reset OTP for ${email}: ${resetOtp}`)
 
+    // Same logo URL as signup OTP email so it loads in email clients
+    const logoBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production.up.railway.app').replace(/\/$/, '')
+    const logoUrl = `${logoBase}/deelmap.png`
+
     const htmlTemplate = `
 <!DOCTYPE html>
 <html>
@@ -48,15 +52,13 @@ export async function POST(request) {
       <td align="center" style="padding: 0;">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
 
-          <!-- Header - Dark Blue with Logo Text -->
+          <!-- Header - Logo (same as signup verification) -->
           <tr>
             <td style="background-color: #1e3a5f; padding: 24px 40px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="vertical-align: middle;">
-                    <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
-                    </div>
+                    <img src="${logoUrl}" alt="Deelmap" width="160" height="48" style="display: block; max-width: 160px; height: auto; border: 0;" />
                   </td>
                 </tr>
               </table>
@@ -77,33 +79,15 @@ export async function POST(request) {
                 We received a request to reset your password for your Deelmap account. Use the following code to complete the password reset procedure. This code is valid for <strong style="color: #1f2937;">15 minutes</strong>.
               </p>
 
-              <!-- Code Display -->
+              <!-- Code - single copyable block (same format as signup verification, no extra spaces) -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px 0;">
                 <tr>
                   <td align="center">
-                    <table cellpadding="0" cellspacing="0">
+                    <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                       <tr>
-                        <td style="padding-bottom: 10px;">
-                          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; text-align: center; margin-bottom: 15px;">Enter Code</label>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
-                            <tr>
-                              ${resetOtp.split('').map((digit) => `
-                                <td style="padding: 0 6px;">
-                                  <table width="50" height="60" cellpadding="0" cellspacing="0" style="width: 50px; height: 60px; border: 2px solid #d1d5db; border-radius: 8px; background-color: #f9fafb;">
-                                    <tr>
-                                      <td align="center" valign="middle" style="font-size: 28px; font-weight: 700; color: #A73636; font-family: 'Courier New', monospace; line-height: 1; text-align: center;">
-                                        ${digit}
-                                      </td>
-                                    </tr>
-                                  </table>
-                                </td>
-                              `).join('')}
-                            </tr>
-                          </table>
+                        <td style="padding: 20px 32px; background-color: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px;">
+                          <p style="margin: 0; font-size: 11px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Verification code</p>
+                          <p style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937; font-family: 'Courier New', Courier, monospace; letter-spacing: 6px; line-height: 1.2;">${resetOtp}</p>
                         </td>
                       </tr>
                     </table>
@@ -111,26 +95,16 @@ export async function POST(request) {
                 </tr>
               </table>
 
-              <!-- Security Notice -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 20px 0;">
-                <tr>
-                  <td style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 8px; padding: 16px 20px;">
-                    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #92400E;">
-                      🔒 Security Tips
-                    </p>
-                    <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #78350F;">
-                      This code will only work once. Never share it with anyone. Deelmap will never ask for your code.
-                    </p>
-                  </td>
-                </tr>
-              </table>
+              <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">
+                Valid for 15 minutes. Do not share this code.
+              </p>
 
               <!-- Didn't Request Notice -->
-              <table width="100%" cellpadding="0" cellspacing="0">
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
                 <tr>
                   <td align="center">
                     <p style="margin: 0; font-size: 14px; color: #6b7280; text-align: center; line-height: 1.6;">
-                      If you did not request a password reset, please ignore this email or contact our security team immediately if you have concerns about your account security.
+                      If you did not request a password reset, please ignore this email or contact our security team if you have concerns.
                     </p>
                   </td>
                 </tr>
@@ -144,17 +118,10 @@ export async function POST(request) {
             <td style="padding: 30px 40px; background-color: #ffffff; border-top: 1px solid #e5e7eb;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding-bottom: 15px;">
+                  <td style="padding-bottom: 10px;">
                     <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151; font-weight: 500;">
                       Thanks,<br>
                       DeelMap Team
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-bottom: 10px;">
-                    <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.6;">
-                      Questions or faq? Contact us at <a href="mailto:faq@deelmap.com" style="color: #dc2626; text-decoration: none;">faq@deelmap.com</a>.
                     </p>
                   </td>
                 </tr>
@@ -168,7 +135,7 @@ export async function POST(request) {
                 <tr>
                   <td>
                     <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      © 2016 DeelMap
+                      © 2026 DeelMap
                     </p>
                   </td>
                 </tr>
@@ -191,23 +158,19 @@ Password Reset
 
 Hello,
 
-We received a request to reset your password for your Deelmap account. Use the following OTP to complete the password reset procedure.
+We received a request to reset your password for your Deelmap account. Use the following code to complete the password reset procedure.
 
-YOUR PASSWORD RESET CODE:
-${resetOtp}
+PASSWORD RESET CODE: ${resetOtp}
 
-⏱ Valid for 15 minutes
+Valid for 15 minutes. Do not share this code.
 
-SECURITY TIPS:
-• This code will only work once
-• Never share this code with anyone
-• Deelmap will never ask for your code
+If you did not request a password reset, please ignore this email or contact our security team if you have concerns.
 
-DIDN'T REQUEST THIS?
-If you didn't request a password reset, please ignore this email or contact our security team immediately if you have concerns about your account security. Your account remains secure and no changes will be made.
+Thanks,
+DeelMap Team
 
 ---
-© ${new Date().getFullYear()} Deelmap. All rights reserved.`
+© 2026 DeelMap. All rights reserved.`
 
     // Send email via Resend
     const startTime = Date.now()

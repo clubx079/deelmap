@@ -27,8 +27,9 @@ export async function GET(request) {
 
     const userId = authHeader.replace('Bearer ', '')
 
-    // Verify user exists
-    const { data: user, error: userError } = await supabase
+    // Verify user exists (use service role if available to avoid RLS blocking)
+    const client = supabaseService || supabase
+    const { data: user, error: userError } = await client
       .from('users')
       .select('id')
       .eq('id', userId)
@@ -38,8 +39,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get user's favorites
-    const { data: favorites, error } = await supabase
+    // Get user's favorites (use service role so RLS does not return empty)
+    const { data: favorites, error } = await client
       .from('user_favorites')
       .select('property_id, created_at')
       .eq('user_id', userId)

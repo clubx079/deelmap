@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { Navbar } from '@/components/layout/Navbar'
 import { Input } from '@/components/ui/Input'
@@ -117,14 +118,6 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       <Navbar />
-
-      {/* Background blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-slate-200 rounded-full blur-3xl opacity-70"></div>
-        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-slate-300 rounded-full blur-3xl opacity-60"></div>
-        <div className="absolute -bottom-24 right-1/4 w-72 h-72 bg-slate-200 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-slate-100 rounded-full blur-3xl opacity-40"></div>
-      </div>
 
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10 pb-20">
         <div className="w-full max-w-md">
@@ -302,13 +295,19 @@ function LoginForm() {
             </div>
 
             {/* Sign Up Link */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-3">
               <p className="text-slate-600 text-sm">
-                Don't have an account?{' '}
-                <a href="/signup" className="text-slate-900 font-semibold hover:underline">
+                Don&apos;t have an account?{' '}
+                <Link href="/signup" className="text-slate-900 font-semibold hover:underline">
                   Sign up for free
-                </a>
+                </Link>
               </p>
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors inline-block"
+              >
+                Forgot Password?
+              </Link>
             </div>
           </div>}
         </div>

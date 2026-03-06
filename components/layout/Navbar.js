@@ -8,218 +8,15 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
-// Portal-based Profile Dropdown Component
-function ProfileDropdown({ user, onLogout, triggerRef, isOpen, onClose }) {
-  const [position, setPosition] = useState({ top: 0, left: 0 })
-  const dropdownRef = useRef(null)
-
-  const updatePosition = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect()
-      setPosition({
-        top: rect.bottom + 12,
-        left: rect.right - 288,
-      })
-    }
-  }
-
-  useEffect(() => {
-    if (isOpen) {
-      updatePosition()
-      
-      const handleUpdate = () => updatePosition()
-      window.addEventListener('scroll', handleUpdate, true)
-      window.addEventListener('resize', handleUpdate)
-      
-      return () => {
-        window.removeEventListener('scroll', handleUpdate, true)
-        window.removeEventListener('resize', handleUpdate)
-      }
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (isOpen) {
-      const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-          onClose()
-        }
-      }
-      
-      const handleClickOutside = (e) => {
-        if (
-          triggerRef.current && 
-          !triggerRef.current.contains(e.target) &&
-          dropdownRef.current &&
-          !dropdownRef.current.contains(e.target)
-        ) {
-          onClose()
-        }
-      }
-
-      document.addEventListener('keydown', handleEscape)
-      document.addEventListener('mousedown', handleClickOutside)
-      
-      return () => {
-        document.removeEventListener('keydown', handleEscape)
-        document.removeEventListener('mousedown', handleClickOutside)
-      }
-    }
-  }, [isOpen, onClose])
-
-  const handleLogoutClick = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    onClose()
-    
-    setTimeout(() => {
-      onLogout()
-    }, 50)
-  }
-
-  if (!isOpen) return null
-
-  return createPortal(
-    <div
-      ref={dropdownRef}
-      style={{
-        position: 'fixed',
-        top: position.top,
-        left: position.left,
-        width: '288px',
-        background: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12)',
-        border: '1px solid rgba(0, 0, 0, 0.08)',
-        padding: '8px 0',
-        zIndex: 99999,
-        opacity: 1,
-        visibility: 'visible',
-        pointerEvents: 'auto'
-      }}
-    >
-      <div 
-        style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid #f1f5f9',
-          background: 'transparent'
-        }}
-      >
-        <p 
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            color: '#64748b',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: '6px',
-            display: 'block',
-            lineHeight: 1.2,
-            margin: '0 0 6px 0',
-            padding: 0,
-            opacity: 1,
-            visibility: 'visible'
-          }}
-        >
-          Signed in as
-        </p>
-        <p 
-          style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: '#1e293b',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: 'block',
-            lineHeight: 1.3,
-            margin: 0,
-            padding: 0,
-            opacity: 1,
-            visibility: 'visible'
-          }}
-        >
-          {user.email}
-        </p>
-      </div>
-      <div 
-        style={{
-          padding: '8px 0',
-          background: 'transparent'
-        }}
-      >
-        <Link
-          href="/buyer/dashboard"
-          onClick={onClose}
-          style={{
-            width: '100%',
-            textAlign: 'left',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: 500,
-            color: '#1e293b',
-            transition: 'background-color 0.15s ease',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            display: 'block',
-            opacity: 1,
-            visibility: 'visible',
-            textDecoration: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#f8fafc'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent'
-          }}
-        >
-          Buyer Portal
-        </Link>
-        <button
-          onClick={handleLogoutClick}
-          style={{
-            width: '100%',
-            textAlign: 'left',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: 500,
-            color: '#dc2626',
-            transition: 'background-color 0.15s ease',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            display: 'block',
-            opacity: 1,
-            visibility: 'visible'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#fef2f2'
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent'
-          }}
-        >
-          Sign Out
-        </button>
-      </div>
-    </div>,
-    document.body
-  )
-}
-
 export function Navbar() {
   const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [showAuth, setShowAuth] = useState(false)
   const [authInitialStep, setAuthInitialStep] = useState('signup')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [showProfile, setShowProfile] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [showAboutDropdown, setShowAboutDropdown] = useState(false)
 
-  const profileButtonRef = useRef(null)
   const aboutButtonRef = useRef(null)
 
   useEffect(() => {
@@ -286,20 +83,6 @@ export function Navbar() {
       return user.email.split('@')[0]
     }
     return 'User'
-  }
-
-  const handleLogout = async () => {
-    try {
-      setShowProfile(false)
-      await signOut()
-      // signOut already redirects, but ensure redirect here too
-      window.location.href = '/'
-    } catch (error) {
-      console.error('Logout error:', error)
-      localStorage.clear()
-      sessionStorage.clear()
-      window.location.href = '/'
-    }
   }
 
   const aboutDropdownItems = [
@@ -444,31 +227,24 @@ export function Navbar() {
             {/* User Profile / Login - Right */}
             <div className="flex items-center space-x-6">
               {user ? (
-                <div className="relative">
-                  <button
-                    ref={profileButtonRef}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowProfile(!showProfile)
-                    }}
-                    className="flex items-center space-x-3 group"
-                  >
-                    <span className="hidden lg:inline-block text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-                      {getUserDisplayName(user)}
-                    </span>
-                    <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-sm font-semibold transition-all group-hover:bg-slate-800">
+                <Link
+                  href="/buyer/dashboard"
+                  className="flex items-center space-x-3 group relative"
+                >
+                  <span className="hidden lg:inline-block text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors duration-200">
+                    {getUserDisplayName(user)}
+                  </span>
+                  <div className="relative">
+                    {/* User avatar: slate base, red ring on hover (professional, no purple) */}
+                    <div className="relative w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white text-sm font-semibold transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg cursor-pointer ring-2 ring-slate-200 group-hover:ring-red-600">
                       {getUserInitials(user)}
+                      {/* Shine on hover */}
+                      <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                        <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                      </div>
                     </div>
-                  </button>
-
-                  <ProfileDropdown
-                    user={user}
-                    onLogout={handleLogout}
-                    triggerRef={profileButtonRef}
-                    isOpen={showProfile}
-                    onClose={() => setShowProfile(false)}
-                  />
-                </div>
+                  </div>
+                </Link>
               ) : (
                 <Link
                   href="/login"
@@ -587,30 +363,23 @@ export function Navbar() {
             {/* User Section */}
             <div className="absolute bottom-0 left-0 right-0 p-6 border-t-2 border-slate-200 bg-white">
               {user ? (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold">
-                      {getUserInitials(user)}
+                <Link
+                  href="/buyer/dashboard"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center space-x-3 p-4 rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 hover:from-blue-600 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-lg">
+                    {getUserInitials(user)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">
+                      {getUserDisplayName(user)}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-900 truncate">
-                        {getUserDisplayName(user)}
-                      </div>
-                      <div className="text-xs text-slate-500 truncate">
-                        {user.email}
-                      </div>
+                    <div className="text-xs text-white/70 truncate">
+                      Go to Buyer Portal →
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setShowMobileMenu(false)
-                      handleLogout()
-                    }}
-                    className="w-full text-left py-3 px-4 text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors font-medium"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+                </Link>
               ) : (
                 <Link
                   href="/login"

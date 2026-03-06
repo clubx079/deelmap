@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { supabaseMarketplace } from '@/lib/supabase'
 
 const DEFAULT_PAGE_SIZE = 48
 
@@ -8,7 +7,8 @@ export const useProperties = ({
   filters = {},
   sortBy = 'newest',
   searchQuery = '',
-  pageSize = DEFAULT_PAGE_SIZE
+  pageSize = DEFAULT_PAGE_SIZE,
+  authToken = null
 } = {}) => {
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
@@ -17,6 +17,7 @@ export const useProperties = ({
   const [hasMore, setHasMore] = useState(true)
   const [totalCount, setTotalCount] = useState(null)
   const [page, setPage] = useState(0)
+  const [metadata, setMetadata] = useState(null)
   const requestIdRef = useRef(0)
 
   useEffect(() => {
@@ -26,157 +27,86 @@ export const useProperties = ({
     setPage(0)
     fetchProperties({ nextPage: 0, replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify({ filters, sortBy, searchQuery, pageSize })])
+  }, [JSON.stringify({ filters, sortBy, searchQuery, pageSize }), authToken])
 
-  const buildQuery = () => {
-    let query = supabaseMarketplace
-      .from('wholesale_deals')
-      .select(`
-        id,
-        price,
-        bedrooms,
-        bathrooms,
-        sqft,
-        full_address,
-        address,
-        city,
-        state,
-        zip_code,
-        status,
-        gross_yield,
-        cap_rate,
-        cash_on_cash,
-        price_per_square_foot,
-        year_built,
-        address_google_lat,
-        address_google_lng,
-        created_at,
-        property_photos (
-          id,
-          photo_url,
-          optimized_url,
-          original_url,
-          display_order
-        )
-      `, { count: 'exact' })
-
-    // Apply state filter (if no states selected, show all)
-    if (filters.states && filters.states.length > 0) {
-      query = query.in('state', filters.states)
+  const buildQueryParams = (currentPage) => {
+    const params = new URLSearchParams()
+    
+    // Pagination
+    params.append('page', (currentPage + 1).toString())
+    params.append('limit', pageSize.toString())
+    
+    // Sorting
+    params.append('sortBy', sortBy)
+    
+    // Search
+    if (searchQuery && searchQuery.trim()) {
+      params.append('searchQuery', searchQuery.trim())
     }
-
-    // Apply status filter - if 'all' is selected or no status, don't filter by status
+    
+    // State filter
+    if (filters.states && filters.states.length > 0) {
+      params.append('states', filters.states.join(','))
+    }
+    
+    // Status filter - if 'all' is selected or no status, don't filter by status
     const statusesToFilter = filters.statuses && filters.statuses.length > 0
       ? filters.statuses
       : ['all']
-
+    
     // Only apply status filter if 'all' is not included
     if (!statusesToFilter.includes('all')) {
-      query = query.in('status', statusesToFilter)
+      // Note: Status filtering will be applied in the API
+      // For now, we'll let the API handle this logic
     }
-
-    // Apply price filters
+    
+    // Price filters
     if (filters.minPrice && filters.minPrice > 0) {
-      query = query.gte('price', filters.minPrice)
+      params.append('minPrice', filters.minPrice.toString())
     }
-
     if (filters.maxPrice && filters.maxPrice > 0) {
-      query = query.lte('price', filters.maxPrice)
+      params.append('maxPrice', filters.maxPrice.toString())
     }
-
-    // Apply bedroom filters
+    
+    // Bedroom filters
     if (filters.minBeds && filters.minBeds > 0) {
-      query = query.gte('bedrooms', filters.minBeds)
+      params.append('minBedrooms', filters.minBeds.toString())
     }
-
     if (filters.maxBeds && filters.maxBeds > 0) {
-      query = query.lte('bedrooms', filters.maxBeds)
+      params.append('maxBedrooms', filters.maxBeds.toString())
     }
-
-    // Apply bathroom filters
+    
+    // Bathroom filters
     if (filters.minBaths && filters.minBaths > 0) {
-      query = query.gte('bathrooms', filters.minBaths)
+      params.append('minBathrooms', filters.minBaths.toString())
     }
-
     if (filters.maxBaths && filters.maxBaths > 0) {
-      query = query.lte('bathrooms', filters.maxBaths)
+      params.append('maxBathrooms', filters.maxBaths.toString())
     }
-
-    // Apply square footage filters (sqft instead of floor_area)
+    
+    // Square footage filters
     if (filters.minFloorArea && filters.minFloorArea > 0) {
-      query = query.gte('sqft', filters.minFloorArea)
+      params.append('minSqft', filters.minFloorArea.toString())
     }
-
     if (filters.maxFloorArea && filters.maxFloorArea > 0) {
-      query = query.lte('sqft', filters.maxFloorArea)
+      params.append('maxSqft', filters.maxFloorArea.toString())
     }
-
-    // Apply investment metric filters (percent values)
+    
+    // Investment metric filters
     if (filters.minGrossYield && filters.minGrossYield > 0) {
-      query = query.gte('gross_yield', filters.minGrossYield)
+      params.append('minYield', filters.minGrossYield.toString())
     }
-
     if (filters.maxGrossYield && filters.maxGrossYield > 0) {
-      query = query.lte('gross_yield', filters.maxGrossYield)
+      params.append('maxYield', filters.maxGrossYield.toString())
     }
-
     if (filters.minCapRate && filters.minCapRate > 0) {
-      query = query.gte('cap_rate', filters.minCapRate)
+      params.append('minCapRate', filters.minCapRate.toString())
     }
-
     if (filters.maxCapRate && filters.maxCapRate > 0) {
-      query = query.lte('cap_rate', filters.maxCapRate)
+      params.append('maxCapRate', filters.maxCapRate.toString())
     }
-
-    if (filters.minCashOnCash && filters.minCashOnCash > 0) {
-      query = query.gte('cash_on_cash', filters.minCashOnCash)
-    }
-
-    if (filters.maxCashOnCash && filters.maxCashOnCash > 0) {
-      query = query.lte('cash_on_cash', filters.maxCashOnCash)
-    }
-
-    const trimmedSearch = searchQuery.trim()
-    if (trimmedSearch) {
-      // Escape special characters for PostgREST (%, _)
-      const escaped = trimmedSearch.replace(/[%_]/g, '\\$&')
-      
-      // For searches with commas (like "Lexington, KY"), we need to handle them specially
-      // PostgREST uses commas as OR separators, so we'll search for the full string
-      // and also split by comma to search individual parts
-      if (trimmedSearch.includes(',')) {
-        // Search for the full string (with comma) in full_address which often contains city, state
-        const parts = trimmedSearch.split(',').map(p => p.trim()).filter(p => p)
-        if (parts.length > 0) {
-          // Search each part individually across all fields
-          const searchConditions = []
-          parts.forEach(part => {
-            const partEscaped = part.replace(/[%_]/g, '\\$&')
-            searchConditions.push(
-              `address.ilike.%${partEscaped}%,full_address.ilike.%${partEscaped}%,city.ilike.%${partEscaped}%,state.ilike.%${partEscaped}%,zip_code.ilike.%${partEscaped}%`
-            )
-          })
-          // Also search for the full string in full_address
-          searchConditions.push(`full_address.ilike.%${escaped}%`)
-          query = query.or(searchConditions.join(','))
-        }
-      } else {
-        // Simple search without commas
-      query = query.or(
-        `address.ilike.%${escaped}%,full_address.ilike.%${escaped}%,city.ilike.%${escaped}%,state.ilike.%${escaped}%,zip_code.ilike.%${escaped}%`
-      )
-      }
-    }
-
-    if (sortBy === 'price-low') {
-      query = query.order('price', { ascending: true, nullsFirst: false })
-    } else if (sortBy === 'price-high') {
-      query = query.order('price', { ascending: false, nullsFirst: false })
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
-
-    return query
+    
+    return params
   }
 
   const fetchProperties = async ({ nextPage = 0, replace = false } = {}) => {
@@ -190,43 +120,49 @@ export const useProperties = ({
       }
       setError(null)
 
-      const from = nextPage * pageSize
-      const to = from + pageSize - 1
-
-      const { data, error, count } = await buildQuery().range(from, to)
+      const params = buildQueryParams(nextPage)
+      const headers = {}
+      if (authToken) headers['Authorization'] = authToken
+      const response = await fetch(`/api/deals?${params.toString()}`, { headers })
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+      
+      const result = await response.json()
 
       if (requestId !== requestIdRef.current) return
 
-      if (error) {
-        console.error('Supabase error:', error)
-        // Convert technical errors to user-friendly messages
-        let userFriendlyError = 'Unable to load properties. Please try again.'
-        
-        if (error.message) {
-          const errorMsg = error.message.toLowerCase()
-          if (errorMsg.includes('parse') || errorMsg.includes('logic tree') || errorMsg.includes('syntax')) {
-            userFriendlyError = 'There was an issue with your search. Please try a different search term.'
-          } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
-            userFriendlyError = 'Network error. Please check your connection and try again.'
-          } else if (errorMsg.includes('timeout')) {
-            userFriendlyError = 'Request timed out. Please try again.'
-          } else if (errorMsg.includes('permission') || errorMsg.includes('unauthorized')) {
-            userFriendlyError = 'You don\'t have permission to view these properties.'
-          }
-        }
-        
-        throw new Error(userFriendlyError)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch properties')
       }
 
-      setTotalCount(typeof count === 'number' ? count : null)
+      setTotalCount(result.totalCount)
       setProperties(prev =>
-        replace ? (data || []) : [...prev, ...(data || [])]
+        replace ? (result.properties || []) : [...prev, ...(result.properties || [])]
       )
-      setHasMore((data?.length || 0) === pageSize)
+      setHasMore(result.hasMore)
       setPage(nextPage)
+      setMetadata(result.metadata)
+      
     } catch (err) {
       console.error('Error fetching properties:', err)
-      setError(err.message)
+      
+      // Convert technical errors to user-friendly messages
+      let userFriendlyError = 'Unable to load properties. Please try again.'
+      
+      if (err.message) {
+        const errorMsg = err.message.toLowerCase()
+        if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+          userFriendlyError = 'Network error. Please check your connection and try again.'
+        } else if (errorMsg.includes('timeout')) {
+          userFriendlyError = 'Request timed out. Please try again.'
+        } else if (errorMsg.includes('api request failed')) {
+          userFriendlyError = 'Server error. Please try again later.'
+        }
+      }
+      
+      setError(userFriendlyError)
     } finally {
       setLoading(false)
       setLoadingMore(false)
@@ -248,6 +184,7 @@ export const useProperties = ({
     hasMore,
     totalCount,
     loadMore,
-    refetch
+    refetch,
+    metadata
   }
 }

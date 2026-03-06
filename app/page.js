@@ -68,13 +68,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right: Image column - scaled and vertically centered in the blue area */}
-          <div className="flex-1 flex items-center justify-center min-w-0 min-h-[50vh] sm:min-h-[55vh] lg:min-h-0 lg:h-[70vh] overflow-hidden">
+          {/* Right: Image column - on mobile fit in screen; on desktop scaled and centered */}
+          <div className="flex-1 flex items-center justify-center min-w-0 min-h-[20vh] sm:min-h-[25vh] lg:min-h-0 lg:h-[70vh] overflow-hidden">
             <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-              <div
-                className="flex items-center justify-center"
-                style={{ transform: 'scale(1.6) translateY(8%)', transformOrigin: 'center center' }}
-              >
+              <div className="flex items-center justify-center origin-center scale-100 lg:scale-[1.6] lg:translate-y-[8%]">
                 <Image
                   src="/assets/landing-hero.png"
                   alt="Deelmap – Real estate investor marketplace. Browse properties on map."

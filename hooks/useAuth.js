@@ -244,8 +244,11 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('ableman_user')
       sessionStorage.clear()
       await fetch('/api/auth/logout', { method: 'POST' })
+
+      // Redirect to landing page (root), not /home
       if (typeof window !== 'undefined') {
-        window.location.href = '/'
+        const origin = window.location.origin || ''
+        window.location.replace(origin + '/')
       }
     } catch (error) {
       console.error('Sign out error:', error)
@@ -253,7 +256,8 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('ableman_user')
       sessionStorage.clear()
       if (typeof window !== 'undefined') {
-        window.location.href = '/'
+        const origin = window.location.origin || ''
+        window.location.replace(origin + '/')
       }
     }
   }

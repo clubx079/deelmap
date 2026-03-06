@@ -1,4 +1,9 @@
 // app/api/analytics/property-tracking/route.js
+// Deal detail tracking – one row per visit (session_id is unique per page load).
+// (1) Page view: each start_view = one deal detail page open; count of rows = how many times user opened that deal.
+// (2) Images viewed: update_behavior.imagesViewed → images_viewed (how many photos they saw this visit).
+// (3) Time spent: update_active_time + end_view → active_time_seconds / duration_seconds per visit; total time = SUM across rows for that property (and optionally user).
+// (4) Device type stored per view (mobile/desktop/tablet).
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendSMS } from '@/lib/sms'
@@ -85,7 +90,10 @@ export async function POST(request) {
     const userAgent = request.headers.get('user-agent') || ''
     const referrer = request.headers.get('referer') || ''
     const clientIP = getClientIP(request)
-    const deviceType = getDeviceType(userAgent)
+    const deviceTypeFromUA = getDeviceType(userAgent)
+    const deviceType = (behaviorData?.deviceType && ['mobile', 'tablet', 'desktop'].includes(behaviorData.deviceType))
+      ? behaviorData.deviceType
+      : deviceTypeFromUA
 
     if (action === 'start_view') {
       // Get user info if userId provided

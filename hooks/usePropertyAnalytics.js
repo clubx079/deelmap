@@ -2,6 +2,14 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
+function getDeviceTypeFromViewport() {
+  if (typeof window === 'undefined') return 'desktop'
+  const w = window.innerWidth
+  if (w >= 1024) return 'desktop'
+  if (w >= 768) return 'tablet'
+  return 'mobile'
+}
+
 export function usePropertyAnalytics(property) {
   const { user } = useAuth()
   const sessionIdRef = useRef(null)
@@ -9,7 +17,7 @@ export function usePropertyAnalytics(property) {
   const activeTimeIntervalRef = useRef(null)
   const isActiveRef = useRef(true)
   const lastActivityRef = useRef(Date.now())
-  const trackingInitializedRef = useRef(false) // Add this to prevent double initialization
+  const trackingInitializedRef = useRef(false)
   const behaviorRef = useRef({
     scrolledToBottom: false,
     viewedDescription: false,
@@ -23,30 +31,11 @@ export function usePropertyAnalytics(property) {
   })
   const lastUpdateRef = useRef(0)
 
+  // One session per deal-page visit so we get: page view count = number of visits, time per visit, images per visit
   const generateSessionId = useCallback(() => {
-    // Check if we already have a session ID for this property today
-    const sessionKey = `analytics_session_${property.id}`
-    const storedSession = sessionStorage.getItem(sessionKey)
-    
-    if (storedSession) {
-      const { id, date } = JSON.parse(storedSession)
-      const today = new Date().toDateString()
-      
-      // Reuse session ID if it's from today
-      if (date === today) {
-        return id
-      }
-    }
-    
-    // Generate new session ID
-    const newId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    sessionStorage.setItem(sessionKey, JSON.stringify({
-      id: newId,
-      date: new Date().toDateString()
-    }))
-    
-    return newId
-  }, [property.id])
+    if (!property?.id) return null
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }, [property?.id])
 
   const getUTMSource = useCallback(() => {
     if (typeof window === 'undefined') return null
@@ -67,7 +56,10 @@ export function usePropertyAnalytics(property) {
   }, [])
 
   const sendAnalytics = useCallback(async (action, behaviorData = {}) => {
+    if (!property?.id || !sessionIdRef.current) return { error: true }
     try {
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : null
+      const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : null
       const response = await fetch('/api/analytics/property-tracking', {
         method: 'POST',
         headers: {
@@ -75,16 +67,17 @@ export function usePropertyAnalytics(property) {
         },
         body: JSON.stringify({
           propertyId: property.id,
-          propertyAddress: property.address,
-          propertyPrice: property.price,
+          propertyAddress: property?.address || property?.full_address || property?.display_address || null,
+          propertyPrice: property?.price ?? null,
           userId: user?.id,
           userEmail: user?.email,
           sessionId: sessionIdRef.current,
           action,
           behaviorData: {
             ...behaviorData,
-            viewportWidth: window.innerWidth,
-            viewportHeight: window.innerHeight
+            viewportWidth,
+            viewportHeight,
+            deviceType: getDeviceTypeFromViewport()
           },
           utmSource: action === 'start_view' ? getUTMSource() : undefined,
           utmCode: action === 'start_view' ? getUTMCode() : undefined,
@@ -156,14 +149,16 @@ export function usePropertyAnalytics(property) {
 
   useEffect(() => {
     if (!property?.id) return
-    
-    // Prevent double initialization in React Strict Mode
-    if (trackingInitializedRef.current) {
+
+    if (trackingInitializedRef.current) return
+
+    trackingInitializedRef.current = true
+    const sid = generateSessionId()
+    if (!sid) {
+      trackingInitializedRef.current = false
       return
     }
-    
-    trackingInitializedRef.current = true
-    sessionIdRef.current = generateSessionId()
+    sessionIdRef.current = sid
     startTimeRef.current = Date.now()
     isActiveRef.current = true
     lastActivityRef.current = Date.now()
@@ -277,12 +272,13 @@ export function usePropertyAnalytics(property) {
     }
   }, [property?.id, generateSessionId, sendAnalytics, trackBehavior, updateActiveTime, trackActivity])
 
+  const noop = () => {}
   return {
-    trackMorePhotosClick: () => trackBehavior('clickedMorePhotos'),
-    trackShareClick: () => trackBehavior('clickedShare'),
-    trackMapZoom: () => trackBehavior('zoomedMap'),
-    trackImageView,
-    trackCustomBehavior: trackBehavior,
+    trackMorePhotosClick: property?.id ? () => trackBehavior('clickedMorePhotos') : noop,
+    trackShareClick: property?.id ? () => trackBehavior('clickedShare') : noop,
+    trackMapZoom: property?.id ? () => trackBehavior('zoomedMap') : noop,
+    trackImageView: property?.id ? trackImageView : noop,
+    trackCustomBehavior: property?.id ? trackBehavior : noop,
     sessionId: sessionIdRef.current
   }
 }

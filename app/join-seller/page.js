@@ -31,6 +31,26 @@ export default function JoinSellerPage() {
     description: ''
   })
 
+  // Phone number formatter
+  const formatPhoneNumber = (value) => {
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '')
+    
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+    }
+  }
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value)
+    setFormData({ ...formData, phone: formatted })
+  }
+
   const propertyTypeOptions = [
     { value: 'single-family', label: 'Single-Family' },
     { value: 'multi-family', label: 'Multi-Family' },
@@ -183,7 +203,6 @@ export default function JoinSellerPage() {
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="bg-white border-2 border-slate-300 p-8 lg:p-10">
             <div className="mb-8 text-center">
-              <div className="w-12 h-1 bg-slate-900 mx-auto mb-4"></div>
               <h2 className="text-3xl font-bold text-slate-900 mb-2">Apply to Become a Seller</h2>
               <p className="text-slate-600">Complete the form below to get started</p>
             </div>
@@ -252,9 +271,10 @@ export default function JoinSellerPage() {
                         type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={handlePhoneChange}
                         className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
                         placeholder="(555) 555-5555"
+                        maxLength={14}
                       />
                     </div>
                   </div>

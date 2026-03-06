@@ -27,10 +27,12 @@ export default function SignupPage() {
   const [statesSearch, setStatesSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0) // seconds until Resend is allowed again
   const [error, setError] = useState('')
   const [phoneError, setPhoneError] = useState('')
   const [validatingPhone, setValidatingPhone] = useState(false)
   const statesDropdownRef = useRef(null)
+  const statesInputRef = useRef(null)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -48,6 +50,14 @@ export default function SignupPage() {
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // 30s resend cooldown timer (single interval, decrements every second when cooldown > 0)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 0 ? 0 : prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
   }, [])
 
   // Format phone number as user types
@@ -196,10 +206,12 @@ export default function SignupPage() {
 
   const handleResendCode = async (e) => {
     e.preventDefault()
+    if (resendCooldown > 0) return
     setResendLoading(true)
     setError('')
     try {
       await sendOTP(formData.email, `${formData.firstName} ${formData.lastName}`)
+      setResendCooldown(30) // 30s before next resend
     } catch (err) {
       setError(err.message || 'Failed to resend code')
     } finally {
@@ -240,15 +252,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       <Navbar />
-      
-      {/* Spilling Background Effect */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-slate-200 rounded-full blur-3xl opacity-70"></div>
-        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-slate-300 rounded-full blur-3xl opacity-60"></div>
-        <div className="absolute -bottom-24 right-1/4 w-72 h-72 bg-slate-200 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-slate-100 rounded-full blur-3xl opacity-40"></div>
-      </div>
-      
+
       <main className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="w-full max-w-2xl">
           {/* Header */}
@@ -356,80 +360,92 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* States of Interest */}
+                {/* States of Interest — single input: search and select */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     States of Interest <span className="text-red-500">*</span>
                   </label>
                   <div className="relative" ref={statesDropdownRef}>
                     <div
-                      onClick={() => setShowStatesDropdown(!showStatesDropdown)}
-                      className={`min-h-[48px] w-full px-3 py-2 border-2 rounded-lg cursor-pointer flex flex-wrap gap-1 items-center text-sm ${
+                      role="combobox"
+                      aria-expanded={showStatesDropdown}
+                      aria-haspopup="listbox"
+                      onClick={() => {
+                        setShowStatesDropdown(true)
+                        statesInputRef.current?.focus()
+                      }}
+                      className={`min-h-[48px] w-full px-3 py-2 border-2 rounded-lg flex flex-wrap gap-2 items-center text-sm cursor-text ${
                         showStatesDropdown ? 'border-slate-900 ring-2 ring-slate-900/20' : 'border-slate-300'
                       }`}
                     >
-                      {formData.statesOfInterest?.length === 0 ? (
-                        <span className="text-sm text-slate-400">Select states...</span>
-                      ) : (
-                        formData.statesOfInterest.map(stateCode => {
-                          const state = US_STATES.find(s => s.value === stateCode)
-                          return (
-                            <span
-                              key={stateCode}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-900 rounded-md text-xs font-medium"
+                      {/* Selected state chips */}
+                      {formData.statesOfInterest?.length > 0 && formData.statesOfInterest.map(stateCode => {
+                        const state = US_STATES.find(s => s.value === stateCode)
+                        return (
+                          <span
+                            key={stateCode}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-900 rounded-md text-xs font-medium"
+                          >
+                            {state?.label || stateCode}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                removeState(stateCode)
+                              }}
+                              className="hover:bg-slate-200 rounded-full p-0.5"
                             >
-                              {state?.label || stateCode}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  removeState(stateCode)
-                                }}
-                                className="hover:bg-slate-200 rounded-full p-0.5"
-                              >
-                                <X size={12} />
-                              </button>
-                            </span>
-                          )
-                        })
-                      )}
+                              <X size={12} />
+                            </button>
+                          </span>
+                        )
+                      })}
+                      {/* Single input: search filters list; selecting an option adds it */}
+                      <input
+                        ref={statesInputRef}
+                        type="text"
+                        placeholder={formData.statesOfInterest?.length === 0 ? 'Select states...' : 'Add more...'}
+                        value={statesSearch}
+                        onChange={(e) => setStatesSearch(e.target.value)}
+                        onFocus={() => setShowStatesDropdown(true)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 min-w-[120px] py-1.5 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-slate-400"
+                      />
                       <ChevronDown
                         size={18}
-                        className={`ml-auto text-slate-400 transition-transform ${showStatesDropdown ? 'rotate-180' : ''}`}
+                        className="text-slate-400 transition-transform pointer-events-none flex-shrink-0"
+                        style={{ transform: showStatesDropdown ? 'rotate(180deg)' : undefined }}
                       />
                     </div>
 
+                    {/* Dropdown: options only (no extra search input) */}
                     {showStatesDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
-                        <div className="p-2 border-b border-slate-200">
-                          <input
-                            type="text"
-                            placeholder="Search states..."
-                            value={statesSearch}
-                            onChange={(e) => setStatesSearch(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-md focus:outline-none focus:border-slate-900"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="overflow-y-auto max-h-44">
-                          {filteredStates.map(state => {
-                            const isSelected = formData.statesOfInterest?.includes(state.value)
-                            return (
-                              <button
-                                key={state.value}
-                                type="button"
-                                onClick={() => toggleState(state.value)}
-                                className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
-                                  isSelected ? 'bg-slate-100' : ''
-                                }`}
-                              >
-                                <span className={isSelected ? 'font-medium text-slate-900' : 'text-slate-700'}>
-                                  {state.label}
-                                </span>
-                                {isSelected && <Check size={16} className="text-slate-900" />}
-                              </button>
-                            )
-                          })}
+                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                        <div className="overflow-y-auto max-h-52">
+                          {filteredStates.length === 0 ? (
+                            <div className="px-3 py-4 text-sm text-slate-500 text-center">
+                              No states match &quot;{statesSearch}&quot;
+                            </div>
+                          ) : (
+                            filteredStates.map(state => {
+                              const isSelected = formData.statesOfInterest?.includes(state.value)
+                              return (
+                                <button
+                                  key={state.value}
+                                  type="button"
+                                  onClick={() => toggleState(state.value)}
+                                  className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                                    isSelected ? 'bg-slate-100' : ''
+                                  }`}
+                                >
+                                  <span className={isSelected ? 'font-medium text-slate-900' : 'text-slate-700'}>
+                                    {state.label}
+                                  </span>
+                                  {isSelected && <Check size={16} className="text-slate-900" />}
+                                </button>
+                              )
+                            })
+                          )}
                         </div>
                       </div>
                     )}
@@ -492,7 +508,7 @@ export default function SignupPage() {
                     onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
                     required
                     maxLength={6}
-                    className="h-12 text-center text-lg tracking-widest border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                    className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-slate-500 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
                   />
                   <p className="text-sm text-slate-500 mt-1.5">
                     Code sent to <strong className="text-slate-700">{formData.email}</strong>
@@ -502,10 +518,14 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={handleResendCode}
-                      disabled={resendLoading}
-                      className="font-medium text-slate-900 hover:underline disabled:opacity-50 focus:outline-none"
+                      disabled={resendLoading || resendCooldown > 0}
+                      className="font-medium text-slate-900 hover:underline disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
                     >
-                      {resendLoading ? 'Sending…' : 'Resend code'}
+                      {resendLoading
+                        ? 'Sending…'
+                        : resendCooldown > 0
+                          ? `Resend code in ${resendCooldown}s`
+                          : 'Resend code'}
                     </button>
                   </p>
                 </div>

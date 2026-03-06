@@ -34,24 +34,37 @@ async function isSystemUser(email) {
   return !!data
 }
 
-// Get property info from slug (ID in deelmapweb)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Get property info from slug (short code or legacy UUID)
 async function getPropertyFromSlug(slug) {
   if (!slug) return null
 
-  const { data } = await supabase
+  let data = null
+  const { data: bySlug } = await supabase
     .from('wholesale_deals')
-    .select('id, full_address, display_address, address, city, state')
-    .eq('id', slug)
-    .single()
+    .select('id, slug, full_address, display_address, address, city, state')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (bySlug) data = bySlug
+
+  if (!data && UUID_REGEX.test(slug)) {
+    const { data: byId } = await supabase
+      .from('wholesale_deals')
+      .select('id, slug, full_address, display_address, address, city, state')
+      .eq('id', slug)
+      .maybeSingle()
+    if (byId) data = byId
+  }
 
   if (!data) return null
 
-  // Build full address
   const fullAddress = data.full_address || data.display_address ||
     `${data.address || ''}, ${data.city || ''}, ${data.state || ''}`.trim()
 
   return {
     id: data.id,
+    slug: data.slug || null,
     address: fullAddress
   }
 }

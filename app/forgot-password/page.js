@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { useAuth } from '@/hooks/useAuth'
-import { Lock, ArrowLeft, CheckCircle, X } from 'lucide-react'
+import { Lock, ArrowLeft, CheckCircle, X, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
@@ -15,50 +15,30 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [step, setStep] = useState('request') // 'request', 'verify', 'reset'
   const [loading, setLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendLoading, setResendLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  // Redirect if not logged in (for security, require login to reset password)
+  // 30s resend cooldown timer
   useEffect(() => {
-    if (!user) {
-      router.push('/login?redirect=/forgot-password')
-    }
-  }, [user, router])
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 0 ? 0 : prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
-  if (!user) {
-    return null
-  }
-
-  // Auto-send OTP when page loads if user is logged in
+  // If user is logged in, use their email automatically
   useEffect(() => {
-    if (user?.email && step === 'request' && !loading) {
-      const autoSend = async () => {
-        setLoading(true)
-        try {
-          const response = await fetch('/api/auth/forgot-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: user.email })
-          })
-          const data = await response.json()
-          if (response.ok) {
-            setShowSuccessModal(true)
-            setStep('verify')
-          } else {
-            setError(data.message || 'Failed to send reset code')
-          }
-        } catch (err) {
-          setError(err.message || 'Failed to send reset code')
-        } finally {
-          setLoading(false)
-        }
-      }
-      autoSend()
+    if (user?.email && !email) {
+      setEmail(user.email)
     }
-  }, [user?.email]) // Only run once when user email is available
+  }, [user?.email, email])
 
-  const handleRequestReset = async (e, autoSend = false) => {
+  const handleRequestReset = async (e) => {
     if (e) e.preventDefault()
     setLoading(true)
     setError('')
@@ -68,7 +48,7 @@ export default function ForgotPasswordPage() {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email || email })
+        body: JSON.stringify({ email: email })
       })
 
       const data = await response.json()
@@ -79,10 +59,32 @@ export default function ForgotPasswordPage() {
 
       setShowSuccessModal(true)
       setStep('verify')
+      setResendCooldown(30) // start cooldown after first send
     } catch (err) {
       setError(err.message || 'Failed to send reset code')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendCode = async (e) => {
+    e.preventDefault()
+    if (resendCooldown > 0) return
+    setResendLoading(true)
+    setError('')
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || 'Failed to send reset code')
+      setResendCooldown(30)
+    } catch (err) {
+      setError(err.message || 'Failed to resend code')
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -97,7 +99,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: user.email || email,
+          email: email,
           otp 
         })
       })
@@ -140,7 +142,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          email: user.email || email,
+          email: email,
           otp,
           newPassword,
           confirmPassword
@@ -170,11 +172,11 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-md mx-auto px-6 sm:px-8 py-12">
           <Link
-            href="/settings"
+            href="/login"
             className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Settings</span>
+            <span>Back to Login</span>
           </Link>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -210,10 +212,10 @@ export default function ForgotPasswordPage() {
                   </label>
                   <input
                     type="email"
-                    value={user?.email || email}
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={!!user?.email}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-slate-900 focus:border-slate-900 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
                     required
                   />
                   {user?.email && (
@@ -235,7 +237,7 @@ export default function ForgotPasswordPage() {
             {step === 'verify' && (
               <form onSubmit={handleVerifyOTP} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Verification Code
                   </label>
                   <input
@@ -243,7 +245,7 @@ export default function ForgotPasswordPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="Enter 6-digit code"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-center text-2xl tracking-widest"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-slate-500"
                     maxLength={6}
                     required
                   />
@@ -257,10 +259,11 @@ export default function ForgotPasswordPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStep('request')}
-                  className="w-full text-slate-600 hover:text-slate-900 text-sm"
+                  onClick={handleResendCode}
+                  disabled={resendLoading || resendCooldown > 0}
+                  className="w-full text-slate-600 hover:text-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Resend Code
+                  {resendLoading ? 'Sending...' : resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Code'}
                 </button>
               </form>
             )}
@@ -271,27 +274,47 @@ export default function ForgotPasswordPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     New Password
                   </label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                    required
-                    minLength={6}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-0 rounded"
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Confirm Password
                   </label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                    required
-                    minLength={6}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-0 rounded"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
                 <button
                   type="submit"

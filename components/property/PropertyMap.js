@@ -54,7 +54,14 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
+        zoomControl: false,
+        rotateControl: false,
+        scaleControl: false,
+        panControl: false,
+        mapTypeId: 'roadmap',
+        disableDefaultUI: true, // Disable ALL default UI controls
         clickableIcons: false,
+        gestureHandling: 'greedy', // Disable the "use ctrl+scroll" message
         styles: [
           {
             featureType: 'poi',
@@ -346,7 +353,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       hideInfoCard()
-      router.push(`/${prop.slug}`)
+      router.push(`/${prop.slug || prop.id}`)
     })
 
     el.addEventListener('mouseenter', () => {
@@ -377,14 +384,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapWidth = mapDiv.offsetWidth
       const mapHeight = mapDiv.offsetHeight
       
-      // Screen edge padding: ensures popup doesn't touch screen edges
-      // Using smaller padding for better positioning flexibility
       const edgePadding = 15
-      // Card dimensions MUST match actual visual size accurately
-      // Actual card: 240px wide × ~210px tall (120px img + 90px content/padding)
-      const cardWidth = 250   // 240px actual + 10px safety margin
-      const cardHeight = 220  // 210px actual + 10px safety margin
-      // Popup offset from marker: keeps popup close to marker
+      const cardWidth = 250   
+      const cardHeight = 220  
       const popupOffset = 15
       
       console.log('🗺️ MAP POPUP CALCULATION START');

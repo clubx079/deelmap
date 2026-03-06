@@ -29,6 +29,21 @@ body {
   background: #9ca3af; 
 }
 
+/* Finance thank-you popup: slide in from top right */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.finance-thankyou-popup {
+  animation: slideInRight 0.3s ease-out;
+}
+
 /* Property listings scroll area */
 .property-listings-scroll { 
   scroll-behavior: smooth; 
@@ -416,7 +431,7 @@ nav {
 
 /* Navbar and dropdown z-index hierarchy */
 nav {
-  z-index: 30 !important;
+  z-index: 50 !important;
   position: relative;
 }
 
@@ -619,4 +634,18 @@ nav {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* User avatar animations */
+@keyframes rotate-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: rotate-slow 3s linear infinite;
 }
