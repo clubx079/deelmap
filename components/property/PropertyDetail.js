@@ -257,11 +257,19 @@ export function PropertyDetail({ property }) {
   const estNetCashFlow = property.est_net_cash_flow || monthlyNetCashFlow
 
   const nextPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev + 1) % photos.length)
+    setCurrentPhotoIndex((prev) => {
+      const next = (prev + 1) % photos.length
+      trackImageView(next + 1)
+      return next
+    })
   }
 
   const prevPhoto = () => {
-    setCurrentPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length)
+    setCurrentPhotoIndex((prev) => {
+      const next = (prev - 1 + photos.length) % photos.length
+      trackImageView(next + 1)
+      return next
+    })
   }
 
   return (
@@ -669,7 +677,7 @@ export function PropertyDetail({ property }) {
                 <Link
                   href={user && (property.temp_seller_id || property.seller_id)
                     ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
-                    : user 
+                    : user
                       ? '/buyer/inbox'
                       : '/login'
                   }
