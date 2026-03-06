@@ -2,9 +2,16 @@
 // OPTIMIZED & IMPROVED DESIGN VERSION
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
+import { withTimeout } from '@/lib/timeout'
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+  process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
+)
 
 // Shared storage - in production, use Redis or database
 let passwordResetStore = new Map()
@@ -16,7 +23,7 @@ if (typeof global !== 'undefined') {
 
 export async function POST(request) {
   try {
-    const { email } = await request.json()
+    const { email, method = 'email' } = await request.json()
 
     if (!email) {
       return NextResponse.json({ message: 'Email is required' }, { status: 400 })
@@ -24,7 +31,7 @@ export async function POST(request) {
 
     // Generate 6-digit OTP for password reset
     const resetOtp = Math.floor(100000 + Math.random() * 900000).toString()
-    
+
     // Store password reset OTP with expiration (15 minutes for password reset)
     passwordResetStore.set(email, {
       otp: resetOtp,
@@ -33,6 +40,56 @@ export async function POST(request) {
     })
 
     console.log(`Generated password reset OTP for ${email}: ${resetOtp}`)
+
+    // SMS delivery via AiroSofts
+    if (method === 'sms') {
+      const { data: userRow } = await supabaseAdmin
+        .from('users')
+        .select('phone')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle()
+
+      if (!userRow?.phone) {
+        return NextResponse.json({ message: 'No phone number on file for this account. Please use email instead.' }, { status: 400 })
+      }
+
+      const digits = userRow.phone.replace(/\D/g, '')
+      const e164Phone = digits.length === 10
+        ? `+1${digits}`
+        : (digits.length === 11 && digits.startsWith('1') ? `+${digits}` : null)
+
+      if (!e164Phone) {
+        return NextResponse.json({ message: 'Invalid phone number on file. Please use email instead.' }, { status: 400 })
+      }
+
+      console.log(`[forgot-password] Sending SMS reset code to ${e164Phone}`)
+
+      const smsResponse = await withTimeout(
+        fetch('https://ap.airosofts.com/api/external/sms/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.AIROSOFTS_SMS_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: process.env.AIROSOFTS_SMS_FROM,
+            to: e164Phone,
+            message: `Your Deelmap password reset code is ${resetOtp}. Valid for 15 minutes. Do not share this code.`
+          })
+        }),
+        10000,
+        'SMS send timed out'
+      )
+
+      const smsData = await smsResponse.json()
+      if (!smsResponse.ok) {
+        console.error('[forgot-password] SMS send failed:', smsData)
+        return NextResponse.json({ message: 'Failed to send SMS. Please use email instead.' }, { status: 500 })
+      }
+
+      console.log(`[forgot-password] SMS reset code sent to ${e164Phone}`)
+      return NextResponse.json({ message: 'Password reset code sent successfully via SMS' })
+    }
 
     // Same logo URL as signup OTP email so it loads in email clients
     const logoBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production.up.railway.app').replace(/\/$/, '')

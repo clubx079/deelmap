@@ -162,11 +162,11 @@ export function AuthProvider({ children }) {
     return result
   }
 
-  const forgotPassword = async (email) => {
+  const forgotPassword = async (email, method = 'email') => {
     const response = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, method }),
     })
 
     if (!response.ok) {
