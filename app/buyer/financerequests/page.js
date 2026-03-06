@@ -1,16 +1,23 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { FileText, Search, ChevronDown, ChevronUp, MapPin, User, DollarSign, Calendar, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FinanceRequestsPage() {
   const { user } = useAuth();
+  const { setPageTitle } = useBuyerPageTitle();
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
+
+  useEffect(() => {
+    setPageTitle('My Applications');
+    return () => setPageTitle('');
+  }, [setPageTitle]);
 
   useEffect(() => {
     if (user?.id) {
@@ -78,12 +85,12 @@ export default function FinanceRequestsPage() {
   };
 
   return (
-    <div className="min-h-full bg-slate-50 pt-12 lg:pt-0">
-      {/* Consistent navbar header like other buyer portal pages */}
+    <div className="min-h-full bg-slate-50">
+      {/* Consistent navbar header like other buyer portal pages; mobile title is in layout bar */}
       <div className="px-4 py-3 border-b border-slate-200 bg-white/80">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">My Applications</h1>
+            <h1 className="hidden lg:block text-lg font-semibold text-slate-900">My Applications</h1>
             <p className="text-xs text-slate-500">View and track your financing applications</p>
           </div>
           <div className="flex items-center gap-2">

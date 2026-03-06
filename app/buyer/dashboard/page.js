@@ -1,11 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import Link from 'next/link';
 import { Users } from 'lucide-react';
 
 export default function BuyerDashboard() {
   const { user } = useAuth();
+  const { setPageTitle } = useBuyerPageTitle();
   const [stats, setStats] = useState({
     totalApplications: 0,
     pendingApplications: 0,
@@ -14,6 +16,11 @@ export default function BuyerDashboard() {
   });
   const [recentApplications, setRecentApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setPageTitle('Dashboard');
+    return () => setPageTitle('');
+  }, [setPageTitle]);
 
   useEffect(() => {
     if (user?.id) {
@@ -111,12 +118,12 @@ export default function BuyerDashboard() {
   }
 
   return (
-    <div className="min-h-full bg-slate-50 pt-12 lg:pt-0">
-      {/* Compact header — one line */}
+    <div className="min-h-full bg-slate-50">
+      {/* Compact header — one line (desktop); mobile title is in layout bar */}
       <div className="px-4 py-3 border-b border-slate-200 bg-white/80">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">Welcome back, {displayFirstName()}</h1>
+            <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Welcome back, {displayFirstName()}</h1>
             <p className="text-xs text-slate-500">{getCurrentDate()}</p>
           </div>
         </div>

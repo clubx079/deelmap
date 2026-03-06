@@ -212,6 +212,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         });
         setNewMessage('');
         scrollToBottom();
+        setTimeout(() => textareaRef.current?.focus(), 0);
       } else {
         const errMsg = data.error || 'Failed to send message. Please try again.';
         alert(errMsg);
@@ -295,6 +296,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           setNewMessage('');
           handleRemovePreview();
           scrollToBottom();
+          setTimeout(() => textareaRef.current?.focus(), 0);
         }
       } else {
         alert(uploadData.error || 'Failed to upload file');

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { MessageCircle, Search, DollarSign, Home, Pin } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
 
@@ -16,6 +17,7 @@ function getAvatarColor(seed = '') {
 
 export default function InboxPage() {
   const { user } = useAuth();
+  const { setPageTitle } = useBuyerPageTitle();
   const [conversations, setConversations] = useState([]);
   const [filteredConversations, setFilteredConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -27,6 +29,11 @@ export default function InboxPage() {
 
   const sellerIdFromUrl = searchParams.get('seller_id');
   const dealIdFromUrl = searchParams.get('deal_id');
+
+  useEffect(() => {
+    setPageTitle('Messages');
+    return () => setPageTitle('');
+  }, [setPageTitle]);
 
   useEffect(() => {
     if (user?.id) {
@@ -242,12 +249,12 @@ export default function InboxPage() {
     });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 pt-12 lg:pt-0">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Left Panel - Conversation List */}
       <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[380px] border-r border-slate-200 bg-white`}>
         {/* Header — compact */}
         <div className="p-3 border-b border-slate-200">
-          <h1 className="text-base font-semibold text-slate-900 mb-2">Messages</h1>
+          <h1 className="hidden lg:block text-base font-semibold text-slate-900 mb-2">Messages</h1>
 
           {/* Search Bar */}
           <div className="relative">
