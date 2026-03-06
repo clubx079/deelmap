@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/hooks/useAuth';
+import Link from 'next/link';
 import {
   X,
   Send,
@@ -14,7 +15,9 @@ import {
   ArrowLeft,
   DollarSign,
   Home,
-  Mail
+  Mail,
+  MoreVertical,
+  ExternalLink
 } from 'lucide-react';
 
 function getSupabase() {
@@ -34,9 +37,11 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [previewFiles, setPreviewFiles] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loadedImages, setLoadedImages] = useState(new Set());
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const listingHref = conversation?.property_slug ? `/${conversation.property_slug}` : (conversation?.property_id ? `/${conversation.property_id}` : null);
 
   // Fetch messages on mount
   useEffect(() => {
@@ -207,6 +212,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         });
         setNewMessage('');
         scrollToBottom();
+        setTimeout(() => textareaRef.current?.focus(), 0);
       } else {
         const errMsg = data.error || 'Failed to send message. Please try again.';
         alert(errMsg);
@@ -290,6 +296,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           setNewMessage('');
           handleRemovePreview();
           scrollToBottom();
+          setTimeout(() => textareaRef.current?.focus(), 0);
         }
       } else {
         alert(uploadData.error || 'Failed to upload file');
@@ -310,6 +317,26 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       hour12: true
     });
   };
+
+  // Group messages by time window (same group = within 5 min of previous message); show time only once per group
+  const MESSAGE_GROUP_WINDOW_MS = 5 * 60 * 1000;
+  const messageGroups = (() => {
+    if (!messages.length) return [];
+    const groups = [];
+    let current = [messages[0]];
+    for (let i = 1; i < messages.length; i++) {
+      const prev = new Date(messages[i - 1].created_at).getTime();
+      const curr = new Date(messages[i].created_at).getTime();
+      if (curr - prev <= MESSAGE_GROUP_WINDOW_MS) {
+        current.push(messages[i]);
+      } else {
+        groups.push(current);
+        current = [messages[i]];
+      }
+    }
+    groups.push(current);
+    return groups;
+  })();
 
   const formatFileSize = (bytes) => {
     if (!bytes) return 'Unknown size';
@@ -395,10 +422,9 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
+      {/* Header: full name, property address, options (View listing) */}
       <div className="flex-shrink-0 px-5 py-4 border-b border-slate-200 bg-white">
         <div className="flex items-center gap-3">
-          {/* Back button for mobile */}
           <button
             onClick={onBack}
             className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-slate-100 transition-colors"
@@ -406,15 +432,28 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
 
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 rounded-full bg-[#002A3A] flex items-center justify-center text-white font-semibold text-sm">
-              {lender?.business_name?.charAt(0)?.toUpperCase() || (financingRequest ? 'L' : 'S')}
-            </div>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {conversation?.property_thumbnail_url ? (
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0">
+                <img
+                  src={conversation.property_thumbnail_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-[#002A3A] flex items-center justify-center text-white font-semibold text-sm shrink-0">
+                {lender?.business_name?.charAt(0)?.toUpperCase() || (financingRequest ? 'L' : 'S')}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold text-slate-900 text-sm truncate">
                 {lender?.business_name || (financingRequest ? 'Lender' : 'Seller')}
               </h2>
-              {financingRequest && (
+              {conversation?.property_address && (
+                <p className="text-[11px] text-slate-600 truncate mt-0.5">{conversation.property_address}</p>
+              )}
+              {financingRequest && !conversation?.property_address && (
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="inline-flex items-center gap-1 text-[11px] text-slate-600">
                     <Home className="w-3 h-3" />
@@ -428,6 +467,34 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               )}
             </div>
           </div>
+
+          {listingHref && (
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setHeaderMenuOpen((v) => !v)}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+                aria-label="Options"
+              >
+                <MoreVertical className="w-5 h-5 text-slate-600" />
+              </button>
+              {headerMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} aria-hidden />
+                  <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-slate-200 bg-white shadow-lg py-1">
+                    <Link
+                      href={listingHref}
+                      onClick={() => setHeaderMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      View listing
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -449,50 +516,61 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => {
-              const isUser = message.sender_type === 'user';
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className="flex flex-col max-w-[70%]">
+            {messageGroups.map((group) => (
+              <div key={group[0].id} className="space-y-2">
+                {group.map((message) => {
+                  const isUser = message.sender_type === 'user';
+                  const isLastInGroup = message.id === group[group.length - 1].id;
+                  return (
                     <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        isUser
-                          ? 'bg-[#002A3A] text-white rounded-br-sm'
-                          : 'bg-white text-slate-900 rounded-bl-sm shadow-sm border border-slate-200'
-                      }`}
+                      key={message.id}
+                      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                     >
-                      {message.message_text && (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                          {message.message_text}
-                        </p>
-                      )}
-                      {renderAttachment(message)}
-                    </div>
-                    <div className={`flex items-center gap-1 mt-1.5 px-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      {message.is_from_email && (
-                        <div className="flex items-center gap-1 text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                          <Mail className="w-3 h-3" />
-                          <span>Email</span>
+                      <div className="flex flex-col max-w-[70%]">
+                        <div
+                          className={`rounded-2xl px-4 py-3 ${
+                            isUser
+                              ? 'bg-[#002A3A] text-white rounded-br-sm'
+                              : 'bg-white text-slate-900 rounded-bl-sm shadow-sm border border-slate-200'
+                          }`}
+                        >
+                          {message.message_text && (
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                              {message.message_text}
+                            </p>
+                          )}
+                          {renderAttachment(message)}
                         </div>
-                      )}
-                      <span className="text-[11px] text-slate-400">
-                        {formatTime(message.created_at)}
-                      </span>
-                      {isUser && (
-                        message.is_read ? (
-                          <CheckCheck className="w-3.5 h-3.5 text-blue-500" />
-                        ) : (
-                          <Check className="w-3.5 h-3.5 text-slate-400" />
-                        )
-                      )}
+                        {(message.is_from_email || isLastInGroup) && (
+                          <div className={`flex items-center gap-1 mt-1.5 px-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            {message.is_from_email && (
+                              <div className="flex items-center gap-1 text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                <Mail className="w-3 h-3" />
+                                <span>Email</span>
+                              </div>
+                            )}
+                            {isLastInGroup && (
+                              <>
+                                <span className="text-[11px] text-slate-400">
+                                  {formatTime(message.created_at)}
+                                </span>
+                                {isUser && (
+                                  message.is_read ? (
+                                    <CheckCheck className="w-3.5 h-3.5 text-blue-500" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5 text-slate-400" />
+                                  )
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            ))}
             <div ref={messagesEndRef} className="h-1" />
           </div>
         )}

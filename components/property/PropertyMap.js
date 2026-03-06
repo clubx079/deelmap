@@ -353,7 +353,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       hideInfoCard()
-      router.push(`/${prop.slug}`)
+      router.push(`/${prop.slug || prop.id}`)
     })
 
     el.addEventListener('mouseenter', () => {

@@ -215,9 +215,10 @@ export function AuthProvider({ children }) {
       // Call logout API
       await fetch('/api/auth/logout', { method: 'POST' })
 
-      // Redirect to landing page
+      // Redirect to landing page (root), not /home
       if (typeof window !== 'undefined') {
-        window.location.href = '/'
+        const origin = window.location.origin || ''
+        window.location.replace(origin + '/')
       }
 
     } catch (error) {
@@ -229,7 +230,8 @@ export function AuthProvider({ children }) {
       
       // Redirect to landing page even on error
       if (typeof window !== 'undefined') {
-        window.location.href = '/'
+        const origin = window.location.origin || ''
+        window.location.replace(origin + '/')
       }
     }
   }

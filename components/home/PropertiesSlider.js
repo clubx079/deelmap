@@ -6,57 +6,67 @@ import { useProperties } from '@/hooks/useProperties'
 import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
 import { useAuth } from '@/hooks/useAuth'
 
+const FEATURED_COUNT = 9
+
 export function PropertiesSlider() {
   const { user } = useAuth()
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'] },
     sortBy: 'newest',
-    pageSize: 15
+    pageSize: FEATURED_COUNT
   })
-  
-  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const [desktopIndex, setDesktopIndex] = useState(0)
+  const [mobileIndex, setMobileIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
-  // Limit to 15 properties
-  const displayProperties = properties.slice(0, 15)
-  
-  // Calculate number of slides (3 properties per slide)
-  const slidesCount = Math.ceil(displayProperties.length / 3)
+  // Exactly 9 latest properties (newest first from API)
+  const displayProperties = properties.slice(0, FEATURED_COUNT)
 
-  // Auto-slide functionality
+  // Desktop: 3 properties per slide → 3 slides
+  const desktopSlidesCount = Math.ceil(displayProperties.length / 3)
+  // Mobile: 1 property per slide → 9 slides
+  const mobileSlidesCount = displayProperties.length
+
+  // Auto-slide: desktop (3 slides) and mobile (9 slides)
   useEffect(() => {
-    if (displayProperties.length === 0 || isPaused || slidesCount <= 1) return
-
+    if (displayProperties.length === 0 || isPaused) return
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % slidesCount)
-    }, 5000) // Change slide every 5 seconds
-
+      setDesktopIndex((prev) => (prev + 1) % desktopSlidesCount)
+      setMobileIndex((prev) => (prev + 1) % mobileSlidesCount)
+    }, 5000)
     return () => clearInterval(interval)
-  }, [displayProperties.length, isPaused, slidesCount])
+  }, [displayProperties.length, isPaused, desktopSlidesCount, mobileSlidesCount])
 
-  const goToSlide = (index) => {
-    setCurrentIndex(index)
-    setIsPaused(true)
-    // Resume auto-slide after 10 seconds
-    setTimeout(() => setIsPaused(false), 10000)
-  }
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % slidesCount)
+  const goToDesktopSlide = (index) => {
+    setDesktopIndex(index)
     setIsPaused(true)
     setTimeout(() => setIsPaused(false), 10000)
   }
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + slidesCount) % slidesCount)
+  const goToMobileSlide = (index) => {
+    setMobileIndex(index)
     setIsPaused(true)
     setTimeout(() => setIsPaused(false), 10000)
   }
-
-  // Get properties for current slide
-  const getCurrentSlideProperties = () => {
-    const start = currentIndex * 3
-    return displayProperties.slice(start, start + 3)
+  const nextDesktopSlide = () => {
+    setDesktopIndex((prev) => (prev + 1) % desktopSlidesCount)
+    setIsPaused(true)
+    setTimeout(() => setIsPaused(false), 10000)
+  }
+  const prevDesktopSlide = () => {
+    setDesktopIndex((prev) => (prev - 1 + desktopSlidesCount) % desktopSlidesCount)
+    setIsPaused(true)
+    setTimeout(() => setIsPaused(false), 10000)
+  }
+  const nextMobileSlide = () => {
+    setMobileIndex((prev) => (prev + 1) % mobileSlidesCount)
+    setIsPaused(true)
+    setTimeout(() => setIsPaused(false), 10000)
+  }
+  const prevMobileSlide = () => {
+    setMobileIndex((prev) => (prev - 1 + mobileSlidesCount) % mobileSlidesCount)
+    setIsPaused(true)
+    setTimeout(() => setIsPaused(false), 10000)
   }
 
   const formatPrice = (price) => {
@@ -73,6 +83,85 @@ export function PropertiesSlider() {
     const firstCommaIndex = fullAddress.indexOf(',')
     if (firstCommaIndex === -1) return fullAddress
     return fullAddress.substring(firstCommaIndex + 1).trim()
+  }
+
+  const renderPropertyCard = (property) => {
+    const featureImage = getPrimaryPhotoUrl(property.property_photos)
+    const photoCount = property.property_photos?.length || 0
+    const hasPhotos = photoCount > 0 && featureImage
+
+    return (
+      <Link
+        href={`/${property.slug || property.id}`}
+        className="group bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-900 transition-all duration-300 hover:shadow-lg block"
+      >
+        <div className="relative h-48 overflow-hidden bg-slate-100">
+          {hasPhotos ? (
+            <>
+              <Image
+                src={featureImage}
+                alt={getDisplayAddress(property)}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </>
+          ) : (
+            /* No photo placeholder - same as buy page: logo + Photos Coming Soon */
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 gap-2">
+              <div className="relative w-40 h-12">
+                <Image
+                  src="/assets/logo copy.png"
+                  alt="DeelMap"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-xs font-medium text-gray-500">Photos Coming Soon</span>
+            </div>
+          )}
+          {property.status && (
+            <div className="absolute top-2 left-2">
+              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+                property.status.toLowerCase() === 'sold' ? 'bg-red-500 text-white'
+                  : property.status.toLowerCase() === 'pending' ? 'bg-orange-500 text-white'
+                  : 'bg-slate-900 text-white'
+              }`}>
+                {property.status.toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="text-xl font-bold text-slate-900 mb-1.5">{formatPrice(property.price)}</div>
+          <p className="text-xs text-slate-600 mb-3 line-clamp-2 min-h-[2rem]">{getDisplayAddress(property)}</p>
+          <div className="flex items-center gap-3 text-xs text-slate-700 mb-3 pb-3 border-b border-slate-200">
+            {property.bedrooms && <span className="font-medium">{property.bedrooms} bed</span>}
+            {property.bathrooms && <span className="font-medium">{property.bathrooms} bath</span>}
+            {property.sqft && <span className="font-medium">{property.sqft.toLocaleString()} sqft</span>}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {property.gross_yield && (
+              <div>
+                <div className="text-[10px] text-slate-500 mb-0.5">Gross Yield</div>
+                <div className="text-sm font-bold text-slate-900">{property.gross_yield}%</div>
+              </div>
+            )}
+            {property.cap_rate && (
+              <div>
+                <div className="text-[10px] text-slate-500 mb-0.5">Cap Rate</div>
+                <div className="text-sm font-bold text-slate-900">{property.cap_rate}%</div>
+              </div>
+            )}
+            {property.cash_on_cash && (
+              <div>
+                <div className="text-[10px] text-slate-500 mb-0.5">Cash on Cash</div>
+                <div className="text-sm font-bold text-slate-900">{property.cash_on_cash}%</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Link>
+    )
   }
 
   // Shimmer skeleton component
@@ -138,14 +227,13 @@ export function PropertiesSlider() {
           </p>
         </div>
 
-        {/* Properties Slider */}
-        <div className="relative">
-          {/* Navigation Arrows - Outside container */}
-          {slidesCount > 1 && (
+        {/* Desktop: 3 properties per slide (original behavior), 3 slides for 9 properties */}
+        <div className="relative hidden lg:block">
+          {desktopSlidesCount > 1 && (
             <>
               <button
-                onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 hidden lg:block bg-white border-2 border-slate-300 rounded-full p-3 hover:border-slate-900 hover:bg-slate-50 transition-all shadow-lg z-10"
+                onClick={prevDesktopSlide}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 bg-white border-2 border-slate-300 rounded-full p-3 hover:border-slate-900 hover:bg-slate-50 transition-all shadow-lg z-10"
                 aria-label="Previous properties"
               >
                 <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,8 +241,8 @@ export function PropertiesSlider() {
                 </svg>
               </button>
               <button
-                onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 hidden lg:block bg-white border-2 border-slate-300 rounded-full p-3 hover:border-slate-900 hover:bg-slate-50 transition-all shadow-lg z-10"
+                onClick={nextDesktopSlide}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 bg-white border-2 border-slate-300 rounded-full p-3 hover:border-slate-900 hover:bg-slate-50 transition-all shadow-lg z-10"
                 aria-label="Next properties"
               >
                 <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,135 +251,93 @@ export function PropertiesSlider() {
               </button>
             </>
           )}
-
-          {/* Properties Grid */}
           <div className="overflow-hidden">
-            <div 
+            <div
               className="flex transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+              style={{ transform: `translateX(-${desktopIndex * 100}%)` }}
             >
-              {Array.from({ length: slidesCount }).map((_, slideIndex) => {
+              {Array.from({ length: desktopSlidesCount }).map((_, slideIndex) => {
                 const slideProperties = displayProperties.slice(slideIndex * 3, slideIndex * 3 + 3)
                 return (
                   <div
                     key={slideIndex}
-                    className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 px-2"
+                    className="w-full shrink-0 grid grid-cols-3 gap-4 px-2"
                   >
-                    {slideProperties.map((property) => {
-                      const featureImage = getPrimaryPhotoUrl(property.property_photos) ||
-                        'https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Property+Image'
-                      
-                      return (
-                        <Link
-                          key={property.id}
-                          href={`/${property.id}`}
-                          className="group bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-900 transition-all duration-300 hover:shadow-lg"
-                        >
-                          {/* Property Image */}
-                          <div className="relative h-48 overflow-hidden bg-slate-100">
-                            <Image
-                              src={featureImage}
-                              alt={getDisplayAddress(property)}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            
-                            {/* Status Badge */}
-                            {property.status && (
-                              <div className="absolute top-2 left-2">
-                                <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
-                                  property.status.toLowerCase() === 'sold' 
-                                    ? 'bg-red-500 text-white' 
-                                    : property.status.toLowerCase() === 'pending'
-                                    ? 'bg-orange-500 text-white'
-                                    : 'bg-slate-900 text-white'
-                                }`}>
-                                  {property.status.toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Property Details */}
-                          <div className="p-4">
-                            {/* Price */}
-                            <div className="text-xl font-bold text-slate-900 mb-1.5">
-                              {formatPrice(property.price)}
-                            </div>
-
-                            {/* Address */}
-                            <p className="text-xs text-slate-600 mb-3 line-clamp-2 min-h-[2rem]">
-                              {getDisplayAddress(property)}
-                            </p>
-
-                            {/* Property Features */}
-                            <div className="flex items-center gap-3 text-xs text-slate-700 mb-3 pb-3 border-b border-slate-200">
-                              {property.bedrooms && (
-                                <span className="font-medium">{property.bedrooms} bed</span>
-                              )}
-                              {property.bathrooms && (
-                                <span className="font-medium">{property.bathrooms} bath</span>
-                              )}
-                              {property.sqft && (
-                                <span className="font-medium">{property.sqft.toLocaleString()} sqft</span>
-                              )}
-                            </div>
-
-                            {/* Key Metrics */}
-                            <div className="grid grid-cols-3 gap-2">
-                              {property.gross_yield && (
-                                <div>
-                                  <div className="text-[10px] text-slate-500 mb-0.5">Gross Yield</div>
-                                  <div className="text-sm font-bold text-slate-900">
-                                    {property.gross_yield}%
-                                  </div>
-                                </div>
-                              )}
-                              {property.cap_rate && (
-                                <div>
-                                  <div className="text-[10px] text-slate-500 mb-0.5">Cap Rate</div>
-                                  <div className="text-sm font-bold text-slate-900">
-                                    {property.cap_rate}%
-                                  </div>
-                                </div>
-                              )}
-                              {property.cash_on_cash && (
-                                <div>
-                                  <div className="text-[10px] text-slate-500 mb-0.5">Cash on Cash</div>
-                                  <div className="text-sm font-bold text-slate-900">
-                                    {property.cash_on_cash}%
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })}
+                    {slideProperties.map((property) => (
+                      <div key={property.id}>{renderPropertyCard(property)}</div>
+                    ))}
                   </div>
                 )
               })}
             </div>
           </div>
+          {desktopSlidesCount > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              {Array.from({ length: desktopSlidesCount }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToDesktopSlide(index)}
+                  className={`transition-all duration-300 rounded-full ${
+                    index === desktopIndex ? 'w-3 h-3 bg-slate-900' : 'w-2 h-2 bg-slate-300 hover:bg-slate-400'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Dot Navigation */}
-        {slidesCount > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8">
-            {Array.from({ length: slidesCount }).map((_, index) => (
+        {/* Mobile: 1 property per slide, 9 slides with slider */}
+        <div className="relative lg:hidden">
+          {mobileSlidesCount > 1 && (
+            <>
               <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`transition-all duration-300 rounded-full ${
-                  index === currentIndex
-                    ? 'w-3 h-3 bg-slate-900'
-                    : 'w-2 h-2 bg-slate-300 hover:bg-slate-400'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
+                onClick={prevMobileSlide}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border-2 border-slate-300 rounded-full p-2.5 hover:border-slate-900 hover:bg-slate-50 shadow-lg"
+                aria-label="Previous property"
+              >
+                <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={nextMobileSlide}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border-2 border-slate-300 rounded-full p-2.5 hover:border-slate-900 hover:bg-slate-50 shadow-lg"
+                aria-label="Next property"
+              >
+                <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(-${mobileIndex * 100}%)` }}
+            >
+              {displayProperties.map((property) => (
+                <div key={property.id} className="w-full shrink-0 px-2">
+                  {renderPropertyCard(property)}
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+          {mobileSlidesCount > 1 && (
+            <div className="flex justify-center gap-2 mt-6">
+              {displayProperties.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToMobileSlide(index)}
+                  className={`transition-all duration-300 rounded-full ${
+                    index === mobileIndex ? 'w-3 h-3 bg-slate-900' : 'w-2 h-2 bg-slate-300 hover:bg-slate-400'
+                  }`}
+                  aria-label={`Go to property ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* View All Link */}
         <div className="text-center mt-10">

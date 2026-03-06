@@ -109,8 +109,126 @@ async function sendEmailToLender(lenderEmail, lenderName, buyerName, messageText
   }
 }
 
+// Helper: resolve deal/property address and slug by id – check both properties (manual) and wholesale_deals
+async function getDealAddressAndSlug(supabase, dealId) {
+  if (!dealId) return { address: null, slug: null, source: null };
+  const idStr = String(dealId).trim();
+  if (!idStr) return { address: null, slug: null, source: null };
+
+  // 1) Try properties table first (seller-added manual listings – "address" column)
+  const { data: prop, error: propErr } = await supabase
+    .from('properties')
+    .select('address, city, state, zip_code, postal_code, slug')
+    .eq('id', idStr)
+    .maybeSingle();
+  if (propErr) {
+    console.warn('[getDealAddressAndSlug] properties query error for id', idStr, ':', propErr.message);
+  }
+  if (!propErr && prop) {
+    const address = (prop.address != null && String(prop.address).trim() !== '')
+      ? String(prop.address).trim()
+      : [prop.address, prop.city, prop.state, prop.zip_code || prop.postal_code].filter(Boolean).join(', ') || null;
+    return { address: address || null, slug: prop.slug || null, source: 'properties' };
+  }
+
+  // 1b) If properties failed on column error, try minimal columns (address only)
+  if (propErr && /column|does not exist/i.test(String(propErr.message))) {
+    const { data: propMin } = await supabase
+      .from('properties')
+      .select('address')
+      .eq('id', idStr)
+      .maybeSingle();
+    if (propMin && (propMin.address != null && String(propMin.address).trim() !== '')) {
+      return { address: String(propMin.address).trim(), slug: null, source: 'properties' };
+    }
+  }
+
+  // 2) Try wholesale_deals (scraped deals)
+  const { data: wholesale, error: wholesaleErr } = await supabase
+    .from('wholesale_deals')
+    .select('full_address, display_address, address, city, state, zip_code, slug')
+    .eq('id', idStr)
+    .maybeSingle();
+  if (wholesaleErr) {
+    console.warn('[getDealAddressAndSlug] wholesale_deals query error for id', idStr, ':', wholesaleErr.message);
+  }
+  if (!wholesaleErr && wholesale) {
+    const address = (wholesale.full_address || wholesale.display_address || '').trim() ||
+      [wholesale.address, wholesale.city, wholesale.state, wholesale.zip_code].filter(Boolean).join(', ') || null;
+    return { address: address || null, slug: wholesale.slug || null, source: 'wholesale_deals' };
+  }
+
+  return { address: null, slug: null, source: null };
+}
+
+// Helper: resolve agent/seller details for logging (source, name, email masked)
+async function getAgentDetailsForLog(supabase, sellerId) {
+  if (!sellerId) return { source: null, name: null, email: null };
+  const { data: sellerApp } = await supabase
+    .from('seller_applications')
+    .select('contact_person_name, business_name, email')
+    .eq('id', sellerId)
+    .maybeSingle();
+  if (sellerApp) {
+    const name = (sellerApp.contact_person_name || sellerApp.business_name || '').trim() || null;
+    const email = sellerApp.email ? `${sellerApp.email.slice(0, 3)}***@${(sellerApp.email.split('@')[1] || '')}` : null;
+    return { source: 'seller_applications', name, email };
+  }
+  const { data: tempSeller } = await supabase
+    .from('temp_seller_logins')
+    .select('seller_name, sender_email')
+    .eq('id', sellerId)
+    .maybeSingle();
+  if (tempSeller) {
+    const name = (tempSeller.seller_name || '').trim() || null;
+    const email = tempSeller.sender_email ? `${tempSeller.sender_email.slice(0, 3)}***@${(tempSeller.sender_email.split('@')[1] || '')}` : null;
+    return { source: 'temp_seller_logins', name, email };
+  }
+  const { data: user } = await supabase
+    .from('users')
+    .select('first_name, last_name, full_name, email')
+    .eq('id', sellerId)
+    .maybeSingle();
+  if (user) {
+    const name = (user.full_name || [user.first_name, user.last_name].filter(Boolean).join(' ')).trim() || null;
+    const email = user.email ? `${user.email.slice(0, 3)}***@${(user.email.split('@')[1] || '')}` : null;
+    return { source: 'users', name, email };
+  }
+  return { source: null, name: null, email: null };
+}
+
+// Helper: get property thumbnail URL for conversation list
+async function getPropertyThumbnail(supabase, propertyId) {
+  if (!propertyId) return null;
+  const { data: photo } = await supabase
+    .from('property_photos')
+    .select('photo_url')
+    .eq('deal_id', propertyId)
+    .eq('is_featured', true)
+    .order('display_order', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (photo?.photo_url) return photo.photo_url;
+  const { data: first } = await supabase
+    .from('property_photos')
+    .select('photo_url')
+    .eq('deal_id', propertyId)
+    .order('display_order', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (first?.photo_url) return first.photo_url;
+  const { data: img } = await supabase
+    .from('property_images')
+    .select('image_url')
+    .eq('property_id', propertyId)
+    .order('sort_order', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return img?.image_url || null;
+}
+
 // Helper function to send email notification to seller (buyer sent message)
-async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText, conversationId) {
+async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText, conversationId, propertyAddress = '') {
   if (!sellerEmail) return;
   const resend = getResend();
   if (!resend) {
@@ -119,8 +237,10 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
   }
   try {
     const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sellerportaldeelmap-production.up.railway.app';
-    const messagesUrl = `${sellerBase}/messages`;
+    const messagesUrl = `${sellerBase}/messages?conversation=${conversationId}`;
+    const logoUrl = `${sellerBase}/deelmap.png`;
     const preview = (messageText || '[Attachment]').slice(0, 200);
+    const propertyText = String(propertyAddress || '').trim();
     const html = `
 <!DOCTYPE html>
 <html>
@@ -128,12 +248,14 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
 <body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:24px">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
     <div style="background:#002A3A;color:#fff;padding:24px;text-align:center">
-      <h1 style="margin:0;font-size:20px;font-weight:600">New message on Deelmap</h1>
+      <img src="${logoUrl}" alt="Deelmap" width="160" height="48" style="display:block;max-width:160px;height:auto;border:0;margin:0 auto" />
     </div>
     <div style="padding:24px">
+      <p style="margin:0 0 12px;font-size:18px;font-weight:600;color:#002A3A">New message on Deelmap</p>
       <p style="margin:0 0 8px;font-size:14px;color:#666">From <strong style="color:#002A3A">${(buyerName || 'A buyer').replace(/</g, '&lt;')}</strong></p>
+      <p style="margin:0 0 8px;font-size:14px;color:#666">Property: <strong style="color:#002A3A">${propertyText ? propertyText.replace(/</g, '&lt;') : '—'}</strong></p>
       <div style="background:#f8f9fa;border-left:4px solid #002A3A;padding:16px;border-radius:4px;margin:16px 0;font-size:15px;line-height:1.5;color:#333">${(preview || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>
-      <a href="${messagesUrl}" style="display:inline-block;background:#002A3A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Open Messages</a>
+      <a href="${messagesUrl}" style="display:inline-block;background:#002A3A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Respond</a>
     </div>
     <div style="padding:16px;text-align:center;font-size:12px;color:#888;border-top:1px solid #eee">You received this because you have an active conversation on Deelmap.</div>
   </div>
@@ -143,7 +265,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
       resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
         to: sellerEmail,
-        subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)} - Deelmap`,
+        subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - Deelmap`,
         html
       }),
       15000,
@@ -249,6 +371,7 @@ export async function GET(request) {
     const action = searchParams.get('action');
     const conversationId = searchParams.get('conversation_id');
     const sellerIdParam = searchParams.get('seller_id');
+    const dealIdParam = searchParams.get('deal_id');
 
     if (action === 'get_blocked_users') {
       const { data: prefs } = await supabase
@@ -276,7 +399,16 @@ export async function GET(request) {
               .select('contact_person_name, business_name')
               .eq('id', conv.seller_id)
               .maybeSingle();
-            name = (sellerApp?.contact_person_name || '').trim() || (sellerApp?.business_name || '').trim() || 'Seller';
+            if (sellerApp) {
+              name = (sellerApp.contact_person_name || '').trim() || (sellerApp.business_name || '').trim() || 'Seller';
+            } else {
+              const { data: tempSeller } = await supabase
+                .from('temp_seller_logins')
+                .select('seller_name')
+                .eq('id', conv.seller_id)
+                .maybeSingle();
+              name = (tempSeller?.seller_name || '').trim() || 'Seller';
+            }
           } else if (conv.lender_id) {
             const { data: lender } = await supabase
               .from('lenders')
@@ -331,29 +463,120 @@ export async function GET(request) {
       );
       sellerConvs.forEach(c => allConversations.push({ ...c, _type: 'seller' }));
 
-      // 3) If seller_id in URL: get or create that seller conversation and set openConversationId
+      // 3) If seller_id in URL: get or create that seller conversation (one thread per deal when deal_id provided)
       if (sellerIdParam) {
-        let conv = (sellerConvs || []).find(c => c.seller_id === sellerIdParam);
-        if (!conv) {
-          const { data: created } = await supabase
+        const matchByDeal = dealIdParam != null && String(dealIdParam).trim() !== '';
+        let conv = null;
+
+        // Log property and agent details when user came from "Contact agent"
+        try {
+          const [propertyForLog, agentForLog] = await Promise.all([
+            matchByDeal ? getDealAddressAndSlug(supabase, dealIdParam) : Promise.resolve({ address: null, slug: null, source: null }),
+            getAgentDetailsForLog(supabase, sellerIdParam)
+          ]);
+          console.log('[Contact agent] URL params:', { seller_id: sellerIdParam, deal_id: dealIdParam || null });
+          if (matchByDeal) {
+            console.log('[Contact agent] Property:', {
+              deal_id: dealIdParam,
+              address: propertyForLog.address || '(none)',
+              slug: propertyForLog.slug || '(none)',
+              source: propertyForLog.source || '(not found)'
+            });
+          }
+          console.log('[Contact agent] Agent:', {
+            seller_id: sellerIdParam,
+            source: agentForLog.source || '(not found)',
+            name: agentForLog.name || '(none)',
+            email: agentForLog.email || '(none)'
+          });
+        } catch (logErr) {
+          console.warn('[Contact agent] Log resolution failed:', logErr?.message || logErr);
+        }
+
+        if (matchByDeal) {
+          const { data: existingByDeal, error: existingErr } = await supabase
             .from('conversations')
-            .insert({
-              seller_id: sellerIdParam,
-              buyer_uuid: authCheck.userUuid,
-              user_id: authCheck.userId,
-              is_active: true,
-              last_message_at: new Date().toISOString(),
-              last_message_preview: null,
-              updated_at: new Date().toISOString()
-            })
+            .select('*')
+            .eq('seller_id', sellerIdParam)
+            .eq('buyer_uuid', authCheck.userUuid)
+            .eq('property_id', String(dealIdParam))
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!existingErr && existingByDeal) conv = existingByDeal;
+          if (existingErr && /property_id|column/i.test(String(existingErr.message || ''))) {
+            const fallback = (sellerConvs || []).filter(c => c.seller_id === sellerIdParam)
+              .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0];
+            if (fallback) conv = fallback;
+          }
+        }
+
+        if (!conv) {
+          conv = (sellerConvs || []).find(c => {
+            if (c.seller_id !== sellerIdParam) return false;
+            if (matchByDeal) return String(c.property_id || '') === String(dealIdParam);
+            return true;
+          });
+        }
+
+        if (!conv) {
+          let insertPayload = {
+            seller_id: sellerIdParam,
+            buyer_uuid: authCheck.userUuid,
+            user_id: authCheck.userId,
+            is_active: true,
+            last_message_at: new Date().toISOString(),
+            last_message_preview: null,
+            updated_at: new Date().toISOString()
+          };
+          if (matchByDeal) {
+            const { address, slug } = await getDealAddressAndSlug(supabase, dealIdParam);
+            insertPayload.property_id = String(dealIdParam);
+            insertPayload.property_address = (address && String(address).trim()) || null;
+          }
+          const { data: created, error: insertErr } = await supabase
+            .from('conversations')
+            .insert(insertPayload)
             .select('*')
             .single();
-          if (created) {
+          if (insertErr && String(insertErr.message || '').toLowerCase().includes('property_')) {
+            const { data: createdFallback } = await supabase
+              .from('conversations')
+              .insert({
+                seller_id: sellerIdParam,
+                buyer_uuid: authCheck.userUuid,
+                user_id: authCheck.userId,
+                is_active: true,
+                last_message_at: new Date().toISOString(),
+                last_message_preview: null,
+                updated_at: new Date().toISOString()
+              })
+              .select('*')
+              .single();
+            if (createdFallback) {
+              const { address } = await getDealAddressAndSlug(supabase, dealIdParam);
+              const addr = (address && String(address).trim()) || null;
+              await supabase
+                .from('conversations')
+                .update({
+                  property_id: String(dealIdParam),
+                  property_address: addr,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', createdFallback.id);
+              conv = {
+                ...createdFallback,
+                property_id: String(dealIdParam),
+                property_address: addr
+              };
+              allConversations.push({ ...conv, _type: 'seller' });
+            }
+          } else if (created) {
             conv = created;
             allConversations.push({ ...conv, _type: 'seller' });
           }
         }
-        if (conv) openConversationId = conv.id;
+        if (conv && conv.is_active !== false) openConversationId = conv.id;
       }
 
       // Sort by last_message_at and enrich
@@ -399,10 +622,9 @@ export async function GET(request) {
               is_unresponded: !!latest?.sender_type && latest.sender_type !== 'user'
             };
           }
-          // For seller conversations, resolve seller name from seller_applications (dashboard) or users
-          let sellerInfo = { business_name: 'Property seller', email: null, phone: null };
+          // For seller conversations, resolve seller name: seller_applications (manual), temp_seller_logins (wholesale), or users
+          let sellerInfo = { business_name: 'Property seller', contact_person_name: null, email: null, phone: null };
           if (conv.seller_id) {
-            // Try seller_applications first (seller dashboard uses this; id in conversations = seller_applications.id)
             const { data: sellerApp } = await supabase
               .from('seller_applications')
               .select('contact_person_name, business_name, email, phone')
@@ -414,31 +636,67 @@ export async function GET(request) {
                 'Property seller';
               sellerInfo = {
                 business_name: displayName || 'Property seller',
+                contact_person_name: (sellerApp.contact_person_name || '').trim() || null,
                 email: sellerApp.email,
                 phone: sellerApp.phone
               };
             } else {
-              // Fallback: try users table (e.g. if seller_id is a user uuid in some flows)
-              const { data: seller } = await supabase
-                .from('users')
-                .select('first_name, last_name, full_name, email, phone')
+              const { data: tempSeller } = await supabase
+                .from('temp_seller_logins')
+                .select('seller_name, seller_phone, sender_email')
                 .eq('id', conv.seller_id)
                 .maybeSingle();
-              if (seller) {
-                const displayName = seller.full_name?.trim() ||
-                  [seller.first_name, seller.last_name].filter(Boolean).join(' ').trim() ||
-                  'Property seller';
+              if (tempSeller) {
+                const displayName = (tempSeller.seller_name || '').trim() || 'Property seller';
                 sellerInfo = {
                   business_name: displayName,
-                  email: seller.email,
-                  phone: seller.phone
+                  contact_person_name: (tempSeller.seller_name || '').trim() || null,
+                  email: tempSeller.sender_email || null,
+                  phone: tempSeller.seller_phone || null
                 };
+              } else {
+                const { data: seller } = await supabase
+                  .from('users')
+                  .select('first_name, last_name, full_name, email, phone')
+                  .eq('id', conv.seller_id)
+                  .maybeSingle();
+                if (seller) {
+                  const displayName = seller.full_name?.trim() ||
+                    [seller.first_name, seller.last_name].filter(Boolean).join(' ').trim() ||
+                    'Property seller';
+                  sellerInfo = {
+                    business_name: displayName,
+                    contact_person_name: (seller.first_name || '').trim() || null,
+                    email: seller.email,
+                    phone: seller.phone
+                  };
+                }
               }
+            }
+          }
+          const property_thumbnail_url = await getPropertyThumbnail(supabase, conv.property_id) || conv.property_thumbnail_url || null;
+          let property_address = (conv.property_address && String(conv.property_address).trim()) || null;
+          let property_slug = conv.property_slug || null;
+          if (conv.property_id && !property_address) {
+            const resolved = await getDealAddressAndSlug(supabase, conv.property_id);
+            property_address = (resolved.address && String(resolved.address).trim()) || null;
+            property_slug = resolved.slug || null;
+            if (property_address) {
+              await supabase
+                .from('conversations')
+                .update({
+                  property_address,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', conv.id);
             }
           }
           const { _type, ...rest } = conv;
           return {
             ...rest,
+            property_address,
+            property_slug,
+            property_thumbnail_url,
             lenders: sellerInfo,
             financing_requests: null,
             unread_count,
@@ -500,9 +758,17 @@ export async function GET(request) {
         }, { status: 500 });
       }
 
+      // Mark conversation as read when buyer opens it: clear mark_unread and set messages is_read
+      const senderTypesToMark = conversation.seller_id != null ? ['seller'] : ['lender'];
+      await supabase.from('messages').update({ is_read: true, read_at: new Date().toISOString() })
+        .eq('conversation_id', conversationId)
+        .in('sender_type', senderTypesToMark)
+        .eq('is_read', false);
+      await upsertBuyerConversationPref(supabase, conversationId, authCheck.userUuid, { mark_unread: false });
+
       return NextResponse.json({
         success: true,
-        messages
+        messages: messages || []
       });
     }
 
@@ -581,7 +847,7 @@ export async function POST(request) {
 
       const { data: conversation } = await supabase
         .from('conversations')
-        .select('id, lender_id, financing_request_id, user_id, seller_id, buyer_uuid')
+        .select('id, lender_id, financing_request_id, user_id, seller_id, buyer_uuid, property_id, property_address')
         .eq('id', conversationId)
         .single();
 
@@ -673,20 +939,31 @@ export async function POST(request) {
             sellerEmail = sellerApp.email;
             sellerName = (sellerApp.contact_person_name || '').trim() || (sellerApp.business_name || '').trim() || 'Seller';
           } else {
-            const { data: seller } = await supabase.from('users').select('email, full_name, first_name, last_name').eq('id', conversation.seller_id).maybeSingle();
-            if (seller) {
-              sellerEmail = seller.email;
-              sellerName = seller.full_name || [seller.first_name, seller.last_name].filter(Boolean).join(' ') || 'Seller';
+            const { data: tempSeller } = await supabase.from('temp_seller_logins').select('sender_email, seller_name').eq('id', conversation.seller_id).maybeSingle();
+            if (tempSeller) {
+              sellerEmail = tempSeller.sender_email || null;
+              sellerName = (tempSeller.seller_name || '').trim() || 'Seller';
+            } else {
+              const { data: seller } = await supabase.from('users').select('email, full_name, first_name, last_name').eq('id', conversation.seller_id).maybeSingle();
+              if (seller) {
+                sellerEmail = seller.email;
+                sellerName = seller.full_name || [seller.first_name, seller.last_name].filter(Boolean).join(' ') || 'Seller';
+              }
             }
           }
           const buyerData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).single();
           const buyerName = [buyerData?.data?.first_name, buyerData?.data?.last_name].filter(Boolean).join(' ').trim() || 'A buyer';
+          let propertyAddress = conversation.property_address || null;
+          if (!propertyAddress && conversation.property_id) {
+            const { address } = await getDealAddressAndSlug(supabase, conversation.property_id);
+            propertyAddress = address;
+          }
           if (!sellerEmail) {
             console.warn('[Buyer chat] Email skipped: no seller email found for seller_id', conversation.seller_id);
           } else {
             console.log('[Buyer chat] Sending email to seller:', sellerEmail);
             fireAndForget(
-              sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText, conversationId),
+              sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText, conversationId, propertyAddress),
               'Seller email notification'
             );
           }
@@ -755,6 +1032,45 @@ export async function POST(request) {
       });
     }
 
+    // Delete (deactivate) conversation – soft delete so thread is hidden from list
+    if (action === 'delete_conversation') {
+      const { conversationId } = body;
+      if (!conversationId) {
+        return NextResponse.json({ success: false, error: 'Missing conversation ID' }, { status: 400 });
+      }
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('id, seller_id, financing_request_id, buyer_uuid, user_id')
+        .eq('id', conversationId)
+        .single();
+      if (!conversation) {
+        return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
+      }
+      let allowed = false;
+      if (conversation.seller_id != null) {
+        allowed = conversation.buyer_uuid === authCheck.userUuid || Number(conversation.user_id) === Number(authCheck.userId);
+      } else if (conversation.financing_request_id) {
+        const { data: fr } = await supabase
+          .from('financing_requests')
+          .select('id')
+          .eq('id', conversation.financing_request_id)
+          .eq('user_id', authCheck.userUuid)
+          .single();
+        allowed = !!fr;
+      }
+      if (!allowed) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+      const { error } = await supabase
+        .from('conversations')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', conversationId);
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message || 'Failed to delete' }, { status: 500 });
+      }
+      return NextResponse.json({ success: true });
+    }
+
     if (action === 'update_conversation_pref') {
       const { conversationId } = body;
       if (!conversationId) {
@@ -765,9 +1081,36 @@ export async function POST(request) {
       for (const key of allowedKeys) {
         if (typeof body[key] === 'boolean') patch[key] = body[key];
       }
-      const { error } = await upsertBuyerConversationPref(supabase, conversationId, authCheck.userUuid, patch);
-      if (error) {
-        return NextResponse.json({ success: false, error: error.message || 'Failed to update preference' }, { status: 500 });
+      const { data: conv, error: convErr } = await supabase
+        .from('conversations')
+        .select('id, seller_id, lender_id, buyer_uuid, user_id')
+        .eq('id', conversationId)
+        .single();
+      if (convErr || !conv) {
+        return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
+      }
+      const isOwner = conv.buyer_uuid === authCheck.userUuid || Number(conv.user_id) === Number(authCheck.userId);
+      if (!isOwner) {
+        return NextResponse.json({ success: false, error: 'You can only update your own conversations' }, { status: 403 });
+      }
+      let conversationIdsToUpdate = [conv.id];
+      if (patch.is_blocked === true) {
+        const { data: allConvs } = await supabase
+          .from('conversations')
+          .select('id, seller_id, lender_id')
+          .or(`buyer_uuid.eq.${authCheck.userUuid},user_id.eq.${authCheck.userId}`);
+        const sameCounterparty = (c) =>
+          (conv.seller_id != null && c.seller_id === conv.seller_id) ||
+          (conv.lender_id != null && c.lender_id === conv.lender_id);
+        const ids = (allConvs || []).filter(sameCounterparty).map((c) => c.id);
+        if (ids.length) conversationIdsToUpdate = ids;
+      }
+      for (const cid of conversationIdsToUpdate) {
+        const { error } = await upsertBuyerConversationPref(supabase, cid, authCheck.userUuid, patch);
+        if (error) {
+          console.error('[update_conversation_pref] upsert error:', error.message);
+          return NextResponse.json({ success: false, error: error.message || 'Failed to update preference' }, { status: 500 });
+        }
       }
       return NextResponse.json({ success: true });
     }

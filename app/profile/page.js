@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
-import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut } from 'lucide-react'
+import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut, ChevronDown, ShieldBan, RefreshCw } from 'lucide-react'
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth()
@@ -23,6 +23,11 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false)
+  const [blockedUsers, setBlockedUsers] = useState([])
+  const [blockedLoading, setBlockedLoading] = useState(false)
+  const [unblockSuccessId, setUnblockSuccessId] = useState(null)
+  const [unblockingId, setUnblockingId] = useState(null)
 
   useEffect(() => {
     if (user?.id) {
@@ -123,6 +128,58 @@ export default function ProfilePage() {
     setSuccess('')
   }
 
+  const fetchBlockedUsers = async () => {
+    if (!user?.id) return
+    try {
+      setBlockedLoading(true)
+      const res = await fetch('/api/buyer/chat?action=get_blocked_users', {
+        headers: { Authorization: `Bearer ${user.id}` }
+      })
+      const data = await res.json().catch(() => ({}))
+      setBlockedUsers(data?.blocked || [])
+    } catch {
+      setBlockedUsers([])
+    } finally {
+      setBlockedLoading(false)
+    }
+  }
+
+  const handleToggleBlockedUsers = () => {
+    const next = !showBlockedUsers
+    setShowBlockedUsers(next)
+    if (next) fetchBlockedUsers()
+  }
+
+  const handleUnblock = async (conversationId) => {
+    if (!user?.id || conversationId == null) return
+    if (unblockingId === conversationId) return
+    setUnblockingId(conversationId)
+    try {
+      const res = await fetch('/api/buyer/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.id}`
+        },
+        body: JSON.stringify({
+          action: 'update_conversation_pref',
+          conversationId: Number(conversationId) || conversationId,
+          is_blocked: false
+        })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setBlockedUsers((prev) => prev.filter((b) => String(b.conversation_id) !== String(conversationId)))
+        setUnblockSuccessId(conversationId)
+        setTimeout(() => setUnblockSuccessId(null), 2500)
+      } else {
+        setError(data?.error || 'Failed to unblock')
+      }
+    } finally {
+      setUnblockingId(null)
+    }
+  }
+
   if (!user) return null
 
   if (isLoading) {
@@ -137,13 +194,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <BuyerPortalLayout>
-    <div className="min-h-full bg-slate-50 pt-12 lg:pt-0">
-      {/* Header */}
+    <BuyerPortalLayout pageTitle="Settings">
+    <div className="min-h-full bg-slate-50">
+      {/* Header — in-page title hidden on mobile (shown in layout bar) */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="px-4 lg:px-6 py-4">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
+            <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Settings</h1>
             <p className="text-xs text-slate-500 mt-0.5">Manage your account</p>
           </div>
         </div>
@@ -169,24 +226,24 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
           {/* Card Header */}
-          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-lg">
+              <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
                 {formData.firstName?.charAt(0)?.toUpperCase() || formData.lastName?.charAt(0)?.toUpperCase() || 'U'}
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-slate-900 truncate">
                   {formData.firstName || formData.lastName ? `${formData.firstName} ${formData.lastName}`.trim() : 'User'}
                 </h2>
-                <p className="text-sm text-slate-600">{formData.email}</p>
+                <p className="text-sm text-slate-500 truncate">{formData.email}</p>
               </div>
             </div>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors"
+                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
               >
-                <Edit2 className="w-4 h-4" />
+                <Edit2 className="w-3.5 h-3.5" />
                 Edit Profile
               </button>
             )}
@@ -332,6 +389,75 @@ export default function ProfilePage() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Blocked users */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+          <button
+            type="button"
+            onClick={handleToggleBlockedUsers}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                <ShieldBan className="w-5 h-5 text-slate-700" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Blocked users
+                  {!blockedLoading && blockedUsers.length > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-slate-200 text-slate-700 text-xs font-medium">
+                      {blockedUsers.length}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-sm text-slate-600">View and unblock chat contacts from Messages</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${showBlockedUsers ? 'rotate-180' : ''}`} />
+          </button>
+          {showBlockedUsers && (
+            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50/50">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Blocked chat contacts</span>
+                <button
+                  type="button"
+                  onClick={fetchBlockedUsers}
+                  disabled={blockedLoading}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${blockedLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+              {blockedLoading ? (
+                <p className="text-sm text-slate-500">Loading blocked users...</p>
+              ) : blockedUsers.length === 0 ? (
+                <p className="text-sm text-slate-500">No blocked users. When you block someone in Messages, they appear here and you can unblock them.</p>
+              ) : (
+                <div className="space-y-2.5 max-h-64 overflow-y-auto">
+                  {blockedUsers.map((row) => (
+                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 bg-white">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-slate-900 truncate">{row.name || 'User'}</p>
+                        <p className="text-xs text-slate-500">
+                          {row.blocked_at ? `Blocked ${new Date(row.blocked_at).toLocaleDateString()}` : 'Blocked'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleUnblock(row.conversation_id)}
+                        disabled={unblockingId === row.conversation_id}
+                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {unblockSuccessId === row.conversation_id ? 'Unblocked' : unblockingId === row.conversation_id ? 'Unblocking…' : 'Unblock'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sign Out Section */}
