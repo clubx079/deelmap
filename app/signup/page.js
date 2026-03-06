@@ -11,7 +11,8 @@ import { US_STATES } from '@/utils/constants'
 export default function SignupPage() {
   const { user, sendOTP, verifyOTP, signInWithGoogle, signInWithFacebook } = useAuth()
   const router = useRouter()
-  const [authStep, setAuthStep] = useState('signup') // 'signup' or 'otp'
+  const [authStep, setAuthStep] = useState('signup') // 'signup', 'otp-method', or 'otp'
+  const [otpMethod, setOtpMethod] = useState('email')
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -173,8 +174,17 @@ export default function SignupPage() {
       return
     }
 
+    // Validation passed — let user pick delivery method
+    setLoading(false)
+    setAuthStep('otp-method')
+  }
+
+  const handleChooseOTPMethod = async (method) => {
+    setOtpMethod(method)
+    setLoading(true)
+    setError('')
     try {
-      await sendOTP(formData.email, `${formData.firstName} ${formData.lastName}`)
+      await sendOTP(formData.email, formData.firstName, formData.lastName, method, formData.phone)
       setAuthStep('otp')
     } catch (err) {
       setError(err.message || 'Failed to send verification code')
@@ -210,7 +220,7 @@ export default function SignupPage() {
     setResendLoading(true)
     setError('')
     try {
-      await sendOTP(formData.email, `${formData.firstName} ${formData.lastName}`)
+      await sendOTP(formData.email, formData.firstName, formData.lastName, otpMethod, formData.phone)
       setResendCooldown(30) // 30s before next resend
     } catch (err) {
       setError(err.message || 'Failed to resend code')
@@ -258,18 +268,73 @@ export default function SignupPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              {authStep === 'signup' ? 'Create Your Account' : 'Verify Your Email'}
+              {authStep === 'signup' ? 'Create Your Account' : authStep === 'otp-method' ? 'How would you like your code?' : otpMethod === 'sms' ? 'Verify Your Phone' : 'Verify Your Email'}
             </h1>
             <p className="text-slate-600">
-              {authStep === 'signup' 
-                ? 'Join Deelmap and start finding great deals' 
-                : 'We sent a verification code to your email'}
+              {authStep === 'signup'
+                ? 'Join Deelmap and start finding great deals'
+                : authStep === 'otp-method'
+                  ? 'Choose how we send your 6-digit verification code.'
+                  : otpMethod === 'sms'
+                    ? `We sent a code to ${formData.phone}. Check your messages.`
+                    : 'We sent a verification code to your email'}
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-white border-2 border-slate-200 rounded-xl p-8 shadow-lg relative z-10">
-            {authStep === 'signup' ? (
+            {authStep === 'otp-method' ? (
+              <div className="space-y-3">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-2">
+                    {error}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleChooseOTPMethod('email')}
+                  disabled={loading}
+                  className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Send via Email</p>
+                    <p className="text-xs text-slate-500">{formData.email}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChooseOTPMethod('sms')}
+                  disabled={loading}
+                  className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Send via Text (SMS)</p>
+                    <p className="text-xs text-slate-500">{formData.phone}</p>
+                  </div>
+                </button>
+                {loading && <p className="text-center text-sm text-slate-500 mt-2">Sending code...</p>}
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => { setError(''); setAuthStep('signup') }}
+                    disabled={loading}
+                    className="text-slate-500 hover:underline text-sm disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            ) : authStep === 'signup' ? (
               <form onSubmit={handleSignUp} className="space-y-5">
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-4">
@@ -413,7 +478,7 @@ export default function SignupPage() {
                       />
                       <ChevronDown
                         size={18}
-                        className="text-slate-400 transition-transform pointer-events-none flex-shrink-0"
+                        className="text-slate-400 transition-transform pointer-events-none shrink-0"
                         style={{ transform: showStatesDropdown ? 'rotate(180deg)' : undefined }}
                       />
                     </div>
@@ -511,7 +576,10 @@ export default function SignupPage() {
                     className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-slate-500 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
                   />
                   <p className="text-sm text-slate-500 mt-1.5">
-                    Code sent to <strong className="text-slate-700">{formData.email}</strong>
+                    {otpMethod === 'sms'
+                      ? <>Code sent to <strong className="text-slate-700">{formData.phone}</strong></>
+                      : <>Code sent to <strong className="text-slate-700">{formData.email}</strong></>
+                    }
                   </p>
                   <p className="text-sm text-slate-600 mt-2">
                     Didn&apos;t receive it?{' '}
@@ -539,7 +607,7 @@ export default function SignupPage() {
                 <div className="flex gap-3">
                   <Button
                     type="button"
-                    onClick={() => setAuthStep('signup')}
+                    onClick={() => { setError(''); setAuthStep('otp-method') }}
                     variant="secondary"
                     className="flex-1 !bg-white border-2 border-slate-300 !text-slate-900 hover:!bg-slate-100 hover:border-slate-900 h-12 text-sm font-semibold rounded-lg transition-all"
                   >
