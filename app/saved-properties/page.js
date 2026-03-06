@@ -69,14 +69,14 @@ export default function SavedPropertiesPage() {
   if (!user) return null
 
   return (
-    <BuyerPortalLayout>
-    <div className="min-h-full bg-slate-50 pt-12 lg:pt-0">
-      {/* Header */}
+    <BuyerPortalLayout pageTitle="Saved Properties">
+    <div className="min-h-full bg-slate-50">
+      {/* Header — in-page title hidden on mobile (shown in layout bar) */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="px-4 lg:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-lg font-semibold text-slate-900">Saved Properties</h1>
+              <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Saved Properties</h1>
               <p className="text-xs text-slate-500 mt-0.5">
                 {favoriteProperties.length > 0
                   ? `You have ${favoriteProperties.length} saved ${favoriteProperties.length === 1 ? 'property' : 'properties'}`

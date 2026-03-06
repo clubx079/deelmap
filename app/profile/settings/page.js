@@ -193,13 +193,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <BuyerPortalLayout>
-    <div className="min-h-full bg-slate-50 pt-12 lg:pt-0">
-      {/* Header */}
+    <BuyerPortalLayout pageTitle="Settings">
+    <div className="min-h-full bg-slate-50">
+      {/* Header — in-page title hidden on mobile (shown in layout bar) */}
       <div className="bg-white border-b border-slate-200 shadow-sm">
         <div className="px-4 lg:px-6 py-4">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
+            <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Settings</h1>
             <p className="text-xs text-slate-500 mt-0.5">Manage your account</p>
           </div>
         </div>

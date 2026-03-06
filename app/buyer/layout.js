@@ -44,18 +44,21 @@ export default function BuyerLayout({ children }) {
 
         {/* Main Content — no navbar; max space for content */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          {/* Mobile only: hamburger + page title on same row */}
-          <header className="lg:hidden flex items-center gap-3 px-3 py-2.5 border-b border-slate-200 bg-white/95 shrink-0">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors shrink-0"
-              aria-label="Open menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="text-base font-semibold text-slate-900 truncate min-w-0">
+          {/* Mobile only: hamburger + page title centered on full screen width */}
+          <header className="lg:hidden relative flex items-center justify-between px-3 py-2.5 border-b border-slate-200 bg-white/95 shrink-0">
+            <div className="w-10 shrink-0 flex items-center justify-start">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            </div>
+            <h1 className="absolute left-0 right-0 text-base font-semibold text-slate-900 text-center pointer-events-none">
               {pageTitle || 'DeelMap'}
             </h1>
+            <div className="w-10 shrink-0" aria-hidden />
           </header>
 
           {/* Content Area */}
