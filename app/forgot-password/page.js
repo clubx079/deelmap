@@ -7,13 +7,14 @@ import { Lock, ArrowLeft, CheckCircle, X, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
-  const { user } = useAuth()
+  const { user, forgotPassword } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [step, setStep] = useState('request') // 'request', 'verify', 'reset'
+  const [step, setStep] = useState('request') // 'request', 'method-picker', 'verify', 'reset'
+  const [resetMethod, setResetMethod] = useState('email')
   const [loading, setLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [resendLoading, setResendLoading] = useState(false)
@@ -40,26 +41,20 @@ export default function ForgotPasswordPage() {
 
   const handleRequestReset = async (e) => {
     if (e) e.preventDefault()
+    setError('')
+    setStep('method-picker')
+  }
+
+  const handleChooseResetMethod = async (method) => {
+    setResetMethod(method)
     setLoading(true)
     setError('')
     setMessage('')
-
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send reset code')
-      }
-
+      await forgotPassword(email, method)
       setShowSuccessModal(true)
       setStep('verify')
-      setResendCooldown(30) // start cooldown after first send
+      setResendCooldown(30)
     } catch (err) {
       setError(err.message || 'Failed to send reset code')
     } finally {
@@ -73,13 +68,7 @@ export default function ForgotPasswordPage() {
     setResendLoading(true)
     setError('')
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.message || 'Failed to send reset code')
+      await forgotPassword(email, resetMethod)
       setResendCooldown(30)
     } catch (err) {
       setError(err.message || 'Failed to resend code')
@@ -186,8 +175,9 @@ export default function ForgotPasswordPage() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Reset Password</h1>
               <p className="text-sm text-gray-600">
-                {step === 'request' && "We'll send a verification code to your email"}
-                {step === 'verify' && 'Enter the verification code sent to your email'}
+                {step === 'request' && "We'll send a verification code to reset your password"}
+                {step === 'method-picker' && 'Choose how we send your reset code'}
+                {step === 'verify' && (resetMethod === 'sms' ? 'Enter the code sent to your phone' : 'Enter the verification code sent to your email')}
                 {step === 'reset' && 'Enter your new password'}
               </p>
             </div>
@@ -232,6 +222,57 @@ export default function ForgotPasswordPage() {
                   {loading ? 'Sending Code...' : 'Send Verification Code'}
                 </button>
               </form>
+            )}
+
+            {step === 'method-picker' && (
+              <div className="space-y-3">
+                {error && (
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleChooseResetMethod('email')}
+                  disabled={loading}
+                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Send via Email</p>
+                    <p className="text-xs text-slate-500">{email}</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChooseResetMethod('sms')}
+                  disabled={loading}
+                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 text-sm">Send via Text (SMS)</p>
+                    <p className="text-xs text-slate-500">Phone number on file</p>
+                  </div>
+                </button>
+                {loading && <p className="text-center text-sm text-slate-500 mt-2">Sending code...</p>}
+                <button
+                  type="button"
+                  onClick={() => { setError(''); setStep('request') }}
+                  disabled={loading}
+                  className="w-full text-slate-500 hover:text-slate-900 text-sm disabled:opacity-50 mt-2"
+                >
+                  Back
+                </button>
+              </div>
             )}
 
             {step === 'verify' && (

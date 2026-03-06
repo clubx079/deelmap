@@ -41,7 +41,7 @@ if (typeof global !== 'undefined' && !global.otpCleanupInterval) {
 
 export async function POST(request) {
   try {
-    const { email, firstName, lastName } = await request.json()
+    const { email, firstName, lastName, method = 'email', phone } = await request.json()
 
     if (!email) {
       return NextResponse.json({ message: 'Email is required' }, { status: 400 })
@@ -77,7 +77,54 @@ export async function POST(request) {
 
     console.log(`Generated OTP for ${email}: ${otp}`)
 
-    const displayName = firstName && lastName 
+    // SMS delivery path
+    if (method === 'sms') {
+      if (!phone) {
+        return NextResponse.json({ message: 'Phone number is required for SMS delivery' }, { status: 400 })
+      }
+
+      const digits = phone.replace(/\D/g, '')
+      const e164Phone = digits.length === 10
+        ? `+1${digits}`
+        : (digits.length === 11 && digits.startsWith('1') ? `+${digits}` : null)
+
+      if (!e164Phone) {
+        return NextResponse.json({ message: 'Invalid phone number format' }, { status: 400 })
+      }
+
+      const smsStart = Date.now()
+      console.log(`[send-otp] Sending SMS OTP to ${e164Phone}...`)
+
+      const smsResponse = await withTimeout(
+        fetch('https://ap.airosofts.com/api/external/sms/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.AIROSOFTS_SMS_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: process.env.AIROSOFTS_SMS_FROM,
+            to: e164Phone,
+            message: `Your Deelmap verification code is ${otp}. Valid for 10 minutes. Do not share this code.`
+          })
+        }),
+        10000,
+        'SMS send timed out'
+      )
+
+      const smsData = await smsResponse.json()
+      const smsEnd = Date.now()
+
+      if (!smsResponse.ok) {
+        console.error('AiroSofts SMS error:', smsData)
+        throw new Error(smsData.message || 'Failed to send SMS verification code')
+      }
+
+      console.log(`SMS OTP sent to ${e164Phone} in ${smsEnd - smsStart}ms`)
+      return NextResponse.json({ message: 'OTP sent via SMS', email, sendTime: smsEnd - smsStart })
+    }
+
+    const displayName = firstName && lastName
       ? `${firstName} ${lastName}` 
       : firstName || lastName || ''
 

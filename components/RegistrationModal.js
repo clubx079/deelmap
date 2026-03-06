@@ -20,6 +20,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', prev
     agreedToPrivacy: false,
     statesOfInterest: []
   })
+  const [otpMethod, setOtpMethod] = useState('email')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [phoneError, setPhoneError] = useState('')
@@ -186,11 +187,20 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', prev
       return
     }
 
+    // Validation passed — let user pick delivery method
+    setLoading(false)
+    setAuthStep('otp-method')
+  }
+
+  const handleChooseOTPMethod = async (method) => {
+    setOtpMethod(method)
+    setLoading(true)
+    setError('')
     try {
-      await sendOTP(authData.email, `${authData.firstName} ${authData.lastName}`)
+      await sendOTP(authData.email, authData.firstName, authData.lastName, method, authData.phone)
       setAuthStep('otp')
-    } catch (error) {
-      setError(error.message || 'Failed to send verification code')
+    } catch (err) {
+      setError(err.message || 'Failed to send verification code')
     } finally {
       setLoading(false)
     }
@@ -669,13 +679,76 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', prev
                   </div>
                 )}
 
+                {/* OTP Method Picker */}
+                {authStep === 'otp-method' && (
+                  <div>
+                    <div className="mb-8 text-center">
+                      <h2 className="text-3xl font-bold text-slate-900 mb-2">How would you like your code?</h2>
+                      <p className="text-slate-600">Choose how we send your 6-digit verification code.</p>
+                    </div>
+                    {error && (
+                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm text-center mb-4">
+                        {error}
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={() => handleChooseOTPMethod('email')}
+                        disabled={loading}
+                        className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                          <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900 text-sm">Send via Email</p>
+                          <p className="text-xs text-slate-500">{authData.email}</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChooseOTPMethod('sms')}
+                        disabled={loading}
+                        className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                          <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900 text-sm">Send via Text (SMS)</p>
+                          <p className="text-xs text-slate-500">{authData.phone}</p>
+                        </div>
+                      </button>
+                    </div>
+                    {loading && <p className="text-center text-sm text-slate-500 mt-4">Sending code...</p>}
+                    <div className="mt-6 text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setError(''); setAuthStep('signup') }}
+                        disabled={loading}
+                        className="text-slate-500 hover:underline text-sm disabled:opacity-50"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* OTP Verification */}
                 {authStep === 'otp' && (
                   <div>
                     <div className="mb-8 text-center">
-                      <h2 className="text-3xl font-bold text-slate-900 mb-2">Verify Your Email</h2>
+                      <h2 className="text-3xl font-bold text-slate-900 mb-2">{otpMethod === 'sms' ? 'Verify Your Phone' : 'Verify Your Email'}</h2>
                       <p className="text-slate-600">
-                        We sent a 6-digit code to <strong>{authData.email}</strong>
+                        {otpMethod === 'sms'
+                          ? <>We sent a 6-digit code to <strong>{authData.phone}</strong></>
+                          : <>We sent a 6-digit code to <strong>{authData.email}</strong></>
+                        }
                       </p>
                     </div>
 
@@ -707,13 +780,21 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', prev
                       </Button>
                     </form>
 
-                    <div className="mt-6 text-center">
+                    <div className="mt-6 text-center space-y-2">
                       <button
-                        onClick={() => handleSignUp({ preventDefault: () => {} })}
+                        onClick={() => handleChooseOTPMethod(otpMethod)}
                         disabled={loading}
-                        className="text-slate-900 font-semibold hover:underline text-sm"
+                        className="text-slate-900 font-semibold hover:underline text-sm block w-full"
                       >
-                        Didn't receive the code? Resend
+                        Didn&apos;t receive the code? Resend
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setError(''); setAuthStep('otp-method') }}
+                        disabled={loading}
+                        className="text-slate-500 hover:underline text-xs disabled:opacity-50"
+                      >
+                        Use a different method
                       </button>
                     </div>
                   </div>

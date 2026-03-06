@@ -85,11 +85,11 @@ export function AuthProvider({ children }) {
     }
   }, [user?.id])
 
-  const sendOTP = async (email, name) => {
+  const sendOTP = async (email, name, lastName, method = 'email', phone = null) => {
     const response = await fetch('/api/auth/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name }),
+      body: JSON.stringify({ email, firstName: name, lastName, method, phone }),
     })
 
     if (!response.ok) {
@@ -162,11 +162,11 @@ export function AuthProvider({ children }) {
     return result
   }
 
-  const forgotPassword = async (email) => {
+  const forgotPassword = async (email, method = 'email') => {
     const response = await fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, method }),
     })
 
     if (!response.ok) {
