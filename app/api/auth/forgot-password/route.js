@@ -5,8 +5,7 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase'
 import { withTimeout } from '@/lib/timeout'
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
