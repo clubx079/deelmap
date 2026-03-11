@@ -153,13 +153,11 @@ export async function GET(request) {
 
     // ==================== FETCH MANUAL PROPERTIES ====================
     const manualCols = [
-      'id', 'slug', 'address', 'city', 'state', 'zip_code', 'postal_code',
+      'id', 'slug', 'address', 'state',
       'latitude', 'longitude',
       'price', 'bedrooms', 'bathrooms', 'floor_area', 'property_type', 'status', 'property_status',
-      'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
-      'year_built', 'lot_size', 'description',
-      'created_at', 'updated_at', 'seller_id',
-      'estimated_rent', 'monthly_rent', 'purchase_price'
+      'description',
+      'created_at', 'updated_at', 'seller_id'
     ].join(',');
 
     let manualQuery = supabaseMarketplace
@@ -205,27 +203,12 @@ export async function GET(request) {
     if (maxSqft !== null) {
       manualQuery = manualQuery.lte('floor_area', maxSqft);
     }
-    if (minYield !== null) {
-      manualQuery = manualQuery.gte('gross_yield', minYield);
-    }
-    if (maxYield !== null) {
-      manualQuery = manualQuery.lte('gross_yield', maxYield);
-    }
-    if (minCapRate !== null) {
-      manualQuery = manualQuery.gte('cap_rate', minCapRate);
-    }
-    if (maxCapRate !== null) {
-      manualQuery = manualQuery.lte('cap_rate', maxCapRate);
-    }
-    if (cities.length > 0) {
-      manualQuery = manualQuery.in('city', cities);
-    }
     if (states.length > 0) {
       manualQuery = manualQuery.in('state', states);
     }
     if (searchQuery) {
       const q = `%${searchQuery}%`;
-      manualQuery = manualQuery.or(`address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+      manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
     }
     manualQuery = manualQuery.limit(500);
 
