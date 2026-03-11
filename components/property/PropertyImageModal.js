@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
-import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
+import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
 
 export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView, preloadedUrl = null }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
@@ -234,7 +234,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
                   `}</style>
                   {visibleThumbnails.map((photo, idx) => {
                     const actualIndex = photos.length <= thumbnailsPerView ? idx : thumbnailIndex + idx
-                    const thumbnailUrl = getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+                    const thumbnailUrl = getThumbnailUrl(photo, 150) || '/placeholder.jpg'
                     const isActive = actualIndex === currentIndex
 
                     return (
@@ -247,11 +247,11 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
                             : 'border-white/30 hover:border-white/60'
                         }`}
                       >
-                        <Image
+                        <img
                           src={thumbnailUrl}
                           alt={`Thumbnail ${actualIndex + 1}`}
-                          fill
-                          className="object-cover"
+                          loading="lazy"
+                          className="absolute inset-0 w-full h-full object-cover"
                         />
                         {isActive && (
                           <div className="absolute inset-0 bg-white/20" />

@@ -50,8 +50,8 @@ export async function GET(request) {
           id,
           photo_url,
           optimized_url,
-          original_url,
-          display_order
+          display_order,
+          is_featured
         )
       `
       )

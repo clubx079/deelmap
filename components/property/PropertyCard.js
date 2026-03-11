@@ -101,10 +101,10 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
                   src={featureImage}
                   alt={fullAddressText || 'Property'}
                   fill
+                  loading="lazy"
                   className="object-cover"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   onError={(e) => {
-                    // Hide image on error
                     e.target.style.display = 'none'
                   }}
                 />

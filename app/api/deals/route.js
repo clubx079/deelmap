@@ -3,8 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   normalizeWholesaleDeal,
   normalizeManualProperty,
-  mergeAndSortProperties,
-  matchesSearch
+  mergeAndSortProperties
 } from '@/lib/propertyMappers';
 
 const supabaseMarketplace = createClient(
@@ -64,19 +63,29 @@ export async function GET(request) {
     const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
 
     // ==================== FETCH WHOLESALE DEALS ====================
-    // Exclude archived (trash) so they never appear on buyer site
+    // Select only needed columns (avoid large text fields that cause timeouts)
+    const wholesaleCols = [
+      'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
+      'address_google_lat', 'address_google_lng',
+      'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
+      'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
+      'year_built', 'lot_size', 'description',
+      'created_at', 'updated_at', 'temp_seller_id',
+      'estimated_rent', 'purchase_price'
+    ].join(',');
+
     let wholesaleQuery = supabaseMarketplace
       .from('wholesale_deals')
       .select(`
-        *,
+        ${wholesaleCols},
         property_photos (
           id,
           photo_url,
           optimized_url,
-          original_url,
-          display_order
+          display_order,
+          is_featured
         )
-      `)
+      `, { count: 'exact' })
       .neq('status', 'archived')
       .order('created_at', { ascending: false });
 
@@ -126,8 +135,15 @@ export async function GET(request) {
     if (states.length > 0) {
       wholesaleQuery = wholesaleQuery.in('state', states);
     }
+    // Push search to DB level
+    if (searchQuery) {
+      const q = `%${searchQuery}%`;
+      wholesaleQuery = wholesaleQuery.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+    }
+    // DB-level pagination — only fetch the rows we need
+    wholesaleQuery = wholesaleQuery.range(offset, offset + limit - 1);
 
-    const { data: wholesaleDeals, error: wholesaleError } = await wholesaleQuery;
+    const { data: wholesaleDeals, count: wholesaleCount, error: wholesaleError } = await wholesaleQuery;
 
     if (wholesaleError) {
       console.error('Error fetching wholesale deals:', wholesaleError);
@@ -135,18 +151,25 @@ export async function GET(request) {
     }
 
     // ==================== FETCH MANUAL PROPERTIES ====================
-    // Only show seller-manual properties that are active or published (exclude draft, inactive, archived)
+    const manualCols = [
+      'id', 'slug', 'address', 'state',
+      'latitude', 'longitude',
+      'price', 'bedrooms', 'bathrooms', 'floor_area', 'property_type', 'status', 'property_status',
+      'description',
+      'created_at', 'updated_at', 'seller_id'
+    ].join(',');
+
     let manualQuery = supabaseMarketplace
       .from('properties')
       .select(`
-        *,
+        ${manualCols},
         property_images (
           id,
           image_url,
           image_key,
           sort_order
         )
-      `)
+      `, { count: 'exact' })
       .in('status', ['active', 'published'])
       .not('status', 'is', null)
       .order('created_at', { ascending: false });
@@ -179,26 +202,16 @@ export async function GET(request) {
     if (maxSqft !== null) {
       manualQuery = manualQuery.lte('floor_area', maxSqft);
     }
-    if (minYield !== null) {
-      manualQuery = manualQuery.gte('gross_yield', minYield);
-    }
-    if (maxYield !== null) {
-      manualQuery = manualQuery.lte('gross_yield', maxYield);
-    }
-    if (minCapRate !== null) {
-      manualQuery = manualQuery.gte('cap_rate', minCapRate);
-    }
-    if (maxCapRate !== null) {
-      manualQuery = manualQuery.lte('cap_rate', maxCapRate);
-    }
-    if (cities.length > 0) {
-      manualQuery = manualQuery.in('city', cities);
-    }
     if (states.length > 0) {
       manualQuery = manualQuery.in('state', states);
     }
+    if (searchQuery) {
+      const q = `%${searchQuery}%`;
+      manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
+    }
+    manualQuery = manualQuery.range(offset, offset + limit - 1);
 
-    const { data: manualProperties, error: manualError } = await manualQuery;
+    const { data: manualProperties, count: manualCount, error: manualError } = await manualQuery;
 
     if (manualError) {
       console.error('Error fetching manual properties:', manualError);
@@ -212,16 +225,11 @@ export async function GET(request) {
       normalizeManualProperty(property, property.property_images || [])
     );
 
-    // ==================== MERGE & FILTER ====================
-    let allProperties = mergeAndSortProperties(normalizedWholesale, normalizedManual, sortBy);
+    // ==================== MERGE & SORT ====================
+    const allProperties = mergeAndSortProperties(normalizedWholesale, normalizedManual, sortBy);
 
-    // Apply search filter (client-side for flexibility)
-    if (searchQuery) {
-      allProperties = allProperties.filter(property => matchesSearch(property, searchQuery));
-    }
-
-    // Get total count before pagination
-    const totalCount = allProperties.length;
+    // Total count from DB (search already applied at DB level)
+    const totalCount = (wholesaleCount || 0) + (manualCount || 0);
     const hasMore = totalCount > offset + limit;
 
     // Apply pagination
@@ -236,9 +244,9 @@ export async function GET(request) {
       limit,
       hasMore,
       metadata: {
-        wholesaleCount: normalizedWholesale.length,
-        manualCount: normalizedManual.length,
-        totalBeforeSearch: normalizedWholesale.length + normalizedManual.length,
+        wholesaleCount: wholesaleCount || 0,
+        manualCount: manualCount || 0,
+        totalBeforeSearch: (wholesaleCount || 0) + (manualCount || 0),
         searchApplied: !!searchQuery,
         sortBy
       }
