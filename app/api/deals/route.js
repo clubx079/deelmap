@@ -82,7 +82,6 @@ export async function GET(request) {
           id,
           photo_url,
           optimized_url,
-          original_url,
           display_order,
           is_featured
         )
@@ -141,8 +140,8 @@ export async function GET(request) {
       const q = `%${searchQuery}%`;
       wholesaleQuery = wholesaleQuery.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
     }
-    // Cap results to prevent statement timeout
-    wholesaleQuery = wholesaleQuery.limit(500);
+    // DB-level pagination — only fetch the rows we need
+    wholesaleQuery = wholesaleQuery.range(offset, offset + limit - 1);
 
     const { data: wholesaleDeals, count: wholesaleCount, error: wholesaleError } = await wholesaleQuery;
 
@@ -210,7 +209,7 @@ export async function GET(request) {
       const q = `%${searchQuery}%`;
       manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
     }
-    manualQuery = manualQuery.limit(500);
+    manualQuery = manualQuery.range(offset, offset + limit - 1);
 
     const { data: manualProperties, count: manualCount, error: manualError } = await manualQuery;
 

@@ -1,6 +1,6 @@
 export const getPreferredPhotoUrl = (photo) => {
   if (!photo) return ''
-  return photo.optimized_url || photo.photo_url || photo.original_url || ''
+  return photo.optimized_url || photo.photo_url || ''
 }
 
 export const getPrimaryPhotoUrl = (photos) => {
