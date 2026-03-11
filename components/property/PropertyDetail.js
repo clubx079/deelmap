@@ -40,6 +40,8 @@ export function PropertyDetail({ property }) {
   const photos = useMemo(() => {
     if (!Array.isArray(property.property_photos)) return []
     return [...property.property_photos].sort((a, b) => {
+      if (a?.is_featured && !b?.is_featured) return -1
+      if (!a?.is_featured && b?.is_featured) return 1
       const aOrder = Number.isFinite(a?.display_order) ? a.display_order : 0
       const bOrder = Number.isFinite(b?.display_order) ? b.display_order : 0
       return aOrder - bOrder

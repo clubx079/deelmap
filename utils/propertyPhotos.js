@@ -3,6 +3,23 @@ export const getPreferredPhotoUrl = (photo) => {
   return photo.optimized_url || photo.photo_url || ''
 }
 
+/**
+ * Returns a Supabase-transformed thumbnail URL for fast loading.
+ * Uses Supabase Storage image transforms to resize at CDN level.
+ */
+export const getThumbnailUrl = (photo, width = 150) => {
+  const url = getPreferredPhotoUrl(photo)
+  if (!url) return ''
+  // Only transform Supabase storage URLs
+  if (url.includes('supabase.co/storage/v1/object/public/')) {
+    return url.replace(
+      '/storage/v1/object/public/',
+      `/storage/v1/render/image/public/`
+    ) + `?width=${width}&resize=contain`
+  }
+  return url
+}
+
 export const getPrimaryPhotoUrl = (photos) => {
   if (!Array.isArray(photos) || photos.length === 0) return ''
   // Prioritize the featured photo as the thumbnail
