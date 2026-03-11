@@ -1,14 +1,57 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
+
+// Progressive quality tiers: load fast low-res first, then upgrade
+const QUALITY_TIERS = [150, 400, 800, 1200, null] // null = full original
 
 export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView, preloadedUrl = null }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [thumbnailIndex, setThumbnailIndex] = useState(0)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [currentTier, setCurrentTier] = useState(0)
+  const [displayUrl, setDisplayUrl] = useState('')
   const [thumbnailsPerView, setThumbnailsPerView] = useState(8)
+  const tierRef = useRef(0)
+  const indexRef = useRef(currentIndex)
+
+  // Get URL for a given quality tier
+  const getUrlForTier = useCallback((photo, tier) => {
+    const width = QUALITY_TIERS[tier]
+    if (width === null) return getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+    return getThumbnailUrl(photo, width) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+  }, [])
+
+  // Progressive loading: start at tier 0, upgrade as each loads
+  useEffect(() => {
+    if (!isOpen || !photos || photos.length === 0) return
+    const photo = photos[currentIndex]
+    tierRef.current = 0
+    indexRef.current = currentIndex
+    setCurrentTier(0)
+    setImageLoaded(false)
+    setDisplayUrl(getUrlForTier(photo, 0))
+  }, [currentIndex, isOpen, photos, getUrlForTier])
+
+  const handleImageLoaded = useCallback(() => {
+    setImageLoaded(true)
+    const nextTier = tierRef.current + 1
+    if (nextTier < QUALITY_TIERS.length && indexRef.current === currentIndex) {
+      const photo = photos[currentIndex]
+      const nextUrl = getUrlForTier(photo, nextTier)
+      const img = new window.Image()
+      img.onload = () => {
+        if (indexRef.current === currentIndex) {
+          tierRef.current = nextTier
+          setCurrentTier(nextTier)
+          setDisplayUrl(nextUrl)
+        }
+      }
+      img.src = nextUrl
+    }
+  }, [currentIndex, photos, getUrlForTier])
 
   // Calculate how many thumbnails can fit based on container width
   useEffect(() => {
@@ -44,10 +87,21 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
     }
   }, [isOpen, initialIndex, thumbnailsPerView])
 
-  // Reset loaded state when current index changes (new image)
+  // Preload next/prev first tier when current image loads
   useEffect(() => {
-    setImageLoaded(false)
-  }, [currentIndex])
+    if (!imageLoaded || !isOpen || photos.length <= 1) return
+    const toPreload = [
+      (currentIndex + 1) % photos.length,
+      (currentIndex - 1 + photos.length) % photos.length,
+    ]
+    toPreload.forEach((idx) => {
+      const url = getUrlForTier(photos[idx], 0)
+      if (url) {
+        const img = new window.Image()
+        img.src = url
+      }
+    })
+  }, [imageLoaded, currentIndex, isOpen, photos, getUrlForTier])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -82,7 +136,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
   if (!isOpen || !photos || photos.length === 0) return null
 
   const currentPhoto = photos[currentIndex]
-  const currentPhotoUrl = getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
+  const currentPhotoUrl = displayUrl || getUrlForTier(currentPhoto, 0)
 
   const handleNext = () => {
     const nextIndex = (currentIndex + 1) % photos.length
@@ -145,32 +199,18 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
       >
         {/* Main Image - fits within viewport, no horizontal scroll */}
         <div className="relative w-full max-w-full flex-1 min-h-0 mb-2 sm:mb-4 overflow-hidden bg-black/80" style={{ height: 'calc(100vh - 140px)' }}>
-          {/* Instant preview from cache (same URL as detail page main image) or blur */}
-          {(preloadedUrl === currentPhotoUrl || !imageLoaded) && (
-            <>
-              {preloadedUrl === currentPhotoUrl ? (
-                <img
-                  src={currentPhotoUrl}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-contain object-center"
-                  aria-hidden
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
-                  <div className="w-16 h-16 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                </div>
-              )}
-            </>
+          {/* Loading spinner - shown until first tier loads */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
+              <div className="w-16 h-16 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
           )}
-          <Image
+          <img
+            key={`${currentIndex}-${currentTier}`}
             src={currentPhotoUrl}
             alt={`Property photo ${currentIndex + 1} of ${photos.length}`}
-            fill
-            className="object-contain object-center transition-opacity duration-200"
-            style={{ opacity: imageLoaded ? 1 : 0 }}
-            priority
-            sizes="(max-width: 1024px) 100vw, 1200px"
-            onLoad={() => setImageLoaded(true)}
+            className="absolute inset-0 w-full h-full object-contain object-center"
+            onLoad={handleImageLoaded}
           />
 
           {/* Navigation Arrows */}

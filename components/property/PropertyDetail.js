@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart, RotateCcw, X } from 'lucide-react'
-import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
+import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart } from 'lucide-react'
+import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
 import { usePropertyAnalytics } from '@/hooks/usePropertyAnalytics'
@@ -28,9 +28,6 @@ export function PropertyDetail({ property }) {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [showNotInterestedModal, setShowNotInterestedModal] = useState(false)
-  const [isNotInterested, setIsNotInterested] = useState(false)
-  const [notInterestedLoading, setNotInterestedLoading] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -48,7 +45,25 @@ export function PropertyDetail({ property }) {
     })
   }, [property.property_photos])
   const currentPhoto = photos[currentPhotoIndex]
-  const currentPhotoUrl = getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
+  const currentPhotoUrl = getThumbnailUrl(currentPhoto, 800) || getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
+
+  // Preload next 3 and previous 1 images for fast navigation
+  useEffect(() => {
+    if (photos.length <= 1) return
+    const toPreload = [
+      (currentPhotoIndex + 1) % photos.length,
+      (currentPhotoIndex + 2) % photos.length,
+      (currentPhotoIndex + 3) % photos.length,
+      (currentPhotoIndex - 1 + photos.length) % photos.length,
+    ]
+    toPreload.forEach((idx) => {
+      const url = getThumbnailUrl(photos[idx], 800) || getPreferredPhotoUrl(photos[idx])
+      if (url) {
+        const img = new window.Image()
+        img.src = url
+      }
+    })
+  }, [currentPhotoIndex, photos])
 
   // Build full address - ALSO MOVED BEFORE EARLY RETURNS
   const fullAddress = property.full_address || property.display_address ||
@@ -105,23 +120,6 @@ export function PropertyDetail({ property }) {
     }
   }, [property?.id, isFavorited])
 
-  // Load not-interested status from API when user and property are available
-  useEffect(() => {
-    if (!user?.id || !property?.id) {
-      setIsNotInterested(false)
-      return
-    }
-    const controller = new AbortController()
-    const authHeader = `Bearer ${user.id}`
-    fetch(`/api/buyer/not-interested?dealId=${encodeURIComponent(property.id)}`, {
-      headers: { Authorization: authHeader },
-      signal: controller.signal
-    })
-      .then((res) => res.ok ? res.json() : { notInterested: false })
-      .then((data) => setIsNotInterested(!!data.notInterested))
-      .catch(() => setIsNotInterested(false))
-    return () => controller.abort()
-  }, [user?.id, property?.id])
 
   // Initialize Google Map - MOVED BEFORE EARLY RETURN TO FIX HOOKS ORDER
   useEffect(() => {
@@ -220,7 +218,7 @@ export function PropertyDetail({ property }) {
     if (price == null || price === '' || (typeof price === 'number' && isNaN(price))) return '-'
     const n = Number(price)
     if (n === 0) return '-'
-    return `$${Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+    return `$${Math.round(n).toLocaleString('en-US')}`
   }
 
   const formatPercent = (value) => {
@@ -327,13 +325,10 @@ export function PropertyDetail({ property }) {
               >
                 {photos.length > 0 ? (
                   <>
-                    <Image
+                    <img
                       src={currentPhotoUrl}
                       alt={`Property photo ${currentPhotoIndex + 1}`}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                      priority
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 66vw"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                     {/* Click overlay hint */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
@@ -523,7 +518,7 @@ export function PropertyDetail({ property }) {
               const rows = [
                 hasVal(property.days_on_market) && { label: 'Days on market', value: property.days_on_market },
                 hasVal(property.property_type) && { label: 'Property type', value: property.property_type },
-                hasVal(property.price_per_square_foot) && { label: 'Price per square foot', value: `$${Number(property.price_per_square_foot).toFixed(2)}` },
+                hasVal(property.price_per_square_foot) && { label: 'Price per square foot', value: `$${Math.round(Number(property.price_per_square_foot)).toLocaleString('en-US')}` },
                 hasVal(property.lot_size) && { label: 'Lot size', value: property.lot_size },
                 hasVal(property.hoa_fees) && { label: 'HOA fees', value: property.hoa_fees },
                 hasVal(property.neighborhood_score) && { label: 'Neighborhood score', value: `${Number(property.neighborhood_score).toFixed(2)} / 5` },
@@ -622,46 +617,6 @@ export function PropertyDetail({ property }) {
                   <span>Share</span>
                 </button>
 
-                {/* Not Interested (cross icon) / Undo not interested */}
-                <button
-                  onClick={async () => {
-                    if (isNotInterested) {
-                      if (!user?.id) return
-                      setNotInterestedLoading(true)
-                      try {
-                        const res = await fetch(
-                          `/api/buyer/not-interested?dealId=${encodeURIComponent(property.id)}`,
-                          { method: 'DELETE', headers: { Authorization: `Bearer ${user.id}` } }
-                        )
-                        if (res.ok) setIsNotInterested(false)
-                        else alert((await res.json().catch(() => ({}))).error || 'Failed to undo')
-                      } catch (e) {
-                        alert(e.message || 'Failed to undo')
-                      } finally {
-                        setNotInterestedLoading(false)
-                      }
-                    } else {
-                      if (!user?.id) { setShowLoginModal(true); return }
-                      setShowNotInterestedModal(true)
-                    }
-                  }}
-                  disabled={notInterestedLoading}
-                  className={`flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border text-xs sm:text-sm font-medium transition-all ${
-                    isNotInterested
-                      ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                  } ${notInterestedLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title={isNotInterested ? 'Undo not interested' : 'Not interested'}
-                >
-                  <span className="shrink-0">
-                    {isNotInterested ? (
-                      <RotateCcw className="h-4 w-4" />
-                    ) : (
-                      <X className="h-4 w-4" />
-                    )}
-                  </span>
-                  <span className="min-w-0">{notInterestedLoading ? '...' : isNotInterested ? 'Undo not interested' : 'Not Interested'}</span>
-                </button>
               </div>
 
               {/* Connect with Agent Card - Simplified */}
@@ -796,69 +751,6 @@ export function PropertyDetail({ property }) {
         </div>
       )}
 
-      {/* Not Interested Modal */}
-      {showNotInterestedModal && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowNotInterestedModal(false)}>
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="text-center mb-4">
-              <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
-                <svg className="h-6 w-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Not Interested</h3>
-              <p className="text-sm text-slate-600">We'll hide this property from your recommendations and won't show it to you again.</p>
-            </div>
-            
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-slate-700 font-medium mb-1">{fullAddress}</p>
-              <p className="text-xs text-slate-500">You can always view hidden properties in your settings.</p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowNotInterestedModal(false)}
-                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  if (!user?.id) { setShowNotInterestedModal(false); setShowLoginModal(true); return }
-                  setNotInterestedLoading(true)
-                  try {
-                    const res = await fetch('/api/buyer/not-interested', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
-                      body: JSON.stringify({ dealId: property.id })
-                    })
-                    const data = await res.json().catch(() => ({}))
-                    if (res.ok) {
-                      setIsNotInterested(true)
-                      setShowNotInterestedModal(false)
-                      const successDiv = document.createElement('div')
-                      successDiv.className = 'fixed top-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg z-[10000] text-sm font-medium'
-                      successDiv.textContent = 'Marked not interested. Click Undo to revert.'
-                      document.body.appendChild(successDiv)
-                      setTimeout(() => successDiv.remove(), 3000)
-                    } else {
-                      alert(data.error || 'Failed to save')
-                    }
-                  } catch (e) {
-                    alert(e.message || 'Failed to save')
-                  } finally {
-                    setNotInterestedLoading(false)
-                  }
-                }}
-                disabled={notInterestedLoading}
-                className="flex-1 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {notInterestedLoading ? 'Saving...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
