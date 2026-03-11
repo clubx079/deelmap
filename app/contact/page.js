@@ -2,7 +2,7 @@
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 import Script from 'next/script'
 
 // Marketplace DB: properties, contact_submissions (see ENV_CLEAN.md)

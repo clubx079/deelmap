@@ -1,7 +1,7 @@
 // /app/api/auth/send-otp/route.js
 // OPTIMIZED & IMPROVED DESIGN VERSION
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 import { Resend } from 'resend'
 import { withTimeout } from '@/lib/timeout'
 

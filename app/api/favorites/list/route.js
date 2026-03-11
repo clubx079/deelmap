@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers';
 
 // Use service role so we can read user_favorites, wholesale_deals, and properties regardless of RLS

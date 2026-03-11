@@ -2,7 +2,7 @@
 // OPTIMIZED & IMPROVED DESIGN VERSION
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 import { withTimeout } from '@/lib/timeout'
 
 // Initialize Resend

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 
 function getClientIP(request) {
   const cf = request.headers.get('cf-connecting-ip')

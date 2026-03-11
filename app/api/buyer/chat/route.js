@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { generateReplyToAddress } from '@/lib/emailReplyUtils';
 import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';

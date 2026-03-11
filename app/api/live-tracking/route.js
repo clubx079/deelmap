@@ -1,7 +1,7 @@
 // app/api/live-tracking/route.js
 // API endpoint for tracking live user sessions
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 
 // Marketplace DB: wholesale_deals, live_sessions, system_users, etc. (see ENV_CLEAN.md)
 const supabase = createClient(

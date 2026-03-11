@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 
 // Use seller database (same as users table) for user_favorites
 // Marketplace DB: user_favorites

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,

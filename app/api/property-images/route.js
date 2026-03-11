@@ -1,6 +1,6 @@
 // /app/api/property-images/route.js
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 
 // Marketplace DB: property_photos (see ENV_CLEAN.md)
 const supabase = createClient(

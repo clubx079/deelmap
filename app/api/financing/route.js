@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 
 // Marketplace DB: financing_requests (run scripts/marketplace-create-financing-requests.sql first)
 const supabase = createClient(
