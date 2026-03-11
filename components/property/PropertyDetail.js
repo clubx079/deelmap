@@ -54,7 +54,10 @@ export function PropertyDetail({ property }) {
       (currentPhotoIndex + 1) % photos.length,
       (currentPhotoIndex + 2) % photos.length,
       (currentPhotoIndex + 3) % photos.length,
+      (currentPhotoIndex + 4) % photos.length,
+      (currentPhotoIndex + 5) % photos.length,
       (currentPhotoIndex - 1 + photos.length) % photos.length,
+      (currentPhotoIndex - 2 + photos.length) % photos.length,
     ]
     toPreload.forEach((idx) => {
       const url = getThumbnailUrl(photos[idx], 800) || getPreferredPhotoUrl(photos[idx])
