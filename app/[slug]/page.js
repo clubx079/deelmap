@@ -23,8 +23,8 @@ async function getProperty(slugParam) {
         id,
         photo_url,
         optimized_url,
-        original_url,
-        display_order
+        display_order,
+        is_featured
       )
     `)
     .eq('slug', slug)
