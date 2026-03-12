@@ -5,7 +5,7 @@ import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
 
 // Progressive quality tiers: load fast low-res first, then upgrade
-const QUALITY_TIERS = [150, 400, 800, 1200, null] // null = full original
+const QUALITY_TIERS = [150, 400, 800, 1200, 2400, null] // null = full original
 
 export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, onPhotoView, preloadedUrl = null }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)

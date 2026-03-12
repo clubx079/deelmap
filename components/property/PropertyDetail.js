@@ -45,22 +45,50 @@ export function PropertyDetail({ property }) {
     })
   }, [property.property_photos])
   const currentPhoto = photos[currentPhotoIndex]
-  const currentPhotoUrl = getThumbnailUrl(currentPhoto, 800) || getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
 
-  // Preload next 3 and previous 1 images for fast navigation
+  // Progressive hero image: load 150 → 800 → 2400
+  const HERO_TIERS = [150, 800, 2400]
+  const [heroUrl, setHeroUrl] = useState('')
+  const heroTierRef = useRef(0)
+  const heroIndexRef = useRef(0)
+
+  useEffect(() => {
+    if (!currentPhoto) {
+      setHeroUrl('/placeholder.jpg')
+      return
+    }
+    heroTierRef.current = 0
+    heroIndexRef.current = currentPhotoIndex
+    setHeroUrl(getThumbnailUrl(currentPhoto, HERO_TIERS[0]) || getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg')
+  }, [currentPhotoIndex, currentPhoto])
+
+  const handleHeroLoaded = useCallback(() => {
+    const nextTier = heroTierRef.current + 1
+    if (nextTier < HERO_TIERS.length && heroIndexRef.current === currentPhotoIndex) {
+      const photo = photos[currentPhotoIndex]
+      const nextUrl = getThumbnailUrl(photo, HERO_TIERS[nextTier]) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+      const img = new window.Image()
+      img.onload = () => {
+        if (heroIndexRef.current === currentPhotoIndex) {
+          heroTierRef.current = nextTier
+          setHeroUrl(nextUrl)
+        }
+      }
+      img.src = nextUrl
+    }
+  }, [currentPhotoIndex, photos])
+
+  // Preload next/prev images at first tier for fast navigation
   useEffect(() => {
     if (photos.length <= 1) return
     const toPreload = [
       (currentPhotoIndex + 1) % photos.length,
       (currentPhotoIndex + 2) % photos.length,
       (currentPhotoIndex + 3) % photos.length,
-      (currentPhotoIndex + 4) % photos.length,
-      (currentPhotoIndex + 5) % photos.length,
       (currentPhotoIndex - 1 + photos.length) % photos.length,
-      (currentPhotoIndex - 2 + photos.length) % photos.length,
     ]
     toPreload.forEach((idx) => {
-      const url = getThumbnailUrl(photos[idx], 800) || getPreferredPhotoUrl(photos[idx])
+      const url = getThumbnailUrl(photos[idx], 150) || getPreferredPhotoUrl(photos[idx])
       if (url) {
         const img = new window.Image()
         img.src = url
@@ -329,9 +357,10 @@ export function PropertyDetail({ property }) {
                 {photos.length > 0 ? (
                   <>
                     <img
-                      src={currentPhotoUrl}
+                      src={heroUrl}
                       alt={`Property photo ${currentPhotoIndex + 1}`}
                       className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                      onLoad={handleHeroLoaded}
                     />
                     {/* Click overlay hint */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
