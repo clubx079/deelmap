@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart } from 'lucide-react'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
+import { getStartingTier, recordImageLoad } from '@/utils/adaptiveImageLoader'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
 import { usePropertyAnalytics } from '@/hooks/usePropertyAnalytics'
@@ -46,30 +47,43 @@ export function PropertyDetail({ property }) {
   }, [property.property_photos])
   const currentPhoto = photos[currentPhotoIndex]
 
-  // Progressive hero image: load 150 → 800 → 2400
+  // Adaptive progressive hero image: skips tiers on fast connections
   const HERO_TIERS = [150, 800, 2400]
   const [heroUrl, setHeroUrl] = useState('')
   const heroTierRef = useRef(0)
   const heroIndexRef = useRef(0)
+  const heroLoadStartRef = useRef(0)
 
   useEffect(() => {
     if (!currentPhoto) {
       setHeroUrl('/placeholder.jpg')
       return
     }
-    heroTierRef.current = 0
+    const startTier = getStartingTier(HERO_TIERS)
+    heroTierRef.current = startTier
     heroIndexRef.current = currentPhotoIndex
-    setHeroUrl(getThumbnailUrl(currentPhoto, HERO_TIERS[0]) || getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg')
+    heroLoadStartRef.current = performance.now()
+    setHeroUrl(getThumbnailUrl(currentPhoto, HERO_TIERS[startTier]) || getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg')
   }, [currentPhotoIndex, currentPhoto])
 
   const handleHeroLoaded = useCallback(() => {
+    // Record load time to refine speed estimate
+    const duration = performance.now() - heroLoadStartRef.current
+    const tierWidth = HERO_TIERS[heroTierRef.current] || 2400
+    const estimatedBytes = tierWidth * tierWidth * 0.1 // rough JPEG estimate
+    recordImageLoad(estimatedBytes, duration)
+
     const nextTier = heroTierRef.current + 1
     if (nextTier < HERO_TIERS.length && heroIndexRef.current === currentPhotoIndex) {
       const photo = photos[currentPhotoIndex]
       const nextUrl = getThumbnailUrl(photo, HERO_TIERS[nextTier]) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
       const img = new window.Image()
+      heroLoadStartRef.current = performance.now()
       img.onload = () => {
         if (heroIndexRef.current === currentPhotoIndex) {
+          const dur = performance.now() - heroLoadStartRef.current
+          const estBytes = HERO_TIERS[nextTier] * HERO_TIERS[nextTier] * 0.1
+          recordImageLoad(estBytes, dur)
           heroTierRef.current = nextTier
           setHeroUrl(nextUrl)
         }

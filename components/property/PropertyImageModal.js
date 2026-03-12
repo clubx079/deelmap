@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
+import { getStartingTier, recordImageLoad } from '@/utils/adaptiveImageLoader'
 
 // Progressive quality tiers: load fast low-res first, then upgrade
 const QUALITY_TIERS = [150, 400, 800, 1200, 2400, null] // null = full original
@@ -16,6 +17,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
   const [thumbnailsPerView, setThumbnailsPerView] = useState(8)
   const tierRef = useRef(0)
   const indexRef = useRef(currentIndex)
+  const loadStartRef = useRef(0)
 
   // Get URL for a given quality tier
   const getUrlForTier = useCallback((photo, tier) => {
@@ -24,26 +26,37 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
     return getThumbnailUrl(photo, width) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
   }, [])
 
-  // Progressive loading: start at tier 0, upgrade as each loads
+  // Adaptive progressive loading: skip tiers on fast connections
   useEffect(() => {
     if (!isOpen || !photos || photos.length === 0) return
     const photo = photos[currentIndex]
-    tierRef.current = 0
+    const startTier = getStartingTier(QUALITY_TIERS)
+    tierRef.current = startTier
     indexRef.current = currentIndex
-    setCurrentTier(0)
+    setCurrentTier(startTier)
     setImageLoaded(false)
-    setDisplayUrl(getUrlForTier(photo, 0))
+    loadStartRef.current = performance.now()
+    setDisplayUrl(getUrlForTier(photo, startTier))
   }, [currentIndex, isOpen, photos, getUrlForTier])
 
   const handleImageLoaded = useCallback(() => {
     setImageLoaded(true)
+    // Record load time to refine speed estimate
+    const duration = performance.now() - loadStartRef.current
+    const tierWidth = QUALITY_TIERS[tierRef.current] || 2400
+    recordImageLoad(tierWidth * tierWidth * 0.1, duration)
+
     const nextTier = tierRef.current + 1
     if (nextTier < QUALITY_TIERS.length && indexRef.current === currentIndex) {
       const photo = photos[currentIndex]
       const nextUrl = getUrlForTier(photo, nextTier)
       const img = new window.Image()
+      loadStartRef.current = performance.now()
       img.onload = () => {
         if (indexRef.current === currentIndex) {
+          const dur = performance.now() - loadStartRef.current
+          const w = QUALITY_TIERS[nextTier] || 2400
+          recordImageLoad(w * w * 0.1, dur)
           tierRef.current = nextTier
           setCurrentTier(nextTier)
           setDisplayUrl(nextUrl)
