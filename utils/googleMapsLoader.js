@@ -4,8 +4,8 @@ let mapsApiLoading = false
 let mapsApiLoadPromise = null
 
 export const loadGoogleMapsAPI = () => {
-  // If already loaded, return resolved promise
-  if (window.google?.maps) {
+  // If already loaded and Map constructor available, return resolved promise
+  if (window.google?.maps?.Map) {
     return Promise.resolve()
   }
 
@@ -14,11 +14,11 @@ export const loadGoogleMapsAPI = () => {
     return mapsApiLoadPromise
   }
 
-  // If already loaded but window.google.maps not available yet, wait a bit
+  // If already loaded but Map constructor not available yet, wait a bit
   if (mapsApiLoaded) {
     return new Promise((resolve) => {
       const checkInterval = setInterval(() => {
-        if (window.google?.maps) {
+        if (window.google?.maps?.Map) {
           clearInterval(checkInterval)
           resolve()
         }
@@ -51,17 +51,20 @@ export const loadGoogleMapsAPI = () => {
       return
     }
 
-    // Create new script
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places&loading=async`
-    script.async = true
-    script.defer = true
-    script.onload = () => {
+    // Create new script with callback for async loading
+    const callbackName = '__googleMapsCallback_' + Date.now()
+    window[callbackName] = () => {
+      delete window[callbackName]
       mapsApiLoaded = true
       mapsApiLoading = false
       resolve()
     }
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places&loading=async&callback=${callbackName}`
+    script.async = true
+    script.defer = true
     script.onerror = () => {
+      delete window[callbackName]
       mapsApiLoading = false
       reject(new Error('Failed to load Google Maps API'))
     }
