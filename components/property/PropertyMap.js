@@ -27,20 +27,18 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
   const markersRef = useRef([])
   const infoOverlayRef = useRef(null)
   const router = useRouter()
-  const pendingMarkersUpdateRef = useRef(false)  // Track if we need to update markers
+  const propertiesRef = useRef(properties)
+  const filtersRef = useRef(filters)
+
+  // Keep refs in sync so callbacks always see latest values
+  useEffect(() => { propertiesRef.current = properties }, [properties])
+  useEffect(() => { filtersRef.current = filters }, [filters])
 
   useEffect(() => { initMap() }, [])
   useEffect(() => {
     if (mapInstanceRef.current && window.google) {
-      // Map is ready, update markers immediately
-      console.log('🔄 Updating markers: map ready, properties changed')
       updateMarkers()
       if (filters?.states?.length) zoomToStates(filters.states)
-      pendingMarkersUpdateRef.current = false
-    } else if (properties.length > 0) {
-      // Map not ready yet but we have properties - mark for later update
-      console.log('⏳ Markers update pending: waiting for map to initialize')
-      pendingMarkersUpdateRef.current = true
     }
   }, [properties, filters])
 
@@ -73,29 +71,22 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
       mapInstanceRef.current = map
       
-      console.log('✅ Google Maps initialized, checking for pending markers...')
-      
       // Close popup when clicking anywhere on the map
       map.addListener('click', (e) => {
-        // Only close if not clicking on a marker or info card
         if (e.placeId === undefined) {
           hideInfoCard()
         }
       })
-      
+
       // Close popup when dragging the map
       map.addListener('dragstart', () => {
         hideInfoCard()
       })
-      
-      // Update markers when map is ready
+
+      // Update markers when map is ready (read from ref to get latest properties)
       window.google.maps.event.addListenerOnce(map, 'idle', () => {
-        console.log('🗺️ Map idle event fired')
-        // Check if we have properties or if there's a pending update
-        if (properties.length > 0 || pendingMarkersUpdateRef.current) {
-          console.log('📍 Rendering markers on map idle')
+        if (propertiesRef.current.length > 0) {
           updateMarkers()
-          pendingMarkersUpdateRef.current = false
         }
       })
     }
@@ -129,24 +120,17 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
   const updateMarkers = () => {
     const map = mapInstanceRef.current
-    if (!map || !window.google) {
-      console.warn('⚠️ Cannot update markers: map or Google Maps not ready')
-      return
-    }
-    
-    if (!properties || properties.length === 0) {
-      console.log('ℹ️ No properties to display on map')
-      return
-    }
+    if (!map || !window.google) return
 
-    console.log(`🎯 Updating ${properties.length} markers on map`)
+    const currentProperties = propertiesRef.current
+    if (!currentProperties || currentProperties.length === 0) return
 
     markersRef.current.forEach(({ overlay }) => overlay?.setMap(null))
     markersRef.current = []
 
     const bounds = new window.google.maps.LatLngBounds()
 
-    properties.forEach((p) => {
+    currentProperties.forEach((p) => {
       // Use Google verified coordinates from wholesale_deals; fallback chain for missing coords
       let lat = parseFloat(p.address_google_lat)
       let lng = parseFloat(p.address_google_lng)
@@ -227,7 +211,6 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       bounds.extend(anchor.getPosition())
     })
 
-    console.log(`✅ Successfully created ${markersRef.current.length} markers`)
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds)
@@ -385,26 +368,12 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapHeight = mapDiv.offsetHeight
       
       const edgePadding = 15
-      const cardWidth = 250   
-      const cardHeight = 220  
+      const cardWidth = 250
+      const cardHeight = 220
       const popupOffset = 15
-      
-      console.log('🗺️ MAP POPUP CALCULATION START');
-      console.log('📍 Marker Position (Centered coords):', { x: pt.x, y: pt.y });
-      console.log('📐 Map Dimensions:', { width: mapWidth, height: mapHeight });
-      
-      // Convert from centered coordinates to screen coordinates
-      // Centered: (0,0) at map center, x: -width/2 to +width/2, y: -height/2 to +height/2
-      // Screen: (0,0) at top-left, x: 0 to width, y: 0 to height
+
       const screenX = pt.x + (mapWidth / 2)
       const screenY = pt.y + (mapHeight / 2)
-      
-      console.log('📍 Converted to Screen coords:', { x: screenX, y: screenY });
-      console.log('📊 Position Analysis:');
-      console.log(`  Horizontal: ${screenX.toFixed(0)}px / ${mapWidth}px = ${((screenX/mapWidth)*100).toFixed(1)}% from left`);
-      console.log(`  Vertical: ${screenY.toFixed(0)}px / ${mapHeight}px = ${((screenY/mapHeight)*100).toFixed(1)}% from top`);
-      console.log(`  Location: ${screenX < mapWidth/3 ? 'LEFT' : screenX > mapWidth*2/3 ? 'RIGHT' : 'CENTER'} side, ${screenY < mapHeight/3 ? 'TOP' : screenY > mapHeight*2/3 ? 'BOTTOM' : 'MIDDLE'} area`);
-      console.log('⚙️ Settings:', { edgePadding, cardWidth, cardHeight, popupOffset });
       
       // Use screen coordinates for all calculations
       const x = screenX
@@ -473,165 +442,68 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         }
       }
       
-      console.log('📊 Position Fits Check (with calculated edges):');
-      Object.keys(positions).forEach(posName => {
-        const pos = positions[posName];
-        // Calculate actual edges based on position and transform
-        let actualLeft = 0, actualRight = 0, actualTop = 0, actualBottom = 0;
-        
-        // Parse the transform to calculate actual edges
-        if (pos.transform === 'translate(-50%, -100%)') {
-          // Top position
-          actualLeft = pos.left - cardWidth/2;
-          actualRight = pos.left + cardWidth/2;
-          actualTop = pos.top - cardHeight;
-          actualBottom = pos.top;
-        } else if (pos.transform === 'translate(-50%, 0%)') {
-          // Bottom position
-          actualLeft = pos.left - cardWidth/2;
-          actualRight = pos.left + cardWidth/2;
-          actualTop = pos.top;
-          actualBottom = pos.top + cardHeight;
-        } else if (pos.transform === 'translate(-100%, -50%)') {
-          // Right position
-          actualLeft = pos.left - cardWidth;
-          actualRight = pos.left;
-          actualTop = pos.top - cardHeight/2;
-          actualBottom = pos.top + cardHeight/2;
-        } else if (pos.transform === 'translate(0%, -50%)') {
-          // Left position
-          actualLeft = pos.left;
-          actualRight = pos.left + cardWidth;
-          actualTop = pos.top - cardHeight/2;
-          actualBottom = pos.top + cardHeight/2;
-        } else if (pos.transform === 'translate(-100%, -100%)') {
-          // TopRight position
-          actualLeft = pos.left - cardWidth;
-          actualRight = pos.left;
-          actualTop = pos.top - cardHeight;
-          actualBottom = pos.top;
-        } else if (pos.transform === 'translate(0%, -100%)') {
-          // TopLeft position
-          actualLeft = pos.left;
-          actualRight = pos.left + cardWidth;
-          actualTop = pos.top - cardHeight;
-          actualBottom = pos.top;
-        } else if (pos.transform === 'translate(-100%, 0%)') {
-          // BottomRight position
-          actualLeft = pos.left - cardWidth;
-          actualRight = pos.left;
-          actualTop = pos.top;
-          actualBottom = pos.top + cardHeight;
-        } else if (pos.transform === 'translate(0%, 0%)') {
-          // BottomLeft position
-          actualLeft = pos.left;
-          actualRight = pos.left + cardWidth;
-          actualTop = pos.top;
-          actualBottom = pos.top + cardHeight;
-        }
-        
-        const fitsInfo = pos.fits ? '✅ FITS' : '❌ NO FIT';
-        console.log(`  ${posName}: ${fitsInfo}`);
-        console.log(`    Edges: L:${actualLeft.toFixed(0)} R:${actualRight.toFixed(0)} T:${actualTop.toFixed(0)} B:${actualBottom.toFixed(0)}`);
-        console.log(`    Within bounds? L:${actualLeft >= edgePadding} R:${actualRight <= mapWidth - edgePadding} T:${actualTop >= edgePadding} B:${actualBottom <= mapHeight - edgePadding}`);
-      });
-      
       // Priority order: prefer top, then bottom, then sides, then corners
       const priority = ['top', 'bottom', 'right', 'left', 'topRight', 'topLeft', 'bottomRight', 'bottomLeft']
       
       let selectedPosition = positions.top // default
-      
+
       // Find the first position that fits
       for (const posName of priority) {
         if (positions[posName].fits) {
           selectedPosition = positions[posName]
-          console.log(`✅ Selected Position: ${posName} (first fit found)`);
           break
         }
       }
       
       // If none fit perfectly, choose the best compromise
       if (!selectedPosition.fits) {
-        console.log('⚠️ No position fits perfectly, calculating best compromise...');
-        
-        // Calculate which position has the least overflow
         let bestPosition = positions.top
         let minOverflow = Infinity
-        
+
         for (const posName of priority) {
           const pos = positions[posName]
           let overflow = 0
-          
-          // Calculate overflow for each edge
+
           const leftEdge = pos.left - (pos.transform.includes('-100%') ? cardWidth : pos.transform.includes('-50%') ? cardWidth/2 : 0)
           const rightEdge = pos.left + (pos.transform.includes('0%') ? cardWidth : pos.transform.includes('-50%') ? cardWidth/2 : cardWidth)
           const topEdge = pos.top - (pos.transform.includes('-100%') || pos.transform.includes('-50%') ? cardHeight : pos.transform.includes('0%') ? 0 : cardHeight/2)
           const bottomEdge = pos.top + (pos.transform.includes('0%') || pos.transform.includes('-50%') ? cardHeight : pos.transform.includes('-100%') ? 0 : cardHeight/2)
-          
+
           if (leftEdge < edgePadding) overflow += edgePadding - leftEdge
           if (rightEdge > mapWidth - edgePadding) overflow += rightEdge - (mapWidth - edgePadding)
           if (topEdge < edgePadding) overflow += edgePadding - topEdge
           if (bottomEdge > mapHeight - edgePadding) overflow += bottomEdge - (mapHeight - edgePadding)
-          
-          console.log(`  ${posName}: overflow = ${overflow.toFixed(2)}px`);
-          
+
           if (overflow < minOverflow) {
             minOverflow = overflow
             bestPosition = pos
           }
         }
-        
-        console.log(`🎯 Best compromise: overflow = ${minOverflow.toFixed(2)}px`);
-        
+
         selectedPosition = bestPosition
-        
-        console.log('🔧 Adjusting position to keep within bounds...');
-        
+
         // Adjust position to keep within bounds
         const leftEdge = selectedPosition.left - (selectedPosition.transform.includes('-100%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : 0)
         const rightEdge = selectedPosition.left + (selectedPosition.transform.includes('0%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : cardWidth)
         const topEdge = selectedPosition.top - (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
         const bottomEdge = selectedPosition.top + (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
-        
-        console.log('  Before adjustment:', { left: selectedPosition.left, top: selectedPosition.top });
-        console.log('  Edges:', { leftEdge, rightEdge, topEdge, bottomEdge });
-        
+
         if (leftEdge < edgePadding) {
           selectedPosition.left = edgePadding + (selectedPosition.transform.includes('-100%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : 0)
-          console.log('  ⬅️ Adjusted left edge');
         }
         if (rightEdge > mapWidth - edgePadding) {
           selectedPosition.left = mapWidth - edgePadding - (selectedPosition.transform.includes('0%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : cardWidth)
-          console.log('  ➡️ Adjusted right edge');
         }
         if (topEdge < edgePadding) {
           selectedPosition.top = edgePadding + (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
-          console.log('  ⬆️ Adjusted top edge');
         }
         if (bottomEdge > mapHeight - edgePadding) {
           selectedPosition.top = mapHeight - edgePadding - (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
-          console.log('  ⬇️ Adjusted bottom edge');
         }
-        
-        console.log('  After adjustment:', { left: selectedPosition.left, top: selectedPosition.top });
       }
-      
-      console.log('🎉 FINAL POSITION (screen coords):', {
-        left: selectedPosition.left,
-        top: selectedPosition.top,
-        transform: selectedPosition.transform
-      });
-      
-      // Convert back from screen coordinates to centered coordinates for DOM
+
       const finalLeft = selectedPosition.left - (mapWidth / 2)
       const finalTop = selectedPosition.top - (mapHeight / 2)
-      
-      console.log('🎉 FINAL POSITION (centered coords for DOM):', {
-        left: finalLeft,
-        top: finalTop,
-        transform: selectedPosition.transform
-      });
-      console.log('🗺️ MAP POPUP CALCULATION END\n');
       
       el.style.left = `${finalLeft}px`
       el.style.top = `${finalTop}px`
@@ -654,7 +526,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     const map = mapInstanceRef.current
     if (!map || !window.google) return
     const b = new window.google.maps.LatLngBounds()
-    properties.forEach((p) => {
+    propertiesRef.current.forEach((p) => {
       if (stateCodes.includes(p.state) && p.latitude && p.longitude) {
         b.extend({ lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) })
       }

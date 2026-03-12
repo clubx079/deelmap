@@ -53,7 +53,7 @@ export const loadGoogleMapsAPI = () => {
 
     // Create new script
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places&loading=async`
     script.async = true
     script.defer = true
     script.onload = () => {
