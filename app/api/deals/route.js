@@ -232,13 +232,12 @@ export async function GET(request) {
     const totalCount = (wholesaleCount || 0) + (manualCount || 0);
     const hasMore = totalCount > offset + limit;
 
-    // Apply pagination
-    const paginatedProperties = allProperties.slice(offset, offset + limit);
+    // DB already returns paginated results via .range() — no JS-level slicing needed
 
     // ==================== RETURN RESPONSE ====================
     return NextResponse.json({
       success: true,
-      properties: paginatedProperties,
+      properties: allProperties,
       totalCount,
       page,
       limit,
