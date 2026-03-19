@@ -48,6 +48,7 @@ export default function DealsPage() {
     filters,
     sortBy,
     searchQuery,
+    pageSize: 500,
     authToken: user?.id ? `Bearer ${user.id}` : undefined
   })
   const [showAuth, setShowAuth] = useState(false)
@@ -192,13 +193,6 @@ const LoadingState = () => (
                 <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />
               ))}
               {properties.length === 0 && <EmptyState />}
-              {hasMore && !loading && (
-                <div className="pt-4">
-                  <Button onClick={loadMore} className="w-full" variant="secondary" disabled={loadingMore}>
-                    {loadingMore ? 'Loading more...' : 'Load more'}
-                  </Button>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -230,13 +224,6 @@ const LoadingState = () => (
                   {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />)}
                 </div>
                 {properties.length === 0 && <EmptyState />}
-                {hasMore && !loading && (
-                  <div className="pt-4">
-                    <Button onClick={loadMore} className="w-full" variant="secondary" disabled={loadingMore}>
-                      {loadingMore ? 'Loading more...' : 'Load more'}
-                    </Button>
-                  </div>
-                )}
               </div>
             )}
           </div>
