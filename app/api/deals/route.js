@@ -87,6 +87,7 @@ export async function GET(request) {
         )
       `, { count: 'exact' })
       .neq('status', 'archived')
+      .neq('is_incomplete', true)
       .order('created_at', { ascending: false });
 
     // Apply filters to wholesale deals
