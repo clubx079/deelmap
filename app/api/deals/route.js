@@ -146,6 +146,14 @@ export async function GET(request) {
 
     const { data: wholesaleDeals, count: wholesaleCount, error: wholesaleError } = await wholesaleQuery;
 
+    // Debug logging
+    console.log('[DEALS-API] Wholesale query results:', {
+      totalReturned: wholesaleDeals?.length || 0,
+      dbCount: wholesaleCount,
+      incompleteFilter: 'neq is_incomplete true',
+      sampleStatuses: wholesaleDeals?.slice(0, 5).map(d => ({ addr: d.address?.substring(0, 30), status: d.status, is_incomplete: d.is_incomplete })),
+    });
+
     if (wholesaleError) {
       console.error('Error fetching wholesale deals:', wholesaleError);
       throw wholesaleError;
@@ -231,6 +239,7 @@ export async function GET(request) {
 
     // Total count from DB (search already applied at DB level)
     const totalCount = (wholesaleCount || 0) + (manualCount || 0);
+    console.log('[DEALS-API] Final counts:', { wholesaleCount, manualCount, totalCount, propertiesReturned: allProperties.length });
     const hasMore = totalCount > offset + limit;
 
     // DB already returns paginated results via .range() — no JS-level slicing needed
