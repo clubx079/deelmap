@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
+
+export const maxDuration = 30; // 30 seconds max
 import {
   normalizeWholesaleDeal,
   normalizeManualProperty,
@@ -69,7 +71,7 @@ export async function GET(request) {
       'address_google_lat', 'address_google_lng',
       'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
       'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
-      'year_built', 'lot_size', 'description',
+      'year_built', 'lot_size',
       'created_at', 'updated_at', 'temp_seller_id',
       'estimated_rent', 'purchase_price'
     ].join(',');
@@ -79,10 +81,8 @@ export async function GET(request) {
       .select(`
         ${wholesaleCols},
         property_photos (
-          id,
           photo_url,
           optimized_url,
-          display_order,
           is_featured
         )
       `, { count: 'exact' })
