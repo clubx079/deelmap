@@ -57,7 +57,7 @@ export default function DealsPage() {
     filters,
     sortBy,
     searchQuery,
-    pageSize: 50,
+    pageSize: 500,
     authToken: user?.id ? `Bearer ${user.id}` : undefined
   })
   const [showAuth, setShowAuth] = useState(false)
