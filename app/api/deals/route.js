@@ -86,8 +86,8 @@ export async function GET(request) {
           is_featured
         )
       `, { count: 'exact' })
-      .neq('status', 'archived')
-      .neq('is_incomplete', true)
+      .eq('status', 'active')
+      .eq('is_incomplete', false)
       .order('created_at', { ascending: false });
 
     // Apply filters to wholesale deals
