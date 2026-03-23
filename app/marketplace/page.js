@@ -13,6 +13,15 @@ import { Button } from '@/components/ui/Button'
 export default function DealsPage() {
   const { user } = useAuth()
   const { loadFavorites } = useFavorites()
+  const [mapPins, setMapPins] = useState([])
+
+  // Load all map pins once (lightweight — just coordinates)
+  useEffect(() => {
+    fetch('/api/deals/map')
+      .then(r => r.json())
+      .then(data => { if (data.success) setMapPins(data.pins) })
+      .catch(() => {})
+  }, [])
   const [filters, setFilters] = useState({
     states: [],
     statuses: ['all'], // Show all properties by default
@@ -156,7 +165,7 @@ const LoadingState = () => (
         {/* Map */}
         <div className="relative h-[45vh] overflow-hidden">
           <PropertyMap
-            properties={properties}
+            properties={mapPins.length > 0 ? mapPins : properties}
             onMarkerClick={handleMarkerClick}
             selectedProperty={selectedProperty}
             filters={filters}
