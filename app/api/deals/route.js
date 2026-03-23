@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 
-export const maxDuration = 30; // 30 seconds max
 import {
   normalizeWholesaleDeal,
   normalizeManualProperty,
@@ -160,72 +159,9 @@ export async function GET(request) {
     }
 
     // ==================== FETCH MANUAL PROPERTIES ====================
-    const manualCols = [
-      'id', 'slug', 'address', 'state',
-      'latitude', 'longitude',
-      'price', 'bedrooms', 'bathrooms', 'floor_area', 'property_type', 'status', 'property_status',
-      'description',
-      'created_at', 'updated_at', 'seller_id'
-    ].join(',');
-
-    let manualQuery = supabaseMarketplace
-      .from('properties')
-      .select(`
-        ${manualCols},
-        property_images (
-          id,
-          image_url,
-          image_key,
-          sort_order
-        )
-      `, { count: 'exact' })
-      .in('status', ['active', 'published'])
-      .not('status', 'is', null)
-      .order('created_at', { ascending: false });
-
-    // Apply filters to manual properties
-    if (propertyTypes.length > 0) {
-      manualQuery = manualQuery.in('property_type', propertyTypes);
-    }
-    if (minPrice !== null) {
-      manualQuery = manualQuery.gte('price', minPrice);
-    }
-    if (maxPrice !== null) {
-      manualQuery = manualQuery.lte('price', maxPrice);
-    }
-    if (minBedrooms !== null) {
-      manualQuery = manualQuery.gte('bedrooms', minBedrooms);
-    }
-    if (maxBedrooms !== null) {
-      manualQuery = manualQuery.lte('bedrooms', maxBedrooms);
-    }
-    if (minBathrooms !== null) {
-      manualQuery = manualQuery.gte('bathrooms', minBathrooms);
-    }
-    if (maxBathrooms !== null) {
-      manualQuery = manualQuery.lte('bathrooms', maxBathrooms);
-    }
-    if (minSqft !== null) {
-      manualQuery = manualQuery.gte('floor_area', minSqft);
-    }
-    if (maxSqft !== null) {
-      manualQuery = manualQuery.lte('floor_area', maxSqft);
-    }
-    if (states.length > 0) {
-      manualQuery = manualQuery.in('state', states);
-    }
-    if (searchQuery) {
-      const q = `%${searchQuery}%`;
-      manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
-    }
-    manualQuery = manualQuery.range(offset, offset + limit - 1);
-
-    const { data: manualProperties, count: manualCount, error: manualError } = await manualQuery;
-
-    if (manualError) {
-      console.error('Error fetching manual properties:', manualError);
-      throw manualError;
-    }
+    // Skip manual properties — table is empty (all deleted)
+    const manualProperties = [];
+    const manualCount = 0;
 
     // ==================== NORMALIZE DATA ====================
     const normalizedWholesale = (wholesaleDeals || []).map(normalizeWholesaleDeal);
