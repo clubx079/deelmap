@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -18,6 +18,21 @@ export function Navbar() {
   const [showAboutDropdown, setShowAboutDropdown] = useState(false)
 
   const aboutButtonRef = useRef(null)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Fetch unread message count
+  useEffect(() => {
+    if (!user?.id) { setUnreadCount(0); return }
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('/api/buyer/unread-count', { headers: { 'x-user-id': user.id } })
+        if (res.ok) { const data = await res.json(); setUnreadCount(data.count || 0) }
+      } catch {}
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 30000) // Poll every 30s
+    return () => clearInterval(interval)
+  }, [user?.id])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -227,24 +242,38 @@ export function Navbar() {
             {/* User Profile / Login - Right */}
             <div className="flex items-center space-x-6">
               {user ? (
-                <Link
-                  href="/buyer/dashboard"
-                  className="flex items-center space-x-3 group relative"
-                >
-                  <span className="hidden lg:inline-block text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors duration-200">
-                    {getUserDisplayName(user)}
-                  </span>
-                  <div className="relative">
-                    {/* User avatar: slate base, red ring on hover (professional, no purple) */}
-                    <div className="relative w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white text-sm font-semibold transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg cursor-pointer ring-2 ring-slate-200 group-hover:ring-red-600">
-                      {getUserInitials(user)}
-                      {/* Shine on hover */}
-                      <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-                        <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="flex items-center space-x-4">
+                  {/* Messages icon with unread badge */}
+                  <Link href="/buyer/inbox" className="relative p-2 text-slate-500 hover:text-slate-900 transition-colors duration-200">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* User profile */}
+                  <Link
+                    href="/buyer/dashboard"
+                    className="flex items-center space-x-3 group relative"
+                  >
+                    <span className="hidden lg:inline-block text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors duration-200">
+                      {getUserDisplayName(user)}
+                    </span>
+                    <div className="relative">
+                      {/* User avatar: slate base, red ring on hover */}
+                      <div className="relative w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white text-sm font-semibold transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg cursor-pointer ring-2 ring-slate-200 group-hover:ring-red-600">
+                        {getUserInitials(user)}
+                        <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                          <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ) : (
                 <Link
                   href="/login"
