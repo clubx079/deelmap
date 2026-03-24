@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Share2, Bed, Bath, Square, Lock, Heart } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { ShareModal } from './ShareModal'
-import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
+// Photo URL utilities imported if needed for future use
 import { useFavorites } from '@/hooks/useFavorites'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -49,9 +49,16 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
     year_built,
   } = property
 
-  const featureImage = getPrimaryPhotoUrl(property_photos)
-  const photoCount = property_photos?.length || 0
-  const hasPhotos = photoCount > 0 && featureImage
+  const featurePhoto = property_photos?.find(p => p?.is_featured) || property_photos?.[0]
+  const featureImage = featurePhoto
+    ? (featurePhoto.optimized_url || featurePhoto.photo_url || '')
+    : ''
+  // Use Supabase image transform for fast thumbnail (400px wide)
+  const thumbnailImage = featureImage && featureImage.includes('supabase.co/storage/v1/object/public/')
+    ? featureImage.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
+    : featureImage
+  const photoCount = property.photo_count || property_photos?.length || 0
+  const hasPhotos = !!thumbnailImage
 
   // Full address for alt text and share modal (includes zip code)
   const fullAddressText = full_address ||
@@ -98,7 +105,7 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
             {hasPhotos ? (
               <>
                 <Image
-                  src={featureImage}
+                  src={thumbnailImage}
                   alt={fullAddressText || 'Property'}
                   fill
                   loading="lazy"

@@ -28,6 +28,8 @@ export async function GET() {
       price: d.price,
       latitude: d.address_google_lat,
       longitude: d.address_google_lng,
+      address_google_lat: d.address_google_lat,
+      address_google_lng: d.address_google_lng,
     }));
 
     return NextResponse.json({ success: true, pins, total: pins.length });

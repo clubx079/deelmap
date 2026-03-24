@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
-import {
-  normalizeWholesaleDeal,
-  mergeAndSortProperties
-} from '@/lib/propertyMappers';
+import { normalizeWholesaleDeal } from '@/lib/propertyMappers';
 
 const supabaseMarketplace = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
@@ -15,7 +12,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
 
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '30'), 100); // Cap at 100
+    const limit = Math.min(parseInt(searchParams.get('limit') || '30'), 100);
     const offset = (page - 1) * limit;
     const sortBy = searchParams.get('sortBy') || 'newest';
     const searchQuery = searchParams.get('searchQuery') || '';
@@ -36,7 +33,7 @@ export async function GET(request) {
     const cities = searchParams.get('cities')?.split(',').filter(Boolean) || [];
     const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
 
-    // Step 1: Get deal IDs + data (no photos — fast query)
+    // Query 1: Get deals with ONLY featured photo (using Supabase transform for speed)
     const dealCols = [
       'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
       'address_google_lat', 'address_google_lng',
@@ -49,7 +46,7 @@ export async function GET(request) {
 
     let query = supabaseMarketplace
       .from('wholesale_deals')
-      .select(dealCols, { count: 'exact' })
+      .select(`${dealCols}, property_photos(photo_url, optimized_url, is_featured)`, { count: 'exact' })
       .eq('status', 'active')
       .eq('is_incomplete', false);
 
@@ -88,64 +85,26 @@ export async function GET(request) {
     const { data: deals, count: totalCount, error: dealError } = await query;
 
     if (dealError) {
-      console.error('[DEALS-API] Query error:', dealError);
+      console.error('[DEALS-API] Error:', dealError);
       throw dealError;
     }
 
-    // Step 2: Get featured photos for these deals (one query, only featured)
-    const dealIds = (deals || []).map(d => d.id);
-    let photosMap = {};
+    // Process: pick featured photo, count photos
+    const properties = (deals || []).map(deal => {
+      const allPhotos = deal.property_photos || [];
+      const featured = allPhotos.find(p => p.is_featured) || allPhotos[0];
 
-    if (dealIds.length > 0) {
-      const { data: photos } = await supabaseMarketplace
-        .from('property_photos')
-        .select('deal_id, photo_url, optimized_url, is_featured')
-        .in('deal_id', dealIds)
-        .eq('is_featured', true);
+      // Replace full photo array with just the featured one for the card
+      deal.photo_count = allPhotos.length;
+      deal.property_photos = featured ? [{
+        photo_url: featured.optimized_url || featured.photo_url,
+        optimized_url: featured.optimized_url || null,
+        is_featured: true
+      }] : [];
 
-      // Map featured photos by deal_id
-      for (const p of (photos || [])) {
-        photosMap[p.deal_id] = [p];
-      }
+      return normalizeWholesaleDeal(deal);
+    }).filter(Boolean);
 
-      // For deals without a featured photo, get their first photo
-      const missingIds = dealIds.filter(id => !photosMap[id]);
-      if (missingIds.length > 0) {
-        const { data: fallbackPhotos } = await supabaseMarketplace
-          .from('property_photos')
-          .select('deal_id, photo_url, optimized_url')
-          .in('deal_id', missingIds)
-          .order('display_order', { ascending: true })
-          .limit(missingIds.length); // ~1 per deal
-
-        // Group by deal_id, take first
-        for (const p of (fallbackPhotos || [])) {
-          if (!photosMap[p.deal_id]) {
-            photosMap[p.deal_id] = [{ ...p, is_featured: true }];
-          }
-        }
-      }
-
-      // Get photo counts per deal
-      const { data: counts } = await supabaseMarketplace
-        .from('property_photos')
-        .select('deal_id')
-        .in('deal_id', dealIds);
-
-      const countMap = {};
-      for (const c of (counts || [])) {
-        countMap[c.deal_id] = (countMap[c.deal_id] || 0) + 1;
-      }
-
-      // Attach photos and counts to deals
-      for (const deal of (deals || [])) {
-        deal.property_photos = photosMap[deal.id] || [];
-        deal.photo_count = countMap[deal.id] || 0;
-      }
-    }
-
-    // Normalize
-    const properties = (deals || []).map(normalizeWholesaleDeal).filter(Boolean);
     const hasMore = (totalCount || 0) > offset + limit;
 
     return NextResponse.json({
