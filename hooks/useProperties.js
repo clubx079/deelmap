@@ -21,6 +21,7 @@ export const useProperties = ({
   const requestIdRef = useRef(0)
 
   useEffect(() => {
+    setLoading(true)
     setProperties([])
     setHasMore(true)
     setTotalCount(null)
