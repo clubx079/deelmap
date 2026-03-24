@@ -212,7 +212,7 @@ const LoadingState = () => (
         <div className="flex h-full">
           <div className="flex-1 border-r border-gray-200 bg-gray-50 relative">
             <PropertyMap
-              properties={properties}
+              properties={mapPins.length > 0 ? mapPins : properties}
               onMarkerClick={handleMarkerClick}
               selectedProperty={selectedProperty}
               filters={filters}
