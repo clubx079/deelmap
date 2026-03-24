@@ -192,7 +192,7 @@ const LoadingState = () => (
 
         {/* Listings */}
         <div className="bg-white">
-          {loading ? (
+          {(loading && properties.length === 0) ? (
             <LoadingState />
           ) : error ? (
             <ErrorState />
@@ -201,7 +201,7 @@ const LoadingState = () => (
               {properties.map((p) => (
                 <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />
               ))}
-              {properties.length === 0 && <EmptyState />}
+              {properties.length === 0 && !loading && !error && <EmptyState />}
             </div>
           )}
         </div>
@@ -223,7 +223,7 @@ const LoadingState = () => (
           <div className="w-[420px] flex flex-col bg-white">
             <RightHeader />
 
-            {loading ? (
+            {(loading && properties.length === 0) ? (
               <LoadingState />
             ) : error ? (
               <ErrorState />
@@ -232,7 +232,7 @@ const LoadingState = () => (
                 <div className="space-y-4">
                   {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />)}
                 </div>
-                {properties.length === 0 && !loading && <EmptyState />}
+                {properties.length === 0 && !loading && !error && <EmptyState />}
                 {hasMore && properties.length > 0 && (
                   <div className="py-4 flex justify-center">
                     <button
