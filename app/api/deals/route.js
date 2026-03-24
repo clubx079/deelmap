@@ -121,9 +121,9 @@ export async function GET(request) {
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
+      manualCount = mCount || 0;
       if (manualData && manualData.length > 0) {
         manualProperties = manualData.map(p => normalizeManualProperty(p, p.property_images || [])).filter(Boolean);
-        manualCount = mCount || 0;
       }
     } catch {
       // Silently skip — manual properties are optional
