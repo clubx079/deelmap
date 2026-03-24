@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
-import { normalizeWholesaleDeal } from '@/lib/propertyMappers';
+import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers';
 
 const supabaseMarketplace = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
@@ -105,18 +105,44 @@ export async function GET(request) {
       return normalizeWholesaleDeal(deal);
     }).filter(Boolean);
 
-    const hasMore = (totalCount || 0) > offset + limit;
+    // Also fetch manual seller properties (safe — won't crash if table empty or missing)
+    let manualProperties = [];
+    let manualCount = 0;
+    try {
+      const { data: manualData, count: mCount } = await supabaseMarketplace
+        .from('properties')
+        .select(`
+          id, slug, address, state, latitude, longitude,
+          price, bedrooms, bathrooms, floor_area, property_type, status,
+          created_at, updated_at, seller_id,
+          property_images (image_url, image_key, sort_order)
+        `, { count: 'exact' })
+        .in('status', ['active', 'published'])
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (manualData && manualData.length > 0) {
+        manualProperties = manualData.map(p => normalizeManualProperty(p, p.property_images || [])).filter(Boolean);
+        manualCount = mCount || 0;
+      }
+    } catch {
+      // Silently skip — manual properties are optional
+    }
+
+    const allProperties = [...properties, ...manualProperties];
+    const combinedTotal = (totalCount || 0) + manualCount;
+    const hasMore = combinedTotal > offset + limit;
 
     return NextResponse.json({
       success: true,
-      properties,
-      totalCount: totalCount || 0,
+      properties: allProperties,
+      totalCount: combinedTotal,
       page,
       limit,
       hasMore,
       metadata: {
         wholesaleCount: totalCount || 0,
-        manualCount: 0,
+        manualCount,
         searchApplied: !!searchQuery,
         sortBy
       }

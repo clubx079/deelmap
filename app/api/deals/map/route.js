@@ -32,6 +32,35 @@ export async function GET() {
       address_google_lng: d.address_google_lng,
     }));
 
+    // Also include manual seller properties on the map
+    try {
+      const { data: manualData } = await supabase
+        .from('properties')
+        .select('id, slug, address, state, latitude, longitude, price')
+        .in('status', ['active', 'published'])
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+
+      if (manualData && manualData.length > 0) {
+        for (const p of manualData) {
+          pins.push({
+            id: p.id,
+            slug: p.slug,
+            address: p.address,
+            city: null,
+            state: p.state,
+            price: p.price,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            address_google_lat: p.latitude,
+            address_google_lng: p.longitude,
+          });
+        }
+      }
+    } catch {
+      // Silently skip — manual properties are optional
+    }
+
     return NextResponse.json({ success: true, pins, total: pins.length });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
