@@ -138,7 +138,10 @@ export const useProperties = ({
         throw new Error(result.error || 'Failed to fetch properties')
       }
 
-      setTotalCount(result.totalCount)
+      // Only update totalCount on first load — prevent flickering on Load More
+      if (replace || totalCount === null) {
+        setTotalCount(result.totalCount)
+      }
       setProperties(prev =>
         replace ? (result.properties || []) : [...prev, ...(result.properties || [])]
       )
