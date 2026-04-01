@@ -121,8 +121,8 @@ export default function HomePage() {
           priority
           sizes="100vw"
         />
-        {/* Left gradient overlay so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent lg:from-white lg:via-white/80 lg:to-transparent" />
+        {/* Left gradient overlay so text stays readable — stops at 50% so right side stays crisp */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, white 0%, white 35%, rgba(255,255,255,0.6) 50%, transparent 65%)' }} />
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
