@@ -130,7 +130,7 @@ export default function HomePage() {
             <div className="w-full max-w-[520px]">
 
               {/* Heading */}
-              <h1 className="text-[44px] sm:text-[52px] lg:text-[56px] font-bold text-[#1A1816] leading-[1.1] mb-5">
+              <h1 className="text-[44px] sm:text-[48px] lg:text-[46px] xl:text-[52px] font-bold text-[#1A1816] leading-[1.1] mb-5">
                 Discover verified<br />
                 off-market{' '}
                 <span className="text-[#D03839]">real<br />estate deals</span>
