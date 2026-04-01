@@ -175,7 +175,7 @@ export function PropertiesSlider() {
                       <img
                         src={thumbImg}
                         alt={cityState || 'Property'}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="block w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
