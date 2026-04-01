@@ -165,6 +165,8 @@ export async function POST(request) {
       sender_type: 'user',
       sender_id: buyerUuid,
       message_text: offerMsgText,
+      has_attachment: false,
+      is_read: false,
     }).then(() => {
       supabase.from('conversations').update({
         last_message_preview: `Offer submitted: ${formatCurrency(Number(amount))}`,
