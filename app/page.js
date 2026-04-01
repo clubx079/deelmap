@@ -116,7 +116,7 @@ export default function HomePage() {
           src="/assets/hero-map-new.png"
           alt="Deelmap map view"
           fill
-          className="object-cover object-right"
+          className="object-cover object-center"
           priority
           sizes="100vw"
         />
@@ -125,7 +125,7 @@ export default function HomePage() {
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
-          <div className="lg:w-[50%] xl:w-[46%] px-6 lg:px-10 xl:px-16 py-16 lg:py-0">
+          <div className="lg:w-[52%] xl:w-[48%] px-6 lg:px-16 xl:px-24 py-16 lg:py-0">
             <div className="w-full max-w-[520px]">
 
               {/* Heading */}
