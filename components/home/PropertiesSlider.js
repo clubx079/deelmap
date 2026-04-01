@@ -169,7 +169,7 @@ export function PropertiesSlider() {
               return (
                 <div key={p.id} className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col">
                   {/* Photo */}
-                  <div className="bg-[#FAFAF8] flex-shrink-0 overflow-hidden" style={{ position: 'relative', height: '220px' }}>
+                  <div className="bg-[#FAFAF8] flex-shrink-0 overflow-hidden" style={{ position: 'relative', height: '260px' }}>
                     {thumbImg ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
