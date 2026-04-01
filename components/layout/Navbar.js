@@ -1,24 +1,27 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/Button'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
 export function Navbar() {
   const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [showAuth, setShowAuth] = useState(false)
-  const [authInitialStep, setAuthInitialStep] = useState('signup')
+  const [authInitialStep, setAuthInitialStep] = useState('login')
+  const [authDefaultRole, setAuthDefaultRole] = useState('buyer')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
   const [showAboutDropdown, setShowAboutDropdown] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notifUnread, setNotifUnread] = useState(0)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
 
   const aboutButtonRef = useRef(null)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const notifBellRef = useRef(null)
 
   // Fetch unread message count
   useEffect(() => {
@@ -30,275 +33,272 @@ export function Navbar() {
       } catch {}
     }
     fetchUnread()
-    const interval = setInterval(fetchUnread, 30000) // Poll every 30s
+    const interval = setInterval(fetchUnread, 30000)
     return () => clearInterval(interval)
   }, [user?.id])
 
+  // Fetch notifications
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Close dropdown when clicking outside or route changes
-  useEffect(() => {
-    setShowAboutDropdown(false)
-  }, [pathname])
-
-  useEffect(() => {
-    if (showAboutDropdown) {
-      const handleClickOutside = (e) => {
-        if (
-          aboutButtonRef.current &&
-          !aboutButtonRef.current.contains(e.target) &&
-          !e.target.closest('.about-dropdown-menu')
-        ) {
-          setShowAboutDropdown(false)
+    if (!user?.id) { setNotifUnread(0); setNotifications([]); return }
+    const fetchNotifs = async () => {
+      try {
+        const res = await fetch('/api/buyer/notifications', { headers: { Authorization: `Bearer ${user.id}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setNotifUnread(data.unreadCount || 0)
+          setNotifications(data.notifications || [])
         }
-      }
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      } catch {}
     }
+    fetchNotifs()
+    const interval = setInterval(fetchNotifs, 30000)
+    return () => clearInterval(interval)
+  }, [user?.id])
+
+  // Close notif dropdown on outside click
+  useEffect(() => {
+    if (!notifOpen) return
+    const handler = (e) => {
+      if (notifBellRef.current && !notifBellRef.current.contains(e.target)) setNotifOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [notifOpen])
+
+  // Close about dropdown on route change
+  useEffect(() => { setShowAboutDropdown(false) }, [pathname])
+
+  // Close about dropdown on outside click
+  useEffect(() => {
+    if (!showAboutDropdown) return
+    const handler = (e) => {
+      if (aboutButtonRef.current && !aboutButtonRef.current.contains(e.target) && !e.target.closest('.about-dropdown-menu')) {
+        setShowAboutDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [showAboutDropdown])
 
+  // Listen for auth modal trigger from PropertyCard
+  useEffect(() => {
+    const handleShowAuth = (event) => {
+      setAuthInitialStep(event.detail?.step || 'login')
+      setAuthDefaultRole(event.detail?.role || 'buyer')
+      setShowAuth(true)
+    }
+    window.addEventListener('showAuth', handleShowAuth)
+    return () => window.removeEventListener('showAuth', handleShowAuth)
+  }, [])
+
   const getUserInitials = (user) => {
-    if (user?.first_name && user?.last_name) {
-      return (user.first_name[0] + user.last_name[0]).toUpperCase()
+    if (user?.first_name && user?.last_name) return (user.first_name[0] + user.last_name[0]).toUpperCase()
+    if (user?.user_metadata?.name) {
+      const parts = user.user_metadata.name.trim().split(' ')
+      return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : parts[0][0].toUpperCase()
     }
-    else if (user?.user_metadata?.name) {
-      const nameParts = user.user_metadata.name.trim().split(' ')
-      if (nameParts.length >= 2) {
-        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
-      } else {
-        return nameParts[0][0].toUpperCase()
-      }
-    }
-    else if (user?.first_name) {
-      return user.first_name[0].toUpperCase()
-    }
-    else if (user?.last_name) {
-      return user.last_name[0].toUpperCase()
-    }
-    else if (user?.email) {
-      return user.email[0].toUpperCase()
-    }
+    if (user?.first_name) return user.first_name[0].toUpperCase()
+    if (user?.email) return user.email[0].toUpperCase()
     return 'U'
   }
 
   const getUserDisplayName = (user) => {
-    if (user?.first_name || user?.last_name) {
-      return `${user.first_name || ''} ${user.last_name || ''}`.trim()
-    }
-    else if (user?.user_metadata?.name) {
-      return user.user_metadata.name
-    }
-    else if (user?.email) {
-      return user.email.split('@')[0]
-    }
+    if (user?.first_name || user?.last_name) return `${user.first_name || ''} ${user.last_name || ''}`.trim()
+    if (user?.user_metadata?.name) return user.user_metadata.name
+    if (user?.email) return user.email.split('@')[0]
     return 'User'
   }
 
   const aboutDropdownItems = [
-    { label: 'Our Story', href: '/our-story' },
-    { label: 'Partnerships', href: '/partnerships' },
-    { label: 'Reviews', href: '/reviews' },
-    { label: 'Leadership', href: '/leadership' }
+    { label: 'About', href: '/our-story' },
+    { label: 'Contact us', href: '/contact' },
   ]
 
   const navItems = [
     { label: 'Buy', href: '/marketplace' },
     { label: 'Sell', href: '/join-seller' },
     { label: 'Finance', href: '/financing' },
-    { label: 'About Us', href: '/about', hasDropdown: true }
+    { label: 'About us', href: '/our-story', hasDropdown: true },
   ]
 
   const isActive = (href) => {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
-    if (href === '/about' || href === '/our-story' || href === '/partnerships' || href === '/reviews' || href === '/leadership') {
-      return pathname === href || pathname.startsWith('/our-story') || pathname.startsWith('/partnerships') || pathname.startsWith('/reviews') || pathname.startsWith('/leadership')
-    }
+    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact'
     return false
   }
 
   return (
     <>
-      <nav 
-        className={`fixed top-0 left-0 right-0 z-[60] bg-white transition-all duration-300 ${
-          isScrolled 
-            ? 'shadow-sm border-b-2 border-slate-200' 
-            : 'border-b-2 border-slate-300'
-        }`}
-      >
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo - Left */}
-          <div className="flex items-center flex-shrink-0">
-              <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
-                <Image
-                  src="/assets/logo copy.png"
-                  alt="Deelmap"
-                  width={140}
-                  height={45}
-                  className="h-10 w-auto"
-                  priority
-                />
-              </Link>
-          </div>
+      <nav className="fixed top-0 left-0 right-0 z-[60] bg-white border-b border-[#E8E8E4]">
+        <div className="w-full px-6 lg:px-10">
+          <div className="flex items-center justify-between h-[70px]">
 
-            {/* Navigation Items - Center (Natural Flexbox Centering) */}
-            <div className="hidden md:flex items-center justify-center flex-1 space-x-0">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
+              <Image src="/assets/logo.svg" alt="DeelMap" width={170} height={60} className="h-[60px] w-[170px]" priority />
+            </Link>
+
+            {/* Nav links – center */}
+            <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const active = isActive(item.href)
-                
                 if (item.hasDropdown) {
                   return (
-                    <div key={item.label} className="relative" ref={item.label === 'About Us' ? aboutButtonRef : null}>
+                    <div key={item.label} className="relative" ref={aboutButtonRef}>
                       <button
                         onClick={() => setShowAboutDropdown(!showAboutDropdown)}
-                        className={`
-                          relative px-6 py-3 text-sm font-medium transition-all duration-200 rounded-lg flex items-center gap-1
-                          ${active 
-                            ? 'text-slate-900 font-semibold bg-slate-200' 
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                          }
-                        `}
+                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[15px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                       >
-                        <span className="relative z-10">{item.label}</span>
-                        <svg 
-                          className={`w-4 h-4 transition-transform ${showAboutDropdown ? 'rotate-180' : ''}`}
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
+                        {item.label}
+                        {/* Filled triangle arrow */}
+                        <svg
+                          className={`w-2.5 h-2.5 transition-transform flex-shrink-0 ${showAboutDropdown ? 'rotate-180' : ''}`}
+                          viewBox="0 0 10 6" fill="currentColor"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          <path d="M0 0l5 6 5-6z" />
                         </svg>
                       </button>
-                      
+
                       {showAboutDropdown && typeof window !== 'undefined' && createPortal(
-                        <div 
-                          className="fixed bg-white rounded-lg shadow-2xl border border-slate-200 py-2 about-dropdown-menu"
+                        <div
+                          className="fixed bg-white rounded-lg shadow-lg border border-[#E8E8E4] py-1.5 about-dropdown-menu"
                           style={{
-                            top: aboutButtonRef.current 
-                              ? aboutButtonRef.current.getBoundingClientRect().bottom + 8 
-                              : '80px',
-                            left: aboutButtonRef.current 
-                              ? aboutButtonRef.current.getBoundingClientRect().left 
-                              : '50%',
-                            width: '192px',
+                            top: aboutButtonRef.current ? aboutButtonRef.current.getBoundingClientRect().bottom + 4 : 68,
+                            left: aboutButtonRef.current ? aboutButtonRef.current.getBoundingClientRect().left : 0,
+                            width: 180,
                             zIndex: 99999,
-                            position: 'fixed'
                           }}
                         >
-                          {aboutDropdownItems.map((dropdownItem) => (
-                            <Link
-                              key={dropdownItem.href}
-                              href={dropdownItem.href}
-                              onClick={() => setShowAboutDropdown(false)}
-                              className={`
-                                block px-4 py-2 text-sm transition-colors
-                                ${isActive(dropdownItem.href)
-                                  ? 'text-slate-900 font-semibold bg-slate-100'
-                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                                }
-                              `}
-                            >
-                              {dropdownItem.label}
-                            </Link>
-                          ))}
+                          {aboutDropdownItems.map((d) => {
+                            const dropdownActive = pathname === d.href
+                            return (
+                              <Link
+                                key={d.href}
+                                href={d.href}
+                                onClick={() => setShowAboutDropdown(false)}
+                                className={`block px-4 py-2.5 text-[14px] transition-colors border-l-2 ${dropdownActive ? 'font-semibold text-[#1A1816] bg-[#FAFAF8] border-l-[#D03839]' : 'text-[#444441] border-l-transparent hover:text-[#1A1816] hover:bg-[#FAFAF8]'}`}
+                              >
+                                {d.label}
+                              </Link>
+                            )
+                          })}
                         </div>,
                         document.body
                       )}
                     </div>
                   )
                 }
-                
+
                 return (
                   <Link
                     key={item.label}
                     href={item.href}
-                    className={`
-                      relative px-6 py-3 text-sm font-medium transition-all duration-200 rounded-lg
-                      ${active 
-                        ? 'text-slate-900 font-semibold bg-slate-200' 
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      }
-                    `}
+                    className={`px-4 pt-2 pb-0.5 text-[15px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                   >
-                    <span className="relative z-10">{item.label}</span>
-                    {!active && (
-                      <span 
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 transition-all duration-200 origin-center scale-x-0 hover:scale-x-100"
-                      />
-                    )}
+                    {item.label}
                   </Link>
                 )
               })}
             </div>
 
-            {/* User Profile / Login - Right */}
-            <div className="flex items-center space-x-6">
+            {/* Right side */}
+            <div className="flex items-center gap-3">
               {user ? (
-                <div className="flex items-center space-x-4">
-                  {/* Messages icon with unread badge */}
-                  <Link href="/buyer/inbox" className="relative p-2 text-slate-500 hover:text-slate-900 transition-colors duration-200">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                    </svg>
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
+                <div className="flex items-center gap-3">
+                  {/* Notifications */}
+                  <div className="relative" ref={notifBellRef}>
+                    <button
+                      onClick={() => setNotifOpen(prev => !prev)}
+                      className="relative p-2 text-[#737370] hover:text-[#1A1816] transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                      </svg>
+                      {notifUnread > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-[#D03839] rounded-full leading-none">
+                          {notifUnread > 99 ? '99+' : notifUnread}
+                        </span>
+                      )}
+                    </button>
 
-                  {/* User profile */}
-                  <Link
-                    href="/buyer/dashboard"
-                    className="flex items-center space-x-3 group relative"
-                  >
-                    <span className="hidden lg:inline-block text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors duration-200">
-                      {getUserDisplayName(user)}
-                    </span>
-                    <div className="relative">
-                      {/* User avatar: slate base, red ring on hover */}
-                      <div className="relative w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white text-sm font-semibold transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg cursor-pointer ring-2 ring-slate-200 group-hover:ring-red-600">
-                        {getUserInitials(user)}
-                        <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-                          <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                    {notifOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-[300px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
+                          <span className="text-[14px] font-semibold text-[#1A1816]">Notifications</span>
+                          {notifUnread > 0 && (
+                            <button
+                              onClick={async () => {
+                                await fetch('/api/buyer/notifications', { method: 'POST', headers: { Authorization: `Bearer ${user.id}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'mark_all_read' }) })
+                                setNotifUnread(0)
+                                setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+                              }}
+                              className="text-[12px] text-[#D03839] font-medium hover:underline"
+                            >
+                              Mark all read
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-[340px] overflow-y-auto">
+                          {notifications.length === 0 ? (
+                            <div className="flex items-center justify-center h-16 text-[13px] text-[#737370]">No notifications yet</div>
+                          ) : notifications.map(n => (
+                            <Link
+                              key={n.id}
+                              href={n.related_conversation_id ? `/buyer/inbox?conversation=${n.related_conversation_id}` : '/buyer/inbox'}
+                              onClick={async () => {
+                                setNotifOpen(false)
+                                if (!n.is_read) {
+                                  await fetch('/api/buyer/notifications', { method: 'POST', headers: { Authorization: `Bearer ${user.id}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'mark_read', notification_id: n.id }) })
+                                  setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x))
+                                  setNotifUnread(prev => Math.max(0, prev - 1))
+                                }
+                              }}
+                              className={`flex items-start gap-3 px-4 py-3 border-l-2 transition-colors hover:bg-[#FAFAF8] ${n.is_read ? 'border-l-transparent' : 'border-l-[#D03839] bg-[#FAFAF8]'}`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-[13px] truncate ${n.is_read ? 'text-[#444441]' : 'font-semibold text-[#1A1816]'}`}>{n.title}</p>
+                                <p className="text-[12px] text-[#737370] truncate mt-0.5">{n.body}</p>
+                                <p className="text-[11px] text-[#A8A8A4] mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</p>
+                              </div>
+                            </Link>
+                          ))}
                         </div>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Avatar */}
+                  <Link href="/buyer/dashboard" className="flex items-center gap-2 group">
+                    <div className="w-9 h-9 rounded-full bg-[#FEF0EF] flex items-center justify-center text-[#D03839] text-[13px] font-semibold ring-2 ring-[#F5C4C0] group-hover:ring-[#D03839] group-hover:scale-110 transition-all duration-200">
+                      {getUserInitials(user)}
                     </div>
                   </Link>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  className={`relative px-6 py-3 text-sm font-medium transition-all duration-200 rounded-lg ${
-                    pathname === '/login'
-                      ? 'text-slate-900 font-semibold bg-slate-200'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <span className="relative z-10">Login</span>
-                  {pathname !== '/login' && (
-                    <span 
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-900 transition-all duration-200 origin-center scale-x-0 hover:scale-x-100"
-                    />
-                  )}
-                </Link>
+                <div className="flex items-center gap-[10px]">
+                  <button
+                    onClick={() => { setAuthInitialStep('signup'); setShowAuth(true) }}
+                    className="py-2 px-[18px] text-[14px] font-semibold text-[#1A1816] border border-[#D1D1CE] rounded hover:bg-[#FAFAF8] transition-colors"
+                  >
+                    Sign up
+                  </button>
+                  <button
+                    onClick={() => { setAuthInitialStep('login'); setShowAuth(true) }}
+                    className="py-2 px-[18px] text-[14px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors"
+                  >
+                    Log in
+                  </button>
+                </div>
               )}
 
-              {/* Mobile Menu Button */}
+              {/* Mobile menu button */}
               <button
                 onClick={() => setShowMobileMenu(true)}
-                className="md:hidden p-2 text-slate-700 hover:text-slate-900 transition-colors"
-                aria-label="Open menu"
+                className="md:hidden p-2 text-[#444441] hover:text-[#1A1816] transition-colors"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -310,128 +310,78 @@ export function Navbar() {
       {/* Mobile Menu */}
       {showMobileMenu && (
         <div className="fixed inset-0 z-[9999] md:hidden">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/50" 
-            onClick={() => setShowMobileMenu(false)} 
-          />
-          
-          {/* Sidebar */}
-          <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl border-l-2 border-slate-200">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b-2 border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Menu</h2>
-              <button
-                onClick={() => setShowMobileMenu(false)}
-                className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
-              >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-white shadow-xl border-l border-[#E8E8E4]">
+            <div className="flex items-center justify-between p-5 border-b border-[#E8E8E4]">
+              <span className="text-[15px] font-semibold text-[#1A1816]">Menu</span>
+              <button onClick={() => setShowMobileMenu(false)} className="p-1 text-[#737370] hover:text-[#1A1816]">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            
-            {/* Menu Items */}
-            <div className="p-6 space-y-1">
+            <div className="p-4 space-y-0.5">
               {navItems.map((item) => {
                 const active = isActive(item.href)
-                
                 if (item.hasDropdown) {
                   return (
-                    <div key={item.label} className="space-y-1">
-                      <div className={`
-                        block py-4 px-4 text-base font-medium transition-colors rounded-lg
-                        ${active 
-                          ? 'text-slate-900 font-semibold bg-slate-200' 
-                          : 'text-slate-600'
-                        }
-                      `}>
+                    <div key={item.label}>
+                      <div className={`py-3 px-3 text-[15px] font-medium rounded ${active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}`}>
                         {item.label}
                       </div>
-                      <div className="pl-4 space-y-1">
-                        {aboutDropdownItems.map((dropdownItem) => (
-                          <Link
-                            key={dropdownItem.href}
-                            href={dropdownItem.href}
-                            onClick={() => setShowMobileMenu(false)}
-                            className={`
-                              block py-3 px-4 text-sm transition-colors rounded-lg
-                              ${isActive(dropdownItem.href)
-                                ? 'text-slate-900 font-semibold bg-slate-100'
-                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                              }
-                            `}
-                          >
-                            {dropdownItem.label}
+                      <div className="pl-4 space-y-0.5">
+                        {aboutDropdownItems.map((d) => (
+                          <Link key={d.href} href={d.href} onClick={() => setShowMobileMenu(false)}
+                            className="block py-2.5 px-3 text-[14px] text-[#737370] hover:text-[#1A1816] rounded hover:bg-[#FAFAF8] transition-colors">
+                            {d.label}
                           </Link>
                         ))}
                       </div>
                     </div>
                   )
                 }
-                
                 return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setShowMobileMenu(false)}
-                    className={`
-                      block py-4 px-4 text-base font-medium transition-colors rounded-lg
-                      ${active 
-                        ? 'text-slate-900 font-semibold bg-slate-200' 
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      }
-                    `}
-                  >
+                  <Link key={item.label} href={item.href} onClick={() => setShowMobileMenu(false)}
+                    className={`block py-3 px-3 text-[15px] font-medium rounded transition-colors ${active ? 'text-[#1A1816] font-semibold bg-[#FAFAF8]' : 'text-[#444441] hover:text-[#1A1816] hover:bg-[#FAFAF8]'}`}>
                     {item.label}
                   </Link>
                 )
               })}
             </div>
-            
-            {/* User Section */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 border-t-2 border-slate-200 bg-white">
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#E8E8E4] bg-white">
               {user ? (
-                <Link
-                  href="/buyer/dashboard"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center space-x-3 p-4 rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 hover:from-blue-600 hover:to-purple-600 transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold text-lg">
+                <Link href="/buyer/dashboard" onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1816] hover:bg-[#2A2825] transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-[#D03839] flex items-center justify-center text-white font-semibold">
                     {getUserInitials(user)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">
-                      {getUserDisplayName(user)}
-                    </div>
-                    <div className="text-xs text-white/70 truncate">
-                      Go to Buyer Portal →
-                    </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-white">{getUserDisplayName(user)}</p>
+                    <p className="text-[11px] text-[#737370]">Go to dashboard →</p>
                   </div>
                 </Link>
               ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setShowMobileMenu(false)}
-                  className={`block w-full text-center py-3 px-4 transition-colors font-medium rounded-lg ${
-                    pathname === '/login'
-                      ? 'text-slate-900 bg-slate-200'
-                      : 'text-slate-900 hover:text-slate-700 border-2 border-slate-300 hover:border-slate-400'
-                  }`}
-                >
-                  Login
-                </Link>
+                <div className="space-y-2">
+                  <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('signup'); setShowAuth(true) }}
+                    className="w-full h-11 text-[14px] font-semibold text-[#1A1816] border border-[#E8E8E4] rounded hover:bg-[#FAFAF8] transition-colors">
+                    Sign up
+                  </button>
+                  <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('login'); setShowAuth(true) }}
+                    className="w-full h-11 text-[14px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors">
+                    Log in
+                  </button>
+                </div>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Auth Modal */}
       <RegistrationModal
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         initialStep={authInitialStep}
+        defaultRole={authDefaultRole}
       />
     </>
   )

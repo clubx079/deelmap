@@ -113,9 +113,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
   const chipColor = (status) => {
     const s = String(status || '').toLowerCase()
-    if (s === 'sold') return '#6366f1'        // Purple - matching Stessa
-    if (s === 'pending') return '#6366f1'     // Purple - matching Stessa
-    return '#6366f1'                          // Purple - matching Stessa
+    if (s === 'sold') return '#D03839'        // Purple - matching Stessa
+    if (s === 'pending') return '#D03839'     // Purple - matching Stessa
+    return '#D03839'                          // Purple - matching Stessa
   }
 
   const updateMarkers = () => {
@@ -165,29 +165,30 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const chip = document.createElement('div')
       chip.className = 'price-marker-dot'
       chip.style.cssText = [
-        `background-color: ${chipColor(p.status)}`,
-        'width: 14px',
-        'height: 14px',
-        'border-radius: 50%',
-        'box-shadow: 0 2px 6px rgba(99, 102, 241, 0.5)',
         'position: absolute',
-        'transform: translate(-50%, -50%)',
+        'transform: translate(-50%, -100%)',
         'z-index: 1000',
         'cursor: pointer',
         'transition: all 0.15s ease',
-        'border: 2.5px solid white'
+        'width: 20px',
+        'height: 26px',
+        'display: flex',
+        'align-items: center',
+        'justify-content: center'
       ].join(';')
+      chip.innerHTML = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="#D03839"/>
+        <circle cx="16" cy="12" r="5" fill="white"/>
+      </svg>`
 
       chip.addEventListener('mouseenter', () => {
-        chip.style.transform = 'translate(-50%, -50%) scale(1.5)'
+        chip.style.transform = 'translate(-50%, -100%) scale(1.2)'
         chip.style.zIndex = '1100'
-        chip.style.boxShadow = '0 3px 10px rgba(99, 102, 241, 0.7)'
       })
 
       chip.addEventListener('mouseleave', () => {
-        chip.style.transform = 'translate(-50%, -50%) scale(1)'
+        chip.style.transform = 'translate(-50%, -100%) scale(1)'
         chip.style.zIndex = '1000'
-        chip.style.boxShadow = '0 2px 6px rgba(99, 102, 241, 0.5)'
       })
 
       chip.addEventListener('click', (e) => {
@@ -244,95 +245,80 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
   }
 
   const buildInfoEl = (prop) => {
-    const img = getPrimaryPhotoUrl(prop.property_photos)
-    const hasPhoto = img && img.length > 0
-    const statusText = (prop.status || 'Available').toUpperCase()
-    const beds = prop.bedrooms ? `${prop.bedrooms} Beds` : ''
-    const baths = prop.bathrooms ? `${prop.bathrooms} Baths` : ''
-    const displayAddress = getDisplayAddress(prop)
+    const rawImg = getPrimaryPhotoUrl(prop.property_photos)
+    const img = rawImg && rawImg.includes('supabase.co/storage/v1/object/public/')
+      ? rawImg.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=200&quality=70&resize=cover'
+      : rawImg
+    const hasPhoto = !!img
+
+    const cityState = [prop.city, prop.state].filter(Boolean).join(', ')
+    const fullAddress = prop.full_address || prop.address || cityState || 'Address unavailable'
+    const priceStr = fullPrice(prop.price)
+    const arvNum = Number(prop.arv) || 0
+    const arvStr = arvNum > 0 ? shortPrice(arvNum) : null
+
+    const statParts = []
+    if (prop.sqft) statParts.push(`${Number(prop.sqft).toLocaleString()} sq ft`)
+    if (prop.bedrooms) statParts.push(`${prop.bedrooms} bed`)
+    if (prop.bathrooms) statParts.push(`${prop.bathrooms} bath`)
+    const stats = statParts.join('  ·  ')
 
     const el = document.createElement('div')
     el.className = 'map-info-card-fixed'
-    el.style.cursor = 'pointer'
+    el.style.cssText = 'cursor: pointer; width: 380px;'
+
     el.innerHTML = `
       <div style="
-        width: 240px;
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        border-radius: 4px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+        border: 1px solid #E8E8E4;
+        font-family: 'DM Sans', sans-serif;
         overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.05);
-        font-family: 'Inter', sans-serif;
-        cursor: pointer;
-        transition: transform 0.2s ease;
+        transition: box-shadow 0.2s ease;
       ">
-        <div style="position: relative; height: 120px; background: #f3f4f6; display: flex; align-items: center; justify-content: center;">
+        <!-- Image -->
+        <div style="width:380px;height:110px;overflow:hidden;background:#F0F0EC;flex-shrink:0;">
           ${hasPhoto ? `
-          <img src="${img}" alt="property" style="
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          " onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;\\'><img src=\\'/assets/logo copy.png\\' alt=\\'DeelMap\\' style=\\'width: 120px; height: auto;\\' /></div>';" />
+            <img src="${img}" alt="property" style="width:380px;height:110px;object-fit:cover;display:block;opacity:0;transition:opacity 0.2s ease;"
+              onload="this.style.opacity='1';"
+              onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:380px;height:110px;background:#FAFAF8;\\'><img src=\\'/assets/logo.svg\\' style=\\'width:80px;opacity:0.3;\\' /></div>';" />
           ` : `
-          <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-            <img src="/assets/logo copy.png" alt="DeelMap" style="width: 120px; height: auto;" />
-          </div>
+            <div style="display:flex;align-items:center;justify-content:center;width:380px;height:110px;">
+              <img src="/assets/logo.svg" alt="DeelMap" style="width:80px;opacity:0.3;" />
+            </div>
           `}
-          <div style="
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-          ">
-            <span style="
-              background: #3b82f6;
-              color: white;
-              font-size: 10px;
-              font-weight: 600;
-              padding: 3px 6px;
-              border-radius: 8px;
-              text-transform: uppercase;
-            ">Active</span>
-            <span style="
-              background: ${chipColor(prop.status)};
-              color: white;
-              font-size: 10px;
-              font-weight: 600;
-              padding: 3px 6px;
-              border-radius: 8px;
-              text-transform: uppercase;
-            ">${statusText}</span>
-          </div>
         </div>
-        <div style="padding: 12px;">
-          <div style="
-            font-size: 16px;
-            font-weight: 700;
-            color: #022b41;
-            margin-bottom: 6px;
-          ">${fullPrice(prop.price)}</div>
-          <div style="
-            font-size: 11px;
-            color: #6b7280;
-            margin-bottom: 8px;
-            line-height: 1.3;
-          ">${displayAddress}</div>
-          <div style="
-            display: flex;
-            gap: 12px;
-            font-size: 11px;
-            color: #374151;
-            font-weight: 600;
-          ">
-            ${beds ? `<span>${beds}</span>` : ''}
-            ${baths ? `<span>${baths}</span>` : ''}
+
+        <!-- Content -->
+        <div style="padding: 14px 14px 12px;">
+
+          <!-- Address -->
+          <div style="font-size:15px;font-weight:700;color:#1A1816;line-height:1.3;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fullAddress}</div>
+
+          <!-- City/State -->
+          <div style="font-size:12px;color:#737370;margin-bottom:10px;">${cityState}</div>
+
+          <!-- Stats -->
+          ${stats ? `<div style="font-size:12px;color:#1A1816;margin-bottom:10px;">${stats}</div>` : ''}
+
+          <!-- Divider -->
+          <div style="height:1px;background:#F0F0EC;margin-bottom:10px;"></div>
+
+          <!-- Price row -->
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:18px;font-weight:700;color:#1A1816;">${priceStr}</div>
+            ${arvStr ? `<div style="font-size:11px;font-weight:600;padding:3px 8px;background:#E4F5EC;color:#0F6E56;border:1px solid #9FDBB8;border-radius:6px;">ARV ${arvStr}</div>` : ''}
+          </div>
+
+          <!-- View button -->
+          <div style="margin-top:10px;padding:8px 12px;background:#1A1816;border-radius:6px;text-align:center;font-size:13px;font-weight:600;color:white;">
+            View Deal
           </div>
         </div>
       </div>
     `
-    
+
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       hideInfoCard()
@@ -340,13 +326,12 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     })
 
     el.addEventListener('mouseenter', () => {
-      el.firstElementChild.style.transform = 'scale(1.02)'
+      el.firstElementChild.style.boxShadow = '0 12px 40px rgba(0,0,0,0.2)'
+    })
+    el.addEventListener('mouseleave', () => {
+      el.firstElementChild.style.boxShadow = '0 8px 32px rgba(0,0,0,0.14)'
     })
 
-    el.addEventListener('mouseleave', () => {
-      el.firstElementChild.style.transform = 'scale(1)'
-    })
-    
     return el
   }
 
@@ -368,8 +353,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const mapHeight = mapDiv.offsetHeight
       
       const edgePadding = 15
-      const cardWidth = 250
-      const cardHeight = 220
+      const topPadding = 80
+      const cardWidth = 380
+      const cardHeight = 280
       const popupOffset = 15
 
       const screenX = pt.x + (mapWidth / 2)
@@ -384,60 +370,60 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           left: x,
           top: y - popupOffset,
           transform: 'translate(-50%, -100%)',
-          fits: y - popupOffset - cardHeight >= edgePadding && 
-                x - cardWidth/2 >= edgePadding && 
+          fits: y - popupOffset - cardHeight >= topPadding &&
+                x - cardWidth/2 >= edgePadding &&
                 x + cardWidth/2 <= mapWidth - edgePadding
         },
         bottom: {
           left: x,
           top: y + popupOffset,
           transform: 'translate(-50%, 0%)',
-          fits: y + popupOffset + cardHeight <= mapHeight - edgePadding && 
-                x - cardWidth/2 >= edgePadding && 
+          fits: y + popupOffset + cardHeight <= mapHeight - edgePadding &&
+                x - cardWidth/2 >= edgePadding &&
                 x + cardWidth/2 <= mapWidth - edgePadding
         },
         left: {
           left: x - popupOffset,
           top: y,
           transform: 'translate(-100%, -50%)',
-          fits: x - popupOffset - cardWidth >= edgePadding && 
-                y - cardHeight/2 >= edgePadding && 
+          fits: x - popupOffset - cardWidth >= edgePadding &&
+                y - cardHeight/2 >= topPadding &&
                 y + cardHeight/2 <= mapHeight - edgePadding
         },
         right: {
           left: x + popupOffset,
           top: y,
           transform: 'translate(0%, -50%)',
-          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding && 
-                y - cardHeight/2 >= edgePadding && 
+          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding &&
+                y - cardHeight/2 >= topPadding &&
                 y + cardHeight/2 <= mapHeight - edgePadding
         },
         topLeft: {
           left: x - popupOffset,
           top: y - popupOffset,
           transform: 'translate(-100%, -100%)',
-          fits: x - popupOffset - cardWidth >= edgePadding && 
-                y - popupOffset - cardHeight >= edgePadding
+          fits: x - popupOffset - cardWidth >= edgePadding &&
+                y - popupOffset - cardHeight >= topPadding
         },
         topRight: {
           left: x + popupOffset,
           top: y - popupOffset,
           transform: 'translate(0%, -100%)',
-          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding && 
-                y - popupOffset - cardHeight >= edgePadding
+          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding &&
+                y - popupOffset - cardHeight >= topPadding
         },
         bottomLeft: {
           left: x - popupOffset,
           top: y + popupOffset,
           transform: 'translate(-100%, 0%)',
-          fits: x - popupOffset - cardWidth >= edgePadding && 
+          fits: x - popupOffset - cardWidth >= edgePadding &&
                 y + popupOffset + cardHeight <= mapHeight - edgePadding
         },
         bottomRight: {
           left: x + popupOffset,
           top: y + popupOffset,
           transform: 'translate(0%, 0%)',
-          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding && 
+          fits: x + popupOffset + cardWidth <= mapWidth - edgePadding &&
                 y + popupOffset + cardHeight <= mapHeight - edgePadding
         }
       }
@@ -471,7 +457,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
           if (leftEdge < edgePadding) overflow += edgePadding - leftEdge
           if (rightEdge > mapWidth - edgePadding) overflow += rightEdge - (mapWidth - edgePadding)
-          if (topEdge < edgePadding) overflow += edgePadding - topEdge
+          if (topEdge < topPadding) overflow += topPadding - topEdge
           if (bottomEdge > mapHeight - edgePadding) overflow += bottomEdge - (mapHeight - edgePadding)
 
           if (overflow < minOverflow) {
@@ -494,8 +480,8 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         if (rightEdge > mapWidth - edgePadding) {
           selectedPosition.left = mapWidth - edgePadding - (selectedPosition.transform.includes('0%') ? cardWidth : selectedPosition.transform.includes('-50%') ? cardWidth/2 : cardWidth)
         }
-        if (topEdge < edgePadding) {
-          selectedPosition.top = edgePadding + (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
+        if (topEdge < topPadding) {
+          selectedPosition.top = topPadding + (selectedPosition.transform.includes('-100%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('0%') ? 0 : cardHeight/2)
         }
         if (bottomEdge > mapHeight - edgePadding) {
           selectedPosition.top = mapHeight - edgePadding - (selectedPosition.transform.includes('0%') || selectedPosition.transform.includes('-50%') ? cardHeight : selectedPosition.transform.includes('-100%') ? 0 : cardHeight/2)
@@ -503,8 +489,16 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       }
 
       const finalLeft = selectedPosition.left - (mapWidth / 2)
-      const finalTop = selectedPosition.top - (mapHeight / 2)
-      
+      let finalTop = selectedPosition.top - (mapHeight / 2)
+
+      // Clamp so the popup never appears above the map container.
+      // translate Y=-100% shifts the card up by its full height; account for that.
+      const transformYShift = selectedPosition.transform.includes(', -100%') ? -cardHeight
+        : selectedPosition.transform.includes(', -50%') ? -cardHeight / 2
+        : 0
+      const minFinalTop = (topPadding - mapHeight / 2) - transformYShift
+      if (finalTop < minFinalTop) finalTop = minFinalTop
+
       el.style.left = `${finalLeft}px`
       el.style.top = `${finalTop}px`
       el.style.transform = selectedPosition.transform

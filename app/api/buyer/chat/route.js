@@ -161,6 +161,35 @@ async function getDealAddressAndSlug(supabase, dealId) {
   return { address: null, slug: null, source: null };
 }
 
+// Helper: resolve property price, beds, baths, sqft by id
+async function getPropertyDetails(supabase, propertyId) {
+  if (!propertyId) return {};
+  const idStr = String(propertyId).trim();
+  const { data: wd } = await supabase
+    .from('wholesale_deals')
+    .select('price, bedrooms, bathrooms, sqft')
+    .eq('id', idStr)
+    .maybeSingle();
+  if (wd) return {
+    property_price: wd.price || null,
+    property_bedrooms: wd.bedrooms || null,
+    property_bathrooms: wd.bathrooms || null,
+    property_sqft: wd.sqft || null,
+  };
+  const { data: p } = await supabase
+    .from('properties')
+    .select('price, bedrooms, bathrooms, floor_area')
+    .eq('id', idStr)
+    .maybeSingle();
+  if (p) return {
+    property_price: p.price || null,
+    property_bedrooms: p.bedrooms || null,
+    property_bathrooms: p.bathrooms || null,
+    property_sqft: p.floor_area || null,
+  };
+  return {};
+}
+
 // Helper: resolve agent/seller details for logging (source, name, email masked)
 async function getAgentDetailsForLog(supabase, sellerId) {
   if (!sellerId) return { source: null, name: null, email: null };
@@ -674,7 +703,11 @@ export async function GET(request) {
               }
             }
           }
-          const property_thumbnail_url = await getPropertyThumbnail(supabase, conv.property_id) || conv.property_thumbnail_url || null;
+          const [property_thumbnail_url_raw, propertyDetails] = await Promise.all([
+            getPropertyThumbnail(supabase, conv.property_id),
+            getPropertyDetails(supabase, conv.property_id),
+          ]);
+          const property_thumbnail_url = property_thumbnail_url_raw || conv.property_thumbnail_url || null;
           let property_address = (conv.property_address && String(conv.property_address).trim()) || null;
           let property_slug = conv.property_slug || null;
           if (conv.property_id && !property_address) {
@@ -697,6 +730,7 @@ export async function GET(request) {
             property_address,
             property_slug,
             property_thumbnail_url,
+            ...propertyDetails,
             lenders: sellerInfo,
             financing_requests: null,
             unread_count,
@@ -926,6 +960,21 @@ export async function POST(request) {
         }
       }
 
+      // Insert notification for seller (new message)
+      if (conversation.seller_id) {
+        const buyerMsgData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).maybeSingle();
+        const bName = buyerMsgData?.data ? `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer' : 'A buyer';
+        supabase.from('notifications').insert({
+          recipient_id: conversation.seller_id,
+          recipient_type: 'seller',
+          type: 'new_message',
+          title: `New message from ${bName}`,
+          body: (messageText || '[Attachment]').slice(0, 120),
+          is_read: false,
+          related_conversation_id: conversationId,
+        }).then(() => {}).catch(() => {});
+      }
+
       // Buyer → Seller: only email if seller is not active on messages tab
       if (conversation.seller_id) {
         const active = await isRecipientActiveOnMessages(supabase, conversation.seller_id, 'seller');
@@ -1113,6 +1162,83 @@ export async function POST(request) {
         }
       }
       return NextResponse.json({ success: true });
+    }
+
+    // Create or get conversation between buyer and seller for a property
+    if (action === 'create_conversation') {
+      const { sellerId, propertyId, propertyAddress } = body;
+      if (!sellerId) {
+        return NextResponse.json({ success: false, error: 'Missing sellerId' }, { status: 400 });
+      }
+
+      // Check if conversation already exists
+      let conv = null;
+      if (propertyId) {
+        const { data: existing } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('seller_id', sellerId)
+          .eq('buyer_uuid', authCheck.userUuid)
+          .eq('property_id', String(propertyId))
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existing) conv = existing;
+      }
+      if (!conv) {
+        const { data: existingAny } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('seller_id', sellerId)
+          .eq('buyer_uuid', authCheck.userUuid)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existingAny && !propertyId) conv = existingAny;
+      }
+
+      if (!conv) {
+        const insertPayload = {
+          seller_id: sellerId,
+          buyer_uuid: authCheck.userUuid,
+          user_id: authCheck.userId,
+          is_active: true,
+          last_message_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (propertyId) {
+          insertPayload.property_id = String(propertyId);
+          if (propertyAddress) insertPayload.property_address = String(propertyAddress).trim() || null;
+        }
+        const { data: created, error: insertErr } = await supabase
+          .from('conversations')
+          .insert(insertPayload)
+          .select('id')
+          .single();
+        if (insertErr) {
+          // Fallback: insert without property fields if column error
+          const { data: fallback, error: fallbackErr } = await supabase
+            .from('conversations')
+            .insert({
+              seller_id: sellerId,
+              buyer_uuid: authCheck.userUuid,
+              user_id: authCheck.userId,
+              is_active: true,
+              last_message_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .select('id')
+            .single();
+          if (fallbackErr || !fallback) {
+            return NextResponse.json({ success: false, error: 'Failed to create conversation' }, { status: 500 });
+          }
+          conv = fallback;
+        } else {
+          conv = created;
+        }
+      }
+
+      return NextResponse.json({ success: true, conversationId: conv.id });
     }
 
     return NextResponse.json({

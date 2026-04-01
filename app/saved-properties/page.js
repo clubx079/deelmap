@@ -71,29 +71,23 @@ export default function SavedPropertiesPage() {
   return (
     <BuyerPortalLayout pageTitle="Saved Properties">
     <div className="min-h-full bg-slate-50">
-      {/* Header — in-page title hidden on mobile (shown in layout bar) */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="px-4 lg:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Saved Properties</h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {favoriteProperties.length > 0
-                  ? `You have ${favoriteProperties.length} saved ${favoriteProperties.length === 1 ? 'property' : 'properties'}`
-                  : 'Properties you save will appear here'}
-              </p>
-            </div>
-            {favoriteProperties.length > 0 && (
-              <Link
-                href="/marketplace"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
-              >
-                Browse More Properties
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
-          </div>
+      {/* Header */}
+      <div className="px-4 lg:px-6 pt-4 lg:pt-6 pb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        <div>
+          <h1 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.44px]">Saved Deals</h1>
+          <p className="text-[14px] text-[#737370] mt-1">
+            {favoriteProperties.length > 0
+              ? `${favoriteProperties.length} saved ${favoriteProperties.length === 1 ? 'deal' : 'deals'}`
+              : 'Deals you save will appear here'}
+          </p>
         </div>
+        {favoriteProperties.length > 0 && (
+          <Link href="/marketplace"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors flex-shrink-0">
+            Browse More
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        )}
       </div>
 
       {/* Main Content */}
