@@ -116,7 +116,8 @@ export default function HomePage() {
           src="/assets/hero-map-new.png"
           alt="Deelmap map view"
           fill
-          className="object-cover object-[30%_center]"
+          className="object-cover"
+          style={{ objectPosition: '20% center' }}
           priority
           sizes="100vw"
         />
