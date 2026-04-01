@@ -117,7 +117,7 @@ export default function HomePage() {
           alt="Deelmap map view"
           fill
           className="object-cover"
-          style={{ objectPosition: '20% center' }}
+          style={{ objectPosition: '35% center' }}
           priority
           sizes="100vw"
         />
@@ -126,7 +126,7 @@ export default function HomePage() {
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
-          <div className="lg:w-[52%] xl:w-[48%] px-6 lg:px-20 xl:px-32 py-16 lg:py-0">
+          <div className="lg:w-[52%] xl:w-[48%] px-6 lg:px-12 xl:px-20 py-16 lg:py-0">
             <div className="w-full max-w-[520px]">
 
               {/* Heading */}

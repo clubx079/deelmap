@@ -169,13 +169,13 @@ export function PropertiesSlider() {
               return (
                 <div key={p.id} className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col">
                   {/* Photo */}
-                  <div className="relative h-[220px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden">
+                  <div className="bg-[#FAFAF8] flex-shrink-0 overflow-hidden" style={{ position: 'relative', height: '220px' }}>
                     {thumbImg ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={thumbImg}
                         alt={cityState || 'Property'}
-                        className="block w-full h-full object-cover"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
