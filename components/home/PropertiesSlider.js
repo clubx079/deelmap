@@ -153,7 +153,7 @@ export function PropertiesSlider() {
             {displayProperties.map((p) => {
               const img = getPrimaryPhotoUrl(p.property_photos)
               const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')
-                ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=600&quality=80&resize=cover'
+                ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=600&quality=80'
                 : img
               const cityState = [p.city, p.state].filter(Boolean).join(', ')
               const dealBadge = getDealBadge(p)
@@ -175,7 +175,7 @@ export function PropertiesSlider() {
                       <img
                         src={thumbImg}
                         alt={cityState || 'Property'}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
