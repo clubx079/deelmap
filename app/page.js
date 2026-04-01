@@ -110,11 +110,22 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative bg-white overflow-hidden" style={{ minHeight: 'calc(100vh - 80px)' }}>
-        <div className="flex flex-col lg:flex-row h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: 'calc(100vh - 80px)' }}>
+        {/* Background: Figma map image */}
+        <Image
+          src="/assets/hero-map-new.png"
+          alt="Deelmap map view"
+          fill
+          className="object-cover object-right"
+          priority
+          sizes="100vw"
+        />
+        {/* Left gradient overlay so text stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent lg:from-white lg:via-white/80 lg:to-transparent" />
 
-          {/* Left: Text */}
-          <div className="flex items-center lg:w-[46%] flex-shrink-0 px-6 lg:px-10 xl:px-16 py-16 lg:py-0">
+        {/* Left: Text (overlaid) */}
+        <div className="relative z-10 flex items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
+          <div className="lg:w-[50%] xl:w-[46%] px-6 lg:px-10 xl:px-16 py-16 lg:py-0">
             <div className="w-full max-w-[520px]">
 
               {/* Heading */}
@@ -130,14 +141,14 @@ export default function HomePage() {
               </p>
 
               {/* Search bar */}
-              <div className="flex items-center h-[56px] border border-[#E8E8E4] rounded overflow-hidden mb-5 max-w-[480px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
+              <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded overflow-hidden mb-5 max-w-[480px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
                 <input
                   type="text"
                   placeholder="Search markets, cities, or ZIP codes"
                   value={heroSearch}
                   onChange={(e) => setHeroSearch(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/marketplace${heroSearch ? `?search=${encodeURIComponent(heroSearch)}` : ''}` }}
-                  className="flex-1 h-full px-4 text-[15px] text-[#1A1816] placeholder:text-[#737370] focus:outline-none"
+                  className="flex-1 h-full px-4 text-[15px] text-[#1A1816] placeholder:text-[#737370] focus:outline-none bg-transparent"
                 />
                 <Link
                   href={`/marketplace${heroSearch ? `?search=${encodeURIComponent(heroSearch)}` : ''}`}
@@ -164,19 +175,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
-          {/* Right: Map */}
-          <div className="flex-1 relative overflow-hidden min-h-[50vh] lg:min-h-0">
-            <Image
-              src="/assets/hero-map.png"
-              alt="Deelmap map view"
-              fill
-              className="object-cover object-left"
-              priority
-              sizes="55vw"
-            />
-          </div>
-
         </div>
       </section>
 
