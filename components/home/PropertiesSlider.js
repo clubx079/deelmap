@@ -141,15 +141,15 @@ export function PropertiesSlider() {
 
         {/* Cards grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : displayProperties.length === 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {displayProperties.map((p) => {
               const img = getPrimaryPhotoUrl(p.property_photos)
               const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')
