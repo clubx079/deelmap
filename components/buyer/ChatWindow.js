@@ -291,8 +291,10 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const hasPendingCounter = latestOffer && latestOffer.parent_offer_id && latestOffer.status === 'pending';
 
   // Merge offers as synthetic items into message stream
+  // Filter out raw "Offer submitted:" text messages — they're already shown as offer cards
   const offerItems = offers.map(o => ({ ...o, _isOffer: true }));
-  const allItems = [...messages, ...offerItems].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const filteredMessages = messages.filter(m => !(m.message_text || '').startsWith('Offer submitted:'));
+  const allItems = [...filteredMessages, ...offerItems].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   // Group combined items by date
   const getDateKey = (ts) => new Date(ts).toDateString();
