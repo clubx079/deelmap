@@ -22,7 +22,6 @@ export const useProperties = ({
 
   useEffect(() => {
     setLoading(true)
-    setProperties([])
     setHasMore(true)
     setTotalCount(null)
     setPage(0)
@@ -48,6 +47,11 @@ export const useProperties = ({
     // State filter
     if (filters.states && filters.states.length > 0) {
       params.append('states', filters.states.join(','))
+    }
+
+    // Property type filter
+    if (filters.propertyTypes && filters.propertyTypes.length > 0) {
+      params.append('propertyTypes', filters.propertyTypes.join(','))
     }
     
     // Status filter - if 'all' is selected or no status, don't filter by status
@@ -125,20 +129,20 @@ export const useProperties = ({
       const headers = {}
       if (authToken) headers['Authorization'] = authToken
       const response = await fetch(`/api/deals?${params.toString()}`, { headers })
-      
+
+      // Stale request — a newer one has already started, silently bail without touching state
+      if (requestId !== requestIdRef.current) return
+
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`)
       }
-      
-      const result = await response.json()
 
-      if (requestId !== requestIdRef.current) return
+      const result = await response.json()
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch properties')
       }
 
-      // Only update totalCount on first load — prevent flickering on Load More
       if (replace || totalCount === null) {
         setTotalCount(result.totalCount)
       }
@@ -148,13 +152,14 @@ export const useProperties = ({
       setHasMore(result.hasMore)
       setPage(nextPage)
       setMetadata(result.metadata)
-      
+
     } catch (err) {
+      // Only update error state if this is still the current request
+      if (requestId !== requestIdRef.current) return
+
       console.error('Error fetching properties:', err)
-      
-      // Convert technical errors to user-friendly messages
+
       let userFriendlyError = 'Unable to load properties. Please try again.'
-      
       if (err.message) {
         const errorMsg = err.message.toLowerCase()
         if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
@@ -165,11 +170,13 @@ export const useProperties = ({
           userFriendlyError = 'Server error. Please try again later.'
         }
       }
-      
       setError(userFriendlyError)
     } finally {
-      setLoading(false)
-      setLoadingMore(false)
+      // Only clear loading if this is still the current request
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+        setLoadingMore(false)
+      }
     }
   }
 

@@ -1,444 +1,159 @@
 'use client'
+import { useState } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase'
-import Script from 'next/script'
-
-// Marketplace DB: properties, contact_submissions (see ENV_CLEAN.md)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
-)
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    propertyAddress: '',
-    message: ''
-  })
-  
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
-  const [recaptchaToken, setRecaptchaToken] = useState('')
-  const [properties, setProperties] = useState([])
-  const [loadingProperties, setLoadingProperties] = useState(true)
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
-  const recaptchaRef = useRef(null)
-
-  // Load available properties
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('properties')
-          .select('id, address')
-          .eq('status', 'available')
-          .order('address')
-
-        if (error) {
-          console.error('Error fetching properties:', error)
-        } else {
-          setProperties(data || [])
-        }
-      } catch (error) {
-        console.error('Error fetching properties:', error)
-      } finally {
-        setLoadingProperties(false)
-      }
-    }
-
-    fetchProperties()
-  }, [])
-
-  // Handle reCAPTCHA loading and initialization
-  useEffect(() => {
-    window.onRecaptchaLoad = () => {
-      console.log('reCAPTCHA API loaded')
-      setRecaptchaLoaded(true)
-      initRecaptcha()
-    }
-
-    window.onRecaptchaSuccess = (token) => {
-      console.log('reCAPTCHA success:', token)
-      setRecaptchaToken(token)
-      setError('')
-    }
-
-    window.onRecaptchaExpired = () => {
-      console.log('reCAPTCHA expired')
-      setRecaptchaToken('')
-    }
-
-    if (window.grecaptcha && window.grecaptcha.render) {
-      setRecaptchaLoaded(true)
-      initRecaptcha()
-    }
-
-    return () => {
-      if (window.grecaptcha && recaptchaRef.current) {
-        try {
-          window.grecaptcha.reset()
-        } catch (error) {
-          console.log('Error resetting reCAPTCHA:', error)
-        }
-      }
-    }
-  }, [])
-
-  const initRecaptcha = () => {
-    if (!recaptchaLoaded || !window.grecaptcha || !process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-      console.log('reCAPTCHA not ready for initialization')
-      return
-    }
-
-    const container = document.getElementById('recaptcha-container')
-    if (container && !container.hasChildNodes()) {
-      try {
-        console.log('Rendering reCAPTCHA...')
-        window.grecaptcha.render(container, {
-          sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-          callback: 'onRecaptchaSuccess',
-          'expired-callback': 'onRecaptchaExpired'
-        })
-        console.log('reCAPTCHA rendered successfully')
-      } catch (error) {
-        console.error('Error rendering reCAPTCHA:', error)
-        setError('Failed to load reCAPTCHA. Please refresh the page.')
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (recaptchaLoaded) {
-      initRecaptcha()
-    }
-  }, [recaptchaLoaded])
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const sendContactEmail = async (data) => {
-    try {
-      // Use absolute path to the API route
-      const response = await fetch('/api/auth/send-contact-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...data,
-          recaptchaToken
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to send email')
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error('Email sending error:', error)
-      throw error
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setIsSubmitting(true)
+    setLoading(true)
     setError('')
-
-    if (!recaptchaToken) {
-      setError('Please complete the reCAPTCHA verification.')
-      setIsSubmitting(false)
-      return
-    }
-
     try {
-      // Insert into Supabase
-      const { data, error: supabaseError } = await supabase
-        .from('contact_submissions')
-        .insert([
-          {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            subject: formData.subject,
-            property_address: formData.propertyAddress,
-            message: formData.message
-          }
-        ])
-
-      if (supabaseError) {
-        throw supabaseError
-      }
-
-      // Send email notification
-      await sendContactEmail(formData)
-
-      setSubmitted(true)
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        propertyAddress: '',
-        message: ''
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
       })
-
-      if (window.grecaptcha) {
-        try {
-          window.grecaptcha.reset()
-        } catch (error) {
-          console.log('Error resetting reCAPTCHA:', error)
-        }
-      }
-      setRecaptchaToken('')
-
-    } catch (error) {
-      console.error('Submission error:', error)
-      setError('There was an error submitting your message. Please try again.')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to send message')
+      setSuccess(true)
+      setForm({ name: '', email: '', message: '' })
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.')
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen">
-        <Navbar currentPage="contact" />
-        <div className="min-h-[60vh] flex items-center justify-center bg-gray-50">
-          <div className="text-center p-8">
-            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
-            <p className="text-gray-600">Your message has been submitted successfully. We&apos;ll get back to you soon.</p>
-            <button
-              onClick={() => setSubmitted(false)}
-              className="mt-4 text-[#022b41] hover:underline"
-            >
-              Send another message
-            </button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    )
   }
 
   return (
-    <>
-      <Script
-        src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit"
-        strategy="lazyOnload"
-        onLoad={() => {
-          console.log('reCAPTCHA script loaded')
-        }}
-      />
+    <div className="min-h-screen bg-white">
+      <Navbar />
 
-      <div className="min-h-screen">
-        <Navbar currentPage="contact" />
+      <section className="pt-20 pb-20 lg:pt-28 lg:pb-32">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
 
-        <section 
-          className="py-16 lg:py-20"
-          style={{ backgroundColor: '#F6F4F1' }}
-        >
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <div className="text-center mb-12">
-              <p 
-                className="text-sm font-semibold tracking-wider uppercase mb-4"
-                style={{ color: 'var(--secondary-color)' }}
-              >
-                GET IN TOUCH WITH US
+            {/* Left */}
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-bold text-[#1A1816] leading-tight mb-5">
+                Contact us and<br />
+                we&apos;ll help you{' '}
+                <span className="text-[#D03839]">find<br />the right deal</span>
+              </h1>
+              <p className="text-[15px] text-[#737370] leading-relaxed mb-8 max-w-sm">
+                Tell us what you&apos;re looking for and we&apos;ll guide you to the right opportunity, from discovering deals to making informed decisions.
               </p>
-              <h2 
-                className="text-2xl sm:text-3xl lg:text-4xl font-bold"
-                style={{ color: 'var(--primary-color)' }}
-              >
-                WRITE US ANYTIME
-              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#1A1816] flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <a href="mailto:office@deelmap.co" className="text-[15px] text-[#444441] hover:text-[#D03839] transition-colors">
+                    office@deelmap.co
+                  </a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#1A1816] flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                    </svg>
+                  </div>
+                  <a href="tel:+18887808093" className="text-[15px] text-[#444441] hover:text-[#D03839] transition-colors">
+                    (888) 780-8093
+                  </a>
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6 lg:p-8">
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-600">{error}</p>
-                </div>
-              )}
+            {/* Right – Form */}
+            <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 shadow-sm">
+              <h2 className="text-[20px] font-bold text-[#1A1816] mb-6">Contact Us</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <div>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Your Name"
-                    required
-                    className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-50 focus:bg-white focus:border-[#022b41] focus:outline-none transition-all duration-200"
-                  />
+              {success ? (
+                <div className="text-center py-10">
+                  <div className="w-12 h-12 rounded-full bg-[#E4F5EC] flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-6 h-6 text-[#0F6E56]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-[15px] font-semibold text-[#1A1816] mb-1">Message sent!</p>
+                  <p className="text-[13px] text-[#737370]">We&apos;ll get back to you as soon as possible.</p>
+                  <button
+                    onClick={() => setSuccess(false)}
+                    className="mt-5 text-[13px] text-[#D03839] font-semibold hover:underline"
+                  >
+                    Send another message
+                  </button>
                 </div>
-
-                <div>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Email Address"
-                    required
-                    className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-50 focus:bg-white focus:border-[#022b41] focus:outline-none transition-all duration-200"
-                  />
-                </div>
-
-                <div>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="Phone Number"
-                    className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-50 focus:bg-white focus:border-[#022b41] focus:outline-none transition-all duration-200"
-                  />
-                </div>
-
-                <div>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    placeholder="Subject"
-                    className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-50 focus:bg-white focus:border-[#022b41] focus:outline-none transition-all duration-200"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  {loadingProperties ? (
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
+                      Your Name <span className="text-[#D03839]">*</span>
+                    </label>
                     <input
                       type="text"
-                      placeholder="Loading properties..."
-                      disabled
-                      className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-100 cursor-not-allowed"
+                      placeholder="Enter your name"
+                      value={form.name}
+                      onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                      className="w-full h-11 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors"
                     />
-                  ) : (
-                    <select
-                      name="propertyAddress"
-                      value={formData.propertyAddress}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-50 focus:bg-white focus:border-[#022b41] focus:outline-none transition-all duration-200"
-                    >
-                      <option value="">Select a property address for inspection report (optional)</option>
-                      {properties.map((property) => (
-                        <option key={property.id} value={property.address}>
-                          {property.address}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    placeholder="Message"
-                    rows={6}
-                    className="w-full px-4 py-3 border-0 border-b border-gray-300 bg-gray-50 focus:bg-white focus:border-[#022b41] focus:outline-none transition-all duration-200 resize-none"
-                  />
-                </div>
-
-              </div>
-
-              <div className="mt-6">
-                <div id="recaptcha-container"></div>
-                {!recaptchaLoaded && (
-                  <div className="bg-gray-100 border border-gray-300 p-4 rounded flex items-center justify-center">
-                    <span className="text-gray-600">Loading reCAPTCHA...</span>
                   </div>
-                )}
-              </div>
 
-              <div className="mt-8">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !recaptchaToken}
-                  className="w-full bg-[#022b41] hover:bg-[#033a56] disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition-colors duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'SENDING...' : 'SEND'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
+                      Your Email <span className="text-[#D03839]">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={form.email}
+                      onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                      className="w-full h-11 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors"
+                    />
+                  </div>
 
-        <section className="py-16 lg:py-20 bg-white">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-              
-              <div className="bg-gray-100 rounded-lg p-8">
-                <h3 
-                  className="text-xl font-bold mb-6 uppercase tracking-wider"
-                  style={{ color: 'var(--primary-color)' }}
-                >
-                  LEXINGTON (HEADQUARTER)
-                </h3>
-                <div className="space-y-3 text-gray-600">
-                  <p>Lexington KY, USA</p>
-                  <p>office@ableman.co</p>
-                  <p>(888) 780-8093</p>
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
+                      Send Message <span className="text-[#D03839]">*</span>
+                    </label>
+                    <textarea
+                      placeholder="Enter your message"
+                      value={form.message}
+                      onChange={(e) => setForm(prev => ({ ...prev, message: e.target.value }))}
+                      required
+                      rows={5}
+                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none"
+                    />
+                  </div>
 
-              <div className="bg-gray-100 rounded-lg p-8">
-                <h3 
-                  className="text-xl font-bold mb-6 uppercase tracking-wider"
-                  style={{ color: 'var(--primary-color)' }}
-                >
-                  DECATUR
-                </h3>
-                <div className="space-y-3 text-gray-600">
-                  <p>Decatur, Illinois</p>
-                  <p>office@ableman.co</p>
-                  <p>(888) 780-8093</p>
-                </div>
-              </div>
+                  {error && <p className="text-[13px] text-[#D03839]">{error}</p>}
 
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold text-[15px] rounded transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Sending...' : 'Submit'}
+                  </button>
+                </form>
+              )}
             </div>
+
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="w-full h-96">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d50095.35619869065!2d-84.50373095273437!3d38.04058419999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x884244e4e39ad337%3A0x9d1f4cd76123946b!2sLexington%2C%20KY%2C%20USA!5e0!3m2!1sen!2sus!4v1703958437000!5m2!1sen!2sus"
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            allowFullScreen=""
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Lexington, KY Location"
-          />
-        </section>
-
-        <Footer />
-      </div>
-    </>
+      <Footer />
+    </div>
   )
 }

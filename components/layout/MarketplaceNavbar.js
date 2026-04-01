@@ -12,7 +12,7 @@ export function MarketplaceNavbar({ searchQuery, onSearchChange }) {
         <div className="flex items-center flex-shrink-0">
           <Link href="/" className="flex items-center">
             <Image
-              src="/assets/logo copy.webp"
+              src="/assets/logo.svg"
               alt="DeelMap"
               width={140}
               height={45}
