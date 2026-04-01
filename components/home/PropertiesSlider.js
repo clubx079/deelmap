@@ -175,7 +175,7 @@ export function PropertiesSlider() {
                       <img
                         src={thumbImg}
                         alt={cityState || 'Property'}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
