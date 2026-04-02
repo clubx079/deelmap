@@ -198,6 +198,7 @@ export async function POST(request) {
       }
 
       // Insert notification for seller
+      // sellerId is already UUID (seller_applications.id); conversation_id is numeric → convert to UUID
       await supabase.from('notifications').insert({
         recipient_id: sellerId,
         recipient_type: 'seller',
@@ -205,8 +206,7 @@ export async function POST(request) {
         title: `New offer from ${buyerName}`,
         body: `${buyerName} submitted an offer of ${formatCurrency(amount)}`,
         is_read: false,
-        related_conversation_id: conversation_id,
-        related_offer_id: offer.id,
+        related_conversation_id: toUuid(conversation_id),
       });
 
       // Send email to seller
@@ -256,24 +256,13 @@ export async function GET(request) {
             .maybeSingle(),
           supabase
             .from('properties')
-            .select('address, city, state, price, bedrooms, bathrooms, floor_area, slug')
+            .select('address, state, price, bedrooms, bathrooms, floor_area, slug')
             .eq('id', pid)
             .maybeSingle(),
         ]);
 
         const wd = wdRes.data;
-        let p = pRes.data;
-
-        // If properties query failed (e.g. column mismatch), retry with minimal columns
-        if (pRes.error) {
-          console.warn('[offers enrich] properties query error, retrying minimal:', pRes.error.message);
-          const { data: pMin } = await supabase
-            .from('properties')
-            .select('address, city, state, price, bedrooms, bathrooms, slug')
-            .eq('id', pid)
-            .maybeSingle();
-          p = pMin;
-        }
+        const p = pRes.data;
 
         if (wd) {
           property_address = (wd.full_address || wd.display_address || '').trim() ||
@@ -287,7 +276,7 @@ export async function GET(request) {
 
         if (p) {
           if (!property_address) {
-            property_address = [p.address, p.city, p.state].filter(Boolean).join(', ') || null;
+            property_address = [p.address, p.state].filter(Boolean).join(', ') || null;
           }
           if (property_price == null) property_price = p.price ?? null;
           if (property_bedrooms == null) property_bedrooms = p.bedrooms ?? null;
@@ -385,7 +374,6 @@ export async function PATCH(request) {
         body: `${buyerName} accepted your counter offer of ${formatCurrency(offer.offer_price)}`,
         is_read: false,
         related_conversation_id: offer.conversation_id,
-        related_offer_id: offer_id,
       });
 
       if (sellerEmail) {
