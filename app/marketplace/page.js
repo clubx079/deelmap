@@ -8,7 +8,7 @@ import { useProperties } from '@/hooks/useProperties'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
 import { Button } from '@/components/ui/Button'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Map, List } from 'lucide-react'
 
 export default function DealsPage() {
   const { user } = useAuth()
@@ -44,6 +44,7 @@ export default function DealsPage() {
   const dragStartWidth = useRef(700)
   const containerRef = useRef(null)
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
+  const [mobileView, setMobileView] = useState('map') // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState('')
   const {
     properties,
@@ -239,26 +240,51 @@ const LoadingState = () => (
         onSearchChange={setSearchQuery}
       />
 
-      {/* Mobile Layout - scrollable: map on top, listings below */}
-      {/* top-[148px] = navbar (80px) + 1-row filterbar (~68px) */}
-      <div className="lg:hidden fixed inset-0 top-[148px] overflow-y-auto bg-white">
-        {/* Map */}
-        <div className="relative h-[45vh] overflow-hidden">
-          <PropertyMap
-            properties={mapPins.length > 0 ? mapPins : properties}
-            onMarkerClick={handleMarkerClick}
-            selectedProperty={selectedProperty}
-            filters={filters}
-            isLoggedIn={!!user}
-          />
+      {/* Mobile Layout */}
+      <div className="lg:hidden">
+        {/* Toggle bar — fixed below filterbar */}
+        <div className="fixed top-[148px] left-0 right-0 z-30 bg-white border-b border-[#E8E8E4] px-4 py-2 flex items-center justify-between gap-3">
+          <div className="flex items-center bg-[#F3F3F0] rounded p-0.5 gap-0.5">
+            <button
+              onClick={() => setMobileView('map')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-all ${
+                mobileView === 'map' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
+              }`}
+            >
+              <Map className="w-3.5 h-3.5" />
+              Map
+            </button>
+            <button
+              onClick={() => setMobileView('list')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-all ${
+                mobileView === 'list' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              Listings
+            </button>
+          </div>
+          <p className="text-[12px] text-[#737370]">{resultCount.toLocaleString()} deals</p>
         </div>
 
-        {/* Listings header */}
-        <div className="relative z-10 px-4 py-3 border-b border-[#E8E8E4] bg-white shadow-sm">
-          <h1 className="text-[18px] font-bold text-[#1A1816] mb-0.5">Investment Properties</h1>
-          <div className="flex items-center justify-between">
-            <p className="text-[12px] text-[#737370]">{resultCount.toLocaleString()} opportunities</p>
-            <div className="flex items-center gap-1">
+        {/* Map view */}
+        {mobileView === 'map' && (
+          <div className="fixed inset-0 top-[196px]">
+            <PropertyMap
+              properties={mapPins.length > 0 ? mapPins : properties}
+              onMarkerClick={(p) => { handleMarkerClick(p); setMobileView('list') }}
+              selectedProperty={selectedProperty}
+              filters={filters}
+              isLoggedIn={!!user}
+            />
+          </div>
+        )}
+
+        {/* List view */}
+        {mobileView === 'list' && (
+          <div className="fixed inset-0 top-[196px] overflow-y-auto bg-[#FAFAF8]">
+            {/* Sort bar */}
+            <div className="sticky top-0 z-10 px-4 py-2.5 bg-white border-b border-[#E8E8E4] flex items-center justify-end gap-1.5">
               <span className="text-[12px] text-[#737370]">Sort:</span>
               <select
                 value={sortBy}
@@ -271,37 +297,34 @@ const LoadingState = () => (
                 <option value="roi">Highest ROI</option>
               </select>
             </div>
-          </div>
-        </div>
 
-        {/* Listings */}
-        <div className="bg-white">
-          {(loading && properties.length === 0) ? (
-            <LoadingState />
-          ) : error ? (
-            <ErrorState />
-          ) : (
-            <div className="p-4 space-y-4">
-              {properties.map((p) => (
-                <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />
-              ))}
-              {properties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
-              {hasMore && properties.length > 0 && (
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="w-full h-12 border border-[#E8E8E4] rounded text-[14px] font-semibold text-[#1A1816] bg-white hover:bg-[#FAFAF8] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {loadingMore ? (
-                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Loading...</>
-                  ) : (
-                    `Load More (${properties.length} of ${totalCount || '?'})`
-                  )}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+            {(loading && properties.length === 0) ? (
+              <LoadingState />
+            ) : error ? (
+              <ErrorState />
+            ) : (
+              <div className="p-3 grid grid-cols-2 gap-3">
+                {properties.map((p) => (
+                  <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="vertical" />
+                ))}
+                {properties.length === 0 && !loading && !loadingMore && !error && <div className="col-span-2"><EmptyState /></div>}
+                {hasMore && properties.length > 0 && (
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="col-span-2 w-full h-12 border border-[#E8E8E4] rounded text-[14px] font-semibold text-[#1A1816] bg-white hover:bg-[#FAFAF8] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loadingMore ? (
+                      <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Loading...</>
+                    ) : (
+                      `Load More (${properties.length} of ${totalCount || '?'})`
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Desktop Layout - fixed */}
