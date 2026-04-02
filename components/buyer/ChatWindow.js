@@ -38,6 +38,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [withdrawing, setWithdrawing] = useState(false);
   const [acceptingCounter, setAcceptingCounter] = useState(false);
   const [rejectingCounter, setRejectingCounter] = useState(false);
+  const [showMobilePropPanel, setShowMobilePropPanel] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -400,10 +401,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             <button onClick={onBack} className="lg:hidden p-2 -ml-2 rounded hover:bg-[#FAFAF8] transition-colors duration-200">
               <ArrowLeft className="w-5 h-5 text-[#444441]" />
             </button>
-            <div>
+            <div className="flex-1 min-w-0">
               <h2 className="text-[16px] font-bold text-[#1A1816]">{sellerName}</h2>
               <p className="text-[13px] text-[#737370]">{sellerRole}</p>
             </div>
+            <button
+              onClick={() => setShowMobilePropPanel(true)}
+              className="xl:hidden p-2 rounded hover:bg-[#FAFAF8] transition-colors duration-200 flex-shrink-0"
+            >
+              <MoreVertical className="w-5 h-5 text-[#444441]" />
+            </button>
           </div>
         </div>
 
@@ -733,6 +740,112 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           </button>
         </div>
       </div>
+
+      {/* Mobile Property Details Panel */}
+      {showMobilePropPanel && (
+        <div className="xl:hidden fixed inset-0 z-50 flex justify-end" onClick={() => setShowMobilePropPanel(false)}>
+          <div className="w-full max-w-sm bg-white h-full overflow-y-auto shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center justify-between flex-shrink-0">
+              <div>
+                <h3 className="text-[16px] font-bold text-[#1A1816]">Deal Overview</h3>
+                <p className="text-[13px] text-[#737370]">Property & Seller</p>
+              </div>
+              <button onClick={() => setShowMobilePropPanel(false)} className="p-2 rounded hover:bg-[#FAFAF8] transition-colors">
+                <X className="w-5 h-5 text-[#444441]" />
+              </button>
+            </div>
+            {/* Property Image */}
+            {propertyImage && (
+              <div className="relative h-[180px] bg-[#FAFAF8] flex-shrink-0">
+                <img src={propertyImage} alt="" className="w-full h-full object-cover" />
+                {arv && propertyPrice && (
+                  <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-[#1A1816]/70 text-white text-[11px] font-semibold rounded-full">
+                    +{Math.round(((arv - propertyPrice) / propertyPrice) * 100)}% ROI
+                  </span>
+                )}
+              </div>
+            )}
+            {/* Property Details */}
+            <div className="px-5 py-4 border-b border-[#E8E8E4]">
+              {propertyAddress && (
+                <div className="flex items-center gap-1 text-[12px] text-[#737370] mb-1">
+                  <MapPin className="w-3 h-3" />
+                  <span>{propertyAddress}</span>
+                </div>
+              )}
+              <p className="text-[14px] font-semibold text-[#1A1816] mb-2">
+                {conversation?.property_bedrooms ? `${conversation.property_bedrooms}BR` : ''} {conversation?.property_title || propertyAddress || 'Property'}
+              </p>
+              {(conversation?.property_sqft || conversation?.property_bedrooms || conversation?.property_bathrooms) && (
+                <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
+                  {conversation.property_sqft && <span>{Number(conversation.property_sqft).toLocaleString()} sq ft</span>}
+                  {conversation.property_bedrooms && <><span className="text-[#D4D4CF]">·</span><span>{conversation.property_bedrooms} bed</span></>}
+                  {conversation.property_bathrooms && <><span className="text-[#D4D4CF]">·</span><span>{conversation.property_bathrooms} bath</span></>}
+                </div>
+              )}
+              {propertyPrice && (
+                <div className="mb-2">
+                  <span className="text-[22px] font-bold text-[#1A1816]">{formatCurrency(propertyPrice)}</span>
+                  {arv && <span className="ml-2 text-[12px] text-[#0F6E56] font-medium">ARV {formatCurrency(arv)}</span>}
+                </div>
+              )}
+              {spread && (
+                <p className="text-[12px] text-[#0F6E56] font-medium flex items-center gap-0.5">
+                  <span>&#8593;</span> {formatCurrency(spread)} spread potential
+                </p>
+              )}
+            </div>
+            {/* Seller Info */}
+            <div className="px-5 py-4 border-b border-[#E8E8E4]">
+              <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1.1px] mb-3">Seller Info</p>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-[#EBF3FC] flex items-center justify-center text-[13px] font-semibold text-[#4A90E2]">
+                  {getInitials(sellerName)}
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-[#1A1816]">{sellerName}</p>
+                  <div className="flex items-center gap-1">
+                    <Shield className="w-3 h-3 text-[#0F6E56]" />
+                    <span className="text-[11px] text-[#0F6E56] font-medium">Verified seller</span>
+                  </div>
+                </div>
+              </div>
+              {lender?.email && (
+                <div className="flex items-center gap-2 text-[13px] text-[#444441] mb-2">
+                  <Mail className="w-4 h-4 text-[#737370]" />
+                  <span>{lender.email}</span>
+                </div>
+              )}
+              {lender?.phone && (
+                <div className="flex items-center gap-2 text-[13px] text-[#444441]">
+                  <Phone className="w-4 h-4 text-[#737370]" />
+                  <span>{lender.phone}</span>
+                </div>
+              )}
+            </div>
+            {/* Actions */}
+            <div className="px-5 py-4">
+              <Link
+                href={makeOfferHref || listingHref || '/marketplace'}
+                onClick={() => setShowMobilePropPanel(false)}
+                className="flex items-center justify-center w-full py-3 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors duration-200 mb-3"
+              >
+                Make Offer
+              </Link>
+              {listingHref && (
+                <Link
+                  href={listingHref}
+                  onClick={() => setShowMobilePropPanel(false)}
+                  className="flex items-center justify-center w-full py-3 border border-[#E8E8E4] text-[#1A1816] text-[14px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors duration-200"
+                >
+                  View Listing
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image Preview Modal */}
       {selectedImage && (

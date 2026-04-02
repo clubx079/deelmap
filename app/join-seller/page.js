@@ -370,8 +370,8 @@ export default function SellPage() {
           {/* Circles row with single continuous dashed line */}
           <div className="relative mb-8">
             {/* Dashed line from center of circle 1 to center of circle 4 */}
-            <div className="absolute top-1/2 -translate-y-1/2 border-t-2 border-dashed border-[#D1D1CE]" style={{ left: '12.5%', right: '12.5%' }} />
-            <div className="grid grid-cols-4">
+            <div className="hidden lg:block absolute top-1/2 -translate-y-1/2 border-t-2 border-dashed border-[#D1D1CE]" style={{ left: '12.5%', right: '12.5%' }} />
+            <div className="grid grid-cols-2 lg:grid-cols-4">
               {HOW_IT_WORKS.map((step) => (
                 <div key={step.n} className="flex justify-center">
                   <div className="relative flex items-center justify-center w-24 h-24">
@@ -405,7 +405,7 @@ export default function SellPage() {
           </div>
 
           {/* Content grid */}
-          <div className="grid grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-8">
             {HOW_IT_WORKS.map((step) => (
               <div key={step.n} className="text-center px-4">
                 <h3 className={`text-[16px] font-semibold mb-3 transition-colors duration-500 ${activeStep === step.n ? 'text-[#1A1816]' : 'text-[#737370]'}`}>

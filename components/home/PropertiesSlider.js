@@ -121,7 +121,7 @@ export function PropertiesSlider() {
               </p>
             </div>
             {/* Tabs */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto lg:flex-shrink-0 pb-0.5">
               {TABS.map((tab) => (
                 <button
                   key={tab.value}

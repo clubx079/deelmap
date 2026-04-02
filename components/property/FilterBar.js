@@ -195,7 +195,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         <div className="w-full px-6 lg:px-10 py-3 flex items-center gap-3">
 
           {/* Search */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-[660px] flex-shrink-0 focus-within:border-[#1A1816] transition-colors">
+          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden flex-1 min-w-0 lg:w-[480px] lg:flex-none focus-within:border-[#1A1816] transition-colors">
             <input
               type="text"
               placeholder="Search markets, cities, or ZIP codes"
@@ -209,7 +209,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
           </div>
 
           {/* Property Types */}
-          <div className="relative" ref={propertyTypesRef}>
+          <div className="relative hidden lg:block" ref={propertyTypesRef}>
             <button
               className={filterBtn(hasPropertyTypesFilter)}
               onClick={() => { setShowPropertyTypes(!showPropertyTypes); setShowPrice(false); setShowBedsBaths(false) }}
@@ -257,7 +257,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
           </div>
 
           {/* Price */}
-          <div className="relative" ref={priceRef}>
+          <div className="relative hidden lg:block" ref={priceRef}>
             <button
               className={filterBtn(hasPriceFilter)}
               onClick={() => {
@@ -339,7 +339,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
           </div>
 
           {/* Beds/Baths */}
-          <div className="relative" ref={bedsBathsRef}>
+          <div className="relative hidden lg:block" ref={bedsBathsRef}>
             <button
               className={filterBtn(hasBedsBathsFilter)}
               onClick={() => {
