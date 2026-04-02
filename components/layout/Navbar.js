@@ -143,11 +143,11 @@ export function Navbar() {
     <>
       <nav className={`fixed top-0 left-0 right-0 z-[60] transition-colors duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white'}`}>
         <div className="w-full px-6 lg:px-10">
-          <div className="flex items-center justify-between h-[70px]">
+          <div className="flex items-center justify-between h-[80px]">
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
-              <Image src="/assets/logo.svg" alt="DeelMap" width={170} height={60} className="h-[60px] w-[170px]" priority />
+              <Image src="/assets/logo.svg" alt="DeelMap" width={190} height={68} className="h-[68px] w-[190px]" priority />
             </Link>
 
             {/* Nav links – center */}
@@ -159,7 +159,7 @@ export function Navbar() {
                     <div key={item.label} className="relative" ref={aboutButtonRef}>
                       <button
                         onClick={() => setShowAboutDropdown(!showAboutDropdown)}
-                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[15px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
+                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[16px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                       >
                         {item.label}
                         {/* Filled triangle arrow */}
@@ -205,7 +205,7 @@ export function Navbar() {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className={`px-4 pt-2 pb-0.5 text-[15px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
+                    className={`px-4 pt-2 pb-0.5 text-[16px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                   >
                     {item.label}
                   </Link>
