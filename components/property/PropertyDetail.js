@@ -850,7 +850,7 @@ export function PropertyDetail({ property }) {
                   const featuredPhoto = p.property_photos?.find(ph => ph?.is_featured) || p.property_photos?.[0]
                   const imgUrl = featuredPhoto ? (featuredPhoto.optimized_url || featuredPhoto.photo_url || '') : ''
                   const thumbUrl = imgUrl && imgUrl.includes('supabase.co/storage/v1/object/public/')
-                    ? imgUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=600&quality=80&resize=cover'
+                    ? imgUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
                     : imgUrl
                   const cityState = [p.city, p.state].filter(Boolean).join(', ')
                   const pArv = Number(p.arv) || 0
@@ -871,9 +871,17 @@ export function PropertyDetail({ property }) {
                   return (
                     <div key={p.id} className="bg-white rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
                       {/* Photo */}
-                      <div className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden">
+                      <Link href={`/${p.slug || p.id}`} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
                         {thumbUrl ? (
-                          <img src={thumbUrl} alt={cityState || 'Property'} className="absolute inset-0 w-full h-full object-cover" />
+                          <Image
+                            src={thumbUrl}
+                            alt={cityState || 'Property'}
+                            fill
+                            loading="lazy"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="400px"
+                            onError={(e) => { e.target.style.display = 'none' }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Home className="w-8 h-8 text-[#E8E8E4]" />
@@ -887,7 +895,7 @@ export function PropertyDetail({ property }) {
                             <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1816]/80 text-white">{roi}</span>
                           </div>
                         )}
-                      </div>
+                      </Link>
                       {/* Content */}
                       <div className="p-4 flex flex-col flex-1">
                         {/* Location + icons */}
@@ -936,7 +944,7 @@ export function PropertyDetail({ property }) {
                               : `/${p.slug || p.id}`}
                             className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
                           >
-                            Invest Now
+                            View Listing
                           </Link>
                         </div>
                       </div>

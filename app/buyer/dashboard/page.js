@@ -27,6 +27,10 @@ export default function BuyerDashboard() {
   const [recentDeals, setRecentDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notifUnread, setNotifUnread] = useState(0);
+  const notifRef = useRef(null);
 
   useEffect(() => {
     setPageTitle('Dashboard');
@@ -37,15 +41,42 @@ export default function BuyerDashboard() {
     if (user?.id) fetchDashboardData();
   }, [user]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchNotifs = async () => {
+      try {
+        const res = await fetch('/api/buyer/notifications', { headers: { Authorization: `Bearer ${user.id}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setNotifUnread(data.unreadCount || 0);
+          setNotifications(data.notifications || []);
+        }
+      } catch {}
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onClickOutside = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [notifOpen]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${user.id}` };
 
-      const [conversationsRes, favoritesRes, dealsRes] = await Promise.allSettled([
+      const [conversationsRes, favoritesRes, dealsRes, offersRes] = await Promise.allSettled([
         fetch('/api/buyer/chat?action=get_conversations', { headers }),
         fetch('/api/favorites/list', { headers }),
-        fetch('/api/deals?limit=10&sortBy=newest')
+        fetch('/api/deals?limit=10&sortBy=newest'),
+        fetch('/api/buyer/offers', { headers })
       ]);
 
       // Conversations
@@ -78,6 +109,20 @@ export default function BuyerDashboard() {
         if (data.success) {
           setStats(prev => ({ ...prev, savedDeals: (data.favorites || []).length }));
         }
+      }
+
+      // Offers made
+      if (offersRes.status === 'fulfilled' && offersRes.value.ok) {
+        const data = await offersRes.value.json();
+        const offers = data.offers || [];
+        const pending = offers.filter(o => o.status === 'pending').length;
+        const underReview = offers.filter(o => o.status === 'accepted' || o.status === 'countered').length;
+        setStats(prev => ({
+          ...prev,
+          offersMade: offers.length,
+          dealsUnderReview: underReview,
+          pendingResponses: pending,
+        }));
       }
 
       // Recent deals for carousel
@@ -200,10 +245,64 @@ export default function BuyerDashboard() {
             <p className="text-[14px] text-[#737370] mt-0.5">{getCurrentDate()}</p>
           </div>
           <div className="hidden lg:flex items-center gap-3">
-            <button className="relative p-2.5 rounded border border-[#E8E8E4] hover:bg-[#FAFAF8] transition-colors duration-200">
-              <Bell className="w-5 h-5 text-[#444441]" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D03839] rounded-full"></span>
-            </button>
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setNotifOpen(prev => !prev)}
+                className="relative p-2.5 rounded border border-[#E8E8E4] hover:bg-[#FAFAF8] transition-colors duration-200"
+              >
+                <Bell className="w-5 h-5 text-[#444441]" />
+                {notifUnread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-[#D03839] rounded-full leading-none">
+                    {notifUnread > 99 ? '99+' : notifUnread}
+                  </span>
+                )}
+              </button>
+
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-2 w-[380px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
+                    <span className="text-[14px] font-semibold text-[#1A1816]">Notifications</span>
+                    {notifUnread > 0 && (
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/buyer/notifications', { method: 'POST', headers: { Authorization: `Bearer ${user.id}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'mark_all_read' }) });
+                          setNotifUnread(0);
+                          setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+                        }}
+                        className="text-[12px] text-[#D03839] font-medium hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-[340px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="flex items-center justify-center h-16 text-[13px] text-[#737370]">No notifications yet</div>
+                    ) : notifications.map(n => (
+                      <Link
+                        key={n.id}
+                        href={n.related_conversation_id ? `/buyer/inbox?conversation=${n.related_conversation_id}` : '/buyer/inbox'}
+                        onClick={async () => {
+                          setNotifOpen(false);
+                          if (!n.is_read) {
+                            await fetch('/api/buyer/notifications', { method: 'POST', headers: { Authorization: `Bearer ${user.id}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'mark_read', notification_id: n.id }) });
+                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x));
+                            setNotifUnread(prev => Math.max(0, prev - 1));
+                          }
+                        }}
+                        className={`flex items-start gap-3 px-4 py-3 border-l-2 transition-colors hover:bg-[#FAFAF8] ${n.is_read ? 'border-l-transparent' : 'border-l-[#D03839] bg-[#FAFAF8]'}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-[13px] truncate ${n.is_read ? 'text-[#444441]' : 'font-semibold text-[#1A1816]'}`}>{n.title}</p>
+                          <p className="text-[12px] text-[#737370] truncate mt-0.5">{n.body}</p>
+                          <p className="text-[11px] text-[#A8A8A4] mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link
               href="/marketplace"
               className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1816] text-white text-[14px] font-semibold rounded hover:bg-[#2a2826] transition-colors duration-200"
@@ -512,7 +611,7 @@ function DealCard({ deal, getFeatureImage, formatCurrency }) {
           href={`/marketplace/${deal.slug || deal.id}`}
           className="mt-2.5 w-full flex items-center justify-center px-3 py-2 border border-[#D03839] text-[#D03839] text-[14px] font-semibold rounded hover:bg-[#FEF0EF] transition-colors duration-200"
         >
-          Invest Now
+          View Listing
         </Link>
       </div>
     </div>

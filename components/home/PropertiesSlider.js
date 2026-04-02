@@ -153,7 +153,7 @@ export function PropertiesSlider() {
             {displayProperties.map((p) => {
               const img = getPrimaryPhotoUrl(p.property_photos)
               const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')
-                ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=600&quality=80'
+                ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
                 : img
               const cityState = [p.city, p.state].filter(Boolean).join(', ')
               const dealBadge = getDealBadge(p)
@@ -169,13 +169,16 @@ export function PropertiesSlider() {
               return (
                 <div key={p.id} className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col">
                   {/* Photo */}
-                  <div className="bg-[#FAFAF8] flex-shrink-0" style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
+                  <div className="bg-[#FAFAF8] flex-shrink-0 relative h-[220px] overflow-hidden">
                     {thumbImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={thumbImg}
                         alt={cityState || 'Property'}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+                        fill
+                        loading="lazy"
+                        className="object-cover"
+                        sizes="400px"
+                        onError={(e) => { e.target.style.display = 'none' }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

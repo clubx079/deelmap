@@ -38,6 +38,11 @@ export default function DealsPage() {
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const sortDropdownRef = useRef(null)
+  const [listingWidth, setListingWidth] = useState(700)
+  const isDragging = useRef(false)
+  const dragStartX = useRef(0)
+  const dragStartWidth = useRef(700)
+  const containerRef = useRef(null)
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
   const [searchQuery, setSearchQuery] = useState('')
   const {
@@ -67,6 +72,28 @@ export default function DealsPage() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    const onMouseMove = (e) => {
+      if (!isDragging.current || !containerRef.current) return
+      const containerWidth = containerRef.current.offsetWidth
+      const dx = dragStartX.current - e.clientX
+      const newWidth = Math.min(Math.max(dragStartWidth.current + dx, 400), containerWidth - 300)
+      setListingWidth(newWidth)
+    }
+    const onMouseUp = () => { isDragging.current = false; document.body.style.cursor = '' }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => { document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp) }
+  }, [])
+
+  const startDrag = (e) => {
+    e.preventDefault()
+    isDragging.current = true
+    dragStartX.current = e.clientX
+    dragStartWidth.current = listingWidth
+    document.body.style.cursor = 'col-resize'
+  }
 
   const SORT_OPTIONS = [
     { value: 'newest', label: 'Newest' },
@@ -266,18 +293,40 @@ const LoadingState = () => (
 
       {/* Desktop Layout - fixed */}
       <div className="hidden lg:block fixed inset-0 top-[140px] bg-[#FAFAF8] overflow-hidden">
-        <div className="flex h-full">
-          <div className="w-[700px] flex flex-col bg-white border-r border-[#E8E8E4]">
+        <div className="flex h-full" ref={containerRef}>
+          {/* Map - left */}
+          <div className="flex-1 bg-[#FAFAF8] relative min-w-[300px]">
+            <PropertyMap
+              properties={mapPins.length > 0 ? mapPins : properties}
+              onMarkerClick={handleMarkerClick}
+              selectedProperty={selectedProperty}
+              filters={filters}
+              isLoggedIn={!!user}
+            />
+          </div>
+
+          {/* Drag handle */}
+          <div
+            onMouseDown={startDrag}
+            className="w-[5px] flex-shrink-0 bg-[#E8E8E4] hover:bg-[#D03839] cursor-col-resize transition-colors duration-150 z-10"
+          />
+
+          {/* Listings - right */}
+          <div className="flex flex-col bg-white border-l border-[#E8E8E4] flex-shrink-0" style={{ width: listingWidth }}>
             <RightHeader />
 
             {(loading && properties.length === 0) ? (
               <LoadingState />
             ) : error ? (
               <ErrorState />
-            ) : (
+            ) : (() => {
+              const cardLayout = listingWidth < 500 ? 'vertical' : 'horizontal'
+              const isGrid = listingWidth < 500 || listingWidth > 900
+              const gridClass = isGrid ? 'grid grid-cols-2 gap-3' : 'space-y-4'
+              return (
               <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
-                <div className="space-y-4">
-                  {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} />)}
+                <div className={gridClass}>
+                  {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout={cardLayout} />)}
                 </div>
                 {properties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
                 {hasMore && properties.length > 0 && (
@@ -299,17 +348,8 @@ const LoadingState = () => (
                   </div>
                 )}
               </div>
-            )}
-          </div>
-
-          <div className="flex-1 bg-[#FAFAF8] relative">
-            <PropertyMap
-              properties={mapPins.length > 0 ? mapPins : properties}
-              onMarkerClick={handleMarkerClick}
-              selectedProperty={selectedProperty}
-              filters={filters}
-              isLoggedIn={!!user}
-            />
+            )
+            })()}
           </div>
         </div>
       </div>

@@ -245,75 +245,68 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
   }
 
   const buildInfoEl = (prop) => {
-    const rawImg = getPrimaryPhotoUrl(prop.property_photos)
+    // Support both wholesale_deals (property_photos) and properties (property_images)
+    let rawImg = getPrimaryPhotoUrl(prop.property_photos)
+    if (!rawImg && Array.isArray(prop.property_images) && prop.property_images.length > 0) {
+      const sorted = [...prop.property_images].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      rawImg = sorted[0]?.image_url || ''
+    }
     const img = rawImg && rawImg.includes('supabase.co/storage/v1/object/public/')
-      ? rawImg.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=200&quality=70&resize=cover'
+      ? rawImg.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
       : rawImg
     const hasPhoto = !!img
 
     const cityState = [prop.city, prop.state].filter(Boolean).join(', ')
-    const fullAddress = prop.full_address || prop.address || cityState || 'Address unavailable'
+    const displayAddr = getDisplayAddress(prop)
     const priceStr = fullPrice(prop.price)
     const arvNum = Number(prop.arv) || 0
     const arvStr = arvNum > 0 ? shortPrice(arvNum) : null
 
+    // floor_area is the sqft column in the properties table
+    const sqftVal = prop.sqft || prop.floor_area
     const statParts = []
-    if (prop.sqft) statParts.push(`${Number(prop.sqft).toLocaleString()} sq ft`)
+    if (sqftVal) statParts.push(`${Number(sqftVal).toLocaleString()} sq ft`)
     if (prop.bedrooms) statParts.push(`${prop.bedrooms} bed`)
     if (prop.bathrooms) statParts.push(`${prop.bathrooms} bath`)
-    const stats = statParts.join('  ·  ')
+    const stats = statParts.join(' · ')
 
     const el = document.createElement('div')
     el.className = 'map-info-card-fixed'
-    el.style.cssText = 'cursor: pointer; width: 380px;'
+    el.style.cssText = 'cursor: pointer; width: 260px;'
 
     el.innerHTML = `
       <div style="
         background: white;
-        border-radius: 4px;
+        border-radius: 6px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.14);
         border: 1px solid #E8E8E4;
         font-family: 'DM Sans', sans-serif;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        width: 260px;
         transition: box-shadow 0.2s ease;
       ">
-        <!-- Image -->
-        <div style="width:380px;height:110px;overflow:hidden;background:#F0F0EC;flex-shrink:0;">
-          ${hasPhoto ? `
-            <img src="${img}" alt="property" style="width:380px;height:110px;object-fit:cover;display:block;opacity:0;transition:opacity 0.2s ease;"
-              onload="this.style.opacity='1';"
-              onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;width:380px;height:110px;background:#FAFAF8;\\'><img src=\\'/assets/logo.svg\\' style=\\'width:80px;opacity:0.3;\\' /></div>';" />
-          ` : `
-            <div style="display:flex;align-items:center;justify-content:center;width:380px;height:110px;">
-              <img src="/assets/logo.svg" alt="DeelMap" style="width:80px;opacity:0.3;" />
-            </div>
-          `}
-        </div>
-
-        <!-- Content -->
-        <div style="padding: 14px 14px 12px;">
-
-          <!-- Address -->
-          <div style="font-size:15px;font-weight:700;color:#1A1816;line-height:1.3;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fullAddress}</div>
-
-          <!-- City/State -->
-          <div style="font-size:12px;color:#737370;margin-bottom:10px;">${cityState}</div>
-
-          <!-- Stats -->
-          ${stats ? `<div style="font-size:12px;color:#1A1816;margin-bottom:10px;">${stats}</div>` : ''}
-
-          <!-- Divider -->
-          <div style="height:1px;background:#F0F0EC;margin-bottom:10px;"></div>
-
-          <!-- Price row -->
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="font-size:18px;font-weight:700;color:#1A1816;">${priceStr}</div>
-            ${arvStr ? `<div style="font-size:11px;font-weight:600;padding:3px 8px;background:#E4F5EC;color:#0F6E56;border:1px solid #9FDBB8;border-radius:6px;">ARV ${arvStr}</div>` : ''}
+        <!-- Image (top, same proportions as vertical listing card) -->
+        ${hasPhoto ? `
+          <div style="width:260px;height:144px;flex-shrink:0;background-image:url('${img}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#FAFAF8;"></div>
+        ` : `
+          <div style="width:260px;height:144px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#FAFAF8;">
+            <img src="/assets/logo.svg" alt="DeelMap" style="width:60px;opacity:0.3;" />
+            <span style="font-size:10px;color:#A8A8A4;">No photo</span>
           </div>
+        `}
 
-          <!-- View button -->
-          <div style="margin-top:10px;padding:8px 12px;background:#1A1816;border-radius:6px;text-align:center;font-size:13px;font-weight:600;color:white;">
-            View Deal
+        <!-- Content (bottom 20%) -->
+        <div style="padding:10px 12px;background:white;">
+          <!-- Address -->
+          <div style="font-size:12px;font-weight:700;color:#1A1816;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">
+            ${displayAddr}
+          </div>
+          <!-- Stats + Price row -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+            ${stats ? `<div style="font-size:10px;color:#737370;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${stats}</div>` : `<div style="font-size:10px;color:#737370;">${cityState || ''}</div>`}
+            <div style="font-size:13px;font-weight:700;color:#1A1816;flex-shrink:0;">${priceStr}</div>
           </div>
         </div>
       </div>
@@ -354,8 +347,8 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       
       const edgePadding = 15
       const topPadding = 80
-      const cardWidth = 380
-      const cardHeight = 280
+      const cardWidth = 260
+      const cardHeight = 215
       const popupOffset = 15
 
       const screenX = pt.x + (mapWidth / 2)

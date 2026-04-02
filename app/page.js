@@ -110,7 +110,7 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: 'calc(100vh - 80px)' }}>
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '100vh' }}>
         {/* Background: Figma map image */}
         <Image
           src="/assets/hero-map-new.png"
@@ -125,9 +125,9 @@ export default function HomePage() {
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, white 0%, white 35%, rgba(255,255,255,0.6) 50%, transparent 65%)' }} />
 
         {/* Left: Text (overlaid) */}
-        <div className="relative z-10 flex items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
-          <div className="lg:w-[52%] xl:w-[48%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0">
-            <div className="w-full max-w-[520px]">
+        <div className="relative z-10 flex items-center h-full" style={{ minHeight: '100vh' }}>
+          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0 lg:pt-[70px]">
+            <div className="w-full max-w-[620px]">
 
               {/* Heading */}
               <h1 className="text-[44px] sm:text-[48px] lg:text-[46px] xl:text-[52px] font-bold text-[#1A1816] leading-[1.1] mb-5">
@@ -142,7 +142,7 @@ export default function HomePage() {
               </p>
 
               {/* Search bar */}
-              <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded overflow-hidden mb-5 max-w-[480px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
+              <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded overflow-hidden mb-5 max-w-[580px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
                 <input
                   type="text"
                   placeholder="Search markets, cities, or ZIP codes"

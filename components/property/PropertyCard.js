@@ -7,7 +7,7 @@ import { ShareModal } from './ShareModal'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function PropertyCard({ property, isLoggedIn = false }) {
+export default function PropertyCard({ property, isLoggedIn = false, layout = 'horizontal' }) {
   const [showShare, setShowShare] = useState(false)
   const { user } = useAuth()
   const { isFavorited, toggleFavorite, loadFavorites } = useFavorites()
@@ -82,132 +82,195 @@ export default function PropertyCard({ property, isLoggedIn = false }) {
   }
   const dealBadge = getDealBadge()
 
+  const favBtn = (
+    <button
+      onClick={async (e) => {
+        e.preventDefault(); e.stopPropagation()
+        if (!user) { window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } })); return }
+        setFavoriteLoading(true)
+        try { await toggleFavorite(property.id); window.dispatchEvent(new CustomEvent('favoriteChanged')) }
+        catch (err) { alert(err.message || 'Error') }
+        finally { setFavoriteLoading(false) }
+      }}
+      className={`p-1.5 rounded hover:bg-[#FAFAF8] transition-colors ${favoriteLoading ? 'opacity-50' : ''}`}
+      disabled={favoriteLoading}
+      title={isFav ? 'Remove from saved' : 'Save'}
+    >
+      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-[#D03839] text-[#D03839]' : 'text-[#737370]'}`} />
+    </button>
+  )
+
   return (
     <>
-      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-md transition-shadow duration-200 flex h-[260px]">
-
-        {/* Photo */}
-        <Link href={`/${slug}`} className="relative flex-shrink-0 w-[300px] h-full block group">
-          {thumbnailImage ? (
-            <Image
-              src={thumbnailImage}
-              alt={displayAddress || 'Property'}
-              fill
-              loading="lazy"
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="300px"
-              onError={(e) => { e.target.style.display = 'none' }}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAFAF8]">
-              <div className="relative w-28 h-8">
-                <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
+      {layout === 'vertical' ? (
+        /* ── VERTICAL card (narrow or wide 2-col grid) ── */
+        <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+          {/* Photo */}
+          <Link href={`/${slug}`} className="relative block w-full h-[160px] flex-shrink-0 group bg-[#FAFAF8]">
+            {thumbnailImage ? (
+              <Image
+                src={thumbnailImage}
+                alt={displayAddress || 'Property'}
+                fill
+                loading="lazy"
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="400px"
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center">
+                <div className="relative w-20 h-6">
+                  <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
+                </div>
+                <span className="text-[10px] text-[#A8A8A4] mt-1">No photo</span>
               </div>
-              <span className="text-[11px] text-[#A8A8A4] mt-1">No photo</span>
-            </div>
-          )}
-          {roiLabel && (
-            <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 text-white text-[11px] font-semibold rounded">
-              {roiLabel}
-            </div>
-          )}
-        </Link>
+            )}
+            {roiLabel && (
+              <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 text-white text-[10px] font-semibold rounded">
+                {roiLabel}
+              </div>
+            )}
+            <div className="absolute top-2 right-2">{favBtn}</div>
+          </Link>
 
-        {/* Content */}
-        <div className="flex-1 p-4 flex flex-col min-w-0 overflow-hidden">
-          {/* Top row */}
-          <div className="flex items-start justify-between gap-2 mb-2.5">
-            {dealBadge ? (
-              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded flex-shrink-0 ${dealBadge.cls}`}>
-                {dealBadge.label}
-              </span>
-            ) : <span />}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowShare(true) }}
-                className="p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors"
-                title="Share"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={async (e) => {
-                  e.preventDefault(); e.stopPropagation()
-                  if (!user) { window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } })); return }
-                  setFavoriteLoading(true)
-                  try { await toggleFavorite(property.id); window.dispatchEvent(new CustomEvent('favoriteChanged')) }
-                  catch (err) { alert(err.message || 'Error') }
-                  finally { setFavoriteLoading(false) }
-                }}
-                className={`p-1.5 rounded hover:bg-[#FAFAF8] transition-colors ${favoriteLoading ? 'opacity-50' : ''}`}
-                disabled={favoriteLoading}
-                title={isFav ? 'Remove from saved' : 'Save'}
-              >
-                <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-[#D03839] text-[#D03839]' : 'text-[#737370]'}`} />
-              </button>
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="mb-2">
-            <Link href={`/${slug}`} className="flex items-center gap-1 mb-1">
+          {/* Content */}
+          <div className="p-3 flex flex-col flex-1 min-w-0">
+            <Link href={`/${slug}`} className="flex items-center gap-1 mb-0.5">
               <MapPin className="w-3 h-3 text-[#737370] flex-shrink-0" />
-              <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
+              <span className="text-[11px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
             </Link>
             {isLoggedIn ? (
               <Link href={`/${slug}`}>
-                <h3 className="text-[16px] font-bold text-[#1A1816] leading-snug line-clamp-1 hover:text-[#D03839] transition-colors">
+                <h3 className="text-[13px] font-bold text-[#1A1816] leading-snug line-clamp-2 hover:text-[#D03839] transition-colors mb-1">
                   {full_address || address || cityState}
                 </h3>
               </Link>
             ) : (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
-                className="text-[13px] text-[#D03839] font-medium hover:underline text-left"
+                className="text-[12px] text-[#D03839] font-medium hover:underline text-left mb-1"
               >
-                Login to view full address
+                Login to view address
               </button>
             )}
-          </div>
-
-          {/* Property type */}
-          <p className="text-[12px] text-[#1A1816] mb-1.5">{propertyTitle}</p>
-
-          {/* Stats */}
-          <div className="flex items-center gap-3 text-[13px] text-[#1A1816] mb-3">
-            {sqft && <span>{Number(sqft).toLocaleString()} sq ft</span>}
-            {sqft && (bedrooms || bathrooms) && <span className="text-[#E8E8E4]">·</span>}
-            {bedrooms && <span>{bedrooms} bed</span>}
-            {bedrooms && bathrooms && <span className="text-[#E8E8E4]">·</span>}
-            {bathrooms && <span>{bathrooms} bath</span>}
-          </div>
-
-          {/* Price + ARV */}
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[20px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
-            {arvNum > 0 && (
-              <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
-                ARV {formatPriceShort(arv)}
-              </span>
+            {(bedrooms || bathrooms || sqft) && (
+              <div className="flex items-center gap-1.5 text-[11px] text-[#737370] mb-1.5 flex-wrap">
+                {sqft && <span>{Number(sqft).toLocaleString()} sf</span>}
+                {sqft && (bedrooms || bathrooms) && <span className="text-[#D4D4CF]">·</span>}
+                {bedrooms && <span>{bedrooms} bd</span>}
+                {bedrooms && bathrooms && <span className="text-[#D4D4CF]">·</span>}
+                {bathrooms && <span>{bathrooms} ba</span>}
+              </div>
             )}
+            <div className="flex items-center gap-1.5 mt-auto pt-1.5">
+              <span className="text-[15px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
+              {arvNum > 0 && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
+                  ARV {formatPriceShort(arv)}
+                </span>
+              )}
+            </div>
           </div>
-
-          {/* Spread */}
-          {spreadNum > 0 && (
-            <p className="text-[13px] text-[#0F6E56] font-medium mb-3">
-              ↑ ${spreadNum.toLocaleString()} spread potential
-            </p>
-          )}
-
-          {/* Invest Now */}
-          <Link
-            href={`/${slug}`}
-            className="mt-auto self-start text-[13px] font-semibold text-[#1A1816] border border-[#1A1816] rounded px-3 py-2 hover:bg-[#1A1816] hover:text-white transition-all duration-200"
-          >
-            Invest Now
-          </Link>
         </div>
-      </div>
+      ) : (
+        /* ── HORIZONTAL card (default) ── */
+        <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-md transition-shadow duration-200 flex h-[260px]">
+          {/* Photo */}
+          <Link href={`/${slug}`} className="relative flex-shrink-0 w-[300px] h-full block group">
+            {thumbnailImage ? (
+              <Image
+                src={thumbnailImage}
+                alt={displayAddress || 'Property'}
+                fill
+                loading="lazy"
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="300px"
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAFAF8]">
+                <div className="relative w-28 h-8">
+                  <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
+                </div>
+                <span className="text-[11px] text-[#A8A8A4] mt-1">No photo</span>
+              </div>
+            )}
+            {roiLabel && (
+              <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 text-white text-[11px] font-semibold rounded">
+                {roiLabel}
+              </div>
+            )}
+          </Link>
+
+          {/* Content */}
+          <div className="flex-1 p-4 flex flex-col min-w-0 overflow-hidden">
+            <div className="flex items-start justify-between gap-2 mb-2.5">
+              {dealBadge ? (
+                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded flex-shrink-0 ${dealBadge.cls}`}>
+                  {dealBadge.label}
+                </span>
+              ) : <span />}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowShare(true) }}
+                  className="p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors"
+                  title="Share"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+                {favBtn}
+              </div>
+            </div>
+            <div className="mb-2">
+              <Link href={`/${slug}`} className="flex items-center gap-1 mb-1">
+                <MapPin className="w-3 h-3 text-[#737370] flex-shrink-0" />
+                <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
+              </Link>
+              {isLoggedIn ? (
+                <Link href={`/${slug}`}>
+                  <h3 className="text-[16px] font-bold text-[#1A1816] leading-snug line-clamp-1 hover:text-[#D03839] transition-colors">
+                    {full_address || address || cityState}
+                  </h3>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
+                  className="text-[13px] text-[#D03839] font-medium hover:underline text-left"
+                >
+                  Login to view full address
+                </button>
+              )}
+            </div>
+            <p className="text-[12px] text-[#1A1816] mb-1.5">{propertyTitle}</p>
+            <div className="flex items-center gap-3 text-[13px] text-[#1A1816] mb-3">
+              {sqft && <span>{Number(sqft).toLocaleString()} sq ft</span>}
+              {sqft && (bedrooms || bathrooms) && <span className="text-[#E8E8E4]">·</span>}
+              {bedrooms && <span>{bedrooms} bed</span>}
+              {bedrooms && bathrooms && <span className="text-[#E8E8E4]">·</span>}
+              {bathrooms && <span>{bathrooms} bath</span>}
+            </div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[20px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
+              {arvNum > 0 && (
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
+                  ARV {formatPriceShort(arv)}
+                </span>
+              )}
+            </div>
+            {spreadNum > 0 && (
+              <p className="text-[13px] text-[#0F6E56] font-medium mb-3">
+                ↑ ${spreadNum.toLocaleString()} spread potential
+              </p>
+            )}
+            <Link
+              href={`/${slug}`}
+              className="mt-auto self-start text-[13px] font-semibold text-[#1A1816] border border-[#1A1816] rounded px-3 py-2 hover:bg-[#1A1816] hover:text-white transition-all duration-200"
+            >
+              View Listing
+            </Link>
+          </div>
+        </div>
+      )}
 
       <ShareModal
         isOpen={showShare}

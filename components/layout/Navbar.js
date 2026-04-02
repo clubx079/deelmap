@@ -22,6 +22,16 @@ export function Navbar() {
 
   const aboutButtonRef = useRef(null)
   const notifBellRef = useRef(null)
+  const [scrolled, setScrolled] = useState(false)
+
+  const isHome = pathname === '/'
+
+  useEffect(() => {
+    if (!isHome) return
+    const onScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [isHome])
 
   // Fetch unread message count
   useEffect(() => {
@@ -131,7 +141,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[60] bg-white border-b border-[#E8E8E4]">
+      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-colors duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white'}`}>
         <div className="w-full px-6 lg:px-10">
           <div className="flex items-center justify-between h-[70px]">
 
@@ -224,7 +234,7 @@ export function Navbar() {
                     </button>
 
                     {notifOpen && (
-                      <div className="absolute right-0 top-full mt-2 w-[300px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
+                      <div className="absolute right-0 top-full mt-2 w-[380px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
                           <span className="text-[14px] font-semibold text-[#1A1816]">Notifications</span>
                           {notifUnread > 0 && (

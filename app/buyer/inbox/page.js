@@ -50,7 +50,7 @@ export default function InboxPage() {
   useEffect(() => {
     if (user?.id) {
       fetchConversations();
-      const interval = setInterval(() => fetchConversations(), 5000);
+      const interval = setInterval(() => fetchConversations(false), 5000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -185,7 +185,7 @@ export default function InboxPage() {
 
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
-    setTimeout(() => fetchConversations(), 500);
+    setTimeout(() => fetchConversations(false), 500);
   };
 
   const formatDate = (dateString) => {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   X, Send, Paperclip, File, Download, Loader2, CheckCheck, Check,
-  ArrowLeft, DollarSign, Home, Mail, MoreVertical, ExternalLink,
+  ArrowLeft, Home, Mail, MoreVertical, ExternalLink,
   Smile, MapPin, Phone, Shield, Calendar
 } from 'lucide-react';
 
@@ -37,6 +37,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [offers, setOffers] = useState([]);
   const [withdrawing, setWithdrawing] = useState(false);
   const [acceptingCounter, setAcceptingCounter] = useState(false);
+  const [rejectingCounter, setRejectingCounter] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -134,6 +135,25 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
     }
   };
 
+  const handleRejectCounter = async (offerId) => {
+    try {
+      setRejectingCounter(true);
+      const res = await fetch('/api/buyer/offers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
+        body: JSON.stringify({ offer_id: offerId, action: 'reject_counter' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'rejected' } : o));
+      }
+    } catch (err) {
+      console.error('Failed to reject counter:', err);
+    } finally {
+      setRejectingCounter(false);
+    }
+  };
+
   const markMessagesAsRead = async () => {
     try {
       await fetch('/api/buyer/chat', {
@@ -179,6 +199,23 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             });
           } catch {}
         }
+      })
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'offers',
+        filter: `conversation_id=eq.${conversation.id}`
+      }, (payload) => {
+        const newOffer = payload.new;
+        if (!newOffer?.id) return;
+        setOffers((prev) => prev.some(o => String(o.id) === String(newOffer.id)) ? prev : [...prev, newOffer]);
+        scrollToBottom();
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'offers',
+        filter: `conversation_id=eq.${conversation.id}`
+      }, (payload) => {
+        const updated = payload.new;
+        if (!updated?.id) return;
+        setOffers((prev) => prev.map(o => String(o.id) === String(updated.id) ? { ...o, ...updated } : o));
       })
       .subscribe();
     return () => supabase.removeChannel(channel);
@@ -293,7 +330,10 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   // Merge offers as synthetic items into message stream
   // Filter out raw "Offer submitted:" text messages — they're already shown as offer cards
   const offerItems = offers.map(o => ({ ...o, _isOffer: true }));
-  const filteredMessages = messages.filter(m => !(m.message_text || '').startsWith('Offer submitted:'));
+  const filteredMessages = messages.filter(m => {
+    const text = m.message_text || '';
+    return !text.startsWith('Offer submitted:') && !text.startsWith('Counter offer:');
+  });
   const allItems = [...filteredMessages, ...offerItems].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   // Group combined items by date
@@ -406,41 +446,47 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                         };
                         const statusLabel = { pending: 'Pending', accepted: 'Accepted', rejected: 'Rejected', countered: 'Countered', withdrawn: 'Withdrawn' };
                         return (
-                          <div key={`offer-${item.id}`} className="flex justify-center">
-                            <div className="w-full max-w-[380px] bg-white border border-[#E8E8E4] rounded shadow-sm">
-                              <div className="px-4 pt-3 pb-2 border-b border-[#E8E8E4] flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <DollarSign className="w-4 h-4 text-[#D03839]" />
-                                  <span className="text-[13px] font-semibold text-[#1A1816]">
-                                    {isCounter ? 'Counter Offer' : 'Offer Submitted'}
-                                  </span>
-                                </div>
+                          <div key={`offer-${item.id}`}>
+                            {isCounter
+                              ? <p className="text-[12px] font-medium text-[#444441] mb-1">{sellerName}</p>
+                              : <p className="text-[12px] font-medium text-[#444441] mb-1 text-right">You</p>
+                            }
+                            <div className={`flex ${isCounter ? 'justify-start' : 'justify-end'}`}>
+                            <div className="w-full max-w-[340px] bg-white border border-[#E8E8E4] rounded-lg px-4 py-3 shadow-sm">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EBF3FC] text-[#4A90E2]">
+                                  {isCounter ? 'Counter Offer' : 'Offer Submitted'}
+                                </span>
                                 <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusColors[item.status] || statusColors.pending}`}>
                                   {statusLabel[item.status] || item.status}
                                 </span>
                               </div>
-                              <div className="px-4 py-3">
-                                <p className="text-[22px] font-bold text-[#1A1816] mb-1">{formatCurrency(item.offer_price)}</p>
-                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#737370]">
-                                  {item.financing_type && <span>{item.financing_type}</span>}
-                                  {item.closing_timeline && <><span className="text-[#D4D4CF]">·</span><span>Close in {item.closing_timeline}</span></>}
-                                  {item.inspection_period && <><span className="text-[#D4D4CF]">·</span><span>{item.inspection_period} inspection</span></>}
+                              <p className="text-[22px] font-bold text-[#1A1816] leading-none mb-1">{formatCurrency(item.offer_price)}</p>
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#737370]">
+                                {item.financing_type && <span>{item.financing_type}</span>}
+                                {item.closing_timeline && <><span className="text-[#D4D4CF]">·</span><span>Close in {item.closing_timeline}</span></>}
+                                {item.inspection_period && <><span className="text-[#D4D4CF]">·</span><span>{item.inspection_period} inspection</span></>}
+                              </div>
+                              {isCounter && item.status === 'pending' && (
+                                <div className="flex gap-2 mt-3">
+                                  <button
+                                    onClick={() => handleAcceptCounter(item.id)}
+                                    disabled={acceptingCounter || rejectingCounter}
+                                    className="flex-1 py-2 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors disabled:opacity-50"
+                                  >
+                                    {acceptingCounter ? 'Accepting…' : 'Accept'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectCounter(item.id)}
+                                    disabled={acceptingCounter || rejectingCounter}
+                                    className="flex-1 py-2 border border-[#E8E8E4] text-[#737370] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] hover:text-[#D03839] transition-colors disabled:opacity-50"
+                                  >
+                                    {rejectingCounter ? 'Declining…' : 'Decline'}
+                                  </button>
                                 </div>
-                                {isCounter && item.status === 'pending' && (
-                                  <div className="flex gap-2 mt-3">
-                                    <button
-                                      onClick={() => handleAcceptCounter(item.id)}
-                                      disabled={acceptingCounter}
-                                      className="flex-1 py-2 bg-[#0F6E56] text-white text-[13px] font-semibold rounded hover:bg-[#0c5c47] transition-colors disabled:opacity-50"
-                                    >
-                                      {acceptingCounter ? 'Accepting…' : 'Accept Counter'}
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="px-4 pb-3">
-                                <span className="text-[11px] text-[#A8A8A4]">{formatTime(item.created_at)}</span>
-                              </div>
+                              )}
+                              <span className="text-[11px] text-[#A8A8A4] mt-1 block">{formatTime(item.created_at)}</span>
+                            </div>
                             </div>
                           </div>
                         );
@@ -637,14 +683,31 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
 
         {/* Action Buttons */}
         <div className="px-5 py-4">
-          {hasPendingCounter ? (
+          {latestOffer?.status === 'accepted' ? (
+            <div className="bg-[#E4F5EC] border border-[#A8DFBA] rounded-lg px-4 py-3 mb-3">
+              <p className="text-[13px] font-semibold text-[#0F6E56] mb-1">Next Steps</p>
+              <p className="text-[12px] text-[#0F6E56]">Coordinate with the seller to proceed to contract signing.</p>
+            </div>
+          ) : latestOffer?.status === 'rejected' ? (
+            <div className="bg-[#FEF0EF] border border-[#F5C4C0] rounded-lg px-4 py-3 mb-3">
+              <p className="text-[13px] font-semibold text-[#D03839]">Offer declined</p>
+              <p className="text-[12px] text-[#D03839] mt-1">You can submit a new offer or continue the conversation.</p>
+            </div>
+          ) : hasPendingCounter ? (
             <>
               <button
                 onClick={() => handleAcceptCounter(latestOffer.id)}
-                disabled={acceptingCounter}
-                className="flex items-center justify-center w-full py-3 bg-[#0F6E56] text-white text-[14px] font-semibold rounded hover:bg-[#0c5c47] transition-colors duration-200 mb-3 disabled:opacity-50"
+                disabled={acceptingCounter || rejectingCounter}
+                className="flex items-center justify-center w-full py-3 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors duration-200 mb-2 disabled:opacity-50"
               >
                 {acceptingCounter ? 'Accepting…' : 'Accept Counter'}
+              </button>
+              <button
+                onClick={() => handleRejectCounter(latestOffer.id)}
+                disabled={acceptingCounter || rejectingCounter}
+                className="flex items-center justify-center w-full py-3 border border-[#E8E8E4] text-[#737370] text-[14px] font-semibold rounded hover:bg-[#FAFAF8] hover:text-[#D03839] transition-colors duration-200 mb-2 disabled:opacity-50"
+              >
+                {rejectingCounter ? 'Declining…' : 'Decline Counter'}
               </button>
               <Link href={makeOfferHref || listingHref || '/marketplace'}
                 className="flex items-center justify-center w-full py-3 border border-[#E8E8E4] text-[#1A1816] text-[14px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors duration-200 mb-3">
