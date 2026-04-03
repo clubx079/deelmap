@@ -96,7 +96,8 @@ export async function GET(request) {
         'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
       };
 
-      let searchTerm = searchQuery.trim();
+      let searchTerm = searchQuery.trim().replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!searchTerm) searchTerm = searchQuery.trim();
       const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
 
       // If user typed a full state name, search by abbreviation too

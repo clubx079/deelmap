@@ -140,6 +140,14 @@ export const useProperties = ({
       const result = await response.json()
 
       if (!result.success) {
+        // If we got properties back (even empty), treat as no results not an error
+        if (Array.isArray(result.properties)) {
+          setProperties(replace ? [] : prev => prev)
+          setHasMore(false)
+          setTotalCount(0)
+          setError(null)
+          return
+        }
         throw new Error(result.error || 'Failed to fetch properties')
       }
 
