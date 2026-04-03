@@ -90,121 +90,44 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Password reset code sent successfully via SMS' })
     }
 
-    // Same logo URL as signup OTP email so it loads in email clients
-    const logoBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production.up.railway.app').replace(/\/$/, '')
-    const logoUrl = `${logoBase}/deelmap.png`
-
     const htmlTemplate = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background-color: #f3f4f6;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 0;">
-    <tr>
-      <td align="center" style="padding: 0;">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
-
-          <!-- Header - Logo (same as signup verification) -->
-          <tr>
-            <td style="background-color: #1e3a5f; padding: 24px 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F5F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
+      <tr>
+        <td style="background:#ffffff;padding:24px 40px;text-align:center;border-bottom:2px solid #D03839">
+          <img src="https://deelmap.co/deelmap.png" alt="Deelmap" height="36" style="display:inline-block;height:36px;width:auto;border:0" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:36px 40px 32px;background:#ffffff">
+          <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#1A1816;letter-spacing:-0.4px;line-height:1.25">Reset your password</h1>
+          <p style="margin:0 0 28px;font-size:14px;line-height:1.65;color:#737370">We received a request to reset your Deelmap password. Use the code below to continue. This code expires in 15 minutes.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+            <tr><td align="center">
+              <table cellpadding="0" cellspacing="0">
                 <tr>
-                  <td align="center" style="vertical-align: middle;">
-                    <img src="${logoUrl}" alt="Deelmap" width="160" height="48" style="display: block; max-width: 160px; height: auto; border: 0;" />
+                  <td style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:20px 32px;text-align:center">
+                    <p style="margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#A8A8A4">Password reset code</p>
+                    <p style="margin:0;font-size:36px;font-weight:700;color:#1A1816;font-family:'Courier New',monospace;letter-spacing:6px;line-height:1.2">${resetOtp}</p>
+                    <p style="margin:8px 0 0;font-size:12px;color:#A8A8A4">Expires in 15 minutes</p>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-
-          <!-- Main Content - White -->
-          <tr>
-            <td style="padding: 50px 40px; background-color: #ffffff;">
-              
-              <!-- Title -->
-              <h1 style="margin: 0 0 20px 0; font-size: 32px; font-weight: 700; color: #1f2937; text-align: center;">
-                Password Reset
-              </h1>
-
-              <!-- Instruction Text -->
-              <p style="margin: 0 0 40px 0; font-size: 16px; line-height: 1.6; color: #4b5563; text-align: center;">
-                We received a request to reset your password for your Deelmap account. Use the following code to complete the password reset procedure. This code is valid for <strong style="color: #1f2937;">15 minutes</strong>.
-              </p>
-
-              <!-- Code - single copyable block (same format as signup verification, no extra spaces) -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px 0;">
-                <tr>
-                  <td align="center">
-                    <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
-                      <tr>
-                        <td style="padding: 20px 32px; background-color: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px;">
-                          <p style="margin: 0; font-size: 11px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Verification code</p>
-                          <p style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937; font-family: 'Courier New', Courier, monospace; letter-spacing: 6px; line-height: 1.2;">${resetOtp}</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">
-                Valid for 15 minutes. Do not share this code.
-              </p>
-
-              <!-- Didn't Request Notice -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
-                <tr>
-                  <td align="center">
-                    <p style="margin: 0; font-size: 14px; color: #6b7280; text-align: center; line-height: 1.6;">
-                      If you did not request a password reset, please ignore this email or contact our security team if you have concerns.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="padding: 30px 40px; background-color: #ffffff; border-top: 1px solid #e5e7eb;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding-bottom: 10px;">
-                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #374151; font-weight: 500;">
-                      Thanks,<br>
-                      DeelMap Team
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-bottom: 5px;">
-                    <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      2464 Royal Ln. Mesa, New Jersey 45463
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                      © 2026 DeelMap
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+            </td></tr>
+          </table>
+          <p style="margin:0;font-size:12px;color:#A8A8A4;line-height:1.6">If you didn't request a password reset, your account is safe — no changes have been made.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#FAFAF8;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body></html>
     `
 
     // Plain text version
