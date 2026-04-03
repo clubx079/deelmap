@@ -72,6 +72,14 @@ async function getProperty(slugParam) {
       }
     }
 
+    // Fall back to agent_phone/agent_name columns on the deal itself
+    if (!agent) {
+      agent = {
+        name: wholesaleProperty.agent_name || null,
+        phone: wholesaleProperty.agent_phone || null
+      }
+    }
+
     // Normalize and return
     const normalized = normalizeWholesaleDeal(wholesaleProperty)
     return {

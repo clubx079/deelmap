@@ -158,23 +158,23 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="min-h-screen bg-[#FAFAF8] pt-20">
         <div className="max-w-md mx-auto px-6 sm:px-8 py-12">
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-[#737370] hover:text-[#1A1816] mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Login</span>
           </Link>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="bg-white border border-[#E8E8E4] rounded p-8">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-slate-700" />
+              <div className="w-16 h-16 rounded-full bg-[#FAFAF8] flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-[#D03839]" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Reset Password</h1>
-              <p className="text-sm text-gray-600">
+              <h1 className="text-2xl font-bold text-[#1A1816] mb-2">Reset Password</h1>
+              <p className="text-sm text-[#737370]">
                 {step === 'request' && "We'll send a verification code to reset your password"}
                 {step === 'method-picker' && 'Choose how we send your reset code'}
                 {step === 'verify' && (resetMethod === 'sms' ? 'Enter the code sent to your phone' : 'Enter the verification code sent to your email')}
@@ -183,13 +183,13 @@ export default function ForgotPasswordPage() {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="mb-4 p-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded text-[#D03839] text-sm">
                 {error}
               </div>
             )}
 
             {message && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+              <div className="mb-4 p-3 bg-[#E4F5EC] border border-[#A8DFBA] rounded text-[#0F6E56] text-sm">
                 {message}
               </div>
             )}
@@ -197,7 +197,7 @@ export default function ForgotPasswordPage() {
             {step === 'request' && (
               <form onSubmit={handleRequestReset} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Email
                   </label>
                   <input
@@ -205,11 +205,11 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={!!user?.email}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-[#E8E8E4] rounded focus:outline-none focus:border-[#D03839] disabled:bg-[#FAFAF8] disabled:cursor-not-allowed"
                     required
                   />
                   {user?.email && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-[#737370] mt-1">
                       We'll send the code to your account email
                     </p>
                   )}
@@ -217,7 +217,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#D03839] text-white py-2.5 rounded font-medium hover:bg-[#C02830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Sending Code...' : 'Send Verification Code'}
                 </button>
@@ -227,7 +227,7 @@ export default function ForgotPasswordPage() {
             {step === 'method-picker' && (
               <div className="space-y-3">
                 {error && (
-                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  <div className="mb-3 p-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded text-[#D03839] text-sm">
                     {error}
                   </div>
                 )}
@@ -235,40 +235,40 @@ export default function ForgotPasswordPage() {
                   type="button"
                   onClick={() => handleChooseResetMethod('email')}
                   disabled={loading}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                  className="w-full flex items-center gap-4 p-4 border border-[#E8E8E4] hover:border-[#D03839] rounded text-left transition-all disabled:opacity-50"
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-full bg-[#FAFAF8] flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-[#1A1816]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">Send via Email</p>
-                    <p className="text-xs text-slate-500">{email}</p>
+                    <p className="font-semibold text-[#1A1816] text-sm">Send via Email</p>
+                    <p className="text-xs text-[#737370]">{email}</p>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleChooseResetMethod('sms')}
                   disabled={loading}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                  className="w-full flex items-center gap-4 p-4 border border-[#E8E8E4] hover:border-[#D03839] rounded text-left transition-all disabled:opacity-50"
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-full bg-[#FAFAF8] flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-[#1A1816]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">Send via Text (SMS)</p>
-                    <p className="text-xs text-slate-500">Phone number on file</p>
+                    <p className="font-semibold text-[#1A1816] text-sm">Send via Text (SMS)</p>
+                    <p className="text-xs text-[#737370]">Phone number on file</p>
                   </div>
                 </button>
-                {loading && <p className="text-center text-sm text-slate-500 mt-2">Sending code...</p>}
+                {loading && <p className="text-center text-sm text-[#737370] mt-2">Sending code...</p>}
                 <button
                   type="button"
                   onClick={() => { setError(''); setStep('request') }}
                   disabled={loading}
-                  className="w-full text-slate-500 hover:text-slate-900 text-sm disabled:opacity-50 mt-2"
+                  className="w-full text-[#737370] hover:text-[#1A1816] text-sm disabled:opacity-50 mt-2"
                 >
                   Back
                 </button>
@@ -278,7 +278,7 @@ export default function ForgotPasswordPage() {
             {step === 'verify' && (
               <form onSubmit={handleVerifyOTP} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Verification Code
                   </label>
                   <input
@@ -286,7 +286,7 @@ export default function ForgotPasswordPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="Enter 6-digit code"
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-slate-500"
+                    className="w-full px-4 py-2.5 border border-[#E8E8E4] rounded focus:outline-none focus:border-[#D03839] text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-[#A8A8A4]"
                     maxLength={6}
                     required
                   />
@@ -294,7 +294,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6}
-                  className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#D03839] text-white py-2.5 rounded font-medium hover:bg-[#C02830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Verifying...' : 'Verify Code'}
                 </button>
@@ -302,7 +302,7 @@ export default function ForgotPasswordPage() {
                   type="button"
                   onClick={handleResendCode}
                   disabled={resendLoading || resendCooldown > 0}
-                  className="w-full text-slate-600 hover:text-slate-900 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full text-[#737370] hover:text-[#1A1816] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {resendLoading ? 'Sending...' : resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Code'}
                 </button>
@@ -312,7 +312,7 @@ export default function ForgotPasswordPage() {
             {step === 'reset' && (
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     New Password
                   </label>
                   <div className="relative">
@@ -320,14 +320,14 @@ export default function ForgotPasswordPage() {
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                      className="w-full px-4 py-2 pr-10 border border-[#E8E8E4] rounded focus:outline-none focus:border-[#D03839]"
                       required
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword((prev) => !prev)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-0 rounded"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#737370] hover:text-[#1A1816] focus:outline-none rounded"
                       aria-label={showNewPassword ? 'Hide password' : 'Show password'}
                     >
                       {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -335,7 +335,7 @@ export default function ForgotPasswordPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Confirm Password
                   </label>
                   <div className="relative">
@@ -343,14 +343,14 @@ export default function ForgotPasswordPage() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                      className="w-full px-4 py-2 pr-10 border border-[#E8E8E4] rounded focus:outline-none focus:border-[#D03839]"
                       required
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-0 rounded"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#737370] hover:text-[#1A1816] focus:outline-none rounded"
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -360,7 +360,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading || newPassword !== confirmPassword}
-                  className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#D03839] text-white py-2.5 rounded font-medium hover:bg-[#C02830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Resetting...' : 'Reset Password'}
                 </button>

@@ -267,10 +267,10 @@ export default function SignupPage() {
         <div className="w-full max-w-2xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            <h1 className="text-3xl font-bold text-[#1A1816] mb-2">
               {authStep === 'signup' ? 'Create Your Account' : authStep === 'otp-method' ? 'How would you like your code?' : otpMethod === 'sms' ? 'Verify Your Phone' : 'Verify Your Email'}
             </h1>
-            <p className="text-slate-600">
+            <p className="text-[#737370]">
               {authStep === 'signup'
                 ? 'Join Deelmap and start finding great deals'
                 : authStep === 'otp-method'
@@ -282,11 +282,11 @@ export default function SignupPage() {
           </div>
 
           {/* Form Card */}
-          <div className="bg-white border-2 border-slate-200 rounded-xl p-8 shadow-lg relative z-10">
+          <div className="bg-white border border-[#E8E8E4] rounded p-8 relative z-10">
             {authStep === 'otp-method' ? (
               <div className="space-y-3">
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-2">
+                  <div className="bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-4 py-3 rounded text-sm mb-2">
                     {error}
                   </div>
                 )}
@@ -294,41 +294,41 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => handleChooseOTPMethod('email')}
                   disabled={loading}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                  className="w-full flex items-center gap-4 p-4 border border-[#E8E8E4] hover:border-[#D03839] rounded text-left transition-all disabled:opacity-50"
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-full bg-[#FAFAF8] flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-[#1A1816]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">Send via Email</p>
-                    <p className="text-xs text-slate-500">{formData.email}</p>
+                    <p className="font-semibold text-[#1A1816] text-sm">Send via Email</p>
+                    <p className="text-xs text-[#737370]">{formData.email}</p>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleChooseOTPMethod('sms')}
                   disabled={loading}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-slate-200 hover:border-slate-900 rounded-xl text-left transition-all disabled:opacity-50"
+                  className="w-full flex items-center gap-4 p-4 border border-[#E8E8E4] hover:border-[#D03839] rounded text-left transition-all disabled:opacity-50"
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-10 h-10 rounded-full bg-[#FAFAF8] flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-[#1A1816]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900 text-sm">Send via Text (SMS)</p>
-                    <p className="text-xs text-slate-500">{formData.phone}</p>
+                    <p className="font-semibold text-[#1A1816] text-sm">Send via Text (SMS)</p>
+                    <p className="text-xs text-[#737370]">{formData.phone}</p>
                   </div>
                 </button>
-                {loading && <p className="text-center text-sm text-slate-500 mt-2">Sending code...</p>}
+                {loading && <p className="text-center text-sm text-[#737370] mt-2">Sending code...</p>}
                 <div className="mt-4 text-center">
                   <button
                     type="button"
                     onClick={() => { setError(''); setAuthStep('signup') }}
                     disabled={loading}
-                    className="text-slate-500 hover:underline text-sm disabled:opacity-50"
+                    className="text-[#737370] hover:text-[#1A1816] text-sm disabled:opacity-50"
                   >
                     Back
                   </button>
@@ -339,7 +339,7 @@ export default function SignupPage() {
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-[#1A1816] mb-2">
                       First Name
                     </label>
                     <Input
@@ -348,11 +348,11 @@ export default function SignupPage() {
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       required
-                      className="h-12 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                      className="h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-[#1A1816] mb-2">
                       Last Name
                     </label>
                     <Input
@@ -361,14 +361,14 @@ export default function SignupPage() {
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       required
-                      className="h-12 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                      className="h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Email Address
                   </label>
                   <Input
@@ -377,13 +377,13 @@ export default function SignupPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="h-12 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                    className="h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
                   />
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Phone Number
                   </label>
                   <Input
@@ -392,7 +392,7 @@ export default function SignupPage() {
                     value={formData.phone}
                     onChange={handlePhoneChange}
                     required
-                    className={`h-12 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20 ${
+                    className={`h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0 ${
                       phoneError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
                     }`}
                   />
@@ -403,7 +403,7 @@ export default function SignupPage() {
 
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Password
                   </label>
                   <div className="relative">
@@ -413,12 +413,12 @@ export default function SignupPage() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       required
-                      className="h-12 pr-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                      className="h-12 pr-10 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] hover:text-[#737370] transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -427,7 +427,7 @@ export default function SignupPage() {
 
                 {/* States of Interest — single input: search and select */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     States of Interest <span className="text-red-500">*</span>
                   </label>
                   <div className="relative" ref={statesDropdownRef}>
@@ -439,8 +439,8 @@ export default function SignupPage() {
                         setShowStatesDropdown(true)
                         statesInputRef.current?.focus()
                       }}
-                      className={`min-h-[48px] w-full px-3 py-2 border-2 rounded-lg flex flex-wrap gap-2 items-center text-sm cursor-text ${
-                        showStatesDropdown ? 'border-slate-900 ring-2 ring-slate-900/20' : 'border-slate-300'
+                      className={`min-h-[48px] w-full px-3 py-2 border rounded flex flex-wrap gap-2 items-center text-sm cursor-text ${
+                        showStatesDropdown ? 'border-[#D03839]' : 'border-[#E8E8E4]'
                       }`}
                     >
                       {/* Selected state chips */}
@@ -449,7 +449,7 @@ export default function SignupPage() {
                         return (
                           <span
                             key={stateCode}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-900 rounded-md text-xs font-medium"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-[#FAFAF8] text-[#1A1816] rounded text-xs font-medium"
                           >
                             {state?.label || stateCode}
                             <button
@@ -458,7 +458,7 @@ export default function SignupPage() {
                                 e.stopPropagation()
                                 removeState(stateCode)
                               }}
-                              className="hover:bg-slate-200 rounded-full p-0.5"
+                              className="hover:bg-[#E8E8E4] rounded-full p-0.5"
                             >
                               <X size={12} />
                             </button>
@@ -474,21 +474,21 @@ export default function SignupPage() {
                         onChange={(e) => setStatesSearch(e.target.value)}
                         onFocus={() => setShowStatesDropdown(true)}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 min-w-[120px] py-1.5 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-slate-400"
+                        className="flex-1 min-w-[120px] py-1.5 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-[#A8A8A4]"
                       />
                       <ChevronDown
                         size={18}
-                        className="text-slate-400 transition-transform pointer-events-none shrink-0"
+                        className="text-[#A8A8A4] transition-transform pointer-events-none shrink-0"
                         style={{ transform: showStatesDropdown ? 'rotate(180deg)' : undefined }}
                       />
                     </div>
 
                     {/* Dropdown: options only (no extra search input) */}
                     {showStatesDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-white border-2 border-slate-200 rounded-lg shadow-lg overflow-hidden">
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-[#E8E8E4] rounded shadow-sm overflow-hidden">
                         <div className="overflow-y-auto max-h-52">
                           {filteredStates.length === 0 ? (
-                            <div className="px-3 py-4 text-sm text-slate-500 text-center">
+                            <div className="px-3 py-4 text-sm text-[#737370] text-center">
                               No states match &quot;{statesSearch}&quot;
                             </div>
                           ) : (
@@ -499,14 +499,14 @@ export default function SignupPage() {
                                   key={state.value}
                                   type="button"
                                   onClick={() => toggleState(state.value)}
-                                  className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
-                                    isSelected ? 'bg-slate-100' : ''
+                                  className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-[#FAFAF8] ${
+                                    isSelected ? 'bg-[#FAFAF8]' : ''
                                   }`}
                                 >
-                                  <span className={isSelected ? 'font-medium text-slate-900' : 'text-slate-700'}>
+                                  <span className={isSelected ? 'font-medium text-[#1A1816]' : 'text-[#1A1816]'}>
                                     {state.label}
                                   </span>
-                                  {isSelected && <Check size={16} className="text-slate-900" />}
+                                  {isSelected && <Check size={16} className="text-[#1A1816]" />}
                                 </button>
                               )
                             })
@@ -516,7 +516,7 @@ export default function SignupPage() {
                     )}
                   </div>
                   {formData.statesOfInterest?.length > 0 && (
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-[#737370] mt-1">
                       {formData.statesOfInterest.length} state{formData.statesOfInterest.length > 1 ? 's' : ''} selected
                     </p>
                   )}
@@ -530,15 +530,15 @@ export default function SignupPage() {
                     checked={formData.agreedToPrivacy}
                     onChange={(e) => setFormData({ ...formData, agreedToPrivacy: e.target.checked })}
                     required
-                    className="mt-0.5 h-4 w-4 text-slate-900 focus:ring-slate-900 border-slate-300 rounded"
+                    className="mt-0.5 h-4 w-4 text-[#1A1816] focus:ring-slate-900 border-slate-300 rounded"
                   />
-                  <label htmlFor="terms" className="text-xs text-slate-600 leading-tight">
+                  <label htmlFor="terms" className="text-xs text-[#737370] leading-tight">
                     I agree to Deelmap's{' '}
-                    <a href="/terms-of-use" target="_blank" className="text-slate-900 font-semibold hover:underline">
+                    <a href="/terms-of-use" target="_blank" className="text-[#1A1816] font-semibold text-[#D03839] hover:underline">
                       Terms of Use
                     </a>
                     {' '}and{' '}
-                    <a href="/privacy-policy" target="_blank" className="text-slate-900 font-semibold hover:underline">
+                    <a href="/privacy-policy" target="_blank" className="text-[#1A1816] font-semibold text-[#D03839] hover:underline">
                       Privacy Policy
                     </a>
                   </label>
@@ -546,7 +546,7 @@ export default function SignupPage() {
 
                 {/* Error Message */}
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  <div className="bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-4 py-3 rounded text-sm">
                     {error}
                   </div>
                 )}
@@ -555,7 +555,7 @@ export default function SignupPage() {
                 <Button
                   type="submit"
                   disabled={loading || validatingPhone}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 text-sm font-semibold disabled:opacity-50 rounded-lg transition-all"
+                  className="w-full bg-[#D03839] hover:bg-[#C02830] text-white h-12 text-sm font-semibold disabled:opacity-50 rounded transition-all"
                 >
                   {loading ? 'Sending Code...' : 'Continue'}
                 </Button>
@@ -563,7 +563,7 @@ export default function SignupPage() {
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
                     Verification Code
                   </label>
                   <Input
@@ -573,21 +573,21 @@ export default function SignupPage() {
                     onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
                     required
                     maxLength={6}
-                    className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-slate-500 border-slate-300 focus:border-slate-900 focus:ring-slate-900/20"
+                    className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-[#A8A8A4] border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
                   />
-                  <p className="text-sm text-slate-500 mt-1.5">
+                  <p className="text-sm text-[#737370] mt-1.5">
                     {otpMethod === 'sms'
-                      ? <>Code sent to <strong className="text-slate-700">{formData.phone}</strong></>
-                      : <>Code sent to <strong className="text-slate-700">{formData.email}</strong></>
+                      ? <>Code sent to <strong className="text-[#1A1816]">{formData.phone}</strong></>
+                      : <>Code sent to <strong className="text-[#1A1816]">{formData.email}</strong></>
                     }
                   </p>
-                  <p className="text-sm text-slate-600 mt-2">
+                  <p className="text-sm text-[#737370] mt-2">
                     Didn&apos;t receive it?{' '}
                     <button
                       type="button"
                       onClick={handleResendCode}
                       disabled={resendLoading || resendCooldown > 0}
-                      className="font-medium text-slate-900 hover:underline disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+                      className="font-medium text-[#D03839] hover:underline disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
                     >
                       {resendLoading
                         ? 'Sending…'
@@ -599,7 +599,7 @@ export default function SignupPage() {
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  <div className="bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-4 py-3 rounded text-sm">
                     {error}
                   </div>
                 )}
@@ -609,14 +609,14 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => { setError(''); setAuthStep('otp-method') }}
                     variant="secondary"
-                    className="flex-1 !bg-white border-2 border-slate-300 !text-slate-900 hover:!bg-slate-100 hover:border-slate-900 h-12 text-sm font-semibold rounded-lg transition-all"
+                    className="flex-1 !bg-white border border-[#E8E8E4] !text-[#1A1816] hover:!bg-[#FAFAF8] hover:border-[#D03839] h-12 text-sm font-semibold rounded transition-all"
                   >
                     Back
                   </Button>
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white h-12 text-sm font-semibold disabled:opacity-50 rounded-lg transition-all hover:shadow-lg"
+                    className="flex-1 bg-[#D03839] hover:bg-[#C02830] text-white h-12 text-sm font-semibold disabled:opacity-50 rounded transition-all"
                   >
                     {loading ? 'Verifying...' : 'Verify & Create Account'}
                   </Button>
@@ -630,10 +630,10 @@ export default function SignupPage() {
                 <div className="mt-6">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-200" />
+                      <div className="w-full border-t border-[#E8E8E4]" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="px-4 bg-white text-slate-500 font-medium">Or continue with</span>
+                      <span className="px-4 bg-white text-[#737370] font-medium text-[#737370]">Or continue with</span>
                     </div>
                   </div>
 
@@ -643,7 +643,7 @@ export default function SignupPage() {
                       type="button"
                       onClick={handleGoogleSignIn}
                       disabled={loading}
-                      className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-4 py-3 border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FAFAF8] transition-all disabled:opacity-50"
                     >
                       <svg className="w-5 h-5" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -651,30 +651,30 @@ export default function SignupPage() {
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
-                      <span className="text-sm font-medium text-slate-700">Google</span>
+                      <span className="text-sm font-medium text-[#1A1816]">Google</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleFacebookSignIn}
                       disabled={loading}
-                      className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-4 py-3 border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FAFAF8] transition-all disabled:opacity-50"
                     >
                       <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                       </svg>
-                      <span className="text-sm font-medium text-slate-700">Facebook</span>
+                      <span className="text-sm font-medium text-[#1A1816]">Facebook</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Sign In Link */}
                 <div className="mt-6 text-center">
-                  <p className="text-slate-600 text-sm">
+                  <p className="text-[#737370] text-sm">
                     Already have an account?{' '}
                     <a
                       href="/login"
-                      className="text-slate-900 font-semibold hover:underline"
+                      className="text-[#1A1816] font-semibold text-[#D03839] hover:underline"
                     >
                       Sign in
                     </a>
