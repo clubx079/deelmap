@@ -1,9 +1,9 @@
-import { Open_Sans } from 'next/font/google'
+import { DM_Sans } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/hooks/useAuth'
 import { LiveTrackingProvider } from '@/components/LiveTrackingProvider'
 
-const openSans = Open_Sans({ subsets: ['latin'] })
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
 
 export const metadata = {
   title: 'DeelMap - Property Deals Marketplace',
@@ -19,7 +19,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={openSans.className}>
+      <body className={`${dmSans.className} ${dmSans.variable}`}>
         <AuthProvider>
           <LiveTrackingProvider>
             {children}

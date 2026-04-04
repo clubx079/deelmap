@@ -1,6 +1,6 @@
 // /app/api/auth/verify-otp/route.js
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { withTimeout, fireAndForget } from '@/lib/timeout'
 

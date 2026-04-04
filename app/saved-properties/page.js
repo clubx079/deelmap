@@ -4,7 +4,7 @@ import PropertyCard from '@/components/property/PropertyCard'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
-import { Heart, Star, ArrowRight } from 'lucide-react'
+import { Star, ArrowRight, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SavedPropertiesPage() {
@@ -15,146 +15,130 @@ export default function SavedPropertiesPage() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false)
-      return
-    }
-
+    if (!user) { setLoading(false); return }
     loadSavedProperties()
   }, [user])
 
   const loadSavedProperties = async () => {
     if (!user) return
-
     setLoading(true)
     setError(null)
-
     try {
       const res = await fetch('/api/favorites/list', {
         headers: { Authorization: `Bearer ${user.id}` }
       })
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Failed to load saved properties')
+        throw new Error(data.error || 'Failed to load saved deals')
       }
-
       const data = await res.json()
       const properties = data.properties || []
-
       setFavoriteProperties(properties)
-
-      if (properties.length > 0) {
-        loadFavorites(properties.map(p => p.id))
-      }
+      if (properties.length > 0) loadFavorites(properties.map(p => p.id))
     } catch (err) {
-      console.error('Error loading saved properties:', err)
-      setError(err.message || 'Failed to load saved properties')
+      setError(err.message || 'Failed to load saved deals')
     } finally {
       setLoading(false)
     }
   }
 
-  // Listen for favorite changes to refresh the list
   useEffect(() => {
-    const handleFavoriteChange = () => {
-      if (user) {
-        loadSavedProperties()
-      }
-    }
-    window.addEventListener('favoriteChanged', handleFavoriteChange)
-    return () => window.removeEventListener('favoriteChanged', handleFavoriteChange)
+    const handle = () => { if (user) loadSavedProperties() }
+    window.addEventListener('favoriteChanged', handle)
+    return () => window.removeEventListener('favoriteChanged', handle)
   }, [user])
 
   if (!user) return null
 
   return (
-    <BuyerPortalLayout pageTitle="Saved Properties">
-    <div className="min-h-full bg-slate-50">
-      {/* Header — in-page title hidden on mobile (shown in layout bar) */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="px-4 lg:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Saved Properties</h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {favoriteProperties.length > 0
-                  ? `You have ${favoriteProperties.length} saved ${favoriteProperties.length === 1 ? 'property' : 'properties'}`
-                  : 'Properties you save will appear here'}
-              </p>
-            </div>
-            {favoriteProperties.length > 0 && (
-              <Link
-                href="/marketplace"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
-              >
-                Browse More Properties
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-4 py-4">
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-200 animate-pulse">
-                <div className="h-[200px] bg-slate-200"></div>
-                <div className="p-4 space-y-3">
-                  <div className="h-6 bg-slate-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                  <div className="h-4 bg-slate-200 rounded w-2/3"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-8 h-8 text-red-500" />
-            </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">Error Loading Properties</h3>
-            <p className="text-slate-600 mb-6">{error}</p>
-            <button
-              onClick={loadSavedProperties}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : favoriteProperties.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-5">
-              <Star className="w-10 h-10 text-slate-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No Saved Properties Yet</h3>
-            <p className="text-slate-600 mb-6 max-w-md mx-auto">
-              Start exploring properties and save your favorites for easy access later
+    <BuyerPortalLayout pageTitle="Saved Deals">
+      <div className="min-h-full bg-[#FAFAF8]" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        {/* Header */}
+        <div className="px-4 lg:px-6 pt-4 lg:pt-6 pb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.44px]">Saved Deals</h1>
+            <p className="text-[14px] text-[#737370] mt-1">
+              {loading
+                ? 'Loading...'
+                : favoriteProperties.length > 0
+                  ? `${favoriteProperties.length} saved ${favoriteProperties.length === 1 ? 'deal' : 'deals'}`
+                  : 'Deals you save will appear here'}
             </p>
+          </div>
+          {favoriteProperties.length > 0 && (
             <Link
               href="/marketplace"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors flex-shrink-0"
             >
-              Browse Properties
+              Browse More
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {favoriteProperties.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                isLoggedIn={!!user}
-              />
-            ))}
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="px-4 lg:px-6 pb-6">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white rounded border border-[#E8E8E4] animate-pulse overflow-hidden">
+                  <div className="h-[200px] bg-[#F0F0EE]" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 bg-[#F0F0EE] rounded w-3/4" />
+                    <div className="h-4 bg-[#F0F0EE] rounded w-1/2" />
+                    <div className="h-4 bg-[#F0F0EE] rounded w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-[#FEF0EF] flex items-center justify-center">
+                <Star className="w-6 h-6 text-[#D03839]" />
+              </div>
+              <div>
+                <p className="text-[15px] font-semibold text-[#1A1816]">Failed to load saved deals</p>
+                <p className="text-[13px] text-[#737370] mt-1">{error}</p>
+              </div>
+              <button
+                onClick={loadSavedProperties}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : favoriteProperties.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-[#F3F3F1] flex items-center justify-center">
+                <Star className="w-6 h-6 text-[#A8A8A4]" />
+              </div>
+              <div>
+                <p className="text-[15px] font-semibold text-[#1A1816]">No saved deals yet</p>
+                <p className="text-[13px] text-[#737370] mt-1 max-w-[280px] mx-auto">
+                  Start exploring and save deals you're interested in — they'll appear here.
+                </p>
+              </div>
+              <Link
+                href="/marketplace"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
+              >
+                Browse Deals
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {favoriteProperties.map((property) => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  isLoggedIn={!!user}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </BuyerPortalLayout>
   )
 }

@@ -3,15 +3,22 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, Heart, RotateCcw, X } from 'lucide-react'
-import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
+import {
+  ArrowLeft, Heart, Share2,
+  MapPin, Building2, Calendar, Square, Map, Bed, Droplets, Car,
+  ChevronLeft, ChevronRight,
+  TrendingUp, Shield, Star, DollarSign, Wrench, Home
+} from 'lucide-react'
+import { useProperties } from '@/hooks/useProperties'
+import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
+import { getStartingTier, recordImageLoad } from '@/utils/adaptiveImageLoader'
 import { useAuth } from '@/hooks/useAuth'
 import { useFavorites } from '@/hooks/useFavorites'
 import { usePropertyAnalytics } from '@/hooks/usePropertyAnalytics'
 import { loadGoogleMapsAPI } from '@/utils/googleMapsLoader'
 import { RegistrationModal } from '@/components/RegistrationModal'
 import { PropertyImageModal } from './PropertyImageModal'
-import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
 
 export function PropertyDetail({ property }) {
   const { user, loading } = useAuth()
@@ -28,15 +35,20 @@ export function PropertyDetail({ property }) {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [showNotInterestedModal, setShowNotInterestedModal] = useState(false)
-  const [isNotInterested, setIsNotInterested] = useState(false)
-  const [notInterestedLoading, setNotInterestedLoading] = useState(false)
+  const [showOfferModal] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
+  const [similarSliderIndex, setSimilarSliderIndex] = useState(0)
   const mapRef = useRef(null)
 
-  // Photo gallery - MOVED BEFORE ANY EARLY RETURNS TO FIX HOOKS ORDER
+  const { properties: similarProperties } = useProperties({
+    filters: { statuses: ['available'], city: property.city },
+    sortBy: 'newest',
+    pageSize: 14,
+  })
+
+  // Photo gallery
   const photos = useMemo(() => {
     if (!Array.isArray(property.property_photos)) return []
     return [...property.property_photos].sort((a, b) => {
@@ -48,20 +60,76 @@ export function PropertyDetail({ property }) {
     })
   }, [property.property_photos])
   const currentPhoto = photos[currentPhotoIndex]
-  const currentPhotoUrl = getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg'
 
-  // Build full address - ALSO MOVED BEFORE EARLY RETURNS
+  // Adaptive progressive hero image
+  const HERO_TIERS = [150, 800, 2400]
+  const [heroUrl, setHeroUrl] = useState('')
+  const heroTierRef = useRef(0)
+  const heroIndexRef = useRef(0)
+  const heroLoadStartRef = useRef(0)
+
+  useEffect(() => {
+    if (!currentPhoto) {
+      setHeroUrl('/placeholder.jpg')
+      return
+    }
+    const startTier = getStartingTier(HERO_TIERS)
+    heroTierRef.current = startTier
+    heroIndexRef.current = currentPhotoIndex
+    heroLoadStartRef.current = performance.now()
+    setHeroUrl(getThumbnailUrl(currentPhoto, HERO_TIERS[startTier]) || getPreferredPhotoUrl(currentPhoto) || '/placeholder.jpg')
+  }, [currentPhotoIndex, currentPhoto])
+
+  const handleHeroLoaded = useCallback(() => {
+    const duration = performance.now() - heroLoadStartRef.current
+    const tierWidth = HERO_TIERS[heroTierRef.current] || 2400
+    const estimatedBytes = tierWidth * tierWidth * 0.1
+    recordImageLoad(estimatedBytes, duration)
+
+    const nextTier = heroTierRef.current + 1
+    if (nextTier < HERO_TIERS.length && heroIndexRef.current === currentPhotoIndex) {
+      const photo = photos[currentPhotoIndex]
+      const nextUrl = getThumbnailUrl(photo, HERO_TIERS[nextTier]) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+      const img = new window.Image()
+      heroLoadStartRef.current = performance.now()
+      img.onload = () => {
+        if (heroIndexRef.current === currentPhotoIndex) {
+          const dur = performance.now() - heroLoadStartRef.current
+          const estBytes = HERO_TIERS[nextTier] * HERO_TIERS[nextTier] * 0.1
+          recordImageLoad(estBytes, dur)
+          heroTierRef.current = nextTier
+          setHeroUrl(nextUrl)
+        }
+      }
+      img.src = nextUrl
+    }
+  }, [currentPhotoIndex, photos])
+
+  // Preload next/prev images
+  useEffect(() => {
+    if (photos.length <= 1) return
+    const toPreload = [
+      (currentPhotoIndex + 1) % photos.length,
+      (currentPhotoIndex + 2) % photos.length,
+      (currentPhotoIndex + 3) % photos.length,
+      (currentPhotoIndex - 1 + photos.length) % photos.length,
+    ]
+    toPreload.forEach((idx) => {
+      const url = getThumbnailUrl(photos[idx], 150) || getPreferredPhotoUrl(photos[idx])
+      if (url) {
+        const img = new window.Image()
+        img.src = url
+      }
+    })
+  }, [currentPhotoIndex, photos])
+
+  // Build full address
   const fullAddress = property.full_address || property.display_address ||
     `${property.address || ''}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim()
 
-  // Show login modal if user is not authenticated (only after loading is complete)
+  // Show login modal if user is not authenticated
   useEffect(() => {
-    // Wait for auth check to complete
-    if (loading) {
-      return
-    }
-    
-    // If not logged in, show login modal
+    if (loading) return
     if (!user) {
       setShowLoginModal(true)
     } else {
@@ -69,21 +137,19 @@ export function PropertyDetail({ property }) {
     }
   }, [user, loading])
 
-  // Close modal after successful login
   useEffect(() => {
     if (user && showLoginModal && !loading) {
       setShowLoginModal(false)
     }
   }, [user, showLoginModal, loading])
 
-  // Track unique photos viewed (main gallery + modal) for analytics
+  // Track unique photos viewed
   useEffect(() => {
     if (photos.length === 0 || typeof trackImageView !== 'function') return
     viewedPhotoIndicesRef.current.add(currentPhotoIndex)
     trackImageView(viewedPhotoIndicesRef.current.size)
   }, [currentPhotoIndex, photos.length, trackImageView])
 
-  // Callback for modal: when user views another photo in fullscreen, count it
   const handlePhotoViewFromModal = useCallback((index) => {
     viewedPhotoIndicesRef.current.add(index)
     if (typeof trackImageView === 'function') {
@@ -91,55 +157,32 @@ export function PropertyDetail({ property }) {
     }
   }, [trackImageView])
 
-  // Load favorite status when component mounts
+  // Load favorite status
   useEffect(() => {
     if (user && property?.id) {
       loadFavorites([property.id])
     }
   }, [user, property?.id, loadFavorites])
 
-  // Update local state when favorites change
   useEffect(() => {
     if (property?.id) {
       setIsFav(isFavorited(property.id))
     }
   }, [property?.id, isFavorited])
 
-  // Load not-interested status from API when user and property are available
+  // Initialize Google Map
   useEffect(() => {
-    if (!user?.id || !property?.id) {
-      setIsNotInterested(false)
-      return
-    }
-    const controller = new AbortController()
-    const authHeader = `Bearer ${user.id}`
-    fetch(`/api/buyer/not-interested?dealId=${encodeURIComponent(property.id)}`, {
-      headers: { Authorization: authHeader },
-      signal: controller.signal
-    })
-      .then((res) => res.ok ? res.json() : { notInterested: false })
-      .then((data) => setIsNotInterested(!!data.notInterested))
-      .catch(() => setIsNotInterested(false))
-    return () => controller.abort()
-  }, [user?.id, property?.id])
-
-  // Initialize Google Map - MOVED BEFORE EARLY RETURN TO FIX HOOKS ORDER
-  useEffect(() => {
-    // Validate coordinates
     const lat = property.address_google_lat ? parseFloat(property.address_google_lat) : null
     const lng = property.address_google_lng ? parseFloat(property.address_google_lng) : null
 
-    // Check if coordinates are valid numbers
     if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
       console.warn('Invalid map coordinates:', { lat, lng })
-      // Show a message or placeholder in the map container
       if (mapRef.current) {
         mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Map location not available</div>'
       }
       return
     }
 
-    // Validate coordinate ranges (latitude: -90 to 90, longitude: -180 to 180)
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       console.warn('Map coordinates out of valid range:', { lat, lng })
       if (mapRef.current) {
@@ -153,29 +196,20 @@ export function PropertyDetail({ property }) {
         console.error('Google Maps API not loaded')
         return
       }
-
       if (!mapRef.current) {
         console.error('Map container not found')
         return
       }
-
       try {
         const map = new window.google.maps.Map(mapRef.current, {
-          center: {
-            lat: lat,
-            lng: lng
-          },
+          center: { lat, lng },
           zoom: 15,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: true,
         })
-
         new window.google.maps.Marker({
-          position: {
-            lat: lat,
-            lng: lng
-          },
+          position: { lat, lng },
           map: map,
           title: fullAddress
         })
@@ -187,12 +221,9 @@ export function PropertyDetail({ property }) {
       }
     }
 
-    // Wait a bit for the container to be ready
     const timer = setTimeout(() => {
       loadGoogleMapsAPI()
-        .then(() => {
-          loadGoogleMaps()
-        })
+        .then(() => { loadGoogleMaps() })
         .catch((error) => {
           console.error('Failed to load Google Maps API:', error)
           if (mapRef.current) {
@@ -209,8 +240,8 @@ export function PropertyDetail({ property }) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#E8E8E4] border-t-[#D03839] mx-auto mb-4"></div>
+          <p className="text-[#737370] text-sm">Loading...</p>
         </div>
       </div>
     )
@@ -220,7 +251,7 @@ export function PropertyDetail({ property }) {
     if (price == null || price === '' || (typeof price === 'number' && isNaN(price))) return '-'
     const n = Number(price)
     if (n === 0) return '-'
-    return `$${Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+    return `$${Math.round(n).toLocaleString('en-US')}`
   }
 
   const formatPercent = (value) => {
@@ -228,15 +259,15 @@ export function PropertyDetail({ property }) {
     return `${Number(value).toFixed(2)}%`
   }
 
-  // Numeric values for calculations (empty/null => 0)
+  // Numeric values for calculations
   const purchasePriceNum = (purchasePrice != null && purchasePrice !== '') ? Number(purchasePrice) : 0
   const estimatedRentNum = (estimatedRent != null && estimatedRent !== '') ? Number(estimatedRent) : 0
 
-  // Calculate financial metrics
+  // Financial calculations
   const downPayment = purchasePriceNum * (downPaymentPercent / 100)
   const loanAmount = purchasePriceNum - downPayment
-  const monthlyInterestRate = 0.07 / 12 // 7% annual rate
-  const numberOfPayments = 30 * 12 // 30 years
+  const monthlyInterestRate = 0.07 / 12
+  const numberOfPayments = 30 * 12
   const monthlyPayment = loanAmount > 0
     ? loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) /
       (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1)
@@ -244,15 +275,14 @@ export function PropertyDetail({ property }) {
 
   const annualRent = estimatedRentNum * 12
   const annualExpenses = (property.hoa_fees ? parseFloat(property.hoa_fees.replace(/[^0-9.]/g, '')) * 12 : 0) +
-    (purchasePriceNum * 0.01) + // Property tax estimate (1%)
-    (purchasePriceNum * 0.005) + // Insurance estimate (0.5%)
-    (annualRent * 0.1) // Maintenance estimate (10% of rent)
+    (purchasePriceNum * 0.01) +
+    (purchasePriceNum * 0.005) +
+    (annualRent * 0.1)
   const netOperatingIncome = annualRent - annualExpenses
   const annualDebtService = monthlyPayment * 12
   const netCashFlow = netOperatingIncome - annualDebtService
   const monthlyNetCashFlow = netCashFlow / 12
 
-  // Financial metrics from DB or calculated
   const grossYield = property.gross_yield ?? (purchasePriceNum > 0 ? (annualRent / purchasePriceNum) * 100 : null)
   const capRate = property.cap_rate ?? (purchasePriceNum > 0 ? (netOperatingIncome / purchasePriceNum) * 100 : null)
   const cashOnCash = property.cash_on_cash ?? (downPayment > 0 ? (netCashFlow / downPayment) * 100 : null)
@@ -274,20 +304,62 @@ export function PropertyDetail({ property }) {
     })
   }
 
+  // Derived values for sidebar
+  const price = property.price ?? property.purchase_price
+  const arv = property.arv ?? property.after_repair_value ?? null
+  const estimatedProfit = (arv && price) ? arv - price : null
+
+  // Property snapshot fields
+  const snapshotItems = [
+    property.property_type && { icon: <Home className="h-4 w-4" />, label: 'Property Type', value: property.property_type },
+    property.year_built && { icon: <Calendar className="h-4 w-4" />, label: 'Year built', value: property.year_built },
+    property.sqft && { icon: <Square className="h-4 w-4" />, label: 'Living Area', value: `${Number(property.sqft).toLocaleString()} sq ft` },
+    property.lot_size && { icon: <Map className="h-4 w-4" />, label: 'Lot Size', value: property.lot_size },
+    property.basement && { icon: <Building2 className="h-4 w-4" />, label: 'Basement', value: property.basement },
+    property.parking && { icon: <Car className="h-4 w-4" />, label: 'Parking', value: property.parking },
+    property.zoning && { icon: <MapPin className="h-4 w-4" />, label: 'Zoning', value: property.zoning },
+    property.school_district && { icon: <Building2 className="h-4 w-4" />, label: 'School District', value: property.school_district },
+    property.flood_zone && { icon: <Droplets className="h-4 w-4" />, label: 'Flood Zone', value: property.flood_zone },
+  ].filter(Boolean)
+
+  // Investment highlights
+  const investmentHighlights = (() => {
+    if (Array.isArray(property.investment_highlights) && property.investment_highlights.length > 0) {
+      return property.investment_highlights.slice(0, 4).map((h) => ({
+        title: h.title || h,
+        desc: h.description || h.desc || ''
+      }))
+    }
+    const generated = []
+    if (arv && price && price < arv * 0.85) {
+      generated.push({ title: 'Below-Market Acquisition', desc: 'Purchase price is significantly below after-repair value, offering built-in equity.' })
+    }
+    if ((cashOnCash != null && cashOnCash > 15) || (grossYield != null && grossYield > 8)) {
+      generated.push({ title: 'High ROI Potential', desc: 'Strong cash-on-cash returns indicate excellent investment performance.' })
+    }
+    if (generated.length < 4) {
+      generated.push({ title: 'Value-Add Opportunity', desc: 'Property offers potential for appreciation through strategic improvements.' })
+    }
+    if (generated.length < 4) {
+      generated.push({ title: 'Strong Rental Market', desc: 'Located in a market with consistent rental demand and low vacancy rates.' })
+    }
+    return generated.slice(0, 4)
+  })()
+
+  const hasRehabData = property.rehab_cost || property.rehab_description || property.condition
+
   return (
-    <div className="min-h-screen bg-white relative overflow-x-hidden">
-      {/* Login Modal - Show when user is not authenticated */}
+    <div className="min-h-screen bg-[#FAFAF8] relative overflow-x-hidden">
+      {/* Login Modal */}
       <RegistrationModal
         isOpen={showLoginModal}
-        onClose={() => {
-          // Prevent closing - user must login to view full details
-          // Modal will close automatically after successful login
-        }}
+        onClose={() => {}}
         initialStep="login"
         preventClose={true}
+        backUrl="/marketplace"
       />
 
-      {/* Image Modal - pass current photo URL so modal can show it immediately while full-res loads */}
+      {/* Image Modal */}
       <PropertyImageModal
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
@@ -296,147 +368,244 @@ export function PropertyDetail({ property }) {
         onPhotoView={handlePhotoViewFromModal}
         preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[currentPhotoIndex]) || null : null}
       />
-      
-      {/* Content */}
-      <div>
-      <Navbar />
 
-      {/* Back to All Listings */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+      {/* Page content — blurred when not logged in */}
+      <div className={showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}>
+
+      {/* Sticky Navbar */}
+      <nav className="sticky top-0 z-50 bg-white border-b border-[#E8E8E4] h-14 flex items-center px-4 sm:px-6">
+        <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
+          {/* Left: Back link */}
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-900 font-medium transition-colors group"
+            className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors"
           >
-            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to All Listings</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to listings</span>
           </Link>
+
+          {/* Center: Logo */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <Link href="/">
+              <Image
+                src="/assets/logo.svg"
+                alt="DeelMap"
+                width={143}
+                height={50}
+                className="h-[50px] w-[143px]"
+              />
+            </Link>
+          </div>
+
+          {/* Right: Share + Favorite */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+            <button
+              onClick={async () => {
+                if (!user) { setShowLoginModal(true); return }
+                setFavoriteLoading(true)
+                try {
+                  await toggleFavorite(property.id)
+                  window.dispatchEvent(new CustomEvent('favoriteChanged'))
+                } catch (error) {
+                  console.error('Error toggling favorite:', error)
+                  alert(error.message || 'Failed to update favorite')
+                } finally {
+                  setFavoriteLoading(false)
+                }
+              }}
+              disabled={favoriteLoading}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors text-sm font-medium ${
+                isFav
+                  ? 'bg-[#FEF0EF] border-[#F5C4C0] text-[#D03839]'
+                  : 'bg-white border-[#E8E8E4] text-[#444441] hover:bg-[#FAFAF8]'
+              } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+              <span className="hidden sm:inline">{isFav ? 'Saved' : 'Save'}</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Photo Grid */}
+      <div className="bg-white border-b border-[#E8E8E4]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="relative h-[340px] sm:h-[460px] rounded overflow-hidden"
+               style={{ display: 'grid', gridTemplateColumns: photos.length > 1 ? '1fr 1fr' : '1fr', gap: '6px' }}>
+
+            {/* Main photo — left half, full height */}
+            <div
+              className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+              onClick={() => photos.length > 0 && setShowImageModal(true)}
+            >
+              {photos.length > 0 ? (
+                <img
+                  src={heroUrl}
+                  alt="Main property photo"
+                  className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                  onLoad={handleHeroLoaded}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-2">
+                  <div className="relative w-40 h-12">
+                    <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+                  </div>
+                  <span className="text-sm text-[#A8A8A4]">Photos coming soon</span>
+                </div>
+              )}
+            </div>
+
+            {/* Right side: 2×2 grid */}
+            {photos.length > 1 && (
+              <div className="grid grid-cols-2 grid-rows-2 gap-[6px]">
+                {[1, 2, 3, 4].map((offset) => {
+                  const photo = photos[offset]
+                  const isLast = offset === 4
+                  return (
+                    <div
+                      key={offset}
+                      className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                      onClick={() => {
+                        setCurrentPhotoIndex(offset < photos.length ? offset : 0)
+                        setShowImageModal(true)
+                      }}
+                    >
+                      {photo ? (
+                        <img
+                          src={getThumbnailUrl(photo, 400) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
+                          alt={`Property photo ${offset + 1}`}
+                          className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-[#E8E8E4]" />
+                      )}
+                      {/* "Show all photos" button on last cell */}
+                      {isLast && photos.length > 0 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                          className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                          Show all photos
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full min-w-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Column - Photos */}
-          <div className="lg:col-span-2 min-w-0">
-            {/* Photo Gallery */}
-            <div className="mb-4 sm:mb-6">
-              <div 
-                className="relative bg-gray-100 rounded-lg overflow-hidden cursor-pointer group h-56 sm:h-72 md:h-[360px] lg:h-[420px]"
-                onClick={() => photos.length > 0 && setShowImageModal(true)}
-              >
-                {photos.length > 0 ? (
+      {/* Main content: two-column layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+
+          {/* Left column */}
+          <div className="flex-1 min-w-0">
+
+            {/* Property overview card */}
+            <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-6">
+              {/* Location */}
+              {(property.city || property.state) && (
+                <div className="flex items-center gap-1.5 text-[#737370] text-[13px] mb-2">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span>{[property.city, property.state].filter(Boolean).join(', ')}</span>
+                </div>
+              )}
+
+              {/* Title + Active Deal badge */}
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h1 className="text-[22px] sm:text-[26px] font-bold text-[#1A1816] leading-snug break-words">{fullAddress}</h1>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-[#16A34A] inline-block"></span>
+                  {property.status || 'Active Deal'}
+                </span>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex flex-wrap items-center gap-4 text-[#444441] text-[14px] mb-4">
+                {property.sqft && <span><span className="font-semibold">{Number(property.sqft).toLocaleString()}</span> sq ft</span>}
+                {property.bedrooms && (
                   <>
-                    <Image
-                      src={currentPhotoUrl}
-                      alt={`Property photo ${currentPhotoIndex + 1}`}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                      priority
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 66vw"
-                    />
-                    {/* Click overlay hint */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 px-4 py-2 rounded-full text-sm font-medium text-gray-700">
-                        Click to view full size
-                      </div>
-                    </div>
-                    {photos.length > 1 && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            prevPhoto()
-                          }}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg z-10"
-                        >
-                          <ChevronLeft className="h-6 w-6 text-gray-800" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            nextPhoto()
-                          }}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg z-10"
-                        >
-                          <ChevronRight className="h-6 w-6 text-gray-800" />
-                        </button>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-                          {currentPhotoIndex + 1} / {photos.length}
-                        </div>
-                      </>
-                    )}
+                    <span className="text-[#D4D4CF]">·</span>
+                    <span><span className="font-semibold">{property.bedrooms}</span> bed</span>
                   </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full bg-gray-100 gap-2">
-                    <div className="relative w-48 h-14">
-                      <Image
-                        src="/assets/logo copy.png"
-                        alt="DeelMap"
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-gray-500">Photos Coming soon</span>
-                  </div>
+                )}
+                {property.bathrooms && (
+                  <>
+                    <span className="text-[#D4D4CF]">·</span>
+                    <span><span className="font-semibold">{property.bathrooms}</span> bath</span>
+                  </>
                 )}
               </div>
+
+              {/* Divider */}
+              <div className="border-t border-[#E8E8E4] mb-4" />
+
+              {/* Description */}
+              {property.description && (
+                <div className="mb-4">
+                  <div
+                    className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap break-words"
+                    dangerouslySetInnerHTML={{
+                      __html: showFullDescription || property.description.length <= 300
+                        ? property.description
+                        : `${property.description.substring(0, 300)}...`
+                    }}
+                  />
+                  {property.description.length > 300 && (
+                    <button
+                      onClick={() => setShowFullDescription(!showFullDescription)}
+                      className="text-[#D03839] hover:text-[#E0493B] text-[13px] font-medium mt-2 flex items-center gap-1 transition-colors"
+                    >
+                      {showFullDescription ? 'Show less' : 'Show more'}
+                      <svg className={`w-4 h-4 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Tags */}
+              {Array.isArray(property.deal_tags) && property.deal_tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {property.deal_tags.map((tag, i) => {
+                    const t = tag.toLowerCase()
+                    const cls = t.includes('roi') || t.includes('high')
+                      ? 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]'
+                      : t.includes('rehab') || t.includes('cosmetic')
+                      ? 'bg-white text-[#0F6E56] border border-[#9FDBB8]'
+                      : t.includes('value') || t.includes('flip')
+                      ? 'bg-white text-[#D03839] border border-[#F5C4C0]'
+                      : 'bg-[#F0F0EC] text-[#444441] border border-[#E8E8E4]'
+                    return (
+                      <span key={i} className={`px-3 py-1 text-[12px] font-medium rounded-full ${cls}`}>
+                        {tag}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Property Address & Basic Info */}
-            <div className="mb-4 sm:mb-6">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2 break-words">{fullAddress}</h1>
-              <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1">{formatPrice(property.price)}</div>
-              {property.status && (
-                <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                  {property.status}
-                </span>
-              )}
-            </div>
-
-            {/* Basic Stats */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-4 sm:mb-6 text-gray-700 text-base sm:text-lg">
-              {property.bedrooms && (
-                <div><span className="font-semibold">{property.bedrooms}</span> beds</div>
-              )}
-              {property.bathrooms && (
-                <div><span className="font-semibold">{property.bathrooms}</span> baths</div>
-              )}
-              {property.sqft && (
-                <div><span className="font-semibold">{property.sqft.toLocaleString()}</span> sq ft</div>
-              )}
-              {property.year_built && (
-                <div>Built in <span className="font-semibold">{property.year_built}</span></div>
-              )}
-            </div>
-
-            {/* Financial Metrics */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div>
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{formatPercent(grossYield)}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Gross yield</div>
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{formatPercent(capRate)}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Cap rate</div>
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{formatPercent(cashOnCash)}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Cash on cash</div>
-              </div>
-              <div>
-                <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate" title={formatPrice(estNetCashFlow)}>{formatPrice(estNetCashFlow)}</div>
-                <div className="text-xs sm:text-sm text-gray-600">Est. cash flow</div>
-              </div>
-            </div>
-
-            {/* Purchase Calculator */}
-            <div className="bg-gray-50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            {/* Calculator section */}
+            <div className="bg-white border border-[#E8E8E4] rounded p-4 sm:p-6 mb-6">
+              <h3 className="text-sm font-semibold text-[#A8A8A4] uppercase tracking-[1.1px] mb-4">Return Calculator</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Purchase price</label>
+                  <label className="block text-xs font-medium text-[#737370] mb-1.5">Purchase price</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm">$</span>
                     <input
                       type="number"
                       value={purchasePrice == null || purchasePrice === '' ? '' : purchasePrice}
@@ -445,12 +614,12 @@ export function PropertyDetail({ property }) {
                         if (v === '') setPurchasePrice(null)
                         else { const n = parseFloat(v); setPurchasePrice(!isNaN(n) ? n : null) }
                       }}
-                      className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full h-10 pl-7 pr-3 border border-[#E8E8E4] rounded focus:border-[#D03839] focus:ring-2 focus:ring-[#D03839]/[.12] outline-none text-sm text-[#1A1816]"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Down payment</label>
+                  <label className="block text-xs font-medium text-[#737370] mb-1.5">Down payment</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -459,15 +628,15 @@ export function PropertyDetail({ property }) {
                         const v = e.target.value
                         setDownPaymentPercent(v === '' ? 0 : (parseFloat(e.target.value) || 0))
                       }}
-                      className="w-full pr-7 pl-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full h-10 pr-7 pl-3 border border-[#E8E8E4] rounded focus:border-[#D03839] focus:ring-2 focus:ring-[#D03839]/[.12] outline-none text-sm text-[#1A1816]"
                     />
-                    <span className="absolute right-3 top-2.5 text-gray-500">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm">%</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Estimated rent</label>
+                  <label className="block text-xs font-medium text-[#737370] mb-1.5">Estimated rent</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm">$</span>
                     <input
                       type="number"
                       value={estimatedRent == null || estimatedRent === '' ? '' : estimatedRent}
@@ -476,86 +645,96 @@ export function PropertyDetail({ property }) {
                         if (v === '') setEstimatedRent(null)
                         else { const n = parseFloat(v); setEstimatedRent(!isNaN(n) ? n : null) }
                       }}
-                      className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full h-10 pl-7 pr-3 border border-[#E8E8E4] rounded focus:border-[#D03839] focus:ring-2 focus:ring-[#D03839]/[.12] outline-none text-sm text-[#1A1816]"
                     />
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 mt-4">
-                Enter values above to calculate your estimated returns and cash flow projections.
-              </p>
+              <p className="text-xs text-[#A8A8A4]">Enter values above to calculate your estimated returns and cash flow projections.</p>
             </div>
 
-            {/* About This Property */}
-            {property.description && (
-              <div className="mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">About this property</h2>
-                <div 
-                  className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-wrap break-words"
-                  dangerouslySetInnerHTML={{
-                    __html: showFullDescription || property.description.length <= 300
-                      ? property.description
-                      : `${property.description.substring(0, 300)}...`
-                  }}
-                />
-                {property.description.length > 300 && (
-                  <button
-                    onClick={() => setShowFullDescription(!showFullDescription)}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2 flex items-center transition-colors"
-                  >
-                    {showFullDescription ? 'Show less' : 'Show more'}
-                    <svg
-                      className={`w-4 h-4 ml-1 transition-transform ${showFullDescription ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Property Details Table - only show rows that have data */}
-            {(() => {
-              const hasVal = (v) => v != null && v !== ''
-              const rows = [
-                hasVal(property.days_on_market) && { label: 'Days on market', value: property.days_on_market },
-                hasVal(property.property_type) && { label: 'Property type', value: property.property_type },
-                hasVal(property.price_per_square_foot) && { label: 'Price per square foot', value: `$${Number(property.price_per_square_foot).toFixed(2)}` },
-                hasVal(property.lot_size) && { label: 'Lot size', value: property.lot_size },
-                hasVal(property.hoa_fees) && { label: 'HOA fees', value: property.hoa_fees },
-                hasVal(property.neighborhood_score) && { label: 'Neighborhood score', value: `${Number(property.neighborhood_score).toFixed(2)} / 5` },
-                hasVal(property.school_score) && { label: 'School score', value: `${Number(property.school_score).toFixed(2)} / 10` },
-                hasVal(property.crime_score) && { label: 'Crime score', value: `${Number(property.crime_score).toFixed(2)} / 10` }
-              ].filter(Boolean)
-              if (rows.length === 0) return null
-              return (
-                <div className="border-t border-gray-200 pt-4 sm:pt-6">
-                  <div className="space-y-2 sm:space-y-3">
-                    {rows.map(({ label, value }) => (
-                      <div key={label} className="flex justify-between gap-2 py-2 text-sm sm:text-base min-w-0">
-                        <span className="text-gray-600 shrink-0">{label}</span>
-                        <span className="font-medium text-gray-900 text-right truncate">{value}</span>
+            {/* PROPERTY SNAPSHOT */}
+            {snapshotItems.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold text-[#D03839] uppercase tracking-[1.1px] mb-3">Property Snapshot</h3>
+                <div className="bg-white border border-[#E8E8E4] rounded p-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+                    {snapshotItems.map((item, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex-shrink-0 bg-[#F5F5F3] rounded flex items-center justify-center text-[#444441]">
+                          {item.icon}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[14px] font-semibold text-[#1A1816] leading-snug truncate">{item.value}</p>
+                          <p className="text-[12px] text-[#737370]">{item.label}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              )
-            })()}
+              </div>
+            )}
+
+            {/* INVESTMENT HIGHLIGHTS */}
+            {investmentHighlights.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold text-[#D03839] uppercase tracking-[1.1px] mb-3">Investment Highlights</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {investmentHighlights.map((item, i) => {
+                    const icons = [
+                      <TrendingUp key={0} className="w-4 h-4 text-[#0F6E56]" />,
+                      <Shield key={1} className="w-4 h-4 text-[#0F6E56]" />,
+                      <Star key={2} className="w-4 h-4 text-[#0F6E56]" />,
+                      <DollarSign key={3} className="w-4 h-4 text-[#0F6E56]" />,
+                    ]
+                    return (
+                      <div key={i} className="bg-white border border-[#E8E8E4] rounded p-4">
+                        <div className="w-8 h-8 rounded bg-[#E4F5EC] flex items-center justify-center mb-3">
+                          {icons[i % icons.length]}
+                        </div>
+                        <div className="text-sm font-semibold text-[#1A1816] mb-1">{item.title}</div>
+                        <div className="text-xs text-[#737370] leading-relaxed">{item.desc}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* CONDITION & REHAB */}
+            {hasRehabData && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold text-[#D03839] uppercase tracking-[1.1px] mb-3">Condition &amp; Rehab</h3>
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    {property.condition && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FEF9EC] border border-[#F5D78E] text-[#B5620A] text-xs font-semibold rounded">
+                        <Wrench className="w-3 h-3" />
+                        {property.condition}
+                      </span>
+                    )}
+                    {property.rehab_cost && (
+                      <span className="text-sm font-semibold text-[#1A1816]">Budget: {formatPrice(property.rehab_cost)}</span>
+                    )}
+                  </div>
+                  {property.rehab_description && (
+                    <p className="text-sm text-[#444441] leading-relaxed">{property.rehab_description}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* MLS Information */}
             {(property.agent_name || property.mls_number) && (
-              <div className="mt-6 border-t border-gray-200 pt-6">
+              <div className="mb-6 border-t border-[#E8E8E4] pt-6">
                 <div className="flex items-start">
                   {property.data_source_brokerage && (
-                    <div className="mr-4">
-                      <div className="text-sm font-medium text-gray-900">
+                    <div>
+                      <div className="text-sm font-medium text-[#1A1816]">
                         Listed By: {property.agent_name || 'N/A'}
                         {property.mls_number && `, ${property.mls_number}`}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-[#737370]">
                         Source: {property.data_source_brokerage}
                         {property.mls_last_updated_at && (
                           <>, last updated on {new Date(property.mls_last_updated_at).toLocaleDateString()}</>
@@ -567,155 +746,251 @@ export function PropertyDetail({ property }) {
               </div>
             )}
 
-            {/* External links removed per requirements */}
           </div>
 
-          {/* Right Column - Actions & Info */}
-          <div className="lg:col-span-1 min-w-0">
-            <div className="sticky top-4 sm:top-6">
-              {/* Action Buttons - Full Width */}
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 mb-4">
-                {/* Save Button */}
-                <button
-                  onClick={async () => {
-                    if (!user) {
-                      setShowLoginModal(true)
-                      return
-                    }
-
-                    setFavoriteLoading(true)
-                    try {
-                      await toggleFavorite(property.id)
-                      window.dispatchEvent(new CustomEvent('favoriteChanged'))
-                    } catch (error) {
-                      console.error('Error toggling favorite:', error)
-                      alert(error.message || 'Failed to update favorite')
-                    } finally {
-                      setFavoriteLoading(false)
-                    }
-                  }}
-                  className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg border transition-all text-xs sm:text-sm font-medium ${
-                    isFav
-                      ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
-                      : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-                  } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={favoriteLoading}
-                  title={isFav ? 'Remove from saved' : 'Save property'}
-                >
-                  {isFav ? (
-                    <Heart className="h-4 w-4 fill-current" />
-                  ) : (
-                    <Heart className="h-4 w-4" />
-                  )}
-                  <span>{isFav ? 'Saved' : 'Save'}</span>
-                </button>
-
-                {/* Share Button */}
-                <button
-                  onClick={() => setShowShareModal(true)}
-                  className="flex-1 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-all text-xs sm:text-sm font-medium"
-                  title="Share property"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  <span>Share</span>
-                </button>
-
-                {/* Not Interested (cross icon) / Undo not interested */}
-                <button
-                  onClick={async () => {
-                    if (isNotInterested) {
-                      if (!user?.id) return
-                      setNotInterestedLoading(true)
-                      try {
-                        const res = await fetch(
-                          `/api/buyer/not-interested?dealId=${encodeURIComponent(property.id)}`,
-                          { method: 'DELETE', headers: { Authorization: `Bearer ${user.id}` } }
-                        )
-                        if (res.ok) setIsNotInterested(false)
-                        else alert((await res.json().catch(() => ({}))).error || 'Failed to undo')
-                      } catch (e) {
-                        alert(e.message || 'Failed to undo')
-                      } finally {
-                        setNotInterestedLoading(false)
-                      }
-                    } else {
-                      if (!user?.id) { setShowLoginModal(true); return }
-                      setShowNotInterestedModal(true)
-                    }
-                  }}
-                  disabled={notInterestedLoading}
-                  className={`flex-1 min-w-0 flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border text-xs sm:text-sm font-medium transition-all ${
-                    isNotInterested
-                      ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                  } ${notInterestedLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title={isNotInterested ? 'Undo not interested' : 'Not interested'}
-                >
-                  <span className="shrink-0">
-                    {isNotInterested ? (
-                      <RotateCcw className="h-4 w-4" />
-                    ) : (
-                      <X className="h-4 w-4" />
-                    )}
-                  </span>
-                  <span className="min-w-0">{notInterestedLoading ? '...' : isNotInterested ? 'Undo not interested' : 'Not Interested'}</span>
-                </button>
-              </div>
-
-              {/* Connect with Agent Card - Simplified */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-5 mb-4 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-slate-900">Contact Agent</h3>
-                  <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </div>
+          {/* Right sidebar */}
+          <div className="lg:w-[380px] shrink-0">
+            <div className="sticky top-20">
+              <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-4">
+                {/* Price row */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[13px] font-medium text-[#737370]">Price</span>
+                  <span className="text-[22px] font-bold text-[#1A1816]">{formatPrice(price)}</span>
                 </div>
-                
-                {/* Message Button Only */}
+
+                {/* ARV row */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[13px] font-medium text-[#737370]">ARV</span>
+                  <span className="text-[16px] font-semibold text-[#0F6E56]">{arv ? formatPrice(arv) : '—'}</span>
+                </div>
+
+                <hr className="border-[#E8E8E4] mb-3" />
+
+                {/* Estimated Profit row */}
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-[13px] font-medium text-[#737370]">Estimated Profit</span>
+                  <span className="text-[16px] font-semibold text-[#0F6E56]">
+                    {estimatedProfit != null && estimatedProfit > 0 ? formatPrice(estimatedProfit) : '—'}
+                  </span>
+                </div>
+
+                {/* Call Agent */}
+                {property.agent?.phone ? (
+                  <a
+                    href={`tel:${property.agent.phone}`}
+                    className="flex items-center justify-center gap-2 w-full bg-[#1A1816] hover:bg-[#2C2A28] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.63a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Call Agent
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="flex items-center justify-center gap-2 w-full bg-[#E8E8E4] text-[#A8A8A4] font-semibold py-2.5 px-4 rounded text-center text-sm cursor-not-allowed mb-3"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.63a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Call Agent
+                  </button>
+                )}
+
+                {/* Message Seller */}
                 <Link
                   href={user && (property.temp_seller_id || property.seller_id)
                     ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
-                    : user
-                      ? '/buyer/inbox'
-                      : '/login'
+                    : user ? '/buyer/inbox' : '/login'
                   }
-                  className="block w-full bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-center text-sm transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] shadow-sm hover:shadow-md"
+                  className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
                 >
-                  Send Message
+                  Message Seller
                 </Link>
+
+                {/* Make Offer */}
+                {user ? (
+                  <Link
+                    href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
+                    className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                  >
+                    Make Offer
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                  >
+                    Make Offer
+                  </button>
+                )}
               </div>
 
-              {/* Google Maps Preview */}
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden min-w-0 w-full">
+              {/* Map */}
+              <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
                 <div
                   ref={mapRef}
-                  className="w-full h-[280px] sm:h-[340px] md:h-[400px]"
+                  className="w-full h-[280px] sm:h-[320px]"
                   style={{ minHeight: '280px' }}
                 />
-              </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Share Modal */}
+      {/* Similar Properties Nearby */}
+      {(() => {
+        const filtered = similarProperties.filter(p => p.id !== property.id)
+        if (filtered.length === 0) return null
+        const perPage = 4
+        const totalPages = Math.ceil(filtered.length / perPage)
+        const visible = filtered.slice(similarSliderIndex * perPage, similarSliderIndex * perPage + perPage)
+        return (
+          <div className="bg-[#FAFAF8] border-t border-[#E8E8E4] py-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[22px] font-bold text-[#1A1816]">Similar Properties Nearby</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSimilarSliderIndex(i => Math.max(0, i - 1))}
+                    disabled={similarSliderIndex === 0}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-[#E8E8E4] bg-white text-[#737370] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setSimilarSliderIndex(i => Math.min(totalPages - 1, i + 1))}
+                    disabled={similarSliderIndex === totalPages - 1}
+                    className="w-9 h-9 flex items-center justify-center rounded-full border border-[#E8E8E4] bg-white text-[#737370] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {visible.map(p => {
+                  const featuredPhoto = p.property_photos?.find(ph => ph?.is_featured) || p.property_photos?.[0]
+                  const imgUrl = featuredPhoto ? (featuredPhoto.optimized_url || featuredPhoto.photo_url || '') : ''
+                  const thumbUrl = imgUrl && imgUrl.includes('supabase.co/storage/v1/object/public/')
+                    ? imgUrl.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
+                    : imgUrl
+                  const cityState = [p.city, p.state].filter(Boolean).join(', ')
+                  const pArv = Number(p.arv) || 0
+                  const pPrice = Number(p.price) || 0
+                  const spread = pArv > pPrice && pPrice > 0 ? pArv - pPrice : 0
+                  const roiVal = p.cash_on_cash ?? p.gross_yield
+                  const roi = roiVal && Number(roiVal) > 0 ? `+${Number(roiVal).toFixed(0)}% ROI` : null
+                  const clean = v => (v && String(v).toLowerCase() !== 'unknown' ? v : null)
+                  const title = clean(p.title) || clean(p.name) || clean(p.property_type) || 'Investment Property'
+                  const dealType = (p.deal_type || '').toLowerCase()
+                  const dealBadge = dealType.includes('quick')
+                    ? { label: 'Quick Sale', cls: 'bg-[#D03839] text-white' }
+                    : dealType.includes('high') || dealType.includes('roi')
+                    ? { label: 'High ROI', cls: 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]' }
+                    : dealType.includes('just') || dealType.includes('listed')
+                    ? { label: 'Just Listed', cls: 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]' }
+                    : { label: 'New Deal', cls: 'bg-[#FEF3E2] text-[#B5620A] border border-[#F3C97D]' }
+                  return (
+                    <div key={p.id} className="bg-white rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
+                      {/* Photo */}
+                      <Link href={`/${p.slug || p.id}`} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
+                        {thumbUrl ? (
+                          <Image
+                            src={thumbUrl}
+                            alt={cityState || 'Property'}
+                            fill
+                            loading="lazy"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="400px"
+                            onError={(e) => { e.target.style.display = 'none' }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Home className="w-8 h-8 text-[#E8E8E4]" />
+                          </div>
+                        )}
+                        <div className="absolute top-2.5 left-2.5">
+                          <span className={`text-[11px] font-semibold px-2 py-1 rounded ${dealBadge.cls}`}>{dealBadge.label}</span>
+                        </div>
+                        {roi && (
+                          <div className="absolute top-2.5 right-2.5">
+                            <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1816]/80 text-white">{roi}</span>
+                          </div>
+                        )}
+                      </Link>
+                      {/* Content */}
+                      <div className="p-4 flex flex-col flex-1">
+                        {/* Location + icons */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1 min-w-0">
+                            <MapPin className="w-3 h-3 text-[#A8A8A4] flex-shrink-0" />
+                            <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <button className="text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button className="text-[#A8A8A4] hover:text-[#D03839] transition-colors">
+                              <Heart className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        {/* Title */}
+                        <h3 className="text-[15px] font-bold text-[#1A1816] mb-1.5 leading-snug line-clamp-1">{title}</h3>
+                        {/* Stats */}
+                        <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
+                          {p.sqft && <span>{Number(p.sqft).toLocaleString()} sq ft</span>}
+                          {p.sqft && p.bedrooms && <span>·</span>}
+                          {p.bedrooms && <span>{p.bedrooms} bed</span>}
+                          {p.bedrooms && p.bathrooms && <span>·</span>}
+                          {p.bathrooms && <span>{p.bathrooms} bath</span>}
+                        </div>
+                        {/* Price + ARV */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[20px] font-bold text-[#1A1816]">{pPrice ? `$${pPrice.toLocaleString()}` : 'Contact for Price'}</span>
+                          {pArv > 0 && (
+                            <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
+                              ARV {pArv >= 1000000 ? `$${(pArv/1000000).toFixed(1)}M` : `$${Math.round(pArv/1000)}k`}
+                            </span>
+                          )}
+                        </div>
+                        {/* Spread */}
+                        {spread > 0 && (
+                          <p className="text-[12px] text-[#0F6E56] font-medium mb-2">↑ ${spread.toLocaleString()} spread potential</p>
+                        )}
+                        {/* Invest Now */}
+                        <div className="mt-auto pt-3 flex justify-end">
+                          <Link
+                            href={user
+                              ? `/buyer/make-offer?property_id=${p.id}&slug=${p.slug || p.id}${p.temp_seller_id || p.seller_id ? `&seller_id=${p.temp_seller_id || p.seller_id}` : ''}`
+                              : `/${p.slug || p.id}`}
+                            className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
+                          >
+                            View Listing
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      </div>{/* end blur wrapper */}
+
+      <Footer />
+
+      {/* Share Modal — outside blur wrapper */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-slate-900 mb-4">Share Property</h3>
-            <p className="text-sm text-slate-600 mb-4">Share this property with others</p>
-            
-            {/* Copy Link Section */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+          <div className="bg-white rounded max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-[#1A1816] mb-1">Share Property</h3>
+            <p className="text-sm text-[#737370] mb-4">Share this property with others</p>
+            <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4 mb-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-700 mb-1">Property Link</p>
-                  <p className="text-sm text-slate-600 truncate">{typeof window !== 'undefined' ? window.location.href : ''}</p>
+                  <p className="text-xs font-medium text-[#444441] mb-1">Property Link</p>
+                  <p className="text-sm text-[#737370] truncate">{typeof window !== 'undefined' ? window.location.href : ''}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -725,137 +1000,18 @@ export function PropertyDetail({ property }) {
                     btn.textContent = 'Copied!'
                     setTimeout(() => btn.textContent = originalText, 2000)
                   }}
-                  className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium whitespace-nowrap"
+                  className="px-4 py-2 bg-[#1A1816] text-white rounded hover:bg-[#2A2825] transition-colors text-sm font-semibold whitespace-nowrap"
                 >
                   Copy Link
                 </button>
               </div>
             </div>
-
-            {/* Social Share Options */}
-            <div className="space-y-2 mb-4">
-              <p className="text-xs font-medium text-slate-700 mb-2">Or share via:</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    const url = encodeURIComponent(window.location.href)
-                    const text = encodeURIComponent(`Check out this property: ${fullAddress}`)
-                    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank')
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
-                >
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                  <span>Twitter</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const url = encodeURIComponent(window.location.href)
-                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank')
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
-                >
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 3.667h-3.533v7.98H9.101z"/></svg>
-                  <span>Facebook</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const url = encodeURIComponent(window.location.href)
-                    const text = encodeURIComponent(`Check out this property: ${fullAddress}`)
-                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank')
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
-                >
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                  <span>LinkedIn</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const url = encodeURIComponent(window.location.href)
-                    const text = encodeURIComponent(`Check out this property: ${fullAddress}`)
-                    if (navigator.share) {
-                      navigator.share({ title: fullAddress, text: text, url: window.location.href })
-                    } else {
-                      window.open(`mailto:?subject=${text}&body=${url}`, '_blank')
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                  <span>Email</span>
-                </button>
-              </div>
-            </div>
-
             <button
               onClick={() => setShowShareModal(false)}
-              className="w-full px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+              className="w-full px-4 py-2.5 bg-[#FAFAF8] border border-[#E8E8E4] text-[#444441] rounded hover:bg-[#F0F0EC] transition-colors text-sm font-semibold"
             >
               Close
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Not Interested Modal */}
-      {showNotInterestedModal && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowNotInterestedModal(false)}>
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="text-center mb-4">
-              <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
-                <svg className="h-6 w-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Not Interested</h3>
-              <p className="text-sm text-slate-600">We'll hide this property from your recommendations and won't show it to you again.</p>
-            </div>
-            
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-slate-700 font-medium mb-1">{fullAddress}</p>
-              <p className="text-xs text-slate-500">You can always view hidden properties in your settings.</p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowNotInterestedModal(false)}
-                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  if (!user?.id) { setShowNotInterestedModal(false); setShowLoginModal(true); return }
-                  setNotInterestedLoading(true)
-                  try {
-                    const res = await fetch('/api/buyer/not-interested', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
-                      body: JSON.stringify({ dealId: property.id })
-                    })
-                    const data = await res.json().catch(() => ({}))
-                    if (res.ok) {
-                      setIsNotInterested(true)
-                      setShowNotInterestedModal(false)
-                      const successDiv = document.createElement('div')
-                      successDiv.className = 'fixed top-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg z-[10000] text-sm font-medium'
-                      successDiv.textContent = 'Marked not interested. Click Undo to revert.'
-                      document.body.appendChild(successDiv)
-                      setTimeout(() => successDiv.remove(), 3000)
-                    } else {
-                      alert(data.error || 'Failed to save')
-                    }
-                  } catch (e) {
-                    alert(e.message || 'Failed to save')
-                  } finally {
-                    setNotInterestedLoading(false)
-                  }
-                }}
-                disabled={notInterestedLoading}
-                className="flex-1 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {notInterestedLoading ? 'Saving...' : 'Confirm'}
-              </button>
-            </div>
           </div>
         </div>
       )}

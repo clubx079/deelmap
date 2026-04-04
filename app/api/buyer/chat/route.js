@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { generateReplyToAddress } from '@/lib/emailReplyUtils';
 import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
@@ -161,6 +161,35 @@ async function getDealAddressAndSlug(supabase, dealId) {
   return { address: null, slug: null, source: null };
 }
 
+// Helper: resolve property price, beds, baths, sqft by id
+async function getPropertyDetails(supabase, propertyId) {
+  if (!propertyId) return {};
+  const idStr = String(propertyId).trim();
+  const { data: wd } = await supabase
+    .from('wholesale_deals')
+    .select('price, bedrooms, bathrooms, sqft')
+    .eq('id', idStr)
+    .maybeSingle();
+  if (wd) return {
+    property_price: wd.price || null,
+    property_bedrooms: wd.bedrooms || null,
+    property_bathrooms: wd.bathrooms || null,
+    property_sqft: wd.sqft || null,
+  };
+  const { data: p } = await supabase
+    .from('properties')
+    .select('price, bedrooms, bathrooms, floor_area')
+    .eq('id', idStr)
+    .maybeSingle();
+  if (p) return {
+    property_price: p.price || null,
+    property_bedrooms: p.bedrooms || null,
+    property_bathrooms: p.bathrooms || null,
+    property_sqft: p.floor_area || null,
+  };
+  return {};
+}
+
 // Helper: resolve agent/seller details for logging (source, name, email masked)
 async function getAgentDetailsForLog(supabase, sellerId) {
   if (!sellerId) return { source: null, name: null, email: null };
@@ -236,31 +265,41 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     return;
   }
   try {
-    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sellerportaldeelmap-production.up.railway.app';
+    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sellerportaldeelmap-production-bea8.up.railway.app';
     const messagesUrl = `${sellerBase}/messages?conversation=${conversationId}`;
-    const logoUrl = `${sellerBase}/deelmap.png`;
     const preview = (messageText || '[Attachment]').slice(0, 200);
     const propertyText = String(propertyAddress || '').trim();
     const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:24px">
-  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-    <div style="background:#002A3A;color:#fff;padding:24px;text-align:center">
-      <img src="${logoUrl}" alt="Deelmap" width="160" height="48" style="display:block;max-width:160px;height:auto;border:0;margin:0 auto" />
-    </div>
-    <div style="padding:24px">
-      <p style="margin:0 0 12px;font-size:18px;font-weight:600;color:#002A3A">New message on Deelmap</p>
-      <p style="margin:0 0 8px;font-size:14px;color:#666">From <strong style="color:#002A3A">${(buyerName || 'A buyer').replace(/</g, '&lt;')}</strong></p>
-      <p style="margin:0 0 8px;font-size:14px;color:#666">Property: <strong style="color:#002A3A">${propertyText ? propertyText.replace(/</g, '&lt;') : '—'}</strong></p>
-      <div style="background:#f8f9fa;border-left:4px solid #002A3A;padding:16px;border-radius:4px;margin:16px 0;font-size:15px;line-height:1.5;color:#333">${(preview || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>
-      <a href="${messagesUrl}" style="display:inline-block;background:#002A3A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Respond</a>
-    </div>
-    <div style="padding:16px;text-align:center;font-size:12px;color:#888;border-top:1px solid #eee">You received this because you have an active conversation on Deelmap.</div>
-  </div>
-</body>
-</html>`;
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F5F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
+      <tr>
+        <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="Deelmap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:36px 40px 32px;background:#ffffff">
+          <p style="margin:0 0 6px;font-size:14px;color:#737370">Hi ${(sellerName || 'there').replace(/</g, '&lt;')},</p>
+          <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#1A1816;letter-spacing:-0.4px;line-height:1.25">${(buyerName || 'A buyer').replace(/</g, '&lt;')} sent you a message</h1>
+          ${propertyText ? `<p style="margin:0 0 20px;font-size:14px;color:#737370">Re: <strong style="color:#1A1816">${propertyText.replace(/</g, '&lt;')}</strong></p>` : ''}
+          <div style="background:#FAFAF8;border-left:3px solid #D03839;padding:12px 16px;border-radius:0 4px 4px 0;margin-bottom:24px;font-size:14px;line-height:1.5;color:#1A1816">${(preview || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>
+          <table cellpadding="0" cellspacing="0">
+            <tr><td style="background:#D03839;border-radius:4px">
+              <a href="${messagesUrl}" style="display:inline-block;padding:12px 24px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600">Reply to Message</a>
+            </td></tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
     await withTimeout(
       resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
@@ -674,7 +713,11 @@ export async function GET(request) {
               }
             }
           }
-          const property_thumbnail_url = await getPropertyThumbnail(supabase, conv.property_id) || conv.property_thumbnail_url || null;
+          const [property_thumbnail_url_raw, propertyDetails] = await Promise.all([
+            getPropertyThumbnail(supabase, conv.property_id),
+            getPropertyDetails(supabase, conv.property_id),
+          ]);
+          const property_thumbnail_url = property_thumbnail_url_raw || conv.property_thumbnail_url || null;
           let property_address = (conv.property_address && String(conv.property_address).trim()) || null;
           let property_slug = conv.property_slug || null;
           if (conv.property_id && !property_address) {
@@ -697,6 +740,7 @@ export async function GET(request) {
             property_address,
             property_slug,
             property_thumbnail_url,
+            ...propertyDetails,
             lenders: sellerInfo,
             financing_requests: null,
             unread_count,
@@ -926,6 +970,21 @@ export async function POST(request) {
         }
       }
 
+      // Insert notification for seller (new message)
+      if (conversation.seller_id) {
+        const buyerMsgData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).maybeSingle();
+        const bName = buyerMsgData?.data ? `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer' : 'A buyer';
+        supabase.from('notifications').insert({
+          recipient_id: conversation.seller_id,
+          recipient_type: 'seller',
+          type: 'new_message',
+          title: `New message from ${bName}`,
+          body: (messageText || '[Attachment]').slice(0, 120),
+          is_read: false,
+          related_conversation_id: conversationId,
+        }).then(() => {}).catch(() => {});
+      }
+
       // Buyer → Seller: only email if seller is not active on messages tab
       if (conversation.seller_id) {
         const active = await isRecipientActiveOnMessages(supabase, conversation.seller_id, 'seller');
@@ -1113,6 +1172,83 @@ export async function POST(request) {
         }
       }
       return NextResponse.json({ success: true });
+    }
+
+    // Create or get conversation between buyer and seller for a property
+    if (action === 'create_conversation') {
+      const { sellerId, propertyId, propertyAddress } = body;
+      if (!sellerId) {
+        return NextResponse.json({ success: false, error: 'Missing sellerId' }, { status: 400 });
+      }
+
+      // Check if conversation already exists
+      let conv = null;
+      if (propertyId) {
+        const { data: existing } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('seller_id', sellerId)
+          .eq('buyer_uuid', authCheck.userUuid)
+          .eq('property_id', String(propertyId))
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existing) conv = existing;
+      }
+      if (!conv) {
+        const { data: existingAny } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('seller_id', sellerId)
+          .eq('buyer_uuid', authCheck.userUuid)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existingAny && !propertyId) conv = existingAny;
+      }
+
+      if (!conv) {
+        const insertPayload = {
+          seller_id: sellerId,
+          buyer_uuid: authCheck.userUuid,
+          user_id: authCheck.userId,
+          is_active: true,
+          last_message_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (propertyId) {
+          insertPayload.property_id = String(propertyId);
+          if (propertyAddress) insertPayload.property_address = String(propertyAddress).trim() || null;
+        }
+        const { data: created, error: insertErr } = await supabase
+          .from('conversations')
+          .insert(insertPayload)
+          .select('id')
+          .single();
+        if (insertErr) {
+          // Fallback: insert without property fields if column error
+          const { data: fallback, error: fallbackErr } = await supabase
+            .from('conversations')
+            .insert({
+              seller_id: sellerId,
+              buyer_uuid: authCheck.userUuid,
+              user_id: authCheck.userId,
+              is_active: true,
+              last_message_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .select('id')
+            .single();
+          if (fallbackErr || !fallback) {
+            return NextResponse.json({ success: false, error: 'Failed to create conversation' }, { status: 500 });
+          }
+          conv = fallback;
+        } else {
+          conv = created;
+        }
+      }
+
+      return NextResponse.json({ success: true, conversationId: conv.id });
     }
 
     return NextResponse.json({

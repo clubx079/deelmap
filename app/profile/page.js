@@ -5,19 +5,16 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
-import { User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle, LogOut, ChevronDown, ShieldBan, RefreshCw } from 'lucide-react'
+import {
+  User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle,
+  LogOut, ChevronDown, ShieldBan, RefreshCw, Loader2
+} from 'lucide-react'
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth()
   const router = useRouter()
-  
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: ''
-  })
 
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '' })
   const [isEditing, setIsEditing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -30,16 +27,12 @@ export default function ProfilePage() {
   const [unblockingId, setUnblockingId] = useState(null)
 
   useEffect(() => {
-    if (user?.id) {
-      fetchUserData()
-    } else {
-      setIsLoading(false)
-    }
+    if (user?.id) fetchUserData()
+    else setIsLoading(false)
   }, [user])
 
   const fetchUserData = async () => {
     if (!user?.id) return
-
     try {
       setIsLoading(true)
       const { data, error } = await supabase
@@ -47,22 +40,14 @@ export default function ProfilePage() {
         .select('first_name, last_name, email, phone')
         .eq('id', user.id)
         .single()
-
-      if (error) {
-        console.error('Error fetching user data:', error)
-        setError('Failed to load profile data')
-        return
-      }
-
+      if (error) { setError('Failed to load profile data'); return }
       setFormData({
         firstName: data.first_name || '',
         lastName: data.last_name || '',
         email: data.email || '',
         phone: data.phone || ''
       })
-
-    } catch (error) {
-      console.error('Error fetching user data:', error)
+    } catch {
       setError('Failed to load profile data')
     } finally {
       setIsLoading(false)
@@ -71,10 +56,7 @@ export default function ProfilePage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
     if (error) setError('')
     if (success) setSuccess('')
   }
@@ -84,64 +66,33 @@ export default function ProfilePage() {
     setIsSubmitting(true)
     setError('')
     setSuccess('')
-
     try {
       const { error: updateError } = await supabase
         .from('users')
-        .update({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phone,
-          updated_at: new Date().toISOString()
-        })
+        .update({ first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, updated_at: new Date().toISOString() })
         .eq('id', user.id)
-
-      if (updateError) {
-        throw updateError
-      }
-
-      // Update local storage
-      const updatedUser = {
-        ...user,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone: formData.phone
-      }
-
-      localStorage.setItem('ableman_user', JSON.stringify(updatedUser))
-
+      if (updateError) throw updateError
+      localStorage.setItem('ableman_user', JSON.stringify({ ...user, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone }))
       setSuccess('Profile updated successfully!')
       setIsEditing(false)
-
-    } catch (error) {
-      console.error('Profile update error:', error)
+    } catch {
       setError('Failed to update profile. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleCancel = () => {
-    fetchUserData()
-    setIsEditing(false)
-    setError('')
-    setSuccess('')
-  }
+  const handleCancel = () => { fetchUserData(); setIsEditing(false); setError(''); setSuccess('') }
 
   const fetchBlockedUsers = async () => {
     if (!user?.id) return
     try {
       setBlockedLoading(true)
-      const res = await fetch('/api/buyer/chat?action=get_blocked_users', {
-        headers: { Authorization: `Bearer ${user.id}` }
-      })
+      const res = await fetch('/api/buyer/chat?action=get_blocked_users', { headers: { Authorization: `Bearer ${user.id}` } })
       const data = await res.json().catch(() => ({}))
       setBlockedUsers(data?.blocked || [])
-    } catch {
-      setBlockedUsers([])
-    } finally {
-      setBlockedLoading(false)
-    }
+    } catch { setBlockedUsers([]) }
+    finally { setBlockedLoading(false) }
   }
 
   const handleToggleBlockedUsers = () => {
@@ -151,343 +102,282 @@ export default function ProfilePage() {
   }
 
   const handleUnblock = async (conversationId) => {
-    if (!user?.id || conversationId == null) return
-    if (unblockingId === conversationId) return
+    if (!user?.id || conversationId == null || unblockingId === conversationId) return
     setUnblockingId(conversationId)
     try {
       const res = await fetch('/api/buyer/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.id}`
-        },
-        body: JSON.stringify({
-          action: 'update_conversation_pref',
-          conversationId: Number(conversationId) || conversationId,
-          is_blocked: false
-        })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+        body: JSON.stringify({ action: 'update_conversation_pref', conversationId: Number(conversationId) || conversationId, is_blocked: false })
       })
-      const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        setBlockedUsers((prev) => prev.filter((b) => String(b.conversation_id) !== String(conversationId)))
+        setBlockedUsers(prev => prev.filter(b => String(b.conversation_id) !== String(conversationId)))
         setUnblockSuccessId(conversationId)
         setTimeout(() => setUnblockSuccessId(null), 2500)
-      } else {
-        setError(data?.error || 'Failed to unblock')
       }
-    } finally {
-      setUnblockingId(null)
-    }
+    } finally { setUnblockingId(null) }
   }
 
   if (!user) return null
 
+  const initials = (formData.firstName?.charAt(0) || formData.lastName?.charAt(0) || 'U').toUpperCase()
+  const fullName = [formData.firstName, formData.lastName].filter(Boolean).join(' ') || 'User'
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-200 border-t-slate-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading profile...</p>
+      <BuyerPortalLayout pageTitle="Settings">
+        <div className="flex items-center justify-center h-full bg-[#FAFAF8]">
+          <Loader2 className="w-7 h-7 text-[#A8A8A4] animate-spin" />
         </div>
-      </div>
+      </BuyerPortalLayout>
     )
   }
 
+  const inputBase = 'w-full pl-10 pr-4 py-2.5 border rounded text-[13px] transition-all outline-none'
+  const inputActive = 'border-[#E8E8E4] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20'
+  const inputDisabled = 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'
+
   return (
     <BuyerPortalLayout pageTitle="Settings">
-    <div className="min-h-full bg-slate-50">
-      {/* Header — in-page title hidden on mobile (shown in layout bar) */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="px-4 lg:px-6 py-4">
-          <div>
-            <h1 className="hidden lg:block text-lg font-semibold text-slate-900">Settings</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Manage your account</p>
-          </div>
-        </div>
-      </div>
+      <div className="min-h-full bg-[#FAFAF8]" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        <div className="p-4 lg:p-6">
 
-      {/* Main Content */}
-      <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto">
-        {/* Alerts */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <X className="w-5 h-5 text-red-600 flex-shrink-0" />
-            <p className="text-red-600">{error}</p>
+          {/* Page title */}
+          <div className="mb-5">
+            <h1 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.44px]">Settings</h1>
+            <p className="text-[14px] text-[#737370] mt-1">Manage your account</p>
           </div>
-        )}
 
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-            <p className="text-green-600">{success}</p>
-          </div>
-        )}
-
-        {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
-          {/* Card Header */}
-          <div className="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
-                {formData.firstName?.charAt(0)?.toUpperCase() || formData.lastName?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-base font-semibold text-slate-900 truncate">
-                  {formData.firstName || formData.lastName ? `${formData.firstName} ${formData.lastName}`.trim() : 'User'}
-                </h2>
-                <p className="text-sm text-slate-500 truncate">{formData.email}</p>
-              </div>
+          {/* Alerts */}
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded flex items-center gap-2.5">
+              <X className="w-4 h-4 text-[#D03839] flex-shrink-0" />
+              <p className="text-[13px] text-[#D03839]">{error}</p>
             </div>
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                Edit Profile
-              </button>
-            )}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* First Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  First Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    required
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg transition-all ${
-                      isEditing
-                        ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
-                        : 'border-slate-200 bg-slate-50 cursor-not-allowed'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Last Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Last Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    required
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg transition-all ${
-                      isEditing
-                        ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
-                        : 'border-slate-200 bg-slate-50 cursor-not-allowed'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    disabled
-                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 rounded-lg cursor-not-allowed"
-                  />
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Email cannot be changed
-                </p>
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    placeholder="Enter your phone number"
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg transition-all ${
-                      isEditing
-                        ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
-                        : 'border-slate-200 bg-slate-50 cursor-not-allowed'
-                    }`}
-                  />
-                </div>
-              </div>
+          )}
+          {success && (
+            <div className="mb-4 px-4 py-3 bg-[#E4F5EC] border border-[#A8DFBA] rounded flex items-center gap-2.5">
+              <CheckCircle className="w-4 h-4 text-[#0F6E56] flex-shrink-0" />
+              <p className="text-[13px] text-[#0F6E56]">{success}</p>
             </div>
+          )}
 
-            {/* Action Buttons */}
-            {isEditing && (
-              <div className="mt-8 flex gap-3 justify-end">
+          {/* Profile card */}
+          <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden mb-4">
+            {/* Card header */}
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-full bg-[#1A1816] flex items-center justify-center text-white text-[15px] font-bold flex-shrink-0">
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-[#1A1816] truncate">{fullName}</p>
+                  <p className="text-[12px] text-[#737370] truncate">{formData.email}</p>
+                </div>
+              </div>
+              {!isEditing && (
                 <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setIsEditing(true)}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-medium transition-colors"
                 >
-                  <X className="w-4 h-4" />
-                  Cancel
+                  <Edit2 className="w-3.5 h-3.5" />
+                  Edit
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save className="w-4 h-4" />
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            )}
-          </form>
-        </div>
-
-        {/* Security Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
-          <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-slate-700" />
+              )}
             </div>
-            <h2 className="text-lg font-semibold text-slate-900">Security</h2>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* First Name */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
+                    <input
+                      type="text" name="firstName" value={formData.firstName}
+                      onChange={handleInputChange} disabled={!isEditing} required
+                      className={`${inputBase} ${isEditing ? inputActive : inputDisabled}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Last Name */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Last Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
+                    <input
+                      type="text" name="lastName" value={formData.lastName}
+                      onChange={handleInputChange} disabled={!isEditing} required
+                      className={`${inputBase} ${isEditing ? inputActive : inputDisabled}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
+                    <input
+                      type="email" name="email" value={formData.email} disabled
+                      className={`${inputBase} ${inputDisabled}`}
+                    />
+                  </div>
+                  <p className="text-[11px] text-[#A8A8A4] mt-1">Email cannot be changed</p>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
+                    <input
+                      type="tel" name="phone" value={formData.phone}
+                      onChange={handleInputChange} disabled={!isEditing}
+                      placeholder="Enter your phone number"
+                      className={`${inputBase} ${isEditing ? inputActive : inputDisabled}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {isEditing && (
+                <div className="mt-5 flex gap-2 justify-end">
+                  <button
+                    type="button" onClick={handleCancel} disabled={isSubmitting}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#F3F3F1] hover:bg-[#E8E8E4] text-[#444441] rounded text-[13px] font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Cancel
+                  </button>
+                  <button
+                    type="submit" disabled={isSubmitting}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50"
+                  >
+                    {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    {isSubmitting ? 'Saving…' : 'Save Changes'}
+                  </button>
+                </div>
+              )}
+            </form>
           </div>
-          <div className="p-6">
-            <div>
-              <h3 className="text-base font-medium text-slate-900 mb-2">Reset Password</h3>
-              <p className="text-sm text-slate-600 mb-4">
-                Change your account password to keep your account secure. You'll receive a verification code via email.
-              </p>
+
+          {/* Security */}
+          <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden mb-4">
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center flex-shrink-0">
+                <Lock className="w-3.5 h-3.5 text-[#D03839]" />
+              </div>
+              <p className="text-[14px] font-semibold text-[#1A1816]">Security</p>
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[13px] font-semibold text-[#1A1816]">Reset Password</p>
+                <p className="text-[12px] text-[#737370] mt-0.5">You'll receive a verification code via email.</p>
+              </div>
               <Link
                 href="/forgot-password"
-                className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
+                className="flex-shrink-0 px-3 py-2 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] text-[12px] font-semibold rounded transition-colors"
               >
                 Reset Password
               </Link>
             </div>
           </div>
-        </div>
 
-        {/* Blocked users */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-          <button
-            type="button"
-            onClick={handleToggleBlockedUsers}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                <ShieldBan className="w-5 h-5 text-slate-700" />
-              </div>
-              <div className="text-left">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Blocked users
-                  {!blockedLoading && blockedUsers.length > 0 && (
-                    <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-slate-200 text-slate-700 text-xs font-medium">
-                      {blockedUsers.length}
-                    </span>
-                  )}
-                </h2>
-                <p className="text-sm text-slate-600">View and unblock chat contacts from Messages</p>
-              </div>
-            </div>
-            <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform ${showBlockedUsers ? 'rotate-180' : ''}`} />
-          </button>
-          {showBlockedUsers && (
-            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50/50">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Blocked chat contacts</span>
-                <button
-                  type="button"
-                  onClick={fetchBlockedUsers}
-                  disabled={blockedLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${blockedLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
-              </div>
-              {blockedLoading ? (
-                <p className="text-sm text-slate-500">Loading blocked users...</p>
-              ) : blockedUsers.length === 0 ? (
-                <p className="text-sm text-slate-500">No blocked users. When you block someone in Messages, they appear here and you can unblock them.</p>
-              ) : (
-                <div className="space-y-2.5 max-h-64 overflow-y-auto">
-                  {blockedUsers.map((row) => (
-                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 bg-white">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-900 truncate">{row.name || 'User'}</p>
-                        <p className="text-xs text-slate-500">
-                          {row.blocked_at ? `Blocked ${new Date(row.blocked_at).toLocaleDateString()}` : 'Blocked'}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleUnblock(row.conversation_id)}
-                        disabled={unblockingId === row.conversation_id}
-                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {unblockSuccessId === row.conversation_id ? 'Unblocked' : unblockingId === row.conversation_id ? 'Unblocking…' : 'Unblock'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Sign Out Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 mb-1">Sign Out</h2>
-              <p className="text-sm text-slate-600">
-                Sign out of your account
-              </p>
-            </div>
+          {/* Blocked users */}
+          <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden mb-4">
             <button
-              onClick={async () => {
-                try {
-                  await signOut()
-                  window.location.href = '/'
-                } catch (error) {
-                  console.error('Logout error:', error)
-                  window.location.href = '/'
-                }
-              }}
-              className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+              type="button" onClick={handleToggleBlockedUsers}
+              className="w-full px-5 py-4 flex items-center justify-between hover:bg-[#FAFAF8] transition-colors"
             >
-              <LogOut className="w-4 h-4" />
-              Sign Out
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center flex-shrink-0">
+                  <ShieldBan className="w-3.5 h-3.5 text-[#D03839]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[14px] font-semibold text-[#1A1816]">
+                    Blocked users
+                    {!blockedLoading && blockedUsers.length > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[#F3F3F1] text-[#737370] text-[11px] font-semibold">
+                        {blockedUsers.length}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[12px] text-[#737370]">View and unblock chat contacts</p>
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-[#A8A8A4] transition-transform ${showBlockedUsers ? 'rotate-180' : ''}`} />
             </button>
+
+            {showBlockedUsers && (
+              <div className="border-t border-[#E8E8E4] px-5 py-4 bg-[#FAFAF8]">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[0.8px]">Blocked contacts</p>
+                  <button
+                    type="button" onClick={fetchBlockedUsers} disabled={blockedLoading}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#F0F0EE] rounded transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${blockedLoading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                </div>
+                {blockedLoading ? (
+                  <div className="flex items-center gap-2 py-3">
+                    <Loader2 className="w-4 h-4 text-[#A8A8A4] animate-spin" />
+                    <p className="text-[13px] text-[#737370]">Loading…</p>
+                  </div>
+                ) : blockedUsers.length === 0 ? (
+                  <p className="text-[13px] text-[#737370] py-2">No blocked users. Block someone in Messages and they'll appear here.</p>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {blockedUsers.map((row) => (
+                      <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded border border-[#E8E8E4] bg-white">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-semibold text-[#1A1816] truncate">{row.name || 'User'}</p>
+                          <p className="text-[11px] text-[#A8A8A4]">
+                            {row.blocked_at ? `Blocked ${new Date(row.blocked_at).toLocaleDateString()}` : 'Blocked'}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUnblock(row.conversation_id)}
+                          disabled={unblockingId === row.conversation_id}
+                          className="flex-shrink-0 px-3 py-1.5 text-[12px] font-semibold rounded border border-[#E8E8E4] text-[#444441] hover:bg-[#FAFAF8] transition-colors disabled:opacity-50"
+                        >
+                          {unblockSuccessId === row.conversation_id ? 'Unblocked ✓' : unblockingId === row.conversation_id ? 'Unblocking…' : 'Unblock'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Sign out */}
+          <div className="bg-white border border-[#E8E8E4] rounded-lg">
+            <div className="px-5 py-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[14px] font-semibold text-[#1A1816]">Sign Out</p>
+                <p className="text-[12px] text-[#737370] mt-0.5">Sign out of your Deelmap account</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try { await signOut() } catch {}
+                  window.location.href = '/'
+                }}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#FEF0EF] hover:bg-[#FEE4E3] text-[#D03839] text-[13px] font-semibold rounded transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
-    </div>
     </BuyerPortalLayout>
   )
 }

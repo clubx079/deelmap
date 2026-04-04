@@ -1,108 +1,61 @@
 'use client'
-import { useState } from 'react'
-import Image from 'next/image'
+import { useState, useEffect } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { useAuth } from '@/hooks/useAuth'
+import Link from 'next/link'
+import { ChevronDown, ChevronUp, Check, BadgeCheck, Rocket, TrendingUp, ShieldCheck, X } from 'lucide-react'
 
-const US_STATES = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+function openAuth(step) {
+  window.dispatchEvent(new CustomEvent('showAuth', { detail: { step, role: 'seller' } }))
+}
+
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'single-family', label: 'Single-Family' },
+  { value: 'multi-family', label: 'Multi-Family' },
+  { value: 'commercial', label: 'Commercial' },
+  { value: 'land', label: 'Land' },
 ]
 
-export default function JoinSellerPage() {
+function formatPhone(value) {
+  const d = value.replace(/\D/g, '')
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`
+}
+
+function SellerApplicationModal({ onClose }) {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
   const [formData, setFormData] = useState({
-    businessName: '',
-    contactPersonName: '',
-    email: '',
-    phone: '',
-    businessType: 'individual',
-    dealsPerMonth: '1-2',
-    primaryMarkets: '',
-    propertyTypes: [],
-    website: '',
-    linkedin: '',
-    description: ''
+    businessName: '', contactPersonName: '', email: '', phone: '',
+    businessType: 'individual', dealsPerMonth: '1-2', primaryMarkets: '',
+    propertyTypes: [], website: '', linkedin: '', description: '',
   })
 
-  // Phone number formatter
-  const formatPhoneNumber = (value) => {
-    // Remove all non-digits
-    const phoneNumber = value.replace(/\D/g, '')
-    
-    // Format as (XXX) XXX-XXXX
-    if (phoneNumber.length <= 3) {
-      return phoneNumber
-    } else if (phoneNumber.length <= 6) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
-    } else {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
-    }
-  }
+  const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }))
 
-  const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value)
-    setFormData({ ...formData, phone: formatted })
-  }
-
-  const propertyTypeOptions = [
-    { value: 'single-family', label: 'Single-Family' },
-    { value: 'multi-family', label: 'Multi-Family' },
-    { value: 'commercial', label: 'Commercial' },
-    { value: 'land', label: 'Land' }
-  ]
-
-  const handlePropertyTypeChange = (value) => {
-    if (formData.propertyTypes.includes(value)) {
-      setFormData({
-        ...formData,
-        propertyTypes: formData.propertyTypes.filter(type => type !== value)
-      })
-    } else {
-      setFormData({
-        ...formData,
-        propertyTypes: [...formData.propertyTypes, value]
-      })
-    }
+  const togglePropertyType = (val) => {
+    set('propertyTypes', formData.propertyTypes.includes(val)
+      ? formData.propertyTypes.filter(t => t !== val)
+      : [...formData.propertyTypes, val])
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    if (formData.propertyTypes.length === 0) { setError('Please select at least one property type'); return }
+    if (formData.description.length > 300) { setError('Description must be 300 characters or less'); return }
     setLoading(true)
-
-    // Validation
-    if (formData.propertyTypes.length === 0) {
-      setError('Please select at least one property type')
-      setLoading(false)
-      return
-    }
-
-    if (formData.description.length > 300) {
-      setError('Description must be 300 characters or less')
-      setLoading(false)
-      return
-    }
-
     try {
-      const response = await fetch('/api/seller-applications', {
+      const res = await fetch('/api/seller-applications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit application')
-      }
-
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to submit application')
       setSubmitted(true)
     } catch (err) {
       setError(err.message)
@@ -111,171 +64,59 @@ export default function JoinSellerPage() {
     }
   }
 
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Navbar />
-        <div className="max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 py-20">
-          <div className="bg-white border-2 border-slate-300 p-10 lg:p-12 text-center">
-            <div className="mb-8">
-              <div className="w-16 h-1 bg-slate-900 mx-auto mb-6"></div>
-              <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
-                Application Received
-              </h1>
-              <p className="text-xl text-slate-600 mb-8">
-                Thank you for applying to become a seller on Deelmap.
-              </p>
-            </div>
-            <div className="bg-slate-50 border-2 border-slate-200 p-6 mb-8 text-left">
-              <p className="text-slate-700 leading-relaxed">
-                We've received your application and our team will review it within <strong className="text-slate-900">24-48 hours</strong>.
-                You'll receive an email at <strong className="text-slate-900">{formData.email}</strong> once your application has been reviewed.
-              </p>
-            </div>
-            <a
-              href="/"
-              className="inline-block bg-slate-900 hover:bg-slate-800 text-white px-8 py-3.5 text-sm font-semibold transition-all"
-            >
-              Return to Home
-            </a>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-
-      {/* Combined Hero & Features Section */}
-      <section className="py-12 sm:py-16 lg:py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10">
-          <div className="text-center mb-10 sm:mb-12 animate-fade-in">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-normal text-slate-900 mb-3 sm:mb-4 tracking-tight">
-              List Your Properties
-            </h1>
-            <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
-              Reach thousands of serious investors and close deals faster
-            </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-8 pt-20 pb-8 bg-black/50 backdrop-blur-sm" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="relative bg-white rounded shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-8 py-5 flex items-center justify-between z-10">
+          <div>
+            <h2 className="text-[20px] font-bold text-[#1A1816]">Apply to Become a Seller</h2>
+            <p className="text-[13px] text-[#737370]">Complete the form to get started on Deelmap</p>
           </div>
-
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Image */}
-            <div className="relative w-full h-56 sm:h-64 lg:h-80 animate-slide-in-left">
-              <Image
-                src="/assets/Frame-5.png"
-                alt="Sell Properties on Deelmap"
-                fill
-                className="object-contain"
-              />
-            </div>
-
-            {/* Content - Vertical Layout */}
-            <div className="space-y-6 sm:space-y-7 animate-slide-in-right">
-              <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-                <h3 className="text-lg sm:text-xl font-normal text-slate-900 mb-2">Serious Buyers</h3>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">Pre-qualified investors actively seeking deals</p>
-              </div>
-
-              <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
-                <h3 className="text-lg sm:text-xl font-normal text-slate-900 mb-2">Fast Approval</h3>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">Get approved and start listing within 24-48 hours</p>
-              </div>
-
-              <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
-                <h3 className="text-lg sm:text-xl font-normal text-slate-900 mb-2">Easy Management</h3>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">Manage all your listings from one dashboard</p>
-              </div>
-
-              <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-                <h3 className="text-lg sm:text-xl font-normal text-slate-900 mb-2">Verified Platform</h3>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed">Quality assurance for legitimate deals only</p>
-              </div>
-            </div>
-          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#737370] hover:text-[#1A1816] hover:border-[#1A1816] transition-colors">
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      </section>
 
-      {/* Application Form Section */}
-      <section className="py-12 sm:py-16 lg:py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
-          <div className="bg-white border-2 border-slate-300 p-8 lg:p-10">
-            <div className="mb-8 text-center">
-              <h2 className="text-3xl font-bold text-slate-900 mb-2">Apply to Become a Seller</h2>
-              <p className="text-slate-600">Complete the form below to get started</p>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border-2 border-red-300 text-red-700 px-4 py-3 mb-6 rounded-lg">
-                <p className="font-semibold mb-1">Error</p>
-                <p className="text-sm">{error}</p>
+        <div className="px-8 py-6">
+          {submitted ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-[#DCFCE7] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-[#16A34A] stroke-[2.5]" />
               </div>
-            )}
-
+              <h3 className="text-[22px] font-bold text-[#1A1816] mb-2">Application Received!</h3>
+              <p className="text-[14px] text-[#737370] mb-2">Our team will review it within <strong className="text-[#1A1816]">24–48 hours</strong>.</p>
+              <p className="text-[14px] text-[#737370] mb-6">You'll receive an email at <strong className="text-[#1A1816]">{formData.email}</strong> once reviewed.</p>
+              <button onClick={onClose} className="h-11 px-6 bg-[#1A1816] text-white text-[14px] font-semibold rounded hover:bg-[#2C2A27] transition-colors">
+                Close
+              </button>
+            </div>
+          ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-[#FEF0EF] border border-[#D03839] text-[#D03839] px-4 py-3 rounded-lg text-[13px]">{error}</div>
+              )}
 
               {/* Business Information */}
               <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-5">Business Information</h3>
+                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Business Information</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Business Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.businessName}
-                      onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                      className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                      placeholder="Your Company Name"
-                    />
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Business Name <span className="text-[#D03839]">*</span></label>
+                    <input required value={formData.businessName} onChange={e => set('businessName', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="Your Company Name" />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Contact Person Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.contactPersonName}
-                      onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })}
-                      className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                      placeholder="John Doe"
-                    />
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Contact Person Name <span className="text-[#D03839]">*</span></label>
+                    <input required value={formData.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="John Doe" />
                   </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Email Address <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                        placeholder="john@example.com"
-                      />
+                      <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Email Address <span className="text-[#D03839]">*</span></label>
+                      <input type="email" required value={formData.email} onChange={e => set('email', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="john@example.com" />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Phone Number <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={handlePhoneChange}
-                        className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                        placeholder="(555) 555-5555"
-                        maxLength={14}
-                      />
+                      <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Phone Number <span className="text-[#D03839]">*</span></label>
+                      <input type="tel" required value={formData.phone} onChange={e => set('phone', formatPhone(e.target.value))} maxLength={14} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="(555) 555-5555" />
                     </div>
                   </div>
                 </div>
@@ -283,47 +124,22 @@ export default function JoinSellerPage() {
 
               {/* Experience & Supply */}
               <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-5">Experience & Supply</h3>
+                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Experience & Supply</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-3">
-                      Are you an individual or company? <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center cursor-pointer bg-white border-2 border-slate-300 rounded-lg px-6 py-3 transition-all hover:border-slate-900 has-[:checked]:border-slate-900 has-[:checked]:bg-slate-100">
-                        <input
-                          type="radio"
-                          name="businessType"
-                          value="individual"
-                          checked={formData.businessType === 'individual'}
-                          onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                          className="w-4 h-4 text-slate-900 focus:ring-slate-900"
-                        />
-                        <span className="ml-3 text-slate-700 font-medium">Individual</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer bg-white border-2 border-slate-300 rounded-lg px-6 py-3 transition-all hover:border-slate-900 has-[:checked]:border-slate-900 has-[:checked]:bg-slate-100">
-                        <input
-                          type="radio"
-                          name="businessType"
-                          value="company"
-                          checked={formData.businessType === 'company'}
-                          onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                          className="w-4 h-4 text-slate-900 focus:ring-slate-900"
-                        />
-                        <span className="ml-3 text-slate-700 font-medium">Company</span>
-                      </label>
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-2">Are you an individual or company? <span className="text-[#D03839]">*</span></label>
+                    <div className="flex gap-3">
+                      {['individual', 'company'].map(type => (
+                        <label key={type} className={`flex items-center gap-2 cursor-pointer border rounded-lg px-5 py-2.5 text-[13px] font-medium transition-colors ${formData.businessType === type ? 'border-[#1A1816] bg-[#FAFAF8] text-[#1A1816]' : 'border-[#E8E8E4] text-[#737370] hover:border-[#1A1816]'}`}>
+                          <input type="radio" name="businessType" value={type} checked={formData.businessType === type} onChange={() => set('businessType', type)} className="sr-only" />
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </label>
+                      ))}
                     </div>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      How many deals do you typically source per month? <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.dealsPerMonth}
-                      onChange={(e) => setFormData({ ...formData, dealsPerMonth: e.target.value })}
-                      className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                    >
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Deals sourced per month <span className="text-[#D03839]">*</span></label>
+                    <select value={formData.dealsPerMonth} onChange={e => set('dealsPerMonth', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] focus:border-[#1A1816] focus:outline-none transition-colors">
                       <option value="1-2">1–2</option>
                       <option value="3-5">3–5</option>
                       <option value="6-10">6–10</option>
@@ -333,39 +149,25 @@ export default function JoinSellerPage() {
                 </div>
               </div>
 
-              {/* Market Info */}
+              {/* Market Information */}
               <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-5">Market Information</h3>
+                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Market Information</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Primary Markets (City, State) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.primaryMarkets}
-                      onChange={(e) => setFormData({ ...formData, primaryMarkets: e.target.value })}
-                      className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                      placeholder="e.g., Atlanta, GA; Dallas, TX; Phoenix, AZ"
-                    />
-                    <p className="text-xs text-slate-500 mt-2">Separate multiple markets with semicolons</p>
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Primary Markets (City, State) <span className="text-[#D03839]">*</span></label>
+                    <input required value={formData.primaryMarkets} onChange={e => set('primaryMarkets', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="e.g., Atlanta, GA; Dallas, TX" />
+                    <p className="text-[11px] text-[#A8A8A4] mt-1">Separate multiple markets with semicolons</p>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-3">
-                      Property Types <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {propertyTypeOptions.map((option) => (
-                        <label key={option.value} className="flex items-center cursor-pointer bg-white border-2 border-slate-300 rounded-lg px-4 py-3 transition-all hover:border-slate-900 has-[:checked]:border-slate-900 has-[:checked]:bg-slate-100">
-                          <input
-                            type="checkbox"
-                            checked={formData.propertyTypes.includes(option.value)}
-                            onChange={() => handlePropertyTypeChange(option.value)}
-                            className="w-4 h-4 text-slate-900 rounded focus:ring-slate-900"
-                          />
-                          <span className="ml-3 text-slate-700 font-medium">{option.label}</span>
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-2">Property Types <span className="text-[#D03839]">*</span></label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {PROPERTY_TYPE_OPTIONS.map(opt => (
+                        <label key={opt.value} className={`flex items-center gap-2.5 cursor-pointer border rounded-lg px-4 py-3 text-[13px] font-medium transition-colors ${formData.propertyTypes.includes(opt.value) ? 'border-[#1A1816] bg-[#FAFAF8] text-[#1A1816]' : 'border-[#E8E8E4] text-[#737370] hover:border-[#1A1816]'}`}>
+                          <input type="checkbox" checked={formData.propertyTypes.includes(opt.value)} onChange={() => togglePropertyType(opt.value)} className="sr-only" />
+                          <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${formData.propertyTypes.includes(opt.value) ? 'bg-[#1A1816] border-[#1A1816]' : 'border-[#E8E8E4]'}`}>
+                            {formData.propertyTypes.includes(opt.value) && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                          </span>
+                          {opt.label}
                         </label>
                       ))}
                     </div>
@@ -373,79 +175,426 @@ export default function JoinSellerPage() {
                 </div>
               </div>
 
-              {/* Optional Information */}
+              {/* Optional */}
               <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-5">Additional Information (Optional)</h3>
+                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Additional Information <span className="text-[#A8A8A4] font-normal normal-case">(optional)</span></h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Website
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                      placeholder="https://yourwebsite.com"
-                    />
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Website</label>
+                    <input type="url" value={formData.website} onChange={e => set('website', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="https://yourwebsite.com" />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      LinkedIn Profile
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.linkedin}
-                      onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
-                      className="w-full h-12 px-4 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none"
-                      placeholder="https://linkedin.com/in/yourprofile"
-                    />
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">LinkedIn Profile</label>
+                    <input type="url" value={formData.linkedin} onChange={e => set('linkedin', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="https://linkedin.com/in/yourprofile" />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Tell us briefly about your operation (Max 300 characters)
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      maxLength={300}
-                      rows={4}
-                      className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-lg focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20 transition-all outline-none resize-none"
-                      placeholder="Brief description of your business and experience..."
-                    />
-                    <p className="text-xs text-slate-500 mt-2 text-right">
-                      {formData.description.length}/300
-                    </p>
+                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Tell us about your operation <span className="text-[#A8A8A4] font-normal">(max 300 chars)</span></label>
+                    <textarea value={formData.description} onChange={e => set('description', e.target.value)} maxLength={300} rows={3} className="w-full px-4 py-3 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors resize-none" placeholder="Brief description of your business and experience..." />
+                    <p className="text-[11px] text-[#A8A8A4] mt-1 text-right">{formData.description.length}/300</p>
                   </div>
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="pt-6">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 font-semibold text-base rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Submitting Application...
+              <button type="submit" disabled={loading} className="w-full h-12 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold text-[15px] rounded flex items-center justify-center transition-colors disabled:opacity-50">
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    Submitting...
+                  </span>
+                ) : 'Submit Application'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const FAQ_ITEMS = [
+  { q: 'How do I list my property on Deelmap?', a: 'Create a seller account, complete your profile, then use the dashboard to add your property details, photos, and pricing.' },
+  { q: 'Who will see my property listing?', a: 'Your listing is visible to our verified network of active real estate investors across the United States.' },
+  { q: 'How do I list my property on Deelmap?', a: 'Log in to your seller account, navigate to "Add Property", fill in the details and submit for review. Listings go live within 24 hours.' },
+  { q: 'How quickly can I start receiving offers and inquiries?', a: 'Most sellers receive their first inquiry within 48 hours of their listing going live.' },
+  { q: 'How does Deelmap ensure I receive inquiries from verified investors only?', a: 'Every buyer on Deelmap goes through identity verification and must confirm active investment intent before accessing listings.' },
+  { q: 'Do I need a real estate agent to sell my property on Deelmap?', a: 'No. Deelmap connects you directly with investors, removing the need for a traditional agent.' },
+  { q: 'How is my contact information kept private and secure?', a: 'All communication happens through the Deelmap platform. Your personal contact details are never shared with buyers directly.' },
+  { q: 'What happens after I submit my property listing?', a: 'Our team reviews it within 24 hours. Once approved, it goes live to our full investor network.' },
+]
+
+const TESTIMONIALS = [
+  {
+    text: 'DeelMap helped me list my property, and connect with serious buyers much faster than expected. I didn\'t have to deal with random inquiries or calls. The process felt smooth, and I was able to move forward with confident buyers.',
+    name: 'Raj Mehta',
+    role: 'Property Owner',
+    days: 12,
+    initials: 'RM',
+    color: 'bg-orange-400',
+  },
+  {
+    text: 'What I liked most was the quality of buyers. Every inquiry felt relevant and serious, which made conversations more productive. Instead of going back and forth endlessly, I was able to focus on real opportunities and close faster.',
+    name: 'Jonathan Reed',
+    role: 'First-time Investor',
+    days: 24,
+    initials: 'JR',
+    color: 'bg-blue-500',
+  },
+  {
+    text: 'Listing on DeelMap was simple, and the response was almost immediate. Buyers already had a clear understanding of the deal, which made negotiations easier. It saved me a lot of time compared to traditional platforms.',
+    name: 'Emily Johnson',
+    role: 'Real Estate Investor',
+    days: 31,
+    initials: 'EJ',
+    color: 'bg-emerald-500',
+  },
+]
+
+const HOW_IT_WORKS = [
+  { n: 1, title: 'List your property', desc: 'Add pricing details, property info, and upload high-quality photos to showcase your deal.' },
+  { n: 2, title: 'Reach verified investors', desc: 'Your deal gets instant visibility, reaching serious investors ready to take action.' },
+  { n: 3, title: 'Receive offers & messages', desc: 'Get quality inquiries from verified investors actively looking to buy serious deals.' },
+  { n: 4, title: 'Close your deal', desc: 'Finalize faster with trusted buyers and close deals efficiently with full confidence.' },
+]
+
+const CLOSED_DEALS = [
+  { badge: 'Similar to yours', roi: '+73% ROI', soldDate: 'Jan 7, 2026', price: 189000, arv: '340k', sqft: '2,040', beds: 4, baths: 2, location: 'Phoenix, AZ', spread: 151000, days: 16, type: 'Fix & Flip', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=260&fit=crop' },
+  { badge: null, roi: '+66% ROI', soldDate: 'Nov 14, 2025', price: 111000, arv: '185k', sqft: '1,420', beds: 3, baths: 1.5, location: 'Detroit, MI', spread: 74000, days: 11, type: 'BRRRR', img: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=260&fit=crop' },
+  { badge: 'Just listed', roi: '+88% ROI', soldDate: 'Jan 7, 2026', price: 210000, arv: '395k', sqft: '1,860', beds: 3, baths: 2, location: 'Bend, OR', spread: 185000, days: 22, type: 'Fix & Flip', img: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=260&fit=crop' },
+  { badge: null, roi: '+92% ROI', soldDate: 'Dec 11, 2025', price: 142000, arv: '278k', sqft: '1,720', beds: 3, baths: 2, location: 'Asheville, NC', spread: 136000, days: 18, type: 'Buy & Hold', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=260&fit=crop' },
+  { badge: 'Hot deal', roi: '+61% ROI', soldDate: 'Dec 3, 2025', price: 95000, arv: '153k', sqft: '1,310', beds: 3, baths: 1, location: 'Memphis, TN', spread: 58000, days: 9, type: 'Fix & Flip', img: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=400&h=260&fit=crop' },
+  { badge: null, roi: '+79% ROI', soldDate: 'Nov 28, 2025', price: 175000, arv: '314k', sqft: '2,100', beds: 4, baths: 2.5, location: 'Tampa, FL', spread: 139000, days: 14, type: 'Buy & Hold', img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=260&fit=crop' },
+]
+
+const WHY_FEATURES = [
+  { Icon: BadgeCheck, title: 'Verified buyers', desc: 'Only serious, identity-verified investors ready to take action on quality deals.' },
+  { Icon: Rocket, title: 'Fast deal distribution', desc: 'Your listing reaches active buyers instantly, increasing visibility and response speed.' },
+  { Icon: TrendingUp, title: 'Smart pricing insights', desc: 'Understand ARV, spread, and market demand to price your deal more effectively.' },
+  { Icon: ShieldCheck, title: 'Private communication', desc: 'Your contact details stay protected while communicating securely with buyers.' },
+]
+
+export default function SellPage() {
+  const { user } = useAuth()
+  const [openFaq, setOpenFaq] = useState(null)
+  const [activeStep, setActiveStep] = useState(1)
+  const [dealIndex, setDealIndex] = useState(0)
+  const [showSellerForm, setShowSellerForm] = useState(false)
+  const visibleDeals = CLOSED_DEALS.slice(dealIndex, dealIndex + 4)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep(prev => prev === 4 ? 1 : prev + 1)
+    }, 1800)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-white">
+      {showSellerForm && <SellerApplicationModal onClose={() => setShowSellerForm(false)} />}
+      <Navbar />
+
+      {/* Hero */}
+      <section className="pt-36 pb-32 bg-white">
+        <div className="w-full max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left */}
+            <div className="pt-4">
+              <h1 className="text-4xl sm:text-5xl font-bold text-[#1A1816] leading-tight mb-4">
+                Sell your property to{' '}
+                <span className="text-[#D03839]">serious investors</span>
+              </h1>
+              <p className="text-[#737370] text-[17px] mb-6 leading-relaxed">
+                List your deal, reach verified buyers, and close faster without spam or middlemen, with direct access to serious investors.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {['Access to 10,000+ active, organic investors', 'Direct access to verified buyers', 'Faster offers and deal closing', 'Get serious inquiries only'].map(item => (
+                  <li key={item} className="flex items-center gap-3 text-[#444441] text-[15px]">
+                    <span className="w-5 h-5 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#16A34A] stroke-[2.5]" />
                     </span>
-                  ) : (
-                    'Submit Application'
-                  )}
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Right – Login card */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-sm">
+                {/* Background shadow layer */}
+                <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 bg-[#E8E8E4] rounded-[14px]" />
+                <div className="relative bg-white border border-[#E8E8E4] rounded-[14px] p-10 shadow-sm">
+                {/* Lock icon */}
+                <div className="flex justify-center mb-6">
+                  <div className="w-14 h-14 bg-[#FEF0EF] rounded-full flex items-center justify-center">
+                    <svg className="w-7 h-7 text-[#D03839]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-[18px] font-bold text-[#1A1816] text-center mb-3">Log in to continue</h3>
+                <p className="text-[13px] text-center mb-8" style={{ color: '#737370' }}>
+                  Create an account to list your property and connect with verified investors
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openAuth('login')}
+                  className="w-full h-12 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold text-[15px] rounded flex items-center justify-center transition-colors mb-3"
+                >
+                  Log in
                 </button>
-                <p className="text-center text-sm text-slate-500 mt-4">
-                  By submitting, you agree to our terms and conditions
+                <button
+                  type="button"
+                  onClick={() => setShowSellerForm(true)}
+                  className="w-full h-12 bg-white border border-[#1A1816] text-[#1A1816] font-semibold text-[15px] rounded flex items-center justify-center hover:bg-[#FAFAF8] transition-colors"
+                >
+                  Sign up as seller
+                </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-24 lg:py-32 bg-[#FAFAF8]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 text-center">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">HOW IT WORKS</p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-3">
+            Sell your property in a few<br />simple steps
+          </h2>
+          <p className="text-[16px] max-w-xl mx-auto mb-12" style={{ color: '#737370' }}>
+            List your property, connect with investors, and close your deal quickly with a faster, more efficient process.
+          </p>
+
+          {/* Circles row with single continuous dashed line */}
+          <div className="relative mb-8">
+            {/* Dashed line from center of circle 1 to center of circle 4 */}
+            <div className="hidden lg:block absolute top-1/2 -translate-y-1/2 border-t-2 border-dashed border-[#D1D1CE]" style={{ left: '12.5%', right: '12.5%' }} />
+            <div className="grid grid-cols-2 lg:grid-cols-4">
+              {HOW_IT_WORKS.map((step) => (
+                <div key={step.n} className="flex justify-center">
+                  <div className="relative flex items-center justify-center w-24 h-24">
+                    {activeStep === step.n && (
+                      <svg key={`ring-${activeStep}`} className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 96 96">
+                        <circle cx="48" cy="48" r="40" fill="none" stroke="#E8E8E4" strokeWidth="2.5" />
+                        <circle
+                          cx="48" cy="48" r="40"
+                          fill="none"
+                          stroke="#D03839"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray="251"
+                          className="animate-stroke-fill"
+                          style={{ strokeDashoffset: 251 }}
+                        />
+                      </svg>
+                    )}
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-bold transition-all duration-500 ease-in-out z-10 ${
+                      activeStep === step.n
+                        ? 'bg-[#D03839] text-white'
+                        : 'bg-white border-2 border-[#E8E8E4] text-[#A8A8A4]'
+                    }`}
+                    style={activeStep === step.n ? { boxShadow: '0 6px 20px rgba(208,56,57,0.35)' } : {}}>
+                      {step.n}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Content grid */}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-8">
+            {HOW_IT_WORKS.map((step) => (
+              <div key={step.n} className="text-center px-4">
+                <h3 className={`text-[16px] font-semibold mb-3 transition-colors duration-500 ${activeStep === step.n ? 'text-[#1A1816]' : 'text-[#737370]'}`}>
+                  {step.title}
+                </h3>
+                <p className={`text-[14px] leading-relaxed transition-colors duration-500 ${activeStep === step.n ? 'text-[#444441]' : 'text-[#A8A8A4]'}`}>
+                  {step.desc}
                 </p>
               </div>
-            </form>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Sell on Deelmap */}
+      <section className="py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="grid lg:grid-cols-[1fr_1.6fr] gap-32 items-center">
+            {/* Left */}
+            <div>
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">WHY SELL ON DEELMAP</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-4">Built to help you<br />close deals faster</h2>
+              <p className="text-[15px] leading-relaxed mb-8" style={{ color: '#737370' }}>
+                Discover curated investment properties with transparent data, ARV insights, and opportunities designed for serious investors.
+              </p>
+              <ul className="space-y-4">
+                {['Reach verified investors instantly', 'No spam or duplicate inquiries', 'Transparent deal insights', 'Secure communication'].map(item => (
+                  <li key={item} className="flex items-center gap-3 text-[#444441] text-[15px]">
+                    <span className="w-5 h-5 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#16A34A] stroke-[2.5]" />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* Right */}
+            <div className="grid grid-cols-2 gap-5">
+              {WHY_FEATURES.map(({ Icon, title, desc }) => (
+                <div key={title} className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-5">
+                  <div className="w-10 h-10 bg-white border border-[#E8E8E4] rounded flex items-center justify-center mb-5">
+                    <Icon className="w-5 h-5 text-[#D03839]" />
+                  </div>
+                  <h4 className="text-[15px] font-semibold text-[#1A1816] mb-5">{title}</h4>
+                  <p className="text-[13px] leading-relaxed" style={{ color: '#737370' }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Closed Deals Nearby */}
+      <section className="py-16 lg:py-20 bg-[#FAFAF8]">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+          {/* Header */}
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-2">RECENT SALES</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816]">Closed deals nearby</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDealIndex(i => Math.max(0, i - 1))}
+                disabled={dealIndex === 0}
+                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+              >
+                <ChevronDown className="w-4 h-4 rotate-90" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setDealIndex(i => Math.min(CLOSED_DEALS.length - 4, i + 1))}
+                disabled={dealIndex >= CLOSED_DEALS.length - 4}
+                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+              >
+                <ChevronDown className="w-4 h-4 -rotate-90" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {visibleDeals.map((deal, i) => (
+              <div key={dealIndex + i} className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+                {/* Image */}
+                <div className="relative h-[160px]">
+                  <img src={deal.img} alt={deal.location} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  {deal.badge && (
+                    <span className="absolute top-2 left-2 bg-white text-[#1A1816] text-[10px] font-semibold px-2 py-1 rounded">
+                      {deal.badge}
+                    </span>
+                  )}
+                  <span className="absolute top-2 right-2 bg-[#1A1816] text-white text-[10px] font-bold px-2 py-1 rounded">
+                    {deal.roi}
+                  </span>
+                </div>
+                {/* Content */}
+                <div className="p-4">
+                  <p className="text-[11px] text-[#737370] mb-1.5 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] inline-block flex-shrink-0" />
+                    Sold – {deal.soldDate}
+                  </p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[18px] font-bold text-[#1A1816]">${Number(deal.price).toLocaleString()}</span>
+                    <span className="text-[10px] font-semibold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded">ARV ${deal.arv}</span>
+                  </div>
+                  <p className="text-[11px] text-[#737370] mb-1">{deal.sqft} sq ft &nbsp;·&nbsp; {deal.beds} bed &nbsp;·&nbsp; {deal.baths} bath</p>
+                  <p className="text-[11px] text-[#737370] mb-3 flex items-center gap-1">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {deal.location}
+                  </p>
+                  <div className="border-t border-[#E8E8E4] pt-3 grid grid-cols-3 gap-1">
+                    <div>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Spread</p>
+                      <p className="text-[11px] font-semibold text-[#D03839]">${(deal.spread / 1000).toFixed(0)}k</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Days on market</p>
+                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.days} days</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Type</p>
+                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.type}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 lg:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-4 text-center">FREQUENTLY ASKED QUESTIONS</p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-14 text-center">Everything you need to know</h2>
+          <div className="divide-y divide-[#E8E8E4]">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between py-6 text-left gap-6"
+                >
+                  <span className="text-[16px] font-semibold text-[#1A1816]">{item.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-[#1A1816] flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === i && (
+                  <p className="pb-6 text-[14px] leading-relaxed text-[#1A1816]">{item.a}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Seller Testimonials */}
+      <section className="py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">SELLER STORIES</p>
+          <h2 className="text-3xl font-bold text-[#1A1816] mb-10">What our sellers say about us</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="bg-white border border-[#E8E8E4] rounded-lg p-6 flex flex-col">
+                <div className="flex mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  ))}
+                </div>
+                <p className="text-[13px] text-[#444441] leading-relaxed mb-5 flex-1">"{t.text}"</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full ${t.color} flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0`}>
+                      {t.initials}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#1A1816] whitespace-nowrap">{t.name}</p>
+                      <p className="text-[11px] text-[#737370] whitespace-nowrap">{t.role}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[13px] font-bold text-[#1A1816]">{t.days}</p>
+                    <p className="text-[10px] text-[#A8A8A4]">Deals closed</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

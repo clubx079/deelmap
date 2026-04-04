@@ -1,351 +1,279 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useProperties } from '@/hooks/useProperties'
 import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
-import { useAuth } from '@/hooks/useAuth'
+import { MapPin } from 'lucide-react'
 
-const FEATURED_COUNT = 9
+const TABS = [
+  { label: 'All deals', value: 'all' },
+  { label: 'Fix & flip', value: 'fix' },
+  { label: 'Buy & hold', value: 'hold' },
+  { label: 'Wholesale', value: 'wholesale' },
+]
+
+const AVATAR_COLORS = ['bg-orange-400', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-rose-500', 'bg-amber-500']
 
 export function PropertiesSlider() {
-  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState('all')
+
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'] },
     sortBy: 'newest',
-    pageSize: FEATURED_COUNT
+    pageSize: 12,
   })
 
-  const [desktopIndex, setDesktopIndex] = useState(0)
-  const [mobileIndex, setMobileIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-
-  // Exactly 9 latest properties (newest first from API)
-  const displayProperties = properties.slice(0, FEATURED_COUNT)
-
-  // Desktop: 3 properties per slide → 3 slides
-  const desktopSlidesCount = Math.ceil(displayProperties.length / 3)
-  // Mobile: 1 property per slide → 9 slides
-  const mobileSlidesCount = displayProperties.length
-
-  // Auto-slide: desktop (3 slides) and mobile (9 slides)
-  useEffect(() => {
-    if (displayProperties.length === 0 || isPaused) return
-    const interval = setInterval(() => {
-      setDesktopIndex((prev) => (prev + 1) % desktopSlidesCount)
-      setMobileIndex((prev) => (prev + 1) % mobileSlidesCount)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [displayProperties.length, isPaused, desktopSlidesCount, mobileSlidesCount])
-
-  const goToDesktopSlide = (index) => {
-    setDesktopIndex(index)
-    setIsPaused(true)
-    setTimeout(() => setIsPaused(false), 10000)
-  }
-  const goToMobileSlide = (index) => {
-    setMobileIndex(index)
-    setIsPaused(true)
-    setTimeout(() => setIsPaused(false), 10000)
-  }
-  const nextDesktopSlide = () => {
-    setDesktopIndex((prev) => (prev + 1) % desktopSlidesCount)
-    setIsPaused(true)
-    setTimeout(() => setIsPaused(false), 10000)
-  }
-  const prevDesktopSlide = () => {
-    setDesktopIndex((prev) => (prev - 1 + desktopSlidesCount) % desktopSlidesCount)
-    setIsPaused(true)
-    setTimeout(() => setIsPaused(false), 10000)
-  }
-  const nextMobileSlide = () => {
-    setMobileIndex((prev) => (prev + 1) % mobileSlidesCount)
-    setIsPaused(true)
-    setTimeout(() => setIsPaused(false), 10000)
-  }
-  const prevMobileSlide = () => {
-    setMobileIndex((prev) => (prev - 1 + mobileSlidesCount) % mobileSlidesCount)
-    setIsPaused(true)
-    setTimeout(() => setIsPaused(false), 10000)
+  const filterByTab = (props) => {
+    if (activeTab === 'all') return props
+    return props.filter(p => {
+      const dt = (p.deal_type || '').toLowerCase()
+      if (activeTab === 'fix') return dt.includes('fix') || dt.includes('flip') || dt.includes('rehab')
+      if (activeTab === 'hold') return dt.includes('hold') || dt.includes('rental') || dt.includes('buy')
+      if (activeTab === 'wholesale') return dt.includes('wholesale')
+      return true
+    })
   }
 
-  const formatPrice = (price) => {
-    if (!price) return 'Contact for Price'
-    return `$${Math.round(price).toLocaleString()}`
+  const displayProperties = filterByTab(properties).slice(0, 4)
+
+  const formatPrice = (val) => {
+    if (!val) return 'Contact for Price'
+    return `$${Math.round(Number(val)).toLocaleString()}`
   }
 
-  const getDisplayAddress = (property) => {
-    const fullAddress = property.full_address || 
-      `${property.address || ''}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim()
-    
-    if (user) return fullAddress
-    
-    const firstCommaIndex = fullAddress.indexOf(',')
-    if (firstCommaIndex === -1) return fullAddress
-    return fullAddress.substring(firstCommaIndex + 1).trim()
+  const formatShort = (val) => {
+    if (!val) return null
+    const n = Number(val)
+    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
+    if (n >= 1000) return `$${Math.round(n / 1000)}k`
+    return `$${n}`
   }
 
-  const renderPropertyCard = (property) => {
-    const featureImage = getPrimaryPhotoUrl(property.property_photos)
-    const photoCount = property.property_photos?.length || 0
-    const hasPhotos = photoCount > 0 && featureImage
-
-    return (
-      <Link
-        href={`/${property.slug || property.id}`}
-        className="group bg-white border-2 border-slate-200 rounded-lg overflow-hidden hover:border-slate-900 transition-all duration-300 hover:shadow-lg block"
-      >
-        <div className="relative h-48 overflow-hidden bg-slate-100">
-          {hasPhotos ? (
-            <>
-              <Image
-                src={featureImage}
-                alt={getDisplayAddress(property)}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </>
-          ) : (
-            /* No photo placeholder - same as buy page: logo + Photos Coming Soon */
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 gap-2">
-              <div className="relative w-40 h-12">
-                <Image
-                  src="/assets/logo copy.png"
-                  alt="DeelMap"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-xs font-medium text-gray-500">Photos Coming Soon</span>
-            </div>
-          )}
-          {property.status && (
-            <div className="absolute top-2 left-2">
-              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
-                property.status.toLowerCase() === 'sold' ? 'bg-red-500 text-white'
-                  : property.status.toLowerCase() === 'pending' ? 'bg-orange-500 text-white'
-                  : 'bg-slate-900 text-white'
-              }`}>
-                {property.status.toUpperCase()}
-              </span>
-            </div>
-          )}
-        </div>
-        <div className="p-4">
-          <div className="text-xl font-bold text-slate-900 mb-1.5">{formatPrice(property.price)}</div>
-          <p className="text-xs text-slate-600 mb-3 line-clamp-2 min-h-[2rem]">{getDisplayAddress(property)}</p>
-          <div className="flex items-center gap-3 text-xs text-slate-700 mb-3 pb-3 border-b border-slate-200">
-            {property.bedrooms && <span className="font-medium">{property.bedrooms} bed</span>}
-            {property.bathrooms && <span className="font-medium">{property.bathrooms} bath</span>}
-            {property.sqft && <span className="font-medium">{property.sqft.toLocaleString()} sqft</span>}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {property.gross_yield && (
-              <div>
-                <div className="text-[10px] text-slate-500 mb-0.5">Gross Yield</div>
-                <div className="text-sm font-bold text-slate-900">{property.gross_yield}%</div>
-              </div>
-            )}
-            {property.cap_rate && (
-              <div>
-                <div className="text-[10px] text-slate-500 mb-0.5">Cap Rate</div>
-                <div className="text-sm font-bold text-slate-900">{property.cap_rate}%</div>
-              </div>
-            )}
-            {property.cash_on_cash && (
-              <div>
-                <div className="text-[10px] text-slate-500 mb-0.5">Cash on Cash</div>
-                <div className="text-sm font-bold text-slate-900">{property.cash_on_cash}%</div>
-              </div>
-            )}
-          </div>
-        </div>
-      </Link>
-    )
+  const getDealBadge = (p) => {
+    const raw = (p.deal_type || '').toLowerCase()
+    if (raw.includes('quick')) return { label: 'Quick Sale', cls: 'bg-[#D03839] text-white' }
+    if (raw.includes('new')) return { label: 'New Deal', cls: 'bg-[#FEF3E2] text-[#B5620A] border border-[#F3C97D]' }
+    if (raw.includes('high') || raw.includes('roi')) return { label: 'High ROI', cls: 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]' }
+    if (raw.includes('just') || raw.includes('listed')) return { label: 'Just Listed', cls: 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]' }
+    return { label: 'New Deal', cls: 'bg-[#FEF3E2] text-[#B5620A] border border-[#F3C97D]' }
   }
 
-  // Shimmer skeleton component
-  const PropertySkeleton = () => (
-    <div className="bg-white border-2 border-slate-200 rounded-lg overflow-hidden animate-pulse">
-      {/* Image skeleton */}
-      <div className="h-48 bg-slate-200"></div>
-      
-      {/* Content skeleton */}
+  const getROI = (p) => {
+    const v = p.cash_on_cash ?? p.gross_yield
+    if (!v || Number(v) <= 0) return null
+    return `+${Number(v).toFixed(0)}% ROI`
+  }
+
+  const getSpread = (p) => {
+    const price = Number(p.price) || 0
+    const arv = Number(p.arv) || 0
+    if (arv > price && price > 0) return arv - price
+    return 0
+  }
+
+  const getInitials = (p) => {
+    const name = p.seller_name || p.full_address || p.address || 'DM'
+    const words = name.trim().split(/\s+/)
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+    return name.slice(0, 2).toUpperCase()
+  }
+
+  const getAvatarColor = (p) => AVATAR_COLORS[(p.id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
+
+  const getSellerName = (p) => {
+    if (p.seller_name) return p.seller_name
+    const addr = p.address || p.full_address || ''
+    const parts = addr.split(' ')
+    if (parts.length >= 2) return `${parts[0][0]}. ${parts[parts.length - 1]}`
+    return 'Verified Seller'
+  }
+
+  const Skeleton = () => (
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden animate-pulse">
+      <div className="h-[220px] bg-[#E8E8E4]" />
       <div className="p-4 space-y-3">
-        <div className="h-6 bg-slate-200 rounded w-32"></div>
-        <div className="h-4 bg-slate-200 rounded w-full"></div>
-        <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-        <div className="h-px bg-slate-200 my-3"></div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="h-8 bg-slate-200 rounded"></div>
-          <div className="h-8 bg-slate-200 rounded"></div>
-          <div className="h-8 bg-slate-200 rounded"></div>
-        </div>
+        <div className="h-3 bg-[#E8E8E4] rounded w-24" />
+        <div className="h-5 bg-[#E8E8E4] rounded w-3/4" />
+        <div className="h-3 bg-[#E8E8E4] rounded w-1/2" />
+        <div className="h-6 bg-[#E8E8E4] rounded w-32" />
+        <div className="h-3 bg-[#E8E8E4] rounded w-2/3" />
+        <div className="h-px bg-[#E8E8E4]" />
+        <div className="h-8 bg-[#E8E8E4] rounded" />
       </div>
     </div>
   )
 
-  if (loading) {
-    return (
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-          {/* Section Header */}
-          <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
-              Featured Properties
-            </h2>
-            <p className="text-slate-600 text-lg">
-              Discover exclusive deals before they hit the market
-            </p>
-          </div>
-
-          {/* Shimmer Loading State */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PropertySkeleton />
-            <PropertySkeleton />
-            <PropertySkeleton />
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  if (displayProperties.length === 0) {
-    return null
-  }
-
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
-            Featured Properties
-          </h2>
-          <p className="text-slate-600 text-lg">
-            Discover exclusive deals before they hit the market
-          </p>
+    <section className="py-16 lg:py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+
+        {/* Header row */}
+        <div className="mb-8">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1.1px] mb-2">Live Marketplace</p>
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div>
+              <h2 className="text-[32px] sm:text-[36px] font-bold text-[#1A1816] leading-tight mb-1">
+                Featured investment opportunities
+              </h2>
+              <p className="text-[14px] text-[#737370]">
+                Verified off-market properties — deduplicated, structured, investor-ready.
+              </p>
+            </div>
+            {/* Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto lg:flex-shrink-0 pb-0.5">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`h-9 px-4 rounded border text-[13px] font-medium transition-all whitespace-nowrap ${
+                    activeTab === tab.value
+                      ? 'bg-[#D03839] border-[#D03839] text-white'
+                      : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Desktop: 3 properties per slide (original behavior), 3 slides for 9 properties */}
-        <div className="relative hidden lg:block">
-          {desktopSlidesCount > 1 && (
-            <>
-              <button
-                onClick={prevDesktopSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 bg-white border-2 border-slate-300 rounded-full p-3 hover:border-slate-900 hover:bg-slate-50 transition-all shadow-lg z-10"
-                aria-label="Previous properties"
-              >
-                <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={nextDesktopSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 bg-white border-2 border-slate-300 rounded-full p-3 hover:border-slate-900 hover:bg-slate-50 transition-all shadow-lg z-10"
-                aria-label="Next properties"
-              >
-                <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${desktopIndex * 100}%)` }}
-            >
-              {Array.from({ length: desktopSlidesCount }).map((_, slideIndex) => {
-                const slideProperties = displayProperties.slice(slideIndex * 3, slideIndex * 3 + 3)
-                return (
-                  <div
-                    key={slideIndex}
-                    className="w-full shrink-0 grid grid-cols-3 gap-4 px-2"
-                  >
-                    {slideProperties.map((property) => (
-                      <div key={property.id}>{renderPropertyCard(property)}</div>
-                    ))}
+        {/* Cards grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
+          </div>
+        ) : displayProperties.length === 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {displayProperties.map((p) => {
+              const img = getPrimaryPhotoUrl(p.property_photos)
+              const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')
+                ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
+                : img
+              const cityState = [p.city, p.state].filter(Boolean).join(', ')
+              const dealBadge = getDealBadge(p)
+              const roi = getROI(p)
+              const spread = getSpread(p)
+              const arv = Number(p.arv) || 0
+              const clean = (v) => (v && String(v).toLowerCase() !== 'unknown' ? v : null)
+              const title = clean(p.title) || clean(p.name) || clean(p.property_type) || 'Investment Property'
+              const beds = p.bedrooms
+              const baths = p.bathrooms
+              const sqft = p.sqft
+
+              return (
+                <div key={p.id} className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col">
+                  {/* Photo */}
+                  <div className="bg-[#FAFAF8] flex-shrink-0 relative h-[220px] overflow-hidden">
+                    {thumbImg ? (
+                      <Image
+                        src={thumbImg}
+                        alt={cityState || 'Property'}
+                        fill
+                        loading="lazy"
+                        className="object-cover"
+                        sizes="400px"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="relative w-24 h-8">
+                          <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+                        </div>
+                      </div>
+                    )}
+                    {/* Badges */}
+                    <div className="absolute top-2.5 left-2.5">
+                      <span className={`text-[11px] font-semibold px-2 py-1 rounded ${dealBadge.cls}`}>
+                        {dealBadge.label}
+                      </span>
+                    </div>
+                    {roi && (
+                      <div className="absolute top-2.5 right-2.5">
+                        <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1816] text-white">
+                          {roi}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )
-              })}
-            </div>
-          </div>
-          {desktopSlidesCount > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-8">
-              {Array.from({ length: desktopSlidesCount }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToDesktopSlide(index)}
-                  className={`transition-all duration-300 rounded-full ${
-                    index === desktopIndex ? 'w-3 h-3 bg-slate-900' : 'w-2 h-2 bg-slate-300 hover:bg-slate-400'
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Mobile: 1 property per slide, 9 slides with slider */}
-        <div className="relative lg:hidden">
-          {mobileSlidesCount > 1 && (
-            <>
-              <button
-                onClick={prevMobileSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border-2 border-slate-300 rounded-full p-2.5 hover:border-slate-900 hover:bg-slate-50 shadow-lg"
-                aria-label="Previous property"
-              >
-                <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={nextMobileSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border-2 border-slate-300 rounded-full p-2.5 hover:border-slate-900 hover:bg-slate-50 shadow-lg"
-                aria-label="Next property"
-              >
-                <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </>
-          )}
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${mobileIndex * 100}%)` }}
-            >
-              {displayProperties.map((property) => (
-                <div key={property.id} className="w-full shrink-0 px-2">
-                  {renderPropertyCard(property)}
+                  {/* Content */}
+                  <div className="p-4 flex flex-col flex-1">
+                    {/* Location */}
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <MapPin className="w-3 h-3 text-[#A8A8A4] flex-shrink-0" />
+                      <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-[15px] font-bold text-[#1A1816] mb-1.5 leading-snug line-clamp-1">{title}</h3>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
+                      {sqft && <span>{Number(sqft).toLocaleString()} sq ft</span>}
+                      {sqft && beds && <span className="text-[#E8E8E4]">·</span>}
+                      {beds && <span>{beds} bed</span>}
+                      {beds && baths && <span className="text-[#E8E8E4]">·</span>}
+                      {baths && <span>{baths} bath</span>}
+                    </div>
+
+                    {/* Price + ARV */}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[20px] font-bold text-[#1A1816]">{formatPrice(p.price)}</span>
+                      {arv > 0 && (
+                        <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
+                          ARV {formatShort(arv)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Spread */}
+                    {spread > 0 && (
+                      <p className="text-[12px] text-[#0F6E56] font-medium mb-3">
+                        ↑ ${spread.toLocaleString()} spread potential
+                      </p>
+                    )}
+
+                    {/* Divider + seller row */}
+                    <div className="mt-auto pt-3 border-t border-[#F0F0EC] flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-full ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                          {getInitials(p)}
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-semibold text-[#1A1816] leading-none">{getSellerName(p)}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                            <span className="text-[10px] text-[#16A34A] font-medium">Verified</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/${p.slug || p.id}`}
+                        className="text-[12px] font-semibold text-[#D03839] hover:underline"
+                      >
+                        View deal
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
-          {mobileSlidesCount > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
-              {displayProperties.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToMobileSlide(index)}
-                  className={`transition-all duration-300 rounded-full ${
-                    index === mobileIndex ? 'w-3 h-3 bg-slate-900' : 'w-2 h-2 bg-slate-300 hover:bg-slate-400'
-                  }`}
-                  aria-label={`Go to property ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        )}
 
-        {/* View All Link */}
+        {/* Browse all */}
         <div className="text-center mt-10">
           <Link
             href="/marketplace"
-            className="inline-block bg-slate-900 text-white px-8 py-3 text-sm font-semibold transition-all hover:bg-slate-800 rounded-lg"
+            className="inline-flex items-center gap-2 h-11 px-8 border border-[#D03839] text-[#D03839] text-[14px] font-semibold rounded hover:bg-[#FEF0EF] transition-colors"
           >
-            View All Properties
+            Browse all deals →
           </Link>
         </div>
       </div>

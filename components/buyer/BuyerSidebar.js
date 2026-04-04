@@ -3,19 +3,21 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, MessageCircle, X, ArrowLeft, Heart, Settings } from 'lucide-react';
+import {
+  LayoutDashboard, Search, MessageSquare, Star, FileText,
+  DollarSign, TrendingUp, Settings, X
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function BuyerSidebar({ mobileOpen, onClose }) {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
     if (user?.id) {
       fetchUnreadCount();
-
-      // Poll for unread count every 10 seconds
       const interval = setInterval(fetchUnreadCount, 10000);
       return () => clearInterval(interval);
     }
@@ -24,16 +26,12 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
   const fetchUnreadCount = async () => {
     try {
       const response = await fetch('/api/buyer/chat?action=get_conversations', {
-        headers: {
-          'Authorization': `Bearer ${user.id}`
-        }
+        headers: { 'Authorization': `Bearer ${user.id}` }
       });
       const data = await response.json();
-
       if (response.ok && data.success) {
         const totalUnread = (data.conversations || []).reduce(
-          (sum, conv) => sum + (conv.unread_count || 0),
-          0
+          (sum, conv) => sum + (conv.unread_count || 0), 0
         );
         setUnreadCount(totalUnread);
       }
@@ -42,33 +40,34 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
     }
   };
 
-  const menuItems = [
+  const sections = [
     {
-      href: '/buyer/dashboard',
-      icon: LayoutDashboard,
-      label: 'Dashboard'
+      label: 'MAIN',
+      items: [
+        { href: '/buyer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { href: '/marketplace', icon: Search, label: 'Browse deals' },
+        { href: '/buyer/inbox', icon: MessageSquare, label: 'Messages', badge: unreadCount },
+        { href: '/saved-properties', icon: Star, label: 'Saved deals', badge: savedCount || null },
+        { href: '/buyer/offers', icon: FileText, label: 'My offers' },
+      ]
     },
     {
-      href: '/buyer/inbox',
-      icon: MessageCircle,
-      label: 'Messages',
-      badge: unreadCount
+      label: 'TOOLS',
+      items: [
+        { href: '/buyer/financerequests', icon: DollarSign, label: 'Financing' },
+        { href: '/buyer/insights', icon: TrendingUp, label: 'Market Insights' },
+      ]
     },
     {
-      href: '/buyer/financerequests',
-      icon: FileText,
-      label: 'My Applications'
-    },
-    {
-      href: '/saved-properties',
-      icon: Heart,
-      label: 'Saved Properties'
+      label: 'ACCOUNT',
+      items: [
+        { href: '/profile', icon: Settings, label: 'Settings' },
+      ]
     }
   ];
 
   return (
     <>
-      {/* Mobile Overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
@@ -76,110 +75,81 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:sticky top-0 left-0 z-50
-        w-64 bg-white
-        border-r border-slate-200
-        flex flex-col h-screen
-        transform transition-all duration-300 ease-in-out
-        shadow-sm
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        {/* Header: Enterprise professional design */}
-        <div className="px-4 pt-6 pb-6 border-b border-slate-200 bg-white">
-          {/* Row 1: Back to Marketplace + Close (mobile) */}
-          <div className="flex items-center justify-between gap-2 mb-6">
-            <Link
-              href="/marketplace"
-              className="flex items-center gap-2 min-w-0 rounded-lg py-2 pr-3 pl-2 -ml-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-200"
-            >
-              <ArrowLeft className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">Back to Marketplace</span>
-            </Link>
-            <button
-              onClick={onClose}
-              className="lg:hidden flex-shrink-0 p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Row 2: Logo + Buyer Label — matching seller dashboard style */}
-          <div className="flex items-center gap-3 justify-center">
-            <Link href="/" className="block hover:opacity-80 transition-opacity duration-200">
+      <aside
+        className={`
+          fixed lg:sticky top-0 left-0 z-50
+          w-[220px] bg-white
+          border-r border-[#E8E8E4]
+          flex flex-col h-screen
+          transform transition-transform duration-300 ease-in-out
+          font-[var(--font-dm-sans)]
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
+        {/* Logo */}
+        <div className="px-5 pt-5 pb-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="block">
               <Image
-                src="/assets/logo copy.png"
+                src="/assets/logo.svg"
                 alt="DeelMap"
-                width={120}
-                height={36}
-                className="h-9 w-auto object-contain"
+                width={240}
+                height={56}
+                className="h-14 w-auto object-contain"
                 priority
               />
             </Link>
-            <span className="text-xs font-medium text-slate-600 uppercase tracking-wider whitespace-nowrap">
-              Buyer
-            </span>
+            <button
+              onClick={onClose}
+              className="lg:hidden p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors duration-200"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <div className="flex flex-col gap-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+        <nav className="flex-1 px-3 overflow-y-auto">
+          {sections.map((section) => (
+            <div key={section.label} className="mb-4">
+              <p className="px-3 mb-1.5 text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1.1px]">
+                {section.label}
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg
-                    transition-all duration-200
-                    ${isActive
-                      ? 'bg-slate-200 text-slate-900 font-semibold'
-                      : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                    }
-                  `}
-                >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
-                  <span className="text-sm">{item.label}</span>
-                  {item.badge > 0 && (
-                    <span className={`ml-auto inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 text-xs font-semibold rounded-full ${
-                      isActive
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-900 text-white'
-                    }`}>
-                      {item.badge > 99 ? '99+' : item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={`
+                        flex items-center gap-2.5 px-3 py-2 rounded
+                        transition-all duration-200
+                        text-[14px]
+                        ${isActive
+                          ? 'bg-[#FAFAF8] text-[#1A1816] font-medium'
+                          : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816]'
+                        }
+                      `}
+                    >
+                      <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-[#1A1816]' : 'text-[#737370]'}`} />
+                      <span className="flex-1">{item.label}</span>
+                      {item.badge > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-semibold rounded-full bg-[#1A1816] text-white">
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
-
-        {/* Settings - Bottom */}
-        <div className="mt-auto px-3 pb-4 border-t border-slate-100 pt-4">
-          <Link
-            href="/profile"
-            onClick={onClose}
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg w-full
-              transition-all duration-200
-              ${pathname === '/profile' || pathname?.startsWith('/profile/')
-                ? 'bg-slate-200 text-slate-900 font-semibold'
-                : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-              }
-            `}
-          >
-            <Settings className={`w-5 h-5 flex-shrink-0 ${pathname === '/profile' || pathname?.startsWith('/profile/') ? 'text-slate-900' : 'text-slate-500'}`} />
-            <span className="text-sm">Settings</span>
-          </Link>
-        </div>
       </aside>
     </>
   );

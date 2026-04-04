@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 import {
   parseConversationIdFromEmail,
@@ -18,7 +18,7 @@ function getLenderSupabase() {
   return createClient(url, key)
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
  * Inbound Email Webhook Handler

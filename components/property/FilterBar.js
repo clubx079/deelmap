@@ -1,33 +1,39 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { ChevronDown, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronDown, SlidersHorizontal, X, Search, Check } from 'lucide-react'
 import { supabaseMarketplace } from '@/lib/supabase'
+
+const PROPERTY_TYPES = [
+  'Single Family',
+  'Multi Family',
+  'Duplex',
+  'Condo',
+  'Townhouse',
+  'Commercial',
+  'Land',
+  'Mobile Home',
+]
+
+const PRICE_PRESETS = [
+  { label: 'Under $100k', min: 0, max: 100000 },
+  { label: '$100k – $250k', min: 100000, max: 250000 },
+  { label: '$250k – $500k', min: 250000, max: 500000 },
+  { label: '$500k – $1M', min: 500000, max: 1000000 },
+  { label: 'Over $1M', min: 1000000, max: undefined },
+]
 
 export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange }) {
   const [showAllFilters, setShowAllFilters] = useState(false)
   const [availableStates, setAvailableStates] = useState([])
-  
-  // Dropdown states
-  const [showPriceDropdown, setShowPriceDropdown] = useState(false)
-  const [showCapRateDropdown, setShowCapRateDropdown] = useState(false)
-  const [showBedsBathsDropdown, setShowBedsBathsDropdown] = useState(false)
-  
-  // Temporary filter values (before Apply is clicked)
+
+  const [showPropertyTypes, setShowPropertyTypes] = useState(false)
+  const [showPrice, setShowPrice] = useState(false)
+  const [showBedsBaths, setShowBedsBaths] = useState(false)
+
   const [tempPrice, setTempPrice] = useState({ min: filters.minPrice || '', max: filters.maxPrice || '' })
-  const [tempCapRate, setTempCapRate] = useState({ min: filters.minCapRate || '', max: filters.maxCapRate || '' })
-  const [tempBedsBaths, setTempBedsBaths] = useState({ 
-    minBeds: filters.minBeds || '', 
-    minBaths: filters.minBaths || '' 
-  })
-  
+  const [tempBedsBaths, setTempBedsBaths] = useState({ minBeds: filters.minBeds || '', minBaths: filters.minBaths || '' })
   const [tempFilters, setTempFilters] = useState({
     states: filters.states || [],
-    minPrice: filters.minPrice || '',
-    maxPrice: filters.maxPrice || '',
-    minBeds: filters.minBeds || '',
-    maxBeds: filters.maxBeds || '',
-    minBaths: filters.minBaths || '',
-    maxBaths: filters.maxBaths || '',
     minFloorArea: filters.minFloorArea || '',
     maxFloorArea: filters.maxFloorArea || '',
     minGrossYield: filters.minGrossYield || '',
@@ -35,13 +41,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     minCapRate: filters.minCapRate || '',
     maxCapRate: filters.maxCapRate || '',
     minCashOnCash: filters.minCashOnCash || '',
-    maxCashOnCash: filters.maxCashOnCash || ''
+    maxCashOnCash: filters.maxCashOnCash || '',
   })
 
-  // Refs for closing dropdowns on outside click
-  const priceDropdownRef = useRef(null)
-  const capRateDropdownRef = useRef(null)
-  const bedsBathsDropdownRef = useRef(null)
+  const propertyTypesRef = useRef(null)
+  const priceRef = useRef(null)
+  const bedsBathsRef = useRef(null)
 
   const STATE_NAMES = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
@@ -56,24 +61,14 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
   }
 
-  useEffect(() => {
-    fetchAvailableStates()
-  }, [])
+  useEffect(() => { fetchAvailableStates() }, [])
 
-  // Close dropdowns on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (priceDropdownRef.current && !priceDropdownRef.current.contains(event.target)) {
-        setShowPriceDropdown(false)
-      }
-      if (capRateDropdownRef.current && !capRateDropdownRef.current.contains(event.target)) {
-        setShowCapRateDropdown(false)
-      }
-      if (bedsBathsDropdownRef.current && !bedsBathsDropdownRef.current.contains(event.target)) {
-        setShowBedsBathsDropdown(false)
-      }
+    const handleClickOutside = (e) => {
+      if (propertyTypesRef.current && !propertyTypesRef.current.contains(e.target)) setShowPropertyTypes(false)
+      if (priceRef.current && !priceRef.current.contains(e.target)) setShowPrice(false)
+      if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
@@ -81,57 +76,53 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const fetchAvailableStates = async () => {
     try {
       const { data, error } = await supabaseMarketplace
-        .from('wholesale_deals')
-        .select('state')
-        .not('state', 'is', null)
-
-      if (error) {
-        console.error('Error fetching states:', error)
-        return
-      }
-
-      const uniqueStates = [...new Set(data.map(item => item.state))]
-        .filter(state => state)
-        .sort()
-        .map(stateCode => ({
-          value: stateCode,
-          label: STATE_NAMES[stateCode] || stateCode
-        }))
-
+        .from('wholesale_deals').select('state').not('state', 'is', null)
+      if (error) return
+      const uniqueStates = [...new Set(data.map(i => i.state))].filter(Boolean).sort()
+        .map(code => ({ value: code, label: STATE_NAMES[code] || code }))
       setAvailableStates(uniqueStates)
-    } catch (err) {
-      console.error('Error fetching available states:', err)
-    }
+    } catch {}
   }
 
-  const applyPriceFilter = () => {
+  const closeAll = () => { setShowPropertyTypes(false); setShowPrice(false); setShowBedsBaths(false) }
+
+  const applyPrice = () => {
     onFiltersChange({
       ...filters,
-      minPrice: tempPrice.min ? parseInt(tempPrice.min) : undefined,
-      maxPrice: tempPrice.max ? parseInt(tempPrice.max) : undefined
+      minPrice: tempPrice.min !== '' ? parseInt(tempPrice.min) : undefined,
+      maxPrice: tempPrice.max !== '' ? parseInt(tempPrice.max) : undefined,
     })
-    setShowPriceDropdown(false)
+    setShowPrice(false)
   }
 
-  const applyCapRateFilter = () => {
-    onFiltersChange({
-      ...filters,
-      minCapRate: tempCapRate.min ? parseFloat(tempCapRate.min) : undefined,
-      maxCapRate: tempCapRate.max ? parseFloat(tempCapRate.max) : undefined
-    })
-    setShowCapRateDropdown(false)
+  const clearPrice = () => {
+    setTempPrice({ min: '', max: '' })
+    onFiltersChange({ ...filters, minPrice: undefined, maxPrice: undefined })
+    setShowPrice(false)
   }
 
-  const applyBedsBathsFilter = () => {
+  const applyBedsBaths = () => {
     onFiltersChange({
       ...filters,
       minBeds: tempBedsBaths.minBeds ? parseInt(tempBedsBaths.minBeds) : undefined,
-      minBaths: tempBedsBaths.minBaths ? parseFloat(tempBedsBaths.minBaths) : undefined
+      minBaths: tempBedsBaths.minBaths ? parseFloat(tempBedsBaths.minBaths) : undefined,
     })
-    setShowBedsBathsDropdown(false)
+    setShowBedsBaths(false)
   }
 
-  const applyFilters = () => {
+  const clearBedsBaths = () => {
+    setTempBedsBaths({ minBeds: '', minBaths: '' })
+    onFiltersChange({ ...filters, minBeds: undefined, minBaths: undefined })
+    setShowBedsBaths(false)
+  }
+
+  const togglePropertyType = (type) => {
+    const current = filters.propertyTypes || []
+    const next = current.includes(type) ? current.filter(t => t !== type) : [...current, type]
+    onFiltersChange({ ...filters, propertyTypes: next })
+  }
+
+  const applyAllFilters = () => {
     onFiltersChange({
       ...filters,
       states: tempFilters.states,
@@ -142,406 +133,427 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       minCapRate: tempFilters.minCapRate ? parseFloat(tempFilters.minCapRate) : undefined,
       maxCapRate: tempFilters.maxCapRate ? parseFloat(tempFilters.maxCapRate) : undefined,
       minCashOnCash: tempFilters.minCashOnCash ? parseFloat(tempFilters.minCashOnCash) : undefined,
-      maxCashOnCash: tempFilters.maxCashOnCash ? parseFloat(tempFilters.maxCashOnCash) : undefined
+      maxCashOnCash: tempFilters.maxCashOnCash ? parseFloat(tempFilters.maxCashOnCash) : undefined,
     })
     setShowAllFilters(false)
   }
 
-  const resetFilters = () => {
-    setTempFilters({
-      states: [],
-      minPrice: '',
-      maxPrice: '',
-      minBeds: '',
-      maxBeds: '',
-      minBaths: '',
-      maxBaths: '',
-      minFloorArea: '',
-      maxFloorArea: '',
-      minGrossYield: '',
-      maxGrossYield: '',
-      minCapRate: '',
-      maxCapRate: '',
-      minCashOnCash: '',
-      maxCashOnCash: ''
-    })
+  const resetAllFilters = () => {
+    setTempFilters({ states: [], minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '' })
   }
 
-  const hasActiveFilters = filters.states?.length > 0 || filters.minPrice || filters.maxPrice ||
-    filters.minBeds || filters.maxBeds || filters.minBaths || filters.maxBaths ||
-    filters.minFloorArea || filters.maxFloorArea || filters.minGrossYield || filters.maxGrossYield ||
-    filters.minCapRate || filters.maxCapRate || filters.minCashOnCash || filters.maxCashOnCash
+  const formatPrice = (val) => {
+    if (!val) return ''
+    const n = Number(val)
+    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
+    if (n >= 1000) return `$${Math.round(n / 1000)}k`
+    return `$${n}`
+  }
+
+  const priceLabel = () => {
+    const { minPrice, maxPrice } = filters
+    if (!minPrice && !maxPrice) return 'Price'
+    if (minPrice && maxPrice) return `${formatPrice(minPrice)} – ${formatPrice(maxPrice)}`
+    if (minPrice) return `From ${formatPrice(minPrice)}`
+    return `Up to ${formatPrice(maxPrice)}`
+  }
+
+  const bedsBathsLabel = () => {
+    const { minBeds, minBaths } = filters
+    if (!minBeds && !minBaths) return 'Beds/Baths'
+    const parts = []
+    if (minBeds) parts.push(`${minBeds}+ bd`)
+    if (minBaths) parts.push(`${minBaths}+ ba`)
+    return parts.join(', ')
+  }
+
+  const propertyTypesLabel = () => {
+    const types = filters.propertyTypes || []
+    if (!types.length) return 'Property Types'
+    if (types.length === 1) return types[0]
+    return `${types[0]} +${types.length - 1}`
+  }
 
   const hasPriceFilter = filters.minPrice || filters.maxPrice
-  const hasCapRateFilter = filters.minCapRate || filters.maxCapRate
   const hasBedsBathsFilter = filters.minBeds || filters.minBaths
+  const hasPropertyTypesFilter = filters.propertyTypes?.length > 0
+  const hasActiveFilters = filters.states?.length > 0 || hasPriceFilter || hasBedsBathsFilter ||
+    hasPropertyTypesFilter || filters.minFloorArea || filters.maxFloorArea ||
+    filters.minGrossYield || filters.maxGrossYield || filters.minCapRate || filters.maxCapRate ||
+    filters.minCashOnCash || filters.maxCashOnCash
+
+  const filterBtn = (active) =>
+    `flex items-center gap-2 h-[42px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
+      active
+        ? 'bg-[#D03839] border-[#D03839] text-white'
+        : 'bg-white border-[#E8E8E4] text-[#1A1816] hover:border-[#1A1816]'
+    }`
 
   return (
     <>
-      <div className="bg-slate-50 border-b border-gray-200 fixed top-20 left-0 right-0 z-40 shadow-sm">
-        <div className="w-full px-4 lg:px-6 py-3">
-          <div className="flex flex-wrap items-center gap-y-2 gap-x-1 lg:gap-4">
-              {/* Search Bar */}
-              <div className="w-full lg:w-80">
-                <input
-                  type="text"
-                  placeholder="Search by address, market, or zip code"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-sky-400 focus:border-sky-400 focus:outline-none"
-                />
-              </div>
+      <div className="bg-white border-b border-[#E8E8E4] fixed top-[80px] left-0 right-0 z-40">
+        <div className="w-full px-6 lg:px-10 py-3 flex items-center gap-3">
 
-              {/* Price Range Dropdown */}
-              <div className="flex-1 lg:flex-none relative" ref={priceDropdownRef}>
-                <button
-                  onClick={() => {
-                    setShowPriceDropdown(!showPriceDropdown)
-                    setShowCapRateDropdown(false)
-                    setShowBedsBathsDropdown(false)
-                    setTempPrice({ min: filters.minPrice || '', max: filters.maxPrice || '' })
-                  }}
-                  className={`w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
-                    hasPriceFilter
-                      ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Price Range
-                  <ChevronDown className={`w-3 h-3 lg:w-4 lg:h-4 transition-transform ${showPriceDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                {showPriceDropdown && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80 z-50">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Price</label>
-                        <input
-                          type="number"
-                          placeholder="$ 0"
-                          value={tempPrice.min}
-                          onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Price</label>
-                        <input
-                          type="number"
-                          placeholder="$ 10,000,000"
-                          value={tempPrice.max}
-                          onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                        />
-                      </div>
+          {/* Search */}
+          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden flex-1 min-w-0 lg:w-[480px] lg:flex-none focus-within:border-[#1A1816] transition-colors">
+            <input
+              type="text"
+              placeholder="Search markets, cities, or ZIP codes"
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
+            />
+            <button className="h-full px-4 bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
+              <Search className="w-4 h-4 text-white" />
+            </button>
+          </div>
+
+          {/* Property Types */}
+          <div className="relative hidden lg:block" ref={propertyTypesRef}>
+            <button
+              className={filterBtn(hasPropertyTypesFilter)}
+              onClick={() => { setShowPropertyTypes(!showPropertyTypes); setShowPrice(false); setShowBedsBaths(false) }}
+            >
+              {propertyTypesLabel()}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showPropertyTypes ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showPropertyTypes && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-64 overflow-hidden">
+                <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Property Type</p>
+                </div>
+                <div className="py-2">
+                  {PROPERTY_TYPES.map((type) => {
+                    const active = filters.propertyTypes?.includes(type)
+                    return (
                       <button
-                        onClick={applyPriceFilter}
-                        className="w-full px-4 py-2 bg-sky-100 border border-sky-300 text-slate-800 rounded-lg hover:bg-sky-200 transition-colors text-sm font-medium"
+                        key={type}
+                        onClick={() => togglePropertyType(type)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8] group"
                       >
-                        Apply
+                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{type}</span>
+                        <span className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                          active ? 'bg-[#D03839] border-[#D03839]' : 'border-[#E8E8E4] group-hover:border-[#C0C0BC]'
+                        }`}>
+                          {active && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                        </span>
                       </button>
-                    </div>
+                    )
+                  })}
+                </div>
+                {hasPropertyTypesFilter && (
+                  <div className="px-4 py-3 border-t border-[#F0F0EC]">
+                    <button
+                      onClick={() => onFiltersChange({ ...filters, propertyTypes: [] })}
+                      className="text-[13px] text-[#737370] hover:text-[#D03839] transition-colors font-medium"
+                    >
+                      Clear selection
+                    </button>
                   </div>
                 )}
               </div>
+            )}
+          </div>
 
-              {/* Beds/Baths Dropdown */}
-              <div className="flex-1 lg:flex-none relative" ref={bedsBathsDropdownRef}>
-                <button
-                  onClick={() => {
-                    setShowBedsBathsDropdown(!showBedsBathsDropdown)
-                    setShowPriceDropdown(false)
-                    setShowCapRateDropdown(false)
-                    setTempBedsBaths({
-                      minBeds: filters.minBeds || '',
-                      minBaths: filters.minBaths || ''
-                    })
-                  }}
-                  className={`w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
-                    hasBedsBathsFilter
-                      ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Beds / Baths
-                  <ChevronDown className={`w-3 h-3 lg:w-4 lg:h-4 transition-transform ${showBedsBathsDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                {showBedsBathsDropdown && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80 z-50">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Beds</label>
-                        <div className="flex gap-2">
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <button
-                              key={n}
-                              onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBeds: tempBedsBaths.minBeds === n.toString() ? '' : n.toString() })}
-                              className={`flex-1 px-3 py-2 rounded-lg border transition-colors text-sm ${
-                                tempBedsBaths.minBeds === n.toString()
-                                  ? 'bg-sky-100 text-slate-800 border-sky-300'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              {n}+
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Baths</label>
-                        <div className="flex gap-2">
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <button
-                              key={n}
-                              onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBaths: tempBedsBaths.minBaths === n.toString() ? '' : n.toString() })}
-                              className={`flex-1 px-3 py-2 rounded-lg border transition-colors text-sm ${
-                                tempBedsBaths.minBaths === n.toString()
-                                  ? 'bg-sky-100 text-slate-800 border-sky-300'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              {n}+
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+          {/* Price */}
+          <div className="relative hidden lg:block" ref={priceRef}>
+            <button
+              className={filterBtn(hasPriceFilter)}
+              onClick={() => {
+                setShowPrice(!showPrice); setShowPropertyTypes(false); setShowBedsBaths(false)
+                setTempPrice({ min: filters.minPrice || '', max: filters.maxPrice || '' })
+              }}
+            >
+              {priceLabel()}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showPrice ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showPrice && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-80 overflow-hidden">
+                <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Price Range</p>
+                </div>
+
+                {/* Quick presets */}
+                <div className="px-4 py-3 border-b border-[#F0F0EC] flex flex-wrap gap-2">
+                  {PRICE_PRESETS.map((p) => {
+                    const active = tempPrice.min === String(p.min || '') && tempPrice.max === String(p.max || '')
+                    return (
                       <button
-                        onClick={applyBedsBathsFilter}
-                        className="w-full px-4 py-2 bg-sky-100 border border-sky-300 text-slate-800 rounded-lg hover:bg-sky-200 transition-colors text-sm font-medium"
+                        key={p.label}
+                        onClick={() => setTempPrice({ min: p.min || '', max: p.max || '' })}
+                        className={`px-3 py-1 rounded-full border text-[12px] font-medium transition-all ${
+                          active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                        }`}
                       >
-                        Apply
+                        {p.label}
                       </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                    )
+                  })}
+                </div>
 
-              {/* Cap Rate Dropdown - desktop only */}
-              <div className="hidden lg:block relative" ref={capRateDropdownRef}>
-                <button
-                  onClick={() => {
-                    setShowCapRateDropdown(!showCapRateDropdown)
-                    setShowPriceDropdown(false)
-                    setShowBedsBathsDropdown(false)
-                    setTempCapRate({ min: filters.minCapRate || '', max: filters.maxCapRate || '' })
-                  }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium whitespace-nowrap ${
-                    hasCapRateFilter
-                      ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  Cap Rate
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showCapRateDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                {showCapRateDropdown && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-80 z-50">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Cap Rate (%)</label>
+                {/* Custom inputs */}
+                <div className="px-4 py-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Min</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
                         <input
                           type="number"
                           placeholder="0"
-                          value={tempCapRate.min}
-                          onChange={(e) => setTempCapRate({ ...tempCapRate, min: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                          value={tempPrice.min}
+                          onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Cap Rate (%)</label>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Max</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
                         <input
                           type="number"
-                          placeholder="25"
-                          value={tempCapRate.max}
-                          onChange={(e) => setTempCapRate({ ...tempCapRate, max: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                          placeholder="Any"
+                          value={tempPrice.max}
+                          onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors"
                         />
                       </div>
-                      <button
-                        onClick={applyCapRateFilter}
-                        className="w-full px-4 py-2 bg-sky-100 border border-sky-300 text-slate-800 rounded-lg hover:bg-sky-200 transition-colors text-sm font-medium"
-                      >
-                        Apply
-                      </button>
                     </div>
                   </div>
-                )}
+                  <div className="flex gap-2 pt-1">
+                    {hasPriceFilter && (
+                      <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">
+                        Clear
+                      </button>
+                    )}
+                    <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">
+                      Apply
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              {/* All Filters */}
-              <button
-                onClick={() => setShowAllFilters(true)}
-                className={`flex-1 lg:flex-none w-full justify-center lg:w-auto flex items-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-lg border transition-all text-xs lg:text-sm font-medium whitespace-nowrap ${
-                  hasActiveFilters
-                    ? 'bg-sky-100 border-sky-300 text-slate-800 hover:bg-sky-200'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <SlidersHorizontal className="w-3 h-3 lg:w-4 lg:h-4" />
-                All Filters
-              </button>
+            )}
           </div>
+
+          {/* Beds/Baths */}
+          <div className="relative hidden lg:block" ref={bedsBathsRef}>
+            <button
+              className={filterBtn(hasBedsBathsFilter)}
+              onClick={() => {
+                setShowBedsBaths(!showBedsBaths); setShowPropertyTypes(false); setShowPrice(false)
+                setTempBedsBaths({ minBeds: filters.minBeds || '', minBaths: filters.minBaths || '' })
+              }}
+            >
+              {bedsBathsLabel()}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showBedsBaths ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showBedsBaths && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-72 overflow-hidden">
+                <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Beds & Baths</p>
+                </div>
+
+                <div className="px-4 py-4 space-y-5">
+                  <div>
+                    <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Bedrooms</p>
+                    <div className="flex gap-2">
+                      {['Any', 1, 2, 3, 4, 5].map((n) => {
+                        const val = n === 'Any' ? '' : String(n)
+                        const active = tempBedsBaths.minBeds === val
+                        return (
+                          <button
+                            key={n}
+                            onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBeds: val })}
+                            className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${
+                              active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                            }`}
+                          >
+                            {n === 'Any' ? 'Any' : `${n}+`}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Bathrooms</p>
+                    <div className="flex gap-2">
+                      {['Any', 1, 2, 3, 4, 5].map((n) => {
+                        const val = n === 'Any' ? '' : String(n)
+                        const active = tempBedsBaths.minBaths === val
+                        return (
+                          <button
+                            key={n}
+                            onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBaths: val })}
+                            className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${
+                              active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                            }`}
+                          >
+                            {n === 'Any' ? 'Any' : `${n}+`}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
+                    {hasBedsBathsFilter && (
+                      <button onClick={clearBedsBaths} className="flex-1 h-10 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">
+                        Clear
+                      </button>
+                    )}
+                    <button onClick={applyBedsBaths} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* All Filters */}
+          <button
+            className={filterBtn(hasActiveFilters)}
+            onClick={() => { closeAll(); setShowAllFilters(true) }}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            All Filters
+            {hasActiveFilters && (
+              <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
+                {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
       {/* All Filters Modal */}
       {showAllFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[88vh] overflow-y-auto shadow-2xl">
+
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">All Filters</h2>
-              <button
-                onClick={() => setShowAllFilters(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
+            <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div>
+                <h2 className="text-[18px] font-bold text-[#1A1816]">All Filters</h2>
+                <p className="text-[12px] text-[#A8A8A4] mt-0.5">Refine your search results</p>
+              </div>
+              <button onClick={() => setShowAllFilters(false)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#FAFAF8] transition-colors">
+                <X className="w-5 h-5 text-[#737370]" />
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-6 space-y-8">
+
               {/* States */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">States</h3>
-                <div className="grid grid-cols-4 gap-3">
-                  {availableStates.map((state) => (
-                    <label key={state.value} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={tempFilters.states.includes(state.value)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setTempFilters({
-                              ...tempFilters,
-                              states: [...tempFilters.states, state.value]
-                            })
-                          } else {
-                            setTempFilters({
-                              ...tempFilters,
-                              states: tempFilters.states.filter(s => s !== state.value)
-                            })
-                          }
-                        }}
-                        className="rounded border-gray-300 text-slate-800 focus:ring-sky-400"
-                      />
-                      <span className="text-sm text-gray-700">{state.label}</span>
-                    </label>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[15px] font-bold text-[#1A1816]">State</h3>
+                  {tempFilters.states.length > 0 && (
+                    <button onClick={() => setTempFilters({ ...tempFilters, states: [] })} className="text-[12px] text-[#D03839] font-medium hover:underline">
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {availableStates.map((state) => {
+                    const active = tempFilters.states.includes(state.value)
+                    return (
+                      <label key={state.value} className={`flex items-center gap-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
+                        active ? 'bg-[#FAFAF8] border-[#1A1816]' : 'border-[#E8E8E4] hover:border-[#C0C0BC]'
+                      }`}>
+                        <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all ${
+                          active ? 'bg-[#D03839] border-[#D03839]' : 'border-[#C0C0BC]'
+                        }`}>
+                          {active && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={(e) => setTempFilters({
+                            ...tempFilters,
+                            states: e.target.checked
+                              ? [...tempFilters.states, state.value]
+                              : tempFilters.states.filter(s => s !== state.value)
+                          })}
+                          className="sr-only"
+                        />
+                        <span className={`text-[13px] ${active ? 'font-semibold text-[#1A1816]' : 'text-[#444441]'}`}>{state.label}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-[#F0F0EC]" />
+
+              {/* Square Footage */}
+              <div>
+                <h3 className="text-[15px] font-bold text-[#1A1816] mb-4">Square Footage</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Min sq ft', key: 'minFloorArea', placeholder: '0' },
+                    { label: 'Max sq ft', key: 'maxFloorArea', placeholder: 'No max' },
+                  ].map(({ label, key, placeholder }) => (
+                    <div key={key}>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">{label}</label>
+                      <input type="number" placeholder={placeholder} value={tempFilters[key]}
+                        onChange={(e) => setTempFilters({ ...tempFilters, [key]: e.target.value })}
+                        className="w-full h-11 px-4 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Square Footage */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Square Footage</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Minimum</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={tempFilters.minFloorArea}
-                      onChange={(e) => setTempFilters({ ...tempFilters, minFloorArea: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Maximum</label>
-                    <input
-                      type="number"
-                      placeholder="No max"
-                      value={tempFilters.maxFloorArea}
-                      onChange={(e) => setTempFilters({ ...tempFilters, maxFloorArea: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                    />
-                  </div>
-                </div>
-              </div>
+              <div className="border-t border-[#F0F0EC]" />
 
               {/* Investment Metrics */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Investment Metrics</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Gross yield (%)</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={tempFilters.minGrossYield}
-                        onChange={(e) => setTempFilters({ ...tempFilters, minGrossYield: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={tempFilters.maxGrossYield}
-                        onChange={(e) => setTempFilters({ ...tempFilters, maxGrossYield: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                      />
+                <h3 className="text-[15px] font-bold text-[#1A1816] mb-5">Investment Metrics</h3>
+                <div className="space-y-5">
+                  {[
+                    { label: 'Gross Yield', unit: '%', minKey: 'minGrossYield', maxKey: 'maxGrossYield' },
+                    { label: 'Cap Rate', unit: '%', minKey: 'minCapRate', maxKey: 'maxCapRate' },
+                    { label: 'Cash on Cash Return', unit: '%', minKey: 'minCashOnCash', maxKey: 'maxCashOnCash' },
+                  ].map(({ label, unit, minKey, maxKey }) => (
+                    <div key={label} className="grid grid-cols-[1fr_2fr] gap-6 items-center">
+                      <div>
+                        <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
+                        <p className="text-[11px] text-[#A8A8A4]">In {unit}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="relative">
+                          <input type="number" placeholder="Min" value={tempFilters[minKey]}
+                            onChange={(e) => setTempFilters({ ...tempFilters, [minKey]: e.target.value })}
+                            className="w-full h-10 px-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                        </div>
+                        <div className="relative">
+                          <input type="number" placeholder="Max" value={tempFilters[maxKey]}
+                            onChange={(e) => setTempFilters({ ...tempFilters, [maxKey]: e.target.value })}
+                            className="w-full h-10 px-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Cap rate (%)</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={tempFilters.minCapRate}
-                        onChange={(e) => setTempFilters({ ...tempFilters, minCapRate: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={tempFilters.maxCapRate}
-                        onChange={(e) => setTempFilters({ ...tempFilters, maxCapRate: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Cash on cash (%)</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        value={tempFilters.minCashOnCash}
-                        onChange={(e) => setTempFilters({ ...tempFilters, minCashOnCash: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        value={tempFilters.maxCashOnCash}
-                        onChange={(e) => setTempFilters({ ...tempFilters, maxCashOnCash: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Footer - compact buttons, clear spacing between Clear all and actions */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between gap-4">
-              <button
-                onClick={resetFilters}
-                className="text-sm font-medium text-gray-700 hover:text-gray-900 shrink-0 px-3 py-2 rounded-lg hover:bg-gray-100 active:scale-[0.98] transition-all duration-200"
-              >
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-white border-t border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-b-2xl">
+              <button onClick={resetAllFilters} className="text-[14px] font-medium text-[#737370] hover:text-[#1A1816] transition-colors underline underline-offset-2">
                 Clear all
               </button>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setShowAllFilters(false)}
-                  className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:border-gray-400 active:scale-[0.98] transition-all duration-200 text-sm font-medium"
-                >
+              <div className="flex items-center gap-3">
+                <button onClick={() => setShowAllFilters(false)} className="h-11 px-5 border border-[#E8E8E4] rounded-lg text-[14px] font-medium text-[#1A1816] hover:bg-[#FAFAF8] transition-colors">
                   Cancel
                 </button>
-                <button
-                  onClick={applyFilters}
-                  className="px-4 py-2 rounded-lg bg-sky-100 border border-sky-300 text-slate-800 hover:bg-sky-200 hover:border-sky-400 active:scale-[0.98] transition-all duration-200 text-sm font-medium"
-                >
-                  Show properties
+                <button onClick={applyAllFilters} className="h-11 px-6 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">
+                  Show results
                 </button>
               </div>
             </div>

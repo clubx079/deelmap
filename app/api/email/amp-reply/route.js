@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { determineSenderType, generateReplyToAddress } from '@/lib/emailReplyUtils';
 import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
@@ -12,7 +12,7 @@ function getLenderSupabase() {
   return createClient(url, key)
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
  * AMP Email Reply Handler
