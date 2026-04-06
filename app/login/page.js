@@ -176,7 +176,7 @@ function LoginForm() {
                         />
                       </div>
                       {reviewError && (
-                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+                        <div className="flex items-center gap-2 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-3 py-2 rounded-lg text-xs">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           {reviewError}
                         </div>
@@ -237,7 +237,7 @@ function LoginForm() {
 
               {/* Error Message */}
               {error && !isSuspended && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-4 py-3 rounded-lg text-sm">
                   {error}
                 </div>
               )}

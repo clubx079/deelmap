@@ -143,15 +143,15 @@ export default function CashOfferPage() {
     return (
       <div className="min-h-screen">
         <Navbar currentPage="cashoffer" />
-        <div className="min-h-[60vh] flex items-center justify-center bg-gray-50">
+        <div className="min-h-[60vh] flex items-center justify-center bg-[#FAFAF8]">
           <div className="text-center p-8">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
-            <p className="text-gray-600">Your cash offer request has been submitted successfully. We'll contact you soon.</p>
+            <h2 className="text-2xl font-bold text-[#1A1816] mb-2">Thank You!</h2>
+            <p className="text-[#444441]">Your cash offer request has been submitted successfully. We'll contact you soon.</p>
           </div>
         </div>
         <Footer />
@@ -192,7 +192,7 @@ export default function CashOfferPage() {
               
               {/* First Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   First Name *
                 </label>
                 <input
@@ -201,13 +201,13 @@ export default function CashOfferPage() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Last Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Last Name *
                 </label>
                 <input
@@ -216,13 +216,13 @@ export default function CashOfferPage() {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Email *
                 </label>
                 <input
@@ -231,13 +231,13 @@ export default function CashOfferPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Phone Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Seller Phone Number (Numbers only) *
                 </label>
                 <input
@@ -246,13 +246,13 @@ export default function CashOfferPage() {
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Property Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Type of Property *
                 </label>
                 <select
@@ -260,7 +260,7 @@ export default function CashOfferPage() {
                   value={formData.propertyType}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 >
                   <option value="Single Family House">Single Family House</option>
                   <option value="Multi Family House">Multi Family House</option>
@@ -271,7 +271,7 @@ export default function CashOfferPage() {
 
               {/* Full Address */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Full Address (Include - City, State, Zip) *
                 </label>
                 <input
@@ -281,13 +281,13 @@ export default function CashOfferPage() {
                   value={formData.fullAddress}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* State */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   State *
                 </label>
                 <select
@@ -295,7 +295,7 @@ export default function CashOfferPage() {
                   value={formData.state}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 >
                   {states.map(state => (
                     <option key={state} value={state}>{state}</option>
@@ -305,7 +305,7 @@ export default function CashOfferPage() {
 
               {/* Closing Time */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Closing Time (Numbers referring to days) *
                 </label>
                 <input
@@ -314,13 +314,13 @@ export default function CashOfferPage() {
                   value={formData.closingTime}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Asking Price */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Asking Price *
                 </label>
                 <input
@@ -329,13 +329,13 @@ export default function CashOfferPage() {
                   value={formData.askingPrice}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Is it negotiable */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Is it negotiable? *
                 </label>
                 <div className="flex space-x-4 mt-2">
@@ -346,9 +346,9 @@ export default function CashOfferPage() {
                       value="Yes"
                       checked={formData.negotiable === 'Yes'}
                       onChange={handleInputChange}
-                      className="mr-2 text-blue-600 focus:ring-blue-500"
+                      className="mr-2 text-[#D03839] focus:ring-[rgba(208,56,57,.12)]"
                     />
-                    <span className="text-sm text-gray-700">Yes</span>
+                    <span className="text-sm text-[#444441]">Yes</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -357,16 +357,16 @@ export default function CashOfferPage() {
                       value="No"
                       checked={formData.negotiable === 'No'}
                       onChange={handleInputChange}
-                      className="mr-2 text-blue-600 focus:ring-blue-500"
+                      className="mr-2 text-[#D03839] focus:ring-[rgba(208,56,57,.12)]"
                     />
-                    <span className="text-sm text-gray-700">No</span>
+                    <span className="text-sm text-[#444441]">No</span>
                   </label>
                 </div>
               </div>
 
               {/* Contact Date */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   When would you like us to contact you? *
                 </label>
                 <input
@@ -375,13 +375,13 @@ export default function CashOfferPage() {
                   value={formData.contactDate}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
               {/* Condition/Notes */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#444441] mb-2">
                   Condition / Notes
                 </label>
                 <textarea
@@ -390,7 +390,7 @@ export default function CashOfferPage() {
                   onChange={handleInputChange}
                   rows={4}
                   placeholder="Ex: number of bedrooms, bathrooms, condition of roof, flooring, kitchen, etc."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839] resize-none"
                 />
               </div>
 
@@ -401,7 +401,7 @@ export default function CashOfferPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#022b41] hover:bg-[#033a56] disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition-colors duration-200 shadow-lg hover:shadow-xl"
+                className="w-full bg-[#D03839] hover:bg-[#E0493B] disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition-colors duration-200 shadow-lg hover:shadow-xl"
               >
                 {isSubmitting ? 'SENDING...' : 'SEND'}
               </button>
@@ -420,7 +420,7 @@ export default function CashOfferPage() {
             {/* Step 1 */}
             <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
-                <div className="w-16 h-16 bg-[#022b41] rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">1</span>
                 </div>
                 <div className="flex justify-center mb-4">
@@ -433,13 +433,13 @@ export default function CashOfferPage() {
                   />
                 </div>
               </div>
-              <p className="text-gray-600 text-base leading-relaxed">Submit your property above.</p>
+              <p className="text-[#444441] text-base leading-relaxed">Submit your property above.</p>
             </div>
 
             {/* Step 2 */}
             <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
-                <div className="w-16 h-16 bg-[#022b41] rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">2</span>
                 </div>
                 <div className="flex justify-center mb-4">
@@ -452,13 +452,13 @@ export default function CashOfferPage() {
                   />
                 </div>
               </div>
-              <p className="text-gray-600 text-base leading-relaxed">An agent will reach out soon to discuss an offer with you.</p>
+              <p className="text-[#444441] text-base leading-relaxed">An agent will reach out soon to discuss an offer with you.</p>
             </div>
 
             {/* Step 3 */}
             <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
-                <div className="w-16 h-16 bg-[#022b41] rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">3</span>
                 </div>
                 <div className="flex justify-center mb-4">
@@ -471,13 +471,13 @@ export default function CashOfferPage() {
                   />
                 </div>
               </div>
-              <p className="text-gray-600 text-base leading-relaxed">Present the as-is, cash offer to your seller.</p>
+              <p className="text-[#444441] text-base leading-relaxed">Present the as-is, cash offer to your seller.</p>
             </div>
 
             {/* Step 4 */}
             <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
-                <div className="w-16 h-16 bg-[#022b41] rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">4</span>
                 </div>
                 <div className="flex justify-center mb-4">
@@ -490,7 +490,7 @@ export default function CashOfferPage() {
                   />
                 </div>
               </div>
-              <p className="text-gray-600 text-base leading-relaxed">Close the deal and repeat.</p>
+              <p className="text-[#444441] text-base leading-relaxed">Close the deal and repeat.</p>
             </div>
           </div>
 
@@ -514,7 +514,7 @@ export default function CashOfferPage() {
               >
                 GET PAID
               </h3>
-              <p className="text-gray-600 text-base leading-relaxed">
+              <p className="text-[#444441] text-base leading-relaxed">
                 No service fees or commissions to New Western.
               </p>
             </div>
@@ -536,7 +536,7 @@ export default function CashOfferPage() {
               >
                 QUICK CLOSE
               </h3>
-              <p className="text-gray-600 text-base leading-relaxed">
+              <p className="text-[#444441] text-base leading-relaxed">
                 Sellers receive a credible as-is, quick close option with New Western cash offers.
               </p>
             </div>

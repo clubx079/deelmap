@@ -180,31 +180,31 @@ export function GuestLockModal({
         {canClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+            className="absolute top-4 right-4 text-[#A8A8A4] hover:text-[#737370] p-1 rounded-full hover:bg-[#FAFAF8]"
           >
             <X size={20} />
           </button>
         )}
 
         <div className="mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#b29578] to-[#9a7e61] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-20 h-20 bg-gradient-to-br from-[#D03839] to-[#E0493B] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Lock className="w-10 h-10 text-white" />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-[#1A1816] mb-2">
             Free Preview Limit Reached
           </h2>
 
-          <p className="text-gray-600 mb-4">
+          <p className="text-[#444441] mb-4">
             You have viewed your free property previews. Sign up now to unlock unlimited access!
           </p>
 
           {lockoutTimeLeft > 0 && (
-            <div className="bg-gray-100 rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-center gap-2 text-gray-700">
+            <div className="bg-[#FAFAF8] rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-center gap-2 text-[#444441]">
                 <Clock className="w-5 h-5" />
                 <span className="text-sm">Or wait</span>
-                <span className="text-2xl font-bold font-mono text-[#b29578]">
+                <span className="text-2xl font-bold font-mono text-[#D03839]">
                   {formatTime(lockoutTimeLeft)}
                 </span>
               </div>
@@ -215,12 +215,12 @@ export function GuestLockModal({
         <div className="space-y-3">
           <button
             onClick={onSignUp}
-            className="w-full bg-[#b29578] hover:bg-[#9a7e61] text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
           >
             Sign Up Free - Instant Access
           </button>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[#737370]">
             Join thousands of investors accessing exclusive deals
           </p>
         </div>
@@ -233,7 +233,7 @@ export function GuestViewBanner({ viewCount, remainingFreeViews, onSignUp }) {
   if (remainingFreeViews <= 0) return null
 
   return (
-    <div className="bg-gradient-to-r from-[#022b41] to-[#033a56] text-white px-4 py-3 rounded-xl mb-4 flex items-center justify-between">
+    <div className="bg-gradient-to-r from-[#D03839] to-[#E0493B] text-white px-4 py-3 rounded-xl mb-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="bg-white/20 p-2 rounded-lg">
           <Eye className="w-5 h-5" />
@@ -247,7 +247,7 @@ export function GuestViewBanner({ viewCount, remainingFreeViews, onSignUp }) {
       </div>
       <button
         onClick={onSignUp}
-        className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        className="bg-[#D03839] hover:bg-[#E0493B] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
       >
         Sign Up Free
       </button>
@@ -266,18 +266,18 @@ export function ContentBlurOverlay({ onSignUp }) {
 
       {/* CTA */}
       <div className="relative z-20 text-center p-6 max-w-sm">
-        <div className="w-14 h-14 bg-[#b29578] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <div className="w-14 h-14 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
           <Lock className="w-7 h-7 text-white" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+        <h3 className="text-xl font-bold text-[#1A1816] mb-2">
           Unlock Full Details
         </h3>
-        <p className="text-gray-600 text-sm mb-4">
+        <p className="text-[#444441] text-sm mb-4">
           Sign up to view property description, repairs, and more
         </p>
         <button
           onClick={onSignUp}
-          className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+          className="bg-[#D03839] hover:bg-[#E0493B] text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
         >
           Sign Up Free
         </button>
@@ -299,8 +299,8 @@ export function GuestCheckingOverlay() {
         }}
       />
       <div className="relative z-10 text-center">
-        <div className="w-12 h-12 border-4 border-[#b29578] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-600 font-medium">Loading...</p>
+        <div className="w-12 h-12 border-4 border-[#D03839] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-[#444441] font-medium">Loading...</p>
       </div>
     </div>
   )

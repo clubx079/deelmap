@@ -28,7 +28,7 @@ export default function TermsOfUsePage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-[#022b41] mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-4">
               Ableman Terms of Use
             </h1>
 
@@ -46,7 +46,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 1 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">1. Ownership of Content and Data</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">1. Ownership of Content and Data</h2>
               <p className="text-base leading-relaxed text-gray-700 mb-4">
                 All content, materials, information, property data, listings, pricing, analytics, text, graphics, images, videos, software, and other materials made available on or through the Site (collectively, "Ableman Content") are owned by or licensed to Ableman and are protected by applicable intellectual property and proprietary rights laws.
               </p>
@@ -60,7 +60,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 2 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">2. Limited Permission to Use</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">2. Limited Permission to Use</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 Ableman grants you a limited, revocable, non-exclusive, non-transferable permission to access and use the Site and Services solely for their intended purpose. All rights not expressly granted are reserved by Ableman.
               </p>
@@ -68,7 +68,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 3 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">3. Prohibited Conduct</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">3. Prohibited Conduct</h2>
               <p className="text-base leading-relaxed text-gray-700 mb-4">
                 You agree not to:
               </p>
@@ -83,7 +83,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 4 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">4. Suspension, Blocking, and Enforcement</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">4. Suspension, Blocking, and Enforcement</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 Ableman may, at its sole discretion and without notice, block, suspend, restrict, or terminate your access to the Site or Services for any violation of these Terms or misuse of Ableman Content.
               </p>
@@ -91,7 +91,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 5 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">5. Legal and Financial Consequences</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">5. Legal and Financial Consequences</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 Unauthorized use of Ableman Content or violation of these Terms may result in legal and financial penalties, including injunctive relief, monetary damages, recovery of attorneys' fees and costs, and other remedies available under law.
               </p>
@@ -99,7 +99,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 6 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">6. Disclaimers and Limitation of Liability</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">6. Disclaimers and Limitation of Liability</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 The Site and Services are provided on an "AS IS" and "AS AVAILABLE" basis. To the fullest extent permitted by law, Ableman disclaims all warranties and shall not be liable for any indirect, incidental, consequential, or punitive damages.
               </p>
@@ -107,7 +107,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 7 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">7. Governing Law</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">7. Governing Law</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 These Terms are governed by the laws of the State of Kentucky. Any disputes shall be brought exclusively in the state or federal courts located in Kentucky.
               </p>
@@ -115,7 +115,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 8 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">8. Changes to These Terms</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">8. Changes to These Terms</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 Ableman may update these Terms at any time by posting revised Terms on the Site. Continued use of the Site or Services constitutes acceptance of the updated Terms.
               </p>
@@ -123,7 +123,7 @@ export default function TermsOfUsePage() {
 
             {/* Section 9 */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#022b41] mb-4">9. Contact</h2>
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-4">9. Contact</h2>
               <p className="text-base leading-relaxed text-gray-700">
                 Questions regarding these Terms should be directed to Ableman using the contact information provided on the Site.
               </p>
@@ -190,7 +190,7 @@ export default function TermsOfUsePage() {
             >
               <a
                 href="/contact"
-                className="inline-block bg-[#022b41] hover:bg-white hover:text-[#022b41] text-white px-8 lg:px-12 py-4 lg:py-5 rounded-lg font-bold text-sm lg:text-base uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-block bg-[#D03839] hover:bg-white hover:text-[#D03839] text-white px-8 lg:px-12 py-4 lg:py-5 rounded-lg font-bold text-sm lg:text-base uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 CONTACT US TODAY!
               </a>

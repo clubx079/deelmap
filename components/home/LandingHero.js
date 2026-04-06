@@ -61,11 +61,11 @@ export function LandingHero() {
       {/* Center: phone + map + pin + number blocks */}
       <div className="relative z-10 flex items-center justify-center">
         {/* Phone mockup */}
-        <div className="relative w-[200px] sm:w-[240px] lg:w-[280px] aspect-[9/19] bg-slate-900 rounded-[2.5rem] shadow-2xl border-[10px] sm:border-[12px] border-slate-800 overflow-hidden">
+        <div className="relative w-[200px] sm:w-[240px] lg:w-[280px] aspect-[9/19] bg-[#1A1816] rounded-[2.5rem] shadow-2xl border-[10px] sm:border-[12px] border-[#1A1816] overflow-hidden">
           {/* Notch */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-slate-900 rounded-b-2xl z-10" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#1A1816] rounded-b-2xl z-10" />
           {/* Screen - map area */}
-          <div className="absolute inset-0 pt-6 bg-slate-200 overflow-hidden">
+          <div className="absolute inset-0 pt-6 bg-[#E8E8E4] overflow-hidden">
             {/* Subtle map-like grid background */}
             <div
               className="absolute inset-0 opacity-40"
@@ -77,7 +77,7 @@ export function LandingHero() {
                 backgroundSize: '16px 16px'
               }}
             />
-            <div className="absolute bottom-2 left-2 right-2 text-[8px] sm:text-[9px] text-slate-500 font-medium">
+            <div className="absolute bottom-2 left-2 right-2 text-[8px] sm:text-[9px] text-[#737370] font-medium">
               Cincinnati
             </div>
 
@@ -87,7 +87,7 @@ export function LandingHero() {
                 key={block.id}
                 type="button"
                 onClick={() => setActiveBlockId(block.id)}
-                className="absolute w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+                className="absolute w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#4A90E2] text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#1A1816] focus:ring-offset-2"
                 style={{
                   left: block.id === 0 ? '18%' : block.id === 1 ? '42%' : '32%',
                   top: block.id === 0 ? '22%' : block.id === 1 ? '38%' : '62%',
@@ -136,8 +136,8 @@ export function LandingHero() {
 
 function PropertyCard({ price, location, beds, baths, sqft, image }) {
   return (
-    <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden transition-shadow duration-300 hover:shadow-2xl">
-      <div className="relative aspect-[4/3] bg-slate-100">
+    <div className="bg-white rounded-xl shadow-xl border border-[#E8E8E4] overflow-hidden transition-shadow duration-300 hover:shadow-2xl">
+      <div className="relative aspect-[4/3] bg-[#FAFAF8]">
         <Image
           src={image}
           alt={location}
@@ -147,16 +147,16 @@ function PropertyCard({ price, location, beds, baths, sqft, image }) {
         />
       </div>
       <div className="p-2 sm:p-2.5">
-        <p className="text-sm sm:text-base font-bold text-slate-900">{price}</p>
-        <p className="text-[10px] sm:text-xs text-slate-600 truncate">{location}</p>
+        <p className="text-sm sm:text-base font-bold text-[#1A1816]">{price}</p>
+        <p className="text-[10px] sm:text-xs text-[#444441] truncate">{location}</p>
         <div className="flex flex-wrap gap-1 mt-1.5">
-          <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[9px] sm:text-xs text-slate-600">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[9px] sm:text-xs text-[#444441]">
             {beds}
           </span>
-          <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[9px] sm:text-xs text-slate-600">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[9px] sm:text-xs text-[#444441]">
             {baths}
           </span>
-          <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-[9px] sm:text-xs text-slate-600">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[9px] sm:text-xs text-[#444441]">
             {sqft}
           </span>
         </div>
@@ -176,7 +176,7 @@ function MapPinIcon() {
       {/* Pin shape */}
       <path
         d="M28 0C12.536 0 0 12.536 0 28c0 15.464 28 44 28 44s28-28.536 28-44C56 12.536 43.464 0 28 0z"
-        fill="#DC2626"
+        fill="#D03839"
       />
       {/* House icon inside pin */}
       <path

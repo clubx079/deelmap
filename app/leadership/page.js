@@ -25,10 +25,10 @@ export default function LeadershipPage() {
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-normal text-slate-900 mb-8 leading-tight tracking-tight">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-normal text-[#1A1816] mb-8 leading-tight tracking-tight">
               Leadership
             </h1>
-            <p className="text-xl sm:text-2xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-xl sm:text-2xl text-[#737370] leading-relaxed max-w-3xl mx-auto">
               Meet the experienced team driving Deelmap's mission to revolutionize wholesale real estate investing.
             </p>
           </div>
@@ -36,13 +36,13 @@ export default function LeadershipPage() {
       </section>
 
       {/* Leadership Section */}
-      <section className="py-12 sm:py-16 lg:py-20 bg-slate-50">
+      <section className="py-12 sm:py-16 lg:py-20 bg-[#FAFAF8]">
         <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16">
             {leaders.map((leader, index) => (
               <div key={index} className="text-center">
                 {/* Leader Image */}
-                <div className="relative w-64 h-64 mx-auto mb-6 rounded-full overflow-hidden bg-slate-200">
+                <div className="relative w-64 h-64 mx-auto mb-6 rounded-full overflow-hidden bg-[#E8E8E4]">
                   <Image
                     src={`https://i.pravatar.cc/300?img=${index + 1}`}
                     alt={leader.name}
@@ -52,13 +52,13 @@ export default function LeadershipPage() {
                 </div>
                 
                 {/* Leader Info */}
-                <h3 className="text-2xl lg:text-3xl font-normal text-slate-900 mb-2">
+                <h3 className="text-2xl lg:text-3xl font-normal text-[#1A1816] mb-2">
                   {leader.name}
                 </h3>
-                <p className="text-lg text-slate-600 mb-6 font-medium">
+                <p className="text-lg text-[#737370] mb-6 font-medium">
                   {leader.role}
                 </p>
-                <p className="text-base text-slate-700 leading-relaxed max-w-md mx-auto">
+                <p className="text-base text-[#444441] leading-relaxed max-w-md mx-auto">
                   {leader.description}
                 </p>
               </div>
@@ -71,10 +71,10 @@ export default function LeadershipPage() {
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="text-center">
-            <h2 className="text-3xl lg:text-4xl font-normal text-slate-900 mb-6">
+            <h2 className="text-3xl lg:text-4xl font-normal text-[#1A1816] mb-6">
               About Our Company
             </h2>
-            <div className="space-y-6 text-lg text-slate-700 leading-relaxed">
+            <div className="space-y-6 text-lg text-[#444441] leading-relaxed">
               <p>
                 Deelmap is led by a team of seasoned real estate professionals and technology experts who are passionate about transforming the wholesale real estate industry. Our leadership team combines decades of experience in real estate investment, technology development, and marketplace operations.
               </p>
