@@ -122,6 +122,7 @@ export function Navbar() {
   const aboutDropdownItems = [
     { label: 'About', href: '/our-story' },
     { label: 'Contact us', href: '/contact' },
+    { label: 'DSCR Calculator', href: '/dscr-calculator' },
   ]
 
   const navItems = [
@@ -135,7 +136,7 @@ export function Navbar() {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
-    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact'
+    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/dscr-calculator'
     return false
   }
 
