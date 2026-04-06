@@ -958,9 +958,7 @@ export function PropertyDetail({ property }) {
                         {/* Invest Now */}
                         <div className="mt-auto pt-3 flex justify-end">
                           <Link
-                            href={user
-                              ? `/buyer/make-offer?property_id=${p.id}&slug=${p.slug || p.id}${p.temp_seller_id || p.seller_id ? `&seller_id=${p.temp_seller_id || p.seller_id}` : ''}`
-                              : `/${p.slug || p.id}`}
+                            href={`/${p.slug || p.id}`}
                             className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
                           >
                             View Listing

@@ -287,7 +287,7 @@ export function Navbar() {
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-center gap-[10px]">
+                <div className="hidden md:flex items-center gap-[10px]">
                   <button
                     onClick={() => { setAuthInitialStep('signup'); setShowAuth(true) }}
                     className="py-2 px-[18px] text-[14px] font-semibold text-[#1A1816] border border-[#D1D1CE] rounded hover:bg-[#FAFAF8] transition-colors"

@@ -39,6 +39,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [acceptingCounter, setAcceptingCounter] = useState(false);
   const [rejectingCounter, setRejectingCounter] = useState(false);
   const [showMobilePropPanel, setShowMobilePropPanel] = useState(false);
+  const [showOfferForm, setShowOfferForm] = useState(false);
+  const [offerAmount, setOfferAmount] = useState('');
+  const [offerClosing, setOfferClosing] = useState('30 days');
+  const [offerFinancing, setOfferFinancing] = useState('Cash');
+  const [offerEarnest, setOfferEarnest] = useState('');
+  const [offerInspection, setOfferInspection] = useState('10 days');
+  const [offerNotes, setOfferNotes] = useState('');
+  const [submittingOffer, setSubmittingOffer] = useState(false);
+  const [offerError, setOfferError] = useState('');
+  const [offerSuccess, setOfferSuccess] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -152,6 +162,56 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       console.error('Failed to reject counter:', err);
     } finally {
       setRejectingCounter(false);
+    }
+  };
+
+  const CLOSING_OPTIONS = ['30 days', '45 days', '60 days', 'As-is'];
+  const INSPECTION_OPTIONS = ['5 days', '10 days', '15 days', 'Waived'];
+  const FINANCING_OPTIONS = ['Cash', 'Conventional', 'Hard Money', 'Other'];
+  const selectStyle = { backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737370' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' };
+
+  const openOfferForm = () => {
+    const defaultAmt = propertyPrice ? Math.round(Number(propertyPrice)).toLocaleString() : '';
+    setOfferAmount(defaultAmt);
+    setOfferClosing('30 days');
+    setOfferFinancing('Cash');
+    setOfferEarnest('');
+    setOfferInspection('10 days');
+    setOfferNotes('');
+    setOfferError('');
+    setOfferSuccess(false);
+    setShowOfferForm(true);
+  };
+
+  const handleSubmitInlineOffer = async () => {
+    const numericAmount = Number(String(offerAmount).replace(/[^0-9.]/g, ''));
+    const numericEarnest = Number(String(offerEarnest).replace(/[^0-9.]/g, ''));
+    if (!numericAmount || numericAmount <= 0) { setOfferError('Please enter a valid offer price'); return; }
+    if (!numericEarnest || numericEarnest <= 0) { setOfferError('Please enter an earnest money amount'); return; }
+    setSubmittingOffer(true); setOfferError('');
+    try {
+      const res = await fetch('/api/buyer/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
+        body: JSON.stringify({
+          conversation_id: conversation.id,
+          property_id: conversation.property_id,
+          amount: numericAmount,
+          closing_timeline: offerClosing,
+          financing_type: offerFinancing,
+          earnest_money: numericEarnest,
+          inspection_period: offerInspection,
+          notes: offerNotes || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Failed to submit offer');
+      setOfferSuccess(true);
+      fetchOffers();
+    } catch (err) {
+      setOfferError(err.message || 'Something went wrong');
+    } finally {
+      setSubmittingOffer(false);
     }
   };
 
@@ -688,7 +748,123 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons / Inline Offer Form */}
+        {showOfferForm ? (
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {offerSuccess ? (
+              <div className="flex flex-col items-center text-center py-6">
+                <div className="w-12 h-12 rounded-full bg-[#E4F5EC] flex items-center justify-center mb-4">
+                  <Calendar className="w-5 h-5 text-[#0F6E56]" />
+                </div>
+                <p className="text-[15px] font-bold text-[#1A1816] mb-1">Offer submitted!</p>
+                <p className="text-[12px] text-[#737370] mb-5">The seller will review and respond soon.</p>
+                <button
+                  onClick={() => setShowOfferForm(false)}
+                  className="w-full py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
+                >
+                  Back to Deal Overview
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[14px] font-bold text-[#1A1816]">Make an Offer</p>
+                  <button onClick={() => setShowOfferForm(false)} className="p-1 rounded hover:bg-[#FAFAF8] transition-colors">
+                    <X className="w-4 h-4 text-[#737370]" />
+                  </button>
+                </div>
+
+                {offerError && (
+                  <div className="mb-3 p-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded text-[12px] text-[#D03839]">{offerError}</div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Offer Price <span className="text-[#D03839]">*</span></label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-[13px]">$</span>
+                      <input
+                        type="text"
+                        value={offerAmount}
+                        onChange={e => { const r = e.target.value.replace(/[^0-9]/g, ''); setOfferAmount(r ? Number(r).toLocaleString() : ''); }}
+                        placeholder="135,000"
+                        className="w-full pl-6 pr-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Financing</label>
+                    <select value={offerFinancing} onChange={e => setOfferFinancing(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
+                      style={selectStyle}>
+                      {FINANCING_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Closing Timeline</label>
+                    <select value={offerClosing} onChange={e => setOfferClosing(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
+                      style={selectStyle}>
+                      {CLOSING_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Earnest Money <span className="text-[#D03839]">*</span></label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-[13px]">$</span>
+                      <input
+                        type="text"
+                        value={offerEarnest}
+                        onChange={e => { const r = e.target.value.replace(/[^0-9]/g, ''); setOfferEarnest(r ? Number(r).toLocaleString() : ''); }}
+                        placeholder="1,000"
+                        className="w-full pl-6 pr-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Inspection Period</label>
+                    <select value={offerInspection} onChange={e => setOfferInspection(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
+                      style={selectStyle}>
+                      {INSPECTION_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Notes</label>
+                    <textarea
+                      value={offerNotes}
+                      onChange={e => setOfferNotes(e.target.value)}
+                      placeholder="Any additional terms..."
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)] resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setShowOfferForm(false)}
+                    className="flex-1 py-2.5 border border-[#E8E8E4] text-[#737370] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitInlineOffer}
+                    disabled={submittingOffer}
+                    className="flex-1 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors disabled:opacity-50"
+                  >
+                    {submittingOffer ? 'Submitting…' : 'Submit Offer'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
         <div className="px-5 py-4">
           {latestOffer?.status === 'accepted' ? (
             <div className="bg-[#E4F5EC] border border-[#A8DFBA] rounded-lg px-4 py-3 mb-3">
@@ -696,10 +872,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               <p className="text-[12px] text-[#0F6E56]">Coordinate with the seller to proceed to contract signing.</p>
             </div>
           ) : latestOffer?.status === 'rejected' ? (
-            <div className="bg-[#FEF0EF] border border-[#F5C4C0] rounded-lg px-4 py-3 mb-3">
-              <p className="text-[13px] font-semibold text-[#D03839]">Offer declined</p>
-              <p className="text-[12px] text-[#D03839] mt-1">You can submit a new offer or continue the conversation.</p>
-            </div>
+            <>
+              <div className="bg-[#FEF0EF] border border-[#F5C4C0] rounded-lg px-4 py-3 mb-3">
+                <p className="text-[13px] font-semibold text-[#D03839]">Offer declined</p>
+                <p className="text-[12px] text-[#D03839] mt-1">You can submit a new offer or continue the conversation.</p>
+              </div>
+              <button onClick={openOfferForm}
+                className="flex items-center justify-center w-full py-3 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors duration-200 mb-3">
+                Make New Offer
+              </button>
+            </>
           ) : hasPendingCounter ? (
             <>
               <button
@@ -716,10 +898,10 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               >
                 {rejectingCounter ? 'Declining…' : 'Decline Counter'}
               </button>
-              <Link href={makeOfferHref || listingHref || '/marketplace'}
+              <button onClick={openOfferForm}
                 className="flex items-center justify-center w-full py-3 border border-[#E8E8E4] text-[#1A1816] text-[14px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors duration-200 mb-3">
                 Counter
-              </Link>
+              </button>
             </>
           ) : hasPendingBuyerOffer ? (
             <button
@@ -730,15 +912,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               {withdrawing ? 'Withdrawing…' : 'Withdraw Offer'}
             </button>
           ) : (
-            <Link href={makeOfferHref || listingHref || '/marketplace'}
+            <button onClick={openOfferForm}
               className="flex items-center justify-center w-full py-3 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors duration-200 mb-3">
               Make Offer
-            </Link>
+            </button>
           )}
           <button className="flex items-center justify-center w-full py-3 border border-[#E8E8E4] text-[#1A1816] text-[14px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors duration-200">
             Schedule Visit
           </button>
         </div>
+        )}
       </div>
 
       {/* Mobile Property Details Panel */}
@@ -826,13 +1009,12 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             </div>
             {/* Actions */}
             <div className="px-5 py-4">
-              <Link
-                href={makeOfferHref || listingHref || '/marketplace'}
-                onClick={() => setShowMobilePropPanel(false)}
+              <button
+                onClick={() => { setShowMobilePropPanel(false); openOfferForm(); }}
                 className="flex items-center justify-center w-full py-3 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors duration-200 mb-3"
               >
                 Make Offer
-              </Link>
+              </button>
               {listingHref && (
                 <Link
                   href={listingHref}
