@@ -323,10 +323,9 @@ const LoadingState = () => (
             ) : error ? (
               <ErrorState />
             ) : (() => {
-              const gridClass = 'grid grid-cols-2 gap-3'
               return (
               <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
-                <div className={gridClass}>
+                <div className="space-y-4">
                   {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
                 </div>
                 {properties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
