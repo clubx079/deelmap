@@ -1,381 +1,371 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
-import { Info, Download, RotateCcw, Lock } from 'lucide-react'
+import { Lock, RotateCcw, Download } from 'lucide-react'
+import Link from 'next/link'
+
+// ── Helper components ──────────────────────────────────────────────
+
+function InputField({ label, hint, ...props }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
+      <input
+        className="text-[13px] font-medium text-[#1A1816] bg-[#F3F3F0] border border-[#E8E8E4] rounded px-3 py-2 outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 w-full"
+        {...props}
+      />
+      {hint && <span className="text-[9.5px] text-[#A8A8A4] leading-tight">{hint}</span>}
+    </div>
+  )
+}
+
+function SelectField({ label, children, ...props }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
+      <select
+        className="text-[13px] font-medium text-[#1A1816] bg-[#F3F3F0] border border-[#E8E8E4] rounded px-3 py-2 outline-none focus:border-[#D03839] w-full"
+        {...props}
+      >
+        {children}
+      </select>
+    </div>
+  )
+}
+
+function Card({ title, children }) {
+  return (
+    <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-3">
+      <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-4 pb-2 border-b border-[#E8E8E4]">{title}</div>
+      {children}
+    </div>
+  )
+}
+
+function LineItem({ label, value, valueClass = 'text-[#1A1816]', total = false }) {
+  return (
+    <div className={`flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0] last:border-0 ${total ? 'border-t border-[#E8E8E4] mt-1 pt-2 font-semibold' : ''}`}>
+      <span className={`flex-1 pr-2 ${total ? 'text-[#1A1816] font-semibold' : 'text-[#737370]'}`}>{label}</span>
+      <span className={`font-medium whitespace-nowrap ${valueClass}`}>{value}</span>
+    </div>
+  )
+}
+
+// ── Math helpers ───────────────────────────────────────────────────
+
+function pmt(r, n, pv) {
+  if (r === 0) return pv / n
+  return pv * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+}
+function loanBal(r, n, pv, k) {
+  if (r === 0) return pv - (pv / n) * k
+  return pv * Math.pow(1 + r, k) - pmt(r, n, pv) * (Math.pow(1 + r, k) - 1) / r
+}
+function calcIRR(cfs) {
+  let rate = 0.1
+  for (let i = 0; i < 200; i++) {
+    let npv = 0, d = 0
+    for (let t = 0; t < cfs.length; t++) {
+      const f = Math.pow(1 + rate, t)
+      npv += cfs[t] / f
+      d -= t * cfs[t] / (f * (1 + rate))
+    }
+    const delta = npv / d
+    rate -= delta
+    if (Math.abs(delta) < 1e-8) break
+  }
+  return rate
+}
+function money(n) { return '$' + Math.abs(Math.round(n)).toLocaleString() }
+function pctFmt(n) { return (n * 100).toFixed(2) + '%' }
+
+// ── Defaults ───────────────────────────────────────────────────────
+
+const DEFAULTS = {
+  purchasePrice: 80000, arv: 165000, propType: 'sfr', strategy: 'brrrr',
+  condition: 'distressed', market: 'primary', yearBuilt: 1978, sqft: 1400,
+  downPct: 10, closingCosts: 1900, inspectionFees: 375, assignmentFee: 0,
+  agentBuy: 0, envSurvey: 0, hoaTransfer: 0, otherAcqCosts: 0,
+  repairs: 18000, contingencyPct: 10, gcFees: 0, permits: 400,
+  staging: 0, landscaping: 300, appliances: 1000, furnishing: 0,
+  hmlRate: 11, hmlOriginPts: 2, hmlDocFees: 500, hmlLtv: 90,
+  hmlCarry: 4, hmlExtension: 0, drawSchedule: 'upfront', hmlInterestType: 'io',
+  privateMoney: 0, privateRate: 0, partnerEquity: 0, prefReturn: 0,
+  loanType: 'dscr', dscrRate: 7.25, dscrTerm: 30, dscrAmort: 30,
+  balloonTerm: 0, dscrLtv: 75, refiClosePct: 3, dscrPoints: 1,
+  pmi: 0, prepayPenalty: 0, rateBuydown: 0, lenderReserves: 6, minDscr: 1.25,
+  grossRent: 1800, otherIncome: 0, parkingIncome: 0, laundryIncome: 0,
+  vacancyPct: 8, creditLossPct: 0, rentGrowth: 3, leaseType: 'annual',
+  strNightly: 0, strOccupancy: 0, strPlatformFee: 0, strMgmtFee: 0,
+  strCleaning: 0, strStays: 0, strSupplies: 0, strLicense: 0,
+  propTax: 1600, insurance: 1000, floodIns: 0, umbrellaIns: 150,
+  hoa: 0, utilities: 0, trash: 0, lawn: 220, pest: 110,
+  security: 0, internet: 0, llcFees: 100,
+  maintPct: 7, capexPct: 5, mgmtPct: 0, leasingFee: 0,
+  eviction: 0, turnover: 350, accounting: 250, legal: 0,
+  software: 0, travel: 0, advertising: 0, otherExpenses: 0,
+  expenseGrowth: 2, taxGrowth: 3, insGrowth: 5,
+  appraisal: 165000, appraisalFee: 550, monthsBeforeRefi: 4, seasoning: 6,
+  holdYears: 5, appreciation: 4, sellerCommission: 5, sellerClose: 1.5,
+  capGainsTax: 20, deprRecapture: 25, stateTax: 5, exchange1031: 'no',
+  flipSalePrice: 165000, flipCommission: 5, flipClose: 2,
+  flipHoldingCost: 1100, flipTaxRate: 37, targetProfit: 25000,
+}
+
+// ── Main page ──────────────────────────────────────────────────────
 
 export default function DSCRCalculatorPage() {
   const { user } = useAuth()
+  const [inputs, setInputs] = useState(DEFAULTS)
+  const [activeTab, setActiveTab] = useState('acquisition')
 
-  // Input states
-  const [loanType, setLoanType] = useState('amortizing')
-  const [loanPurpose, setLoanPurpose] = useState('purchase')
-  const [monthlyRent, setMonthlyRent] = useState(2500)
-  const [annualTaxes, setAnnualTaxes] = useState(3600)
-  const [annualInsurance, setAnnualInsurance] = useState(1200)
-  const [annualHOA, setAnnualHOA] = useState(0)
-  const [purchasePrice, setPurchasePrice] = useState(300000)
-  const [loanAmount, setLoanAmount] = useState(240000)
-  const [ltv, setLtv] = useState(80)
-  const [interestRate, setInterestRate] = useState(7.5)
-  const [termInYears, setTermInYears] = useState(30)
-  const [originationFee, setOriginationFee] = useState(1500)
-  const [originationFeeMode, setOriginationFeeMode] = useState('fixed')
-  const [originationFeePercent, setOriginationFeePercent] = useState(2.0)
-  const [loanFees, setLoanFees] = useState(1995)
-  const [titleFees, setTitleFees] = useState(2400)
-  const [escrow, setEscrow] = useState(0)
-  const [prepaidInterest, setPrepaidInterest] = useState(0)
-  const [prepaidInsurance, setPrepaidInsurance] = useState(0)
-  const [paymentReserve, setPaymentReserve] = useState(0)
-  const [currentLoanBalance, setCurrentLoanBalance] = useState(0)
-  const [cashOutEnabled, setCashOutEnabled] = useState(false)
-  const [cashOutAmount, setCashOutAmount] = useState(0)
-  const [vacancyRate, setVacancyRate] = useState(5)
-  const [propertyManagementFee, setPropertyManagementFee] = useState(8)
+  const upd = (key) => (e) => setInputs(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))
+  const updSel = (key) => (e) => setInputs(p => ({ ...p, [key]: e.target.value }))
 
-  const [initialSnapshot, setInitialSnapshot] = useState(null)
-  const [hasChanged, setHasChanged] = useState(false)
+  // ── Calculations ────────────────────────────────────────────────
+  const r = useMemo(() => {
+    const i = inputs
 
-  // Output states
-  const [monthlyPayment, setMonthlyPayment] = useState(0)
-  const [dscr, setDscr] = useState(0)
-  const [monthlyCashflow, setMonthlyCashflow] = useState(0)
-  const [proceeds, setProceeds] = useState(0)
-  const [liquidityToVerify, setLiquidityToVerify] = useState(0)
-  const [effectiveMonthlyRent, setEffectiveMonthlyRent] = useState(0)
-  const [noi, setNoi] = useState(0)
-  const [capRate, setCapRate] = useState(0)
-  const [annualCashFlow, setAnnualCashFlow] = useState(0)
-  const [cashOnCashReturn, setCashOnCashReturn] = useState(0)
-  const [totalCashInvested, setTotalCashInvested] = useState(0)
+    // Acquisition
+    const purchase = i.purchasePrice
+    const arv = i.arv
+    const downPct = i.downPct / 100
+    const closing = i.closingCosts
+    const inspect = i.inspectionFees
+    const assign = i.assignmentFee
+    const agentBuy = i.agentBuy
+    const envSurvey = i.envSurvey
+    const hoaXfer = i.hoaTransfer
+    const otherAcq = i.otherAcqCosts
 
-  const [activeTooltip, setActiveTooltip] = useState(null)
-  const tooltipTimeoutRef = useRef(null)
+    // Rehab
+    const rehabBase = i.repairs
+    const contingPct = i.contingencyPct / 100
+    const gcFees = i.gcFees
+    const permits = i.permits
+    const staging = i.staging
+    const landscape = i.landscaping
+    const appliances = i.appliances
+    const furnishing = i.furnishing
+    const totalRehab = rehabBase * (1 + contingPct) + gcFees + permits + staging + landscape + appliances + furnishing
 
-  useEffect(() => {
-    calculateResults()
-  }, [loanType, monthlyRent, annualTaxes, annualInsurance, annualHOA,
-      loanAmount, interestRate, termInYears, originationFee, loanFees,
-      titleFees, escrow, prepaidInterest, prepaidInsurance, paymentReserve,
-      purchasePrice, loanPurpose, currentLoanBalance, cashOutEnabled, cashOutAmount,
-      vacancyRate, propertyManagementFee])
+    // HML
+    const hmlRate = i.hmlRate / 100
+    const hmlPts = i.hmlOriginPts / 100
+    const hmlDoc = i.hmlDocFees
+    const hmlLtvPct = i.hmlLtv / 100
+    const hmlCarry = i.hmlCarry
+    const hmlExt = i.hmlExtension
 
-  useEffect(() => {
-    if (purchasePrice > 0) {
-      setLtv(parseFloat(((loanAmount / purchasePrice) * 100).toFixed(2)))
+    const hmlLoan = purchase * hmlLtvPct
+    const downAmt = hmlLtvPct >= 1.0 ? 0
+      : hmlLtvPct > 0 ? Math.max(purchase - hmlLoan, 0)
+        : purchase * downPct
+    const hmlOrig = hmlLoan * hmlPts
+    const hmlInt = hmlLoan * (hmlRate / 12) * hmlCarry
+
+    const otherEntry = closing + inspect + assign + agentBuy + envSurvey + hoaXfer + otherAcq
+    const totalCashIn = downAmt + hmlOrig + hmlDoc + hmlInt + hmlExt + totalRehab + otherEntry
+
+    // DSCR / perm loan
+    const dscrRateAnn = i.dscrRate / 100
+    const dscrTerm = i.dscrTerm
+    const dscrAmort = i.dscrAmort || i.dscrTerm
+    const dscrLtvPct = i.dscrLtv / 100
+    const refiClosePct = i.refiClosePct / 100
+    const dscrPtsPct = i.dscrPoints / 100
+    const appraisal = i.appraisal
+    const apprFee = i.appraisalFee
+    const pmiMo = i.pmi
+    const rateBuydown = i.rateBuydown
+    const lenderRes = i.lenderReserves
+    const minDscr = i.minDscr
+
+    const dscrLoan = i.loanType === 'none' ? 0 : appraisal * dscrLtvPct
+    const refiClose = dscrLoan * refiClosePct
+    const dscrPtsAmt = dscrLoan * dscrPtsPct
+    const netProceeds = dscrLoan - hmlLoan - refiClose - apprFee - dscrPtsAmt
+    const cashBack = Math.min(Math.max(netProceeds, 0), totalCashIn)
+    const dscrMo = dscrRateAnn / 12
+    const dscrN = dscrAmort * 12
+    const piMo = i.loanType === 'none' ? 0 : pmt(dscrMo, dscrN, dscrLoan)
+
+    const pitia = piMo + (i.propTax / 12) + (i.insurance / 12)
+    const reserveHeld = pitia * lenderRes
+
+    const cashLeftInDeal = Math.max(totalCashIn - cashBack, 0)
+
+    // Income
+    let grossRentMo = i.grossRent + i.otherIncome + i.parkingIncome + i.laundryIncome
+    if (i.leaseType === 'str') {
+      const strRev = i.strNightly * (i.strOccupancy / 100) * 30
+      const strPlatCost = strRev * (i.strPlatformFee / 100)
+      const strMgmtCost = strRev * (i.strMgmtFee / 100)
+      const strClean = i.strCleaning * i.strStays
+      const strSupp = i.strSupplies
+      grossRentMo = strRev - strPlatCost - strMgmtCost - strClean - strSupp
     }
-  }, [loanAmount, purchasePrice])
 
-  useEffect(() => {
-    if (originationFeeMode === 'percentage' && loanAmount > 0) {
-      setOriginationFee(parseFloat(((loanAmount * originationFeePercent) / 100).toFixed(0)))
-    }
-  }, [originationFeeMode, originationFeePercent, loanAmount])
+    const vacPct = (i.vacancyPct + i.creditLossPct) / 100
+    const vacancyMo = grossRentMo * vacPct
+    const egiMo = grossRentMo - vacancyMo
 
-  const calculateResults = () => {
-    const rate = (interestRate / 100) / 12
-    const numPayments = termInYears * 12
-    let payment = 0
-    if (loanType === 'interestOnly') {
-      payment = (loanAmount * (interestRate / 100)) / 12
-    } else {
-      if (rate > 0 && numPayments > 0) {
-        payment = (loanAmount * rate * Math.pow(1 + rate, numPayments)) / (Math.pow(1 + rate, numPayments) - 1)
-      }
-    }
-    const monthlyTax = annualTaxes / 12
-    const monthlyIns = annualInsurance / 12
-    const monthlyHoa = annualHOA / 12
-    const totalPITIA = payment + monthlyTax + monthlyIns + monthlyHoa
-    const vacancyLoss = monthlyRent * (vacancyRate / 100)
-    const effectiveRent = monthlyRent - vacancyLoss
-    const managementFeeAmount = effectiveRent * (propertyManagementFee / 100)
-    const netRentalIncome = effectiveRent - managementFeeAmount
-    const dscrValue = totalPITIA > 0 ? netRentalIncome / totalPITIA : 0
-    const cashflow = netRentalIncome - totalPITIA
-    const annualNetRentalIncome = netRentalIncome * 12
-    const annualOperatingExpenses = (monthlyTax + monthlyIns + monthlyHoa) * 12
-    const noiValue = annualNetRentalIncome - annualOperatingExpenses
-    const annualCashFlowValue = cashflow * 12
-    const capRateValue = purchasePrice > 0 ? (noiValue / purchasePrice) * 100 : 0
-    const fees = originationFee + loanFees + titleFees + escrow + prepaidInterest + prepaidInsurance + paymentReserve
-    let downPmt = 0, netProceeds = 0, liquidity = 0, cashInvested = 0
-    if (loanPurpose === 'purchase') {
-      downPmt = purchasePrice - loanAmount
-      netProceeds = loanAmount - fees
-      liquidity = downPmt + originationFee + loanFees + (totalPITIA * 9)
-      cashInvested = downPmt + fees
-    } else {
-      netProceeds = loanAmount - fees
-      if (cashOutEnabled) netProceeds = loanAmount - currentLoanBalance - fees
-      liquidity = fees + (totalPITIA * 6)
-      cashInvested = fees
-    }
-    const cashOnCashValue = cashInvested > 0 ? (annualCashFlowValue / cashInvested) * 100 : 0
-    setMonthlyPayment(payment)
-    setDscr(dscrValue)
-    setMonthlyCashflow(cashflow)
-    setProceeds(netProceeds)
-    setLiquidityToVerify(liquidity)
-    setEffectiveMonthlyRent(netRentalIncome)
-    setNoi(noiValue)
-    setCapRate(capRateValue)
-    setAnnualCashFlow(annualCashFlowValue)
-    setCashOnCashReturn(cashOnCashValue)
-    setTotalCashInvested(cashInvested)
-  }
+    // Expenses monthly
+    const propTaxAnn = i.propTax
+    const insAnn = i.insurance + i.floodIns + i.umbrellaIns
+    const fixedAnn = i.hoa + i.utilities + i.trash + i.lawn + i.pest + i.security + i.internet + i.llcFees
+    const strLicAnn = i.leaseType === 'str' ? i.strLicense : 0
+    const maintPct = i.maintPct / 100
+    const capexPct = i.capexPct / 100
+    const mgmtPct = i.mgmtPct / 100
+    const leasingAnn = i.leasingFee
+    const varAnn = i.eviction + i.turnover + i.accounting + i.legal + i.software + i.travel + i.advertising + i.otherExpenses + strLicAnn
 
-  const handleLtvChange = (val) => {
-    const newLtv = parseFloat(val) || 0
-    setLtv(newLtv)
-    setLoanAmount(parseFloat(((purchasePrice * newLtv) / 100).toFixed(0)))
-  }
+    const taxInsMo = (propTaxAnn + insAnn) / 12
+    const fixedMo = fixedAnn / 12
+    const maintMo = grossRentMo * (maintPct + capexPct)
+    const mgmtMo = egiMo * mgmtPct + leasingAnn / 12
+    const varMo = varAnn / 12
 
-  const handleOriginationFeePercentChange = (val) => {
-    const newPercent = parseFloat(val) || 0
-    setOriginationFeePercent(newPercent)
-    setOriginationFee(parseFloat(((loanAmount * newPercent) / 100).toFixed(0)))
-  }
+    const totalExpMo = piMo + taxInsMo + fixedMo + maintMo + mgmtMo + varMo + pmiMo
+    const moCF = egiMo - totalExpMo
 
-  const resetToDefaults = () => {
-    setLoanType('amortizing'); setLoanPurpose('purchase'); setMonthlyRent(0)
-    setAnnualTaxes(0); setAnnualInsurance(0); setAnnualHOA(0)
-    setPurchasePrice(0); setLoanAmount(0); setLtv(0); setInterestRate(0)
-    setTermInYears(0); setOriginationFee(0); setOriginationFeeMode('fixed')
-    setOriginationFeePercent(0); setLoanFees(0); setTitleFees(0); setEscrow(0)
-    setPrepaidInterest(0); setPrepaidInsurance(0); setPaymentReserve(0)
-    setCurrentLoanBalance(0); setCashOutEnabled(false); setCashOutAmount(0)
-    setVacancyRate(0); setPropertyManagementFee(0)
-    setHasChanged(false); setInitialSnapshot(null)
-  }
+    // Annual
+    const annEGI = egiMo * 12
+    const annPI = piMo * 12
+    const annTaxIns = propTaxAnn + insAnn
+    const annFixed = fixedAnn
+    const annMaint = maintMo * 12
+    const annMgmt = mgmtMo * 12
+    const annVar = varAnn + pmiMo * 12
+    const annNOI = moCF * 12
 
-  const resetDifferences = () => {
-    if (!initialSnapshot) return
-    if (loanType !== initialSnapshot.loanType) setLoanType(initialSnapshot.loanType)
-    if (loanPurpose !== initialSnapshot.loanPurpose) setLoanPurpose(initialSnapshot.loanPurpose)
-    if (monthlyRent !== initialSnapshot.monthlyRent) setMonthlyRent(initialSnapshot.monthlyRent)
-    if (annualTaxes !== initialSnapshot.annualTaxes) setAnnualTaxes(initialSnapshot.annualTaxes)
-    if (annualInsurance !== initialSnapshot.annualInsurance) setAnnualInsurance(initialSnapshot.annualInsurance)
-    if (annualHOA !== initialSnapshot.annualHOA) setAnnualHOA(initialSnapshot.annualHOA)
-    if (purchasePrice !== initialSnapshot.purchasePrice) setPurchasePrice(initialSnapshot.purchasePrice)
-    if (loanAmount !== initialSnapshot.loanAmount) setLoanAmount(initialSnapshot.loanAmount)
-    if (ltv !== initialSnapshot.ltv) setLtv(initialSnapshot.ltv)
-    if (interestRate !== initialSnapshot.interestRate) setInterestRate(initialSnapshot.interestRate)
-    if (termInYears !== initialSnapshot.termInYears) setTermInYears(initialSnapshot.termInYears)
-    if (originationFee !== initialSnapshot.originationFee) setOriginationFee(initialSnapshot.originationFee)
-    if (originationFeeMode !== initialSnapshot.originationFeeMode) setOriginationFeeMode(initialSnapshot.originationFeeMode)
-    if (originationFeePercent !== initialSnapshot.originationFeePercent) setOriginationFeePercent(initialSnapshot.originationFeePercent)
-    if (loanFees !== initialSnapshot.loanFees) setLoanFees(initialSnapshot.loanFees)
-    if (titleFees !== initialSnapshot.titleFees) setTitleFees(initialSnapshot.titleFees)
-    if (escrow !== initialSnapshot.escrow) setEscrow(initialSnapshot.escrow)
-    if (prepaidInterest !== initialSnapshot.prepaidInterest) setPrepaidInterest(initialSnapshot.prepaidInterest)
-    if (prepaidInsurance !== initialSnapshot.prepaidInsurance) setPrepaidInsurance(initialSnapshot.prepaidInsurance)
-    if (paymentReserve !== initialSnapshot.paymentReserve) setPaymentReserve(initialSnapshot.paymentReserve)
-    if (currentLoanBalance !== initialSnapshot.currentLoanBalance) setCurrentLoanBalance(initialSnapshot.currentLoanBalance)
-    if (cashOutEnabled !== initialSnapshot.cashOutEnabled) setCashOutEnabled(initialSnapshot.cashOutEnabled)
-    if (cashOutAmount !== initialSnapshot.cashOutAmount) setCashOutAmount(initialSnapshot.cashOutAmount)
-    if (vacancyRate !== initialSnapshot.vacancyRate) setVacancyRate(initialSnapshot.vacancyRate)
-    if (propertyManagementFee !== initialSnapshot.propertyManagementFee) setPropertyManagementFee(initialSnapshot.propertyManagementFee)
-  }
+    // DSCR ratio
+    const noi4dscr = annEGI - annTaxIns - annFixed - annMaint - annMgmt - annVar
+    const dscrRatio = annPI > 0 ? noi4dscr / annPI : 999
 
-  const captureSnapshot = () => {
-    if (!hasChanged) {
-      setInitialSnapshot({
-        loanType, loanPurpose, monthlyRent, annualTaxes, annualInsurance, annualHOA,
-        purchasePrice, loanAmount, ltv, interestRate, termInYears,
-        originationFee, originationFeeMode, originationFeePercent, loanFees, titleFees, escrow,
-        prepaidInterest, prepaidInsurance, paymentReserve, currentLoanBalance, cashOutEnabled,
-        cashOutAmount, vacancyRate, propertyManagementFee
-      })
-      setHasChanged(true)
-    }
-  }
+    // Return metrics
+    const coc = cashLeftInDeal > 1 ? annNOI / cashLeftInDeal : Infinity
+    const capRate = arv > 0 ? noi4dscr / arv : 0
+    const grm = annEGI > 0 ? purchase / (grossRentMo * 12) : 0
+    const ltvAtAcq = purchase > 0 ? hmlLoan / purchase : 0
+    const equityRefi = appraisal - dscrLoan
+    const monthsRec = moCF > 1 ? cashLeftInDeal / moCF : Infinity
 
-  const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val)
-  const formatDecimal = (val, decimals = 2) => Number(val).toFixed(decimals)
+    // Hold & sale
+    const holdYears = Math.max(1, Math.round(i.holdYears))
+    const apprecPct = i.appreciation / 100
+    const rentGrowth = i.rentGrowth / 100
+    const expGrowth = i.expenseGrowth / 100
 
-  const downloadPDF = async () => {
+    const salePriceProj = arv * Math.pow(1 + apprecPct, holdYears)
+    const sellComm = salePriceProj * (i.sellerCommission / 100)
+    const sellClose = salePriceProj * (i.sellerClose / 100)
+    const holdMonths = holdYears * 12
+    const loanBalSale = i.loanType === 'none' ? 0 : loanBal(dscrMo, dscrN, dscrLoan, holdMonths)
+    const saleGross = salePriceProj - sellComm - sellClose - loanBalSale - totalCashIn
+    const taxPct = i.exchange1031 === 'yes' ? 0 : (i.capGainsTax + i.stateTax) / 100
+    const saleTax = Math.max(saleGross, 0) * taxPct
+    const saleNet = saleGross - saleTax
+
+    // IRR
+    let irr = NaN
     try {
-      const { jsPDF } = await import('jspdf')
-      const doc = new jsPDF()
-      // Header
-      doc.setFillColor(208, 56, 57)
-      doc.rect(0, 0, 210, 40, 'F')
-      try {
-        const img = new Image()
-        img.src = '/assets/logo.svg'
-        await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; setTimeout(reject, 3000) })
-        doc.addImage(img, 'SVG', 75, 10, 60, 20)
-      } catch {
-        doc.setFontSize(24); doc.setTextColor(255, 255, 255)
-        doc.text('DEELMAP', 105, 25, { align: 'center' })
+      if (cashLeftInDeal > 1) {
+        const cfs = [-cashLeftInDeal]
+        for (let yr = 1; yr <= holdYears; yr++) {
+          const rScale = Math.pow(1 + rentGrowth, yr)
+          const eScale = Math.pow(1 + expGrowth, yr)
+          const yrEGI = annEGI * rScale
+          const yrOp = (annTaxIns + annFixed + annMaint + annMgmt + annVar) * eScale
+          cfs.push(yrEGI - yrOp - annPI)
+        }
+        cfs[cfs.length - 1] += saleNet + loanBalSale
+        const raw = calcIRR(cfs)
+        irr = (isFinite(raw) && raw > -1 && raw < 5) ? raw : NaN
       }
-      doc.setFontSize(22); doc.setTextColor(26, 24, 22)
-      doc.text('DSCR Calculator Report', 105, 55, { align: 'center' })
-      doc.setDrawColor(232, 232, 228); doc.setLineWidth(0.5); doc.line(20, 62, 190, 62)
-      let y = 75
-      doc.setFillColor(250, 250, 248)
-      doc.roundedRect(20, y, 170, 45, 3, 3, 'F')
-      doc.setFontSize(14); doc.setTextColor(26, 24, 22)
-      doc.text('Debt Service Coverage Ratio', 105, y + 10, { align: 'center' })
-      doc.setFontSize(32)
-      const dscrColor = dscr >= 1.1 ? [16, 185, 129] : [220, 38, 38]
-      doc.setTextColor(dscrColor[0], dscrColor[1], dscrColor[2])
-      doc.text(formatDecimal(dscr, 2), 105, y + 28, { align: 'center' })
-      doc.setFontSize(10); doc.setTextColor(115, 115, 112)
-      doc.text(dscr >= 1.1 ? 'Positive Coverage - Loan Qualifies' : 'Insufficient Coverage', 105, y + 38, { align: 'center' })
-      y += 55
-      doc.setFontSize(14); doc.setTextColor(26, 24, 22)
-      doc.text('Key Financial Metrics', 20, y); y += 10
-      const totalPITIA = monthlyPayment + (annualTaxes / 12) + (annualInsurance / 12) + (annualHOA / 12)
-      const metrics = [
-        { label: 'Monthly Rental Income', value: formatCurrency(monthlyRent) },
-        { label: 'Effective Monthly Rent', value: formatCurrency(effectiveMonthlyRent) },
-        { label: 'Monthly Payment (PITIA)', value: formatCurrency(totalPITIA) },
-        { label: 'Monthly Cashflow', value: formatCurrency(monthlyCashflow), color: monthlyCashflow >= 0 ? 'green' : 'red' },
-        { label: 'Annual Cash Flow', value: formatCurrency(annualCashFlow), color: annualCashFlow >= 0 ? 'green' : 'red' },
-        { label: 'Net Operating Income (NOI)', value: formatCurrency(noi) },
-        { label: 'Cap Rate', value: formatDecimal(capRate, 2) + '%' },
-        { label: 'Cash-on-Cash Return', value: formatDecimal(cashOnCashReturn, 2) + '%', color: cashOnCashReturn >= 0 ? 'green' : 'red' },
-        { label: 'Loan Proceeds', value: formatCurrency(proceeds) },
-        { label: 'Liquidity Required', value: formatCurrency(liquidityToVerify) }
-      ]
-      metrics.forEach((m, idx) => {
-        const rowY = y + (idx * 12)
-        if (idx % 2 === 0) { doc.setFillColor(250, 250, 248); doc.rect(20, rowY - 3, 170, 10, 'F') }
-        doc.setFontSize(10); doc.setTextColor(115, 115, 112); doc.text(m.label, 25, rowY + 4)
-        doc.setFontSize(11)
-        if (m.color === 'green') doc.setTextColor(16, 185, 129)
-        else if (m.color === 'red') doc.setTextColor(220, 38, 38)
-        else doc.setTextColor(26, 24, 22)
-        doc.setFont(undefined, 'bold'); doc.text(m.value, 185, rowY + 4, { align: 'right' }); doc.setFont(undefined, 'normal')
-      })
-      y += (metrics.length * 12) + 10
-      doc.setFontSize(14); doc.setTextColor(26, 24, 22); doc.text('Loan Details', 20, y); y += 10
-      let details = [
-        { label: 'Loan Type', value: loanType === 'amortizing' ? 'Fully Amortizing' : 'Interest Only' },
-        { label: 'Loan Purpose', value: loanPurpose === 'purchase' ? 'Purchase' : 'Refinance' },
-        { label: 'Property Value', value: formatCurrency(purchasePrice) },
-        { label: 'Loan Amount', value: formatCurrency(loanAmount) },
-        { label: 'LTV', value: formatDecimal(ltv, 2) + '%' },
-        { label: 'Interest Rate', value: formatDecimal(interestRate, 2) + '%' },
-        { label: 'Term', value: termInYears + ' years' },
-        { label: 'Vacancy Rate', value: formatDecimal(vacancyRate, 1) + '%' },
-        { label: 'Management Fee', value: formatDecimal(propertyManagementFee, 1) + '%' }
-      ]
-      if (loanPurpose === 'refinance') {
-        details.push({ label: 'Current Balance', value: formatCurrency(currentLoanBalance) })
-        if (cashOutEnabled) details.push({ label: 'Cash-Out', value: formatCurrency(cashOutAmount) })
-      }
-      let detailY = y
-      details.forEach((d, idx) => {
-        const col = idx % 2 === 0 ? 25 : 110
-        if (idx % 2 === 0 && idx > 0) detailY += 8
-        doc.setFontSize(9); doc.setTextColor(115, 115, 112); doc.text(d.label, col, detailY)
-        doc.setFontSize(10); doc.setTextColor(26, 24, 22); doc.setFont(undefined, 'bold')
-        doc.text(d.value, col, detailY + 5); doc.setFont(undefined, 'normal')
-      })
-      doc.setFillColor(232, 232, 228); doc.rect(0, 275, 210, 22, 'F')
-      doc.setFontSize(9); doc.setTextColor(115, 115, 112)
-      doc.text('Generated by DeelMap | Wholesale Real Estate Deals', 105, 283, { align: 'center' })
-      doc.text(`Report Date: ${new Date().toLocaleDateString()}`, 105, 290, { align: 'center' })
-      doc.save(`DSCR-Report-${new Date().toISOString().split('T')[0]}.pdf`)
-    } catch (err) {
-      console.error('PDF Error:', err)
-      alert('Could not generate PDF. Please try again.')
+    } catch (e) { }
+
+    // Equity multiple
+    const totalReturn = annNOI * holdYears + saleNet
+    const emx = cashLeftInDeal > 1 ? (cashLeftInDeal + totalReturn) / cashLeftInDeal : 0
+
+    // Flip
+    const flipAllIn = downAmt + hmlOrig + hmlDoc + hmlInt + hmlExt + totalRehab + otherEntry + rateBuydown + i.prepayPenalty
+    const flipSale = i.flipSalePrice
+    const flipComm = flipSale * (i.flipCommission / 100)
+    const flipCl = flipSale * (i.flipClose / 100)
+    const flipHold = i.flipHoldingCost * hmlCarry
+    const flipGross = flipSale - flipComm - flipCl - flipAllIn - flipHold
+    const flipTax = flipGross > 0 && i.exchange1031 !== 'yes' ? flipGross * (i.flipTaxRate / 100) : 0
+    const flipNet = flipGross - flipTax
+
+    const isFlip = i.strategy === 'flip'
+    const dispSale = isFlip ? flipSale : salePriceProj
+    const dispCosts = isFlip ? flipComm + flipCl : sellComm + sellClose
+    const dispBal = isFlip ? 0 : loanBalSale
+    const dispGross = isFlip ? flipGross : saleGross
+    const dispTax = isFlip ? flipTax : saleTax
+    const dispNet = isFlip ? flipNet : saleNet
+
+    // Benchmarks
+    const rule50 = annEGI * 0.5 - annPI
+    const rtv = purchase > 0 ? grossRentMo / purchase : 0
+    const oer = annEGI > 0 ? (annEGI - annNOI - annPI) / annEGI : 0
+    const beoOcc = grossRentMo > 0 ? totalExpMo / grossRentMo : 0
+    const units = { sfr: 1, duplex: 2, triplex: 3, fourplex: 4, smallmf: 8, commercial: 1 }[i.propType] || 1
+    const ppu = purchase / units
+    const ppsf = i.sqft > 0 ? purchase / i.sqft : 0
+    const debtYield = dscrLoan > 0 ? noi4dscr / dscrLoan : 0
+    const targetMet = dispNet >= i.targetProfit
+
+    // 5-yr projection rows
+    const projRows = []
+    for (let yr = 1; yr <= Math.min(holdYears, 10); yr++) {
+      const rS = Math.pow(1 + rentGrowth, yr)
+      const eS = Math.pow(1 + expGrowth, yr)
+      const yrEGI = annEGI * rS
+      const yrOp = (annTaxIns + annFixed + annMaint + annMgmt + annVar) * eS + annPI
+      const yrNOI = yrEGI - yrOp
+      const yrVal = arv * Math.pow(1 + apprecPct, yr)
+      projRows.push({ yr, yrNOI, yrVal, yrEGI, yrOp: yrOp - annPI })
     }
-  }
 
-  const showTooltip = (id) => { if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current); setActiveTooltip(id) }
-  const hideTooltip = () => { tooltipTimeoutRef.current = setTimeout(() => setActiveTooltip(null), 100) }
+    return {
+      purchase, arv, downAmt, hmlLoan, hmlOrig, hmlDoc, hmlInt, hmlExt,
+      totalRehab, otherEntry, rateBuydown, prepayPenalty: i.prepayPenalty,
+      totalCashIn, dscrLoan, dscrLtvPct, refiClose, dscrPtsAmt, apprFee,
+      netProceeds, cashBack, reserveHeld, cashLeftInDeal,
+      grossRentMo, vacancyMo, egiMo, piMo, pmiMo, taxInsMo, fixedMo,
+      mgmtMo, maintMo, varMo, moCF,
+      annEGI, annPI, annTaxIns, annFixed, annMaint, annMgmt, annVar, annNOI,
+      noi4dscr, dscrRatio, minDscr,
+      coc, capRate, grm, ltvAtAcq, equityRefi, monthsRec, irr, emx,
+      dscrRateAnn: i.dscrRate, dscrTerm, dscrAmort,
+      dispSale, dispCosts, dispBal, dispGross, dispTax, dispNet,
+      exchange1031: i.exchange1031,
+      rule50, rtv, oer, beoOcc, ppsf, ppu, debtYield, targetMet,
+      targetProfit: i.targetProfit, isFlip, projRows,
+    }
+  }, [inputs])
 
-  const tooltips = {
-    loanType: "Choose between fully amortizing (principal + interest) or interest-only payments.",
-    monthlyRent: "Expected monthly rental income for the property.",
-    annualTaxes: "Actual or estimated annual property taxes.",
-    annualInsurance: "Annual property insurance cost.",
-    annualHOA: "Annual homeowners association dues, if applicable.",
-    loanPurpose: "Purchase or refinance - affects which fields appear.",
-    purchasePrice: "For Purchase: ARV (After Repair Value) or purchase price. For Refinance: Current appraised value of the property.",
-    loanAmount: "Total loan size.",
-    ltv: "Loan-to-Value ratio (typically 50-80%).",
-    interestRate: "Annual interest rate.",
-    termInYears: "Loan term in years (15 or 30 typically).",
-    originationFee: "Lender's processing fee (≈ $1,500).",
-    loanFees: "Third-party underwriting and appraisal (≈ $1,995).",
-    titleFees: "Title company charges (~1% of loan).",
-    escrow: "Funds held by lender for taxes/insurance.",
-    prepaidInterest: "Daily interest from closing to month end.",
-    prepaidInsurance: "First year insurance paid upfront.",
-    paymentReserve: "0-3 months payments held in reserve.",
-    currentLoanBalance: "Existing mortgage balance being refinanced.",
-    cashOutEnabled: "Are you taking cash out in this refinance?",
-    cashOutAmount: "Amount of cash you want to receive at closing.",
-    vacancyRate: "Expected vacancy rate (typically 5-8%). Reduces effective rental income.",
-    propertyManagementFee: "Property management fee as % of rent (typically 8-10%).",
-    monthlyPayment: "Total monthly payment (PITIA).",
-    dscr: "Debt Service Coverage Ratio. >1.1 means positive coverage. Calculated using effective rent after vacancy and management fees.",
-    monthlyCashflow: "Monthly profit or loss (Effective Rent - PITIA).",
-    proceeds: "Net loan funds after fees. For cash-out refi: cash to borrower after paying off existing loan.",
-    liquidityToVerify: "Total funds lender will verify.",
-    effectiveMonthlyRent: "Rental income after vacancy loss and management fees.",
-    noi: "Net Operating Income. Annual rental income minus operating expenses.",
-    capRate: "Capitalization Rate. Measures return on investment (NOI / Property Value).",
-    annualCashFlow: "Total annual cash flow (Monthly Cashflow × 12).",
-    cashOnCashReturn: "Annual return on your actual cash invested (Annual Cash Flow / Cash Invested)."
-  }
-
-  const inputClass = "w-full px-4 py-2.5 border border-[#E8E8E4] rounded text-sm text-[#1A1816] bg-white placeholder-[#A8A8A4] focus:outline-none focus:ring-2 focus:ring-[#D03839]/20 focus:border-[#D03839] transition-colors"
-  const labelClass = "flex items-center text-sm font-medium text-[#1A1816] mb-2"
-  const tooltipClass = "absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#1A1816] text-white text-xs rounded shadow-xl z-[9999] pointer-events-none"
-
-  const TooltipField = ({ id, children }) => (
-    <div className="relative inline-block ml-1.5">
-      <div onMouseEnter={() => showTooltip(id)} onMouseLeave={hideTooltip} className="text-[#A8A8A4] hover:text-[#D03839] cursor-help transition-colors">
-        <Info className="w-3.5 h-3.5" />
-      </div>
-      {activeTooltip === id && (
-        <div className={tooltipClass}>
-          {tooltips[id]}
-          <div className="absolute top-full left-4 w-2 h-2 bg-[#1A1816] transform -translate-y-1 rotate-45" />
-        </div>
-      )}
-    </div>
-  )
-
-  const ToggleGroup = ({ value, onChange, options }) => (
-    <div className="flex gap-2">
-      {options.map(opt => (
-        <button key={opt.value} type="button" onClick={() => onChange(opt.value)}
-          className={`flex-1 px-4 py-2.5 rounded text-sm font-medium transition-all ${value === opt.value ? 'bg-[#D03839] text-white' : 'bg-[#FAFAF8] border border-[#E8E8E4] text-[#737370] hover:text-[#1A1816] hover:border-[#A8A8A4]'}`}>
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  )
-
-  const totalPITIA = monthlyPayment + (annualTaxes / 12) + (annualInsurance / 12) + (annualHOA / 12)
-
-  // Auth gate
+  // ── Auth gate ──────────────────────────────────────────────────
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#FAFAF8]">
+      <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
         <Navbar />
-        <div className="pt-[80px] flex items-center justify-center min-h-screen">
-          <div className="text-center max-w-sm mx-auto px-6 py-16">
-            <div className="w-14 h-14 rounded-full bg-[#FEF0EF] flex items-center justify-center mx-auto mb-5">
-              <Lock className="w-6 h-6 text-[#D03839]" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-14 h-14 bg-[#F3F3F0] border border-[#E8E8E4] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-6 h-6 text-[#737370]" />
             </div>
-            <h2 className="text-xl font-semibold text-[#1A1816] mb-2">Sign in to access</h2>
-            <p className="text-sm text-[#737370] mb-6">The DSCR Calculator is available to logged-in users only.</p>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login', role: 'buyer' } }))}
-              className="inline-block px-6 py-2.5 bg-[#D03839] text-white text-sm font-semibold rounded hover:bg-[#E0493B] transition-colors"
-            >
-              Log in
-            </button>
+            <h2 className="text-[18px] font-semibold text-[#1A1816] mb-2">Sign in to access the underwriting tool</h2>
+            <p className="text-[13px] text-[#737370] mb-6">This tool is available to DeelMap members.</p>
+            <Link href="/login" className="inline-block bg-[#D03839] text-white text-[13px] font-semibold px-6 py-3 rounded hover:bg-[#b83233] transition-colors">
+              Login
+            </Link>
           </div>
         </div>
         <Footer />
@@ -383,398 +373,549 @@ export default function DSCRCalculatorPage() {
     )
   }
 
+  // ── DSCR badge helper ──────────────────────────────────────────
+  function DscrBadge({ ratio, min }) {
+    const isGood = ratio >= min
+    const isWarn = !isGood && ratio >= 1.0
+    const cls = isGood ? 'bg-[#E8F5EE] text-[#1A6B3C]' : isWarn ? 'bg-[#FFF8E8] text-[#A06800]' : 'bg-[#FDF0EF] text-[#D03839]'
+    const mark = isGood ? '✓' : isWarn ? '!' : '✗'
+    const label = isFinite(ratio) ? ratio.toFixed(2) + 'x' : '∞'
+    return <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${cls}`}>{label} {mark}</span>
+  }
+
+  function RuleBadge({ pass, warn, value }) {
+    const cls = pass ? 'bg-[#E8F5EE] text-[#1A6B3C]' : warn ? 'bg-[#FFF8E8] text-[#A06800]' : 'bg-[#FDF0EF] text-[#D03839]'
+    const mark = pass ? '✓' : '✗'
+    return <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${cls}`}>{value} {mark}</span>
+  }
+
+  // ── PDF export ─────────────────────────────────────────────────
+  function handleExport() {
+    window.print()
+  }
+
+  // ── Tab content ────────────────────────────────────────────────
+  const TABS = ['acquisition', 'financing', 'income', 'expenses', 'refi', 'results']
+  const TAB_LABELS = { acquisition: 'Acquisition', financing: 'Financing', income: 'Income', expenses: 'Expenses', refi: 'Refi / Exit', results: 'Results' }
+
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <div className="pt-[80px]">
+        <div className="max-w-5xl mx-auto px-6 py-8">
 
-        {/* Page Header */}
-        <div className="border-b border-[#E8E8E4] bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1816]">DSCR Calculator</h1>
-            <p className="text-sm text-[#737370] mt-1">Calculate your Debt Service Coverage Ratio for investment properties</p>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            <button type="button" onClick={resetToDefaults}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E8E8E4] text-[#737370] rounded text-sm font-medium hover:border-[#A8A8A4] hover:text-[#1A1816] transition-colors">
-              <RotateCcw className="w-4 h-4" />
-              Reset
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#E8E8E4]">
+            <div>
+              <h1 className="text-[18px] font-bold text-[#1A1816]">Advanced REI Underwriting Tool</h1>
+              <div className="text-[10.5px] text-[#737370] uppercase tracking-[0.1em] mt-0.5">DeelMap | Investment Analysis</div>
+            </div>
+            <button
+              onClick={() => setInputs(DEFAULTS)}
+              className="flex items-center gap-1.5 text-[11px] font-medium text-[#737370] border border-[#E8E8E4] rounded px-3 py-1.5 hover:text-[#1A1816] hover:border-[#1A1816] transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" /> Reset
             </button>
-            {hasChanged && (
-              <button type="button" onClick={resetDifferences}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E8E8E4] text-[#737370] rounded text-sm font-medium hover:border-[#A8A8A4] hover:text-[#1A1816] transition-colors">
-                <RotateCcw className="w-4 h-4" />
-                Reset Changes
-              </button>
-            )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-
-            {/* LEFT — Inputs */}
-            <div className="bg-white rounded border border-[#E8E8E4] p-6">
-              <h2 className="text-base font-semibold text-[#1A1816] mb-5">Input Parameters</h2>
-
-              {/* Loan Amortization */}
-              <div className="mb-4">
-                <label className={labelClass}>Loan Amortization<TooltipField id="loanType" /></label>
-                <ToggleGroup value={loanType} onChange={(v) => { setLoanType(v); captureSnapshot() }}
-                  options={[{ value: 'amortizing', label: 'Fully Amortizing' }, { value: 'interestOnly', label: 'Interest Only' }]} />
+          {/* Hero KPI bar */}
+          <div className="bg-white border border-[#E8E8E4] rounded grid grid-cols-6 mb-4 overflow-hidden">
+            {[
+              { label: 'Total Cash In', value: money(r.totalCashIn), cls: 'text-[#D03839]' },
+              { label: 'Cash Back at Refi', value: money(r.cashBack), cls: 'text-[#1A6B3C]' },
+              {
+                label: 'Cash Left in Deal',
+                value: r.cashLeftInDeal < 100 ? '$0' : money(r.cashLeftInDeal),
+                cls: r.cashLeftInDeal < 100 ? 'text-[#1A6B3C]' : 'text-[#1B4F9B]'
+              },
+              {
+                label: 'Monthly Cash Flow',
+                value: (r.moCF >= 0 ? '+' : '−') + money(r.moCF),
+                cls: r.moCF >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'
+              },
+              { label: 'Cash-on-Cash', value: isFinite(r.coc) ? pctFmt(r.coc) : '∞', cls: 'text-[#A06800]' },
+              { label: 'Est. IRR', value: isNaN(r.irr) ? 'N/A' : (r.irr * 100).toFixed(2) + '%', cls: 'text-[#A06800]' },
+            ].map((s, idx) => (
+              <div key={idx} className={`p-4 ${idx < 5 ? 'border-r border-[#E8E8E4]' : ''}`}>
+                <div className={`text-[17px] font-semibold leading-none mb-1.5 ${s.cls}`}>{s.value}</div>
+                <div className="text-[9.5px] font-medium text-[#737370] uppercase tracking-[0.06em] leading-tight">{s.label}</div>
               </div>
+            ))}
+          </div>
 
-              {/* Loan Purpose */}
-              <div className="mb-4">
-                <label className={labelClass}>Loan Purpose<TooltipField id="loanPurpose" /></label>
-                <ToggleGroup value={loanPurpose} onChange={(v) => { setLoanPurpose(v); captureSnapshot() }}
-                  options={[{ value: 'purchase', label: 'Purchase' }, { value: 'refinance', label: 'Refinance' }]} />
-              </div>
+          {/* Tabs */}
+          <div className="flex gap-1.5 mb-4 flex-wrap">
+            {TABS.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`text-[12px] font-medium px-4 py-2 rounded border transition-colors ${activeTab === tab
+                  ? 'bg-[#1A1816] text-white border-[#1A1816]'
+                  : 'border-[#E8E8E4] text-[#737370] hover:text-[#1A1816] hover:border-[#1A1816]'
+                  }`}
+              >
+                {TAB_LABELS[tab]}
+              </button>
+            ))}
+          </div>
 
-              {/* Monthly Rent */}
-              <div className="mb-4">
-                <label className={labelClass}>Monthly Rent<TooltipField id="monthlyRent" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={monthlyRent === 0 ? '' : monthlyRent}
-                    onChange={(e) => { setMonthlyRent(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+          {/* ── ACQUISITION TAB ── */}
+          {activeTab === 'acquisition' && (
+            <div>
+              <Card title="Property & Strategy">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Purchase Price ($)" type="number" value={inputs.purchasePrice} onChange={upd('purchasePrice')} />
+                  <InputField label="After-Repair Value ($)" type="number" value={inputs.arv} onChange={upd('arv')} hint="For LTV, cap rate, equity calcs" />
+                  <SelectField label="Property Type" value={inputs.propType} onChange={updSel('propType')}>
+                    <option value="sfr">Single Family (SFR)</option>
+                    <option value="duplex">Duplex</option>
+                    <option value="triplex">Triplex</option>
+                    <option value="fourplex">Fourplex</option>
+                    <option value="smallmf">Small MF (5–20 units)</option>
+                    <option value="commercial">Commercial</option>
+                  </SelectField>
+                  <SelectField label="Investment Strategy" value={inputs.strategy} onChange={updSel('strategy')}>
+                    <option value="brrrr">BRRRR</option>
+                    <option value="buynhold">Buy &amp; Hold (no refi)</option>
+                    <option value="flip">Fix &amp; Flip</option>
+                  </SelectField>
+                  <SelectField label="Property Condition" value={inputs.condition} onChange={updSel('condition')}>
+                    <option value="distressed">Distressed / Heavy Rehab</option>
+                    <option value="light">Light Cosmetic</option>
+                    <option value="turnkey">Turnkey</option>
+                  </SelectField>
+                  <SelectField label="Market Type" value={inputs.market} onChange={updSel('market')}>
+                    <option value="primary">Primary Market</option>
+                    <option value="secondary">Secondary Market</option>
+                    <option value="tertiary">Tertiary / Rural</option>
+                  </SelectField>
+                  <InputField label="Year Built" type="number" value={inputs.yearBuilt} onChange={upd('yearBuilt')} hint="Affects CapEx assumptions" />
+                  <InputField label="Square Footage" type="number" value={inputs.sqft} onChange={upd('sqft')} />
                 </div>
-              </div>
+              </Card>
 
-              {/* Annual Taxes */}
-              <div className="mb-4">
-                <label className={labelClass}>Annual Taxes<TooltipField id="annualTaxes" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={annualTaxes === 0 ? '' : annualTaxes}
-                    onChange={(e) => { setAnnualTaxes(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+              <Card title="Acquisition Costs">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Down Payment (%)" type="number" step="0.5" value={inputs.downPct} onChange={upd('downPct')} hint="Used only when HML LTV = 0%" />
+                  <InputField label="Buyer Closing Costs ($)" type="number" value={inputs.closingCosts} onChange={upd('closingCosts')} hint="Title, escrow, transfer tax" />
+                  <InputField label="Inspection & Due Diligence ($)" type="number" value={inputs.inspectionFees} onChange={upd('inspectionFees')} />
+                  <InputField label="Wholesaler / Assignment Fee ($)" type="number" value={inputs.assignmentFee} onChange={upd('assignmentFee')} />
+                  <InputField label="Buyer's Agent Commission ($)" type="number" value={inputs.agentBuy} onChange={upd('agentBuy')} />
+                  <InputField label="Environmental / Survey ($)" type="number" value={inputs.envSurvey} onChange={upd('envSurvey')} />
+                  <InputField label="HOA Transfer Fee ($)" type="number" value={inputs.hoaTransfer} onChange={upd('hoaTransfer')} />
+                  <InputField label="Other Acquisition Costs ($)" type="number" value={inputs.otherAcqCosts} onChange={upd('otherAcqCosts')} />
                 </div>
-              </div>
+              </Card>
 
-              {/* Annual Insurance */}
-              <div className="mb-4">
-                <label className={labelClass}>Annual Insurance<TooltipField id="annualInsurance" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={annualInsurance === 0 ? '' : annualInsurance}
-                    onChange={(e) => { setAnnualInsurance(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+              <Card title="Rehab / Construction Budget">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Estimated Rehab Budget ($)" type="number" value={inputs.repairs} onChange={upd('repairs')} />
+                  <InputField label="Contingency Reserve (%)" type="number" step="5" value={inputs.contingencyPct} onChange={upd('contingencyPct')} hint="Added to rehab budget" />
+                  <InputField label="GC / Labor Markup ($)" type="number" value={inputs.gcFees} onChange={upd('gcFees')} />
+                  <InputField label="Permits & Plans ($)" type="number" value={inputs.permits} onChange={upd('permits')} />
+                  <InputField label="Staging / Photography ($)" type="number" value={inputs.staging} onChange={upd('staging')} />
+                  <InputField label="Landscaping / Exterior ($)" type="number" value={inputs.landscaping} onChange={upd('landscaping')} />
+                  <InputField label="Appliances ($)" type="number" value={inputs.appliances} onChange={upd('appliances')} />
+                  <InputField label="Furnishing (STR) ($)" type="number" value={inputs.furnishing} onChange={upd('furnishing')} />
                 </div>
-              </div>
+              </Card>
+            </div>
+          )}
 
-              {/* Annual HOA */}
-              <div className="mb-4">
-                <label className={labelClass}>Annual HOA<TooltipField id="annualHOA" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={annualHOA === 0 ? '' : annualHOA}
-                    onChange={(e) => { setAnnualHOA(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+          {/* ── FINANCING TAB ── */}
+          {activeTab === 'financing' && (
+            <div>
+              <Card title="Hard Money / Bridge Loan">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="HML Interest Rate (%)" type="number" step="0.25" value={inputs.hmlRate} onChange={upd('hmlRate')} />
+                  <InputField label="HML Origination Points (%)" type="number" step="0.25" value={inputs.hmlOriginPts} onChange={upd('hmlOriginPts')} />
+                  <InputField label="HML Doc Fees ($)" type="number" value={inputs.hmlDocFees} onChange={upd('hmlDocFees')} />
+                  <InputField label="HML LTV (% of purchase)" type="number" step="5" value={inputs.hmlLtv} onChange={upd('hmlLtv')} />
+                  <InputField label="Carry Period (months)" type="number" step="1" value={inputs.hmlCarry} onChange={upd('hmlCarry')} />
+                  <InputField label="Extension Fee ($)" type="number" value={inputs.hmlExtension} onChange={upd('hmlExtension')} hint="If loan needs extending" />
+                  <SelectField label="Draw Schedule" value={inputs.drawSchedule} onChange={updSel('drawSchedule')}>
+                    <option value="upfront">All Upfront</option>
+                    <option value="draws">Progress Draws</option>
+                  </SelectField>
+                  <SelectField label="Interest Type" value={inputs.hmlInterestType} onChange={updSel('hmlInterestType')}>
+                    <option value="io">Interest Only</option>
+                    <option value="pi">P&amp;I Amortizing</option>
+                  </SelectField>
                 </div>
-              </div>
+              </Card>
 
-              {/* Vacancy Rate */}
-              <div className="mb-4">
-                <label className={labelClass}>Vacancy Rate<TooltipField id="vacancyRate" /></label>
-                <div className="relative">
-                  <input type="text" value={vacancyRate === 0 ? '' : vacancyRate}
-                    onChange={(e) => { const v = e.target.value; if (v === '' || v === '.' || !isNaN(v)) { setVacancyRate(v === '' ? 0 : v); captureSnapshot() } }}
-                    onBlur={(e) => setVacancyRate(parseFloat(e.target.value) || 0)}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pr-8'} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">%</span>
+              <Card title="Private Money / Equity Partner">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Private Money Amount ($)" type="number" value={inputs.privateMoney} onChange={upd('privateMoney')} hint="Supplements or replaces HML" />
+                  <InputField label="Private Money Rate (%)" type="number" step="0.5" value={inputs.privateRate} onChange={upd('privateRate')} />
+                  <InputField label="Partner Equity Share (%)" type="number" step="5" value={inputs.partnerEquity} onChange={upd('partnerEquity')} hint="% of profits / cash flow" />
+                  <InputField label="Preferred Return (%)" type="number" step="1" value={inputs.prefReturn} onChange={upd('prefReturn')} />
                 </div>
-              </div>
+              </Card>
 
-              {/* Property Management Fee */}
-              <div className="mb-4">
-                <label className={labelClass}>Property Management Fee<TooltipField id="propertyManagementFee" /></label>
-                <div className="relative">
-                  <input type="text" value={propertyManagementFee === 0 ? '' : propertyManagementFee}
-                    onChange={(e) => { const v = e.target.value; if (v === '' || v === '.' || !isNaN(v)) { setPropertyManagementFee(v === '' ? 0 : v); captureSnapshot() } }}
-                    onBlur={(e) => setPropertyManagementFee(parseFloat(e.target.value) || 0)}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pr-8'} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">%</span>
+              <Card title="Long-Term / Permanent Loan">
+                <div className="grid grid-cols-4 gap-3">
+                  <SelectField label="Loan Type" value={inputs.loanType} onChange={updSel('loanType')}>
+                    <option value="dscr">DSCR Loan</option>
+                    <option value="conv">Conventional</option>
+                    <option value="fha">FHA</option>
+                    <option value="portfolio">Portfolio / Local Bank</option>
+                    <option value="seller">Seller Financing</option>
+                    <option value="none">All Cash / No Loan</option>
+                  </SelectField>
+                  <InputField label="Interest Rate (%)" type="number" step="0.125" value={inputs.dscrRate} onChange={upd('dscrRate')} />
+                  <InputField label="Loan Term (years)" type="number" step="5" value={inputs.dscrTerm} onChange={upd('dscrTerm')} />
+                  <InputField label="Amortization (years)" type="number" step="5" value={inputs.dscrAmort} onChange={upd('dscrAmort')} hint="If balloon loan, enter amort" />
+                  <InputField label="Balloon Term (years)" type="number" step="1" value={inputs.balloonTerm} onChange={upd('balloonTerm')} hint="0 = no balloon" />
+                  <InputField label="LTV at Refi (%)" type="number" step="5" value={inputs.dscrLtv} onChange={upd('dscrLtv')} />
+                  <InputField label="Refi Closing Costs (%)" type="number" step="0.25" value={inputs.refiClosePct} onChange={upd('refiClosePct')} />
+                  <InputField label="Points on DSCR Loan (%)" type="number" step="0.25" value={inputs.dscrPoints} onChange={upd('dscrPoints')} />
+                  <InputField label="PMI / MIP (monthly $)" type="number" value={inputs.pmi} onChange={upd('pmi')} hint="FHA/Conv if <20% down" />
+                  <InputField label="Prepayment Penalty ($)" type="number" value={inputs.prepayPenalty} onChange={upd('prepayPenalty')} />
+                  <InputField label="Interest Rate Buydown ($)" type="number" value={inputs.rateBuydown} onChange={upd('rateBuydown')} />
+                  <InputField label="Lender Reserves Required (mo)" type="number" step="1" value={inputs.lenderReserves} onChange={upd('lenderReserves')} hint="Months PITIA held in reserve" />
+                  <InputField label="Min DSCR Required" type="number" step="0.05" value={inputs.minDscr} onChange={upd('minDscr')} hint="Lender minimum threshold" />
                 </div>
-              </div>
+              </Card>
+            </div>
+          )}
 
-              {/* Property Value */}
-              <div className="mb-4">
-                <label className={labelClass}>
-                  {loanPurpose === 'purchase' ? 'Purchase Price (ARV or Appraised Value)' : 'Current Property Value (Appraised Value)'}
-                  <TooltipField id="purchasePrice" />
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={purchasePrice === 0 ? '' : purchasePrice}
-                    onChange={(e) => { setPurchasePrice(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+          {/* ── INCOME TAB ── */}
+          {activeTab === 'income' && (
+            <div>
+              <Card title="Rental Income">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Monthly Gross Rent ($)" type="number" value={inputs.grossRent} onChange={upd('grossRent')} />
+                  <InputField label="Other Monthly Income ($)" type="number" value={inputs.otherIncome} onChange={upd('otherIncome')} hint="Laundry, storage, pet fees" />
+                  <InputField label="Parking / Garage Income ($)" type="number" value={inputs.parkingIncome} onChange={upd('parkingIncome')} />
+                  <InputField label="Coin Laundry / Vending ($)" type="number" value={inputs.laundryIncome} onChange={upd('laundryIncome')} />
+                  <InputField label="Vacancy Rate (%)" type="number" step="1" value={inputs.vacancyPct} onChange={upd('vacancyPct')} />
+                  <InputField label="Credit Loss / Bad Debt (%)" type="number" step="0.5" value={inputs.creditLossPct} onChange={upd('creditLossPct')} />
+                  <InputField label="Annual Rent Growth (%)" type="number" step="0.5" value={inputs.rentGrowth} onChange={upd('rentGrowth')} hint="Used in 5-yr projection + IRR" />
+                  <SelectField label="Lease Type" value={inputs.leaseType} onChange={updSel('leaseType')}>
+                    <option value="annual">Annual Lease</option>
+                    <option value="mth">Month-to-Month</option>
+                    <option value="str">Short-Term Rental (STR)</option>
+                  </SelectField>
                 </div>
-              </div>
+              </Card>
 
-              {/* Refinance-specific fields */}
-              {loanPurpose === 'refinance' && (
-                <>
-                  <div className="mb-4">
-                    <label className={labelClass}>Current Loan Balance<TooltipField id="currentLoanBalance" /></label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                      <input type="text" value={currentLoanBalance === 0 ? '' : currentLoanBalance}
-                        onChange={(e) => { setCurrentLoanBalance(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                        onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                    </div>
+              {inputs.leaseType === 'str' && (
+                <Card title="Short-Term Rental (STR) Details">
+                  <div className="grid grid-cols-4 gap-3">
+                    <InputField label="Avg Nightly Rate ($)" type="number" value={inputs.strNightly} onChange={upd('strNightly')} />
+                    <InputField label="Occupancy Rate (%)" type="number" step="5" value={inputs.strOccupancy} onChange={upd('strOccupancy')} />
+                    <InputField label="Platform Fee (%)" type="number" step="0.5" value={inputs.strPlatformFee} onChange={upd('strPlatformFee')} hint="Airbnb / VRBO host fee" />
+                    <InputField label="STR Mgmt Fee (%)" type="number" step="5" value={inputs.strMgmtFee} onChange={upd('strMgmtFee')} />
+                    <InputField label="Cleaning Cost / Stay ($)" type="number" value={inputs.strCleaning} onChange={upd('strCleaning')} />
+                    <InputField label="Avg Stays / Month" type="number" value={inputs.strStays} onChange={upd('strStays')} />
+                    <InputField label="Supplies / Toiletries (mo $)" type="number" value={inputs.strSupplies} onChange={upd('strSupplies')} />
+                    <InputField label="STR License / Permit (ann $)" type="number" value={inputs.strLicense} onChange={upd('strLicense')} />
                   </div>
-                  <div className="mb-4">
-                    <label className={labelClass}>Taking Cash Out?<TooltipField id="cashOutEnabled" /></label>
-                    <ToggleGroup value={cashOutEnabled ? 'yes' : 'no'} onChange={(v) => { setCashOutEnabled(v === 'yes'); captureSnapshot() }}
-                      options={[{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} />
-                  </div>
-                  {cashOutEnabled && (
-                    <div className="mb-4">
-                      <label className={labelClass}>Desired Cash-Out Amount<TooltipField id="cashOutAmount" /></label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                        <input type="text" value={cashOutAmount === 0 ? '' : cashOutAmount}
-                          onChange={(e) => { setCashOutAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                          onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                      </div>
-                    </div>
-                  )}
-                </>
+                </Card>
               )}
+            </div>
+          )}
 
-              {/* Loan Amount */}
-              <div className="mb-4">
-                <label className={labelClass}>Loan Amount<TooltipField id="loanAmount" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={loanAmount === 0 ? '' : loanAmount}
-                    onChange={(e) => { setLoanAmount(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+          {/* ── EXPENSES TAB ── */}
+          {activeTab === 'expenses' && (
+            <div>
+              <Card title="Fixed Operating Expenses — Annual">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Property Tax ($)" type="number" value={inputs.propTax} onChange={upd('propTax')} />
+                  <InputField label="Hazard Insurance ($)" type="number" value={inputs.insurance} onChange={upd('insurance')} />
+                  <InputField label="Flood Insurance ($)" type="number" value={inputs.floodIns} onChange={upd('floodIns')} />
+                  <InputField label="Umbrella / Landlord Policy ($)" type="number" value={inputs.umbrellaIns} onChange={upd('umbrellaIns')} />
+                  <InputField label="HOA / Condo Fees ($)" type="number" value={inputs.hoa} onChange={upd('hoa')} />
+                  <InputField label="Utilities (landlord-paid) ($)" type="number" value={inputs.utilities} onChange={upd('utilities')} hint="Water/sewer if landlord pays" />
+                  <InputField label="Trash / Recycling ($)" type="number" value={inputs.trash} onChange={upd('trash')} />
+                  <InputField label="Lawn / Snow Removal ($)" type="number" value={inputs.lawn} onChange={upd('lawn')} />
+                  <InputField label="Pest Control ($)" type="number" value={inputs.pest} onChange={upd('pest')} />
+                  <InputField label="Security / Alarm ($)" type="number" value={inputs.security} onChange={upd('security')} />
+                  <InputField label="Internet (if landlord-paid) ($)" type="number" value={inputs.internet} onChange={upd('internet')} />
+                  <InputField label="License / LLC / Reg Fees ($)" type="number" value={inputs.llcFees} onChange={upd('llcFees')} />
+                </div>
+              </Card>
+
+              <Card title="Variable & Percentage-Based Expenses">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Maintenance % of Rent" type="number" step="0.5" value={inputs.maintPct} onChange={upd('maintPct')} hint="Rule of thumb: 5–10%" />
+                  <InputField label="CapEx Reserve % of Rent" type="number" step="0.5" value={inputs.capexPct} onChange={upd('capexPct')} hint="Roof, HVAC, plumbing, etc." />
+                  <InputField label="Property Management (%)" type="number" step="1" value={inputs.mgmtPct} onChange={upd('mgmtPct')} />
+                  <InputField label="Leasing / Placement Fee (ann $)" type="number" value={inputs.leasingFee} onChange={upd('leasingFee')} />
+                  <InputField label="Eviction Reserve (ann $)" type="number" value={inputs.eviction} onChange={upd('eviction')} />
+                  <InputField label="Turnover Costs (ann $)" type="number" value={inputs.turnover} onChange={upd('turnover')} hint="Paint, carpet, deep clean" />
+                  <InputField label="Accounting / Bookkeeping ($)" type="number" value={inputs.accounting} onChange={upd('accounting')} />
+                  <InputField label="Legal / Entity Mgmt ($)" type="number" value={inputs.legal} onChange={upd('legal')} />
+                  <InputField label="Software / Tools ($)" type="number" value={inputs.software} onChange={upd('software')} hint="PM software, analytics, etc." />
+                  <InputField label="Travel / Inspection ($)" type="number" value={inputs.travel} onChange={upd('travel')} />
+                  <InputField label="Advertising / Listing ($)" type="number" value={inputs.advertising} onChange={upd('advertising')} />
+                  <InputField label="Other Operating ($)" type="number" value={inputs.otherExpenses} onChange={upd('otherExpenses')} />
+                </div>
+              </Card>
+
+              <Card title="Growth & Inflation Assumptions (5-yr Projection)">
+                <div className="grid grid-cols-3 gap-3">
+                  <InputField label="Annual Expense Growth (%)" type="number" step="0.5" value={inputs.expenseGrowth} onChange={upd('expenseGrowth')} />
+                  <InputField label="Property Tax Growth (%/yr)" type="number" step="1" value={inputs.taxGrowth} onChange={upd('taxGrowth')} />
+                  <InputField label="Insurance Inflation (%/yr)" type="number" step="1" value={inputs.insGrowth} onChange={upd('insGrowth')} />
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* ── REFI / EXIT TAB ── */}
+          {activeTab === 'refi' && (
+            <div>
+              <Card title="Refinance Assumptions">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Appraised Value at Refi ($)" type="number" value={inputs.appraisal} onChange={upd('appraisal')} />
+                  <InputField label="Appraisal Fee ($)" type="number" value={inputs.appraisalFee} onChange={upd('appraisalFee')} />
+                  <InputField label="Months Until Refi" type="number" step="1" value={inputs.monthsBeforeRefi} onChange={upd('monthsBeforeRefi')} />
+                  <InputField label="Lender Seasoning Required (mo)" type="number" step="1" value={inputs.seasoning} onChange={upd('seasoning')} hint="Most DSCR lenders: 6–12 mo" />
+                </div>
+              </Card>
+
+              <Card title="Hold & Sale Analysis">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Hold Period (years)" type="number" step="1" value={inputs.holdYears} onChange={upd('holdYears')} />
+                  <InputField label="Annual Appreciation (%)" type="number" step="0.5" value={inputs.appreciation} onChange={upd('appreciation')} />
+                  <InputField label="Seller Agent Commission (%)" type="number" step="0.5" value={inputs.sellerCommission} onChange={upd('sellerCommission')} />
+                  <InputField label="Seller Closing Costs (%)" type="number" step="0.25" value={inputs.sellerClose} onChange={upd('sellerClose')} />
+                  <InputField label="Capital Gains Tax Rate (%)" type="number" step="1" value={inputs.capGainsTax} onChange={upd('capGainsTax')} hint="Long-term rate estimate" />
+                  <InputField label="Depreciation Recapture (%)" type="number" step="1" value={inputs.deprRecapture} onChange={upd('deprRecapture')} />
+                  <InputField label="State Income Tax (%)" type="number" step="1" value={inputs.stateTax} onChange={upd('stateTax')} />
+                  <SelectField label="1031 Exchange?" value={inputs.exchange1031} onChange={updSel('exchange1031')}>
+                    <option value="no">No — pay taxes at sale</option>
+                    <option value="yes">Yes — defer all taxes</option>
+                  </SelectField>
+                </div>
+              </Card>
+
+              <Card title="Fix & Flip Analysis">
+                <div className="grid grid-cols-4 gap-3">
+                  <InputField label="Flip Sale Price ($)" type="number" value={inputs.flipSalePrice} onChange={upd('flipSalePrice')} />
+                  <InputField label="Seller Agent Commission (%)" type="number" step="0.5" value={inputs.flipCommission} onChange={upd('flipCommission')} />
+                  <InputField label="Flip Closing Costs (%)" type="number" step="0.25" value={inputs.flipClose} onChange={upd('flipClose')} />
+                  <InputField label="Monthly Holding Cost ($)" type="number" value={inputs.flipHoldingCost} onChange={upd('flipHoldingCost')} hint="Taxes, utils, HML int." />
+                  <InputField label="Flip Tax Rate (%)" type="number" step="1" value={inputs.flipTaxRate} onChange={upd('flipTaxRate')} hint="Short-term = ordinary income" />
+                  <InputField label="Target Flip Profit ($)" type="number" value={inputs.targetProfit} onChange={upd('targetProfit')} hint="Min acceptable profit" />
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* ── RESULTS TAB ── */}
+          {activeTab === 'results' && (
+            <div>
+              {/* Export bar */}
+              <div className="flex items-center justify-between mb-4 px-4 py-3 bg-[#1A1816] border border-[#1A1816] rounded">
+                <span className="text-[12px] font-medium text-white/60">Generate a professional investment report with all metrics</span>
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 text-[12px] font-semibold text-white bg-[#D03839] border-none rounded px-5 py-2 hover:bg-[#b83233] transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" /> Export PDF Report
+                </button>
+              </div>
+
+              {/* Phase cards */}
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {/* Phase 1 */}
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#EEF3FB] text-[#1B4F9B] mb-3">Phase 1 — All-In Entry Cost</span>
+                  <LineItem label="Purchase price" value={money(r.purchase)} />
+                  <LineItem label="Down payment" value={'−' + money(r.downAmt)} valueClass="text-[#D03839]" />
+                  <LineItem label="Hard money loan" value={money(r.hmlLoan)} valueClass="text-[#1B4F9B]" />
+                  <LineItem label="HML origination + doc" value={'−' + money(r.hmlOrig + r.hmlDoc)} valueClass="text-[#D03839]" />
+                  <LineItem label="HML carry interest" value={'−' + money(r.hmlInt + r.hmlExt)} valueClass="text-[#D03839]" />
+                  <LineItem label="Rehab (w/ contingency)" value={'−' + money(r.totalRehab)} valueClass="text-[#D03839]" />
+                  <LineItem label="Closing + acq costs" value={'−' + money(r.otherEntry)} valueClass="text-[#D03839]" />
+                  <LineItem label="Other entry costs" value={'−' + money(r.rateBuydown + r.prepayPenalty)} valueClass="text-[#D03839]" />
+                  <LineItem label="Total cash deployed" value={money(r.totalCashIn)} valueClass="text-[#D03839]" total />
+                </div>
+
+                {/* Phase 2 */}
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#E8F5EE] text-[#1A6B3C] mb-3">Phase 2 — DSCR Refi</span>
+                  <LineItem label="Appraised value" value={money(r.appraisal || inputs.appraisal)} />
+                  <LineItem label={`New loan @ ${Math.round(r.dscrLtvPct * 100)}% LTV`} value={money(r.dscrLoan)} valueClass="text-[#1B4F9B]" />
+                  <LineItem label="Pay off hard money" value={'−' + money(r.hmlLoan)} valueClass="text-[#D03839]" />
+                  <LineItem label="Refi closing + points" value={'−' + money(r.refiClose + r.dscrPtsAmt)} valueClass="text-[#D03839]" />
+                  <LineItem label="Appraisal fee" value={'−' + money(r.apprFee)} valueClass="text-[#D03839]" />
+                  <LineItem label="Net proceeds" value={(r.netProceeds >= 0 ? '+' : '−') + money(r.netProceeds)} valueClass={r.netProceeds >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'} />
+                  <LineItem label="Lender reserve held" value={'−' + money(r.reserveHeld)} valueClass="text-[#D03839]" />
+                  <LineItem label="Proceeds at Closing" value={'+' + money(r.cashBack)} valueClass="text-[#1A6B3C]" total />
+                  <LineItem
+                    label="Net cash left in deal"
+                    value={r.cashLeftInDeal < 100 ? '$0 — full recycle' : money(r.cashLeftInDeal)}
+                    valueClass={r.cashLeftInDeal < 100 ? 'text-[#1A6B3C]' : 'text-[#1A1816]'}
+                    total
+                  />
+                </div>
+
+                {/* Phase 3 */}
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#FFF8E8] text-[#A06800] mb-3">Phase 3 — Monthly P&L</span>
+                  <LineItem label="Gross rent + other" value={money(r.grossRentMo)} valueClass="text-[#1A6B3C]" />
+                  <LineItem label="Vacancy + credit loss" value={'−' + money(r.vacancyMo)} valueClass="text-[#D03839]" />
+                  <LineItem label="Effective gross income" value={money(r.egiMo)} />
+                  <LineItem label="DSCR P&I payment" value={'−' + money(r.piMo + r.pmiMo)} valueClass="text-[#D03839]" />
+                  <LineItem label="Tax + insurance" value={'−' + money(r.taxInsMo)} valueClass="text-[#D03839]" />
+                  <LineItem label="HOA + utilities" value={'−' + money(r.fixedMo)} valueClass="text-[#D03839]" />
+                  <LineItem label="Mgmt + leasing" value={'−' + money(r.mgmtMo)} valueClass="text-[#D03839]" />
+                  <LineItem label="Maint + CapEx reserve" value={'−' + money(r.maintMo)} valueClass="text-[#D03839]" />
+                  <LineItem label="Other operating" value={'−' + money(r.varMo)} valueClass="text-[#D03839]" />
+                  <LineItem
+                    label="Monthly cash flow"
+                    value={(r.moCF >= 0 ? '+' : '−') + money(r.moCF)}
+                    valueClass={r.moCF >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'}
+                    total
+                  />
                 </div>
               </div>
 
-              {/* LTV */}
-              <div className="mb-4">
-                <label className={labelClass}>Loan-to-Value (LTV)<TooltipField id="ltv" /></label>
-                <div className="relative">
-                  <input type="text" value={ltv === 0 ? '' : ltv}
-                    onChange={(e) => { handleLtvChange(e.target.value); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pr-8'} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">%</span>
+              {/* Annual + Metrics */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Annual Breakdown</div>
+                  <LineItem label="Effective gross income" value={money(r.annEGI)} />
+                  <LineItem label="Annual debt service" value={'−' + money(r.annPI + r.pmiMo * 12)} valueClass="text-[#D03839]" />
+                  <LineItem label="Taxes + insurance" value={'−' + money(r.annTaxIns)} valueClass="text-[#D03839]" />
+                  <LineItem label="HOA + utilities + fixed" value={'−' + money(r.annFixed)} valueClass="text-[#D03839]" />
+                  <LineItem label="Maintenance + CapEx" value={'−' + money(r.annMaint)} valueClass="text-[#D03839]" />
+                  <LineItem label="Management + leasing" value={'−' + money(r.annMgmt)} valueClass="text-[#D03839]" />
+                  <LineItem label="Other operating" value={'−' + money(r.annVar)} valueClass="text-[#D03839]" />
+                  <LineItem
+                    label="Net annual cash flow"
+                    value={(r.annNOI >= 0 ? '+' : '−') + money(r.annNOI)}
+                    valueClass={r.annNOI >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'}
+                    total
+                  />
+                </div>
+
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Return & Lender Metrics</div>
+                  <LineItem label="DSCR loan amount" value={money(r.dscrLoan)} valueClass="text-[#1B4F9B]" />
+                  <LineItem label="Rate / term / amort" value={`${r.dscrRateAnn}% / ${r.dscrTerm}yr / ${r.dscrAmort}yr amort`} />
+                  <LineItem label="Monthly P&I" value={money(r.piMo) + '/mo'} />
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
+                    <span className="text-[#737370] flex-1 pr-2">DSCR ratio</span>
+                    <DscrBadge ratio={r.dscrRatio} min={r.minDscr} />
+                  </div>
+                  <LineItem label="Lender min DSCR" value={r.minDscr.toFixed(2) + 'x required'} />
+                  <LineItem label="LTV at acquisition" value={pctFmt(r.ltvAtAcq)} />
+                  <LineItem label="Equity at refi" value={money(r.equityRefi)} valueClass="text-[#1A6B3C]" />
+                  <LineItem label="Cash-on-cash return" value={isFinite(r.coc) ? pctFmt(r.coc) : '∞'} />
+                  <LineItem label="Cap rate (on ARV)" value={pctFmt(r.capRate)} />
+                  <LineItem label="Gross rent multiplier" value={r.grm.toFixed(1) + 'x'} />
+                  <LineItem label="Estimated IRR" value={isNaN(r.irr) ? 'N/A' : (r.irr * 100).toFixed(2) + '%'} valueClass="text-[#A06800]" />
+                  <LineItem label="Equity multiple (hold)" value={isFinite(r.emx) && r.cashLeftInDeal > 1 ? r.emx.toFixed(2) + 'x' : 'N/A'} />
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px]">
+                    <span className="text-[#737370] flex-1 pr-2">Months to recover</span>
+                    {!isFinite(r.monthsRec) || r.monthsRec <= 0
+                      ? <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded bg-[#E8F5EE] text-[#1A6B3C]">Recovered ✓</span>
+                      : <span className="font-medium text-[#1A1816]">{Math.ceil(r.monthsRec)} months</span>
+                    }
+                  </div>
                 </div>
               </div>
 
-              {/* Interest Rate */}
-              <div className="mb-4">
-                <label className={labelClass}>Interest Rate<TooltipField id="interestRate" /></label>
-                <div className="relative">
-                  <input type="text" value={interestRate === 0 ? '' : interestRate}
-                    onChange={(e) => { const v = e.target.value; if (v === '' || v === '.' || !isNaN(v)) { setInterestRate(v === '' ? 0 : v); captureSnapshot() } }}
-                    onBlur={(e) => setInterestRate(parseFloat(e.target.value) || 0)}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pr-8'} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">%</span>
-                </div>
-              </div>
-
-              {/* Loan Term */}
-              <div className="mb-4">
-                <label className={labelClass}>Loan Term (Years)<TooltipField id="termInYears" /></label>
-                <input type="text" value={termInYears === 0 ? '' : termInYears}
-                  onChange={(e) => { setTermInYears(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                  onFocus={(e) => e.target.select()} className={inputClass} />
-              </div>
-
-              {/* Origination Fee */}
-              <div className="mb-4">
-                <label className={labelClass}>Origination Fee<TooltipField id="originationFee" /></label>
-                <div className="flex gap-2 mb-2">
-                  {['fixed', 'percentage'].map(mode => (
-                    <button key={mode} type="button" onClick={() => { setOriginationFeeMode(mode); captureSnapshot() }}
-                      className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${originationFeeMode === mode ? 'bg-[#D03839] text-white' : 'bg-[#FAFAF8] border border-[#E8E8E4] text-[#737370] hover:text-[#1A1816]'}`}>
-                      {mode === 'fixed' ? 'Fixed Amount' : 'Percentage'}
-                    </button>
+              {/* 3-col bottom */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* 5-Year Projection */}
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">5-Year Cash Flow Projection</div>
+                  <div className="flex justify-between text-[9px] font-semibold uppercase tracking-[0.06em] text-[#737370] pb-1 mb-1 border-b border-[#E8E8E4]">
+                    <span>Year</span>
+                    <span>EGI</span>
+                    <span>Expenses</span>
+                    <span>Cash Flow</span>
+                  </div>
+                  {r.projRows.map(({ yr, yrNOI, yrVal, yrEGI, yrOp }) => (
+                    <div key={yr} className="flex justify-between items-baseline py-1 text-[11px] border-b border-[#F3F3F0] last:border-0">
+                      <span className="text-[#737370] w-10">Yr {yr}</span>
+                      <span className="text-[#1A1816] w-16 text-right">{money(yrEGI)}</span>
+                      <span className="text-[#D03839] w-16 text-right">{money(yrOp)}</span>
+                      <span className={`w-16 text-right font-medium ${yrNOI >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'}`}>
+                        {(yrNOI >= 0 ? '+' : '−') + money(yrNOI)}
+                      </span>
+                    </div>
                   ))}
                 </div>
-                {originationFeeMode === 'fixed' ? (
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                    <input type="text" value={originationFee === 0 ? '' : originationFee}
-                      onChange={(e) => { setOriginationFee(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                      onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+
+                {/* Flip / Sale exit */}
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Flip / Sale & Exit Analysis</div>
+                  <LineItem label="Sale / flip price" value={money(r.dispSale)} />
+                  <LineItem label="Commission + closing" value={'−' + money(r.dispCosts)} valueClass="text-[#D03839]" />
+                  <LineItem label="Remaining loan balance" value={'−' + money(r.dispBal)} valueClass="text-[#D03839]" />
+                  <LineItem
+                    label="Gross profit"
+                    value={(r.dispGross >= 0 ? '+' : '−') + money(r.dispGross)}
+                    valueClass={r.dispGross >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'}
+                  />
+                  <LineItem
+                    label="Tax liability (est.)"
+                    value={r.exchange1031 === 'yes' ? '$0 (1031 deferred)' : '−' + money(r.dispTax)}
+                    valueClass={r.exchange1031 === 'yes' ? 'text-[#1A6B3C]' : 'text-[#D03839]'}
+                  />
+                  <LineItem
+                    label="Net profit / proceeds"
+                    value={(r.dispNet >= 0 ? '+' : '−') + money(r.dispNet)}
+                    valueClass={r.dispNet >= 0 ? 'text-[#1A6B3C]' : 'text-[#D03839]'}
+                    total
+                  />
+                </div>
+
+                {/* Quick Benchmarks */}
+                <div className="bg-white border border-[#E8E8E4] rounded p-4">
+                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Quick Benchmarks</div>
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
+                    <span className="text-[#737370]">1% Rule</span>
+                    <RuleBadge pass={r.rtv >= 0.01} warn={false} value={pctFmt(r.rtv)} />
                   </div>
-                ) : (
-                  <div>
-                    <div className="relative mb-2">
-                      <input type="text" value={originationFeePercent === 0 ? '' : originationFeePercent}
-                        onChange={(e) => { const v = e.target.value; if (v === '' || v === '.' || !isNaN(v)) { handleOriginationFeePercentChange(v === '' ? 0 : v); captureSnapshot() } }}
-                        onBlur={(e) => handleOriginationFeePercentChange(parseFloat(e.target.value) || 0)}
-                        onFocus={(e) => e.target.select()} className={inputClass + ' pr-8'} />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">%</span>
-                    </div>
-                    <p className="text-xs text-[#737370] bg-[#FAFAF8] border border-[#E8E8E4] px-3 py-2 rounded">
-                      Calculated Fee: <span className="font-semibold text-[#1A1816]">{formatCurrency(originationFee)}</span>
-                    </p>
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
+                    <span className="text-[#737370]">2% Rule</span>
+                    <RuleBadge pass={r.rtv >= 0.02} warn={r.rtv >= 0.015} value={pctFmt(r.rtv)} />
                   </div>
-                )}
-              </div>
-
-              {/* Loan Fees */}
-              <div className="mb-4">
-                <label className={labelClass}>Loan Fees<TooltipField id="loanFees" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={loanFees === 0 ? '' : loanFees}
-                    onChange={(e) => { setLoanFees(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                </div>
-              </div>
-
-              {/* Title Fees */}
-              <div className="mb-4">
-                <label className={labelClass}>Title Fees<TooltipField id="titleFees" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={titleFees === 0 ? '' : titleFees}
-                    onChange={(e) => { setTitleFees(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                </div>
-              </div>
-
-              {/* Escrow */}
-              <div className="mb-4">
-                <label className={labelClass}>Escrow<TooltipField id="escrow" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={escrow === 0 ? '' : escrow}
-                    onChange={(e) => { setEscrow(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                </div>
-              </div>
-
-              {/* Prepaid Interest */}
-              <div className="mb-4">
-                <label className={labelClass}>Prepaid Interest<TooltipField id="prepaidInterest" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={prepaidInterest === 0 ? '' : prepaidInterest}
-                    onChange={(e) => { setPrepaidInterest(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                </div>
-              </div>
-
-              {/* Prepaid Insurance */}
-              <div className="mb-4">
-                <label className={labelClass}>Prepaid Insurance<TooltipField id="prepaidInsurance" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={prepaidInsurance === 0 ? '' : prepaidInsurance}
-                    onChange={(e) => { setPrepaidInsurance(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
-                </div>
-              </div>
-
-              {/* Payment Reserve */}
-              <div className="mb-0">
-                <label className={labelClass}>Payment Reserve<TooltipField id="paymentReserve" /></label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-sm pointer-events-none">$</span>
-                  <input type="text" value={paymentReserve === 0 ? '' : paymentReserve}
-                    onChange={(e) => { setPaymentReserve(e.target.value === '' ? 0 : parseFloat(e.target.value) || 0); captureSnapshot() }}
-                    onFocus={(e) => e.target.select()} className={inputClass + ' pl-7'} />
+                  <LineItem
+                    label="50% Rule NOI (est.)"
+                    value={(r.rule50 >= 0 ? '+' : '−') + money(r.rule50)}
+                    valueClass={r.rule50 >= 0 ? 'text-[#1A1816]' : 'text-[#D03839]'}
+                  />
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
+                    <span className="text-[#737370]">Operating expense ratio</span>
+                    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${r.oer <= 0.5 ? 'bg-[#E8F5EE] text-[#1A6B3C]' : r.oer <= 0.65 ? 'bg-[#FFF8E8] text-[#A06800]' : 'bg-[#FDF0EF] text-[#D03839]'}`}>
+                      {pctFmt(r.oer)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
+                    <span className="text-[#737370]">Break-even occupancy</span>
+                    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${r.beoOcc <= 0.85 ? 'bg-[#E8F5EE] text-[#1A6B3C]' : r.beoOcc <= 0.95 ? 'bg-[#FFF8E8] text-[#A06800]' : 'bg-[#FDF0EF] text-[#D03839]'}`}>
+                      {pctFmt(Math.min(r.beoOcc, 1))}
+                    </span>
+                  </div>
+                  <LineItem label="Price per sq ft" value={r.ppsf > 0 ? '$' + Math.round(r.ppsf) + '/sf' : 'N/A'} />
+                  <LineItem label="Price per unit" value={money(r.ppu) + '/unit'} />
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
+                    <span className="text-[#737370]">Rent-to-value ratio</span>
+                    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${r.rtv >= 0.01 ? 'bg-[#E8F5EE] text-[#1A6B3C]' : r.rtv >= 0.007 ? 'bg-[#FFF8E8] text-[#A06800]' : 'bg-[#FDF0EF] text-[#D03839]'}`}>
+                      {pctFmt(r.rtv)}
+                    </span>
+                  </div>
+                  <LineItem label="Debt yield" value={pctFmt(r.debtYield)} />
+                  <div className="flex justify-between items-baseline py-1 text-[11.5px]">
+                    <span className="text-[#737370]">Target profit met?</span>
+                    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded ${r.targetMet ? 'bg-[#E8F5EE] text-[#1A6B3C]' : 'bg-[#FDF0EF] text-[#D03839]'}`}>
+                      {r.targetMet ? 'Yes ✓' : 'No ✗'} ({money(r.targetProfit)} target)
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* RIGHT — Results */}
-            <div className="lg:sticky lg:top-[96px] h-fit">
-              <div className="bg-white rounded border border-[#E8E8E4] p-6">
-                <h2 className="text-base font-semibold text-[#1A1816] mb-5">Results</h2>
-
-                {/* DSCR Hero */}
-                <div className={`rounded border p-5 mb-5 text-center ${dscr >= 1.1 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                  <p className="text-xs font-medium text-[#737370] uppercase tracking-wide mb-1">Debt Service Coverage Ratio</p>
-                  <p className={`text-5xl font-bold mb-1 ${dscr >= 1.1 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatDecimal(dscr, 2)}
-                  </p>
-                  <p className={`text-xs font-medium ${dscr >= 1.1 ? 'text-green-600' : 'text-red-600'}`}>
-                    {dscr >= 1.1 ? 'Positive Coverage — Loan Qualifies' : 'Insufficient Coverage'}
-                  </p>
-                </div>
-
-                {/* Metric rows */}
-                {[
-                  {
-                    label: 'Monthly Payment (PITIA)', tooltipId: 'monthlyPayment',
-                    value: formatCurrency(totalPITIA), sub: null
-                  },
-                  {
-                    label: 'Monthly Cashflow', tooltipId: 'monthlyCashflow',
-                    value: formatCurrency(monthlyCashflow),
-                    color: monthlyCashflow >= 0 ? 'text-green-600' : 'text-red-600'
-                  },
-                  {
-                    label: 'Effective Monthly Rent', tooltipId: 'effectiveMonthlyRent',
-                    value: formatCurrency(effectiveMonthlyRent),
-                    sub: `After ${formatDecimal(vacancyRate, 1)}% vacancy & ${formatDecimal(propertyManagementFee, 1)}% mgmt`
-                  },
-                  {
-                    label: 'Loan Proceeds', tooltipId: 'proceeds',
-                    value: formatCurrency(proceeds)
-                  },
-                  {
-                    label: 'Liquidity to Verify', tooltipId: 'liquidityToVerify',
-                    value: formatCurrency(liquidityToVerify)
-                  },
-                  {
-                    label: 'NOI (Annual)', tooltipId: 'noi',
-                    value: formatCurrency(noi)
-                  },
-                  {
-                    label: 'Cap Rate', tooltipId: 'capRate',
-                    value: formatDecimal(capRate, 2) + '%'
-                  },
-                  {
-                    label: 'Annual Cash Flow', tooltipId: 'annualCashFlow',
-                    value: formatCurrency(annualCashFlow),
-                    color: annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'
-                  },
-                  {
-                    label: 'Cash-on-Cash Return', tooltipId: 'cashOnCashReturn',
-                    value: formatDecimal(cashOnCashReturn, 2) + '%',
-                    color: cashOnCashReturn >= 0 ? 'text-green-600' : 'text-red-600',
-                    sub: `Cash Invested: ${formatCurrency(totalCashInvested)}`
-                  },
-                ].map((m, i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b border-[#E8E8E4] last:border-b-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm text-[#737370]">{m.label}</span>
-                      <TooltipField id={m.tooltipId} />
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${m.color || 'text-[#1A1816]'}`}>{m.value}</p>
-                      {m.sub && <p className="text-[11px] text-[#A8A8A4] mt-0.5">{m.sub}</p>}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Download PDF */}
-                <div className="mt-5">
-                  <button type="button" onClick={downloadPDF}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded bg-[#D03839] text-white text-sm font-semibold hover:bg-[#E0493B] active:bg-[#C73022] transition-colors">
-                    <Download className="w-4 h-4" />
-                    Download PDF Report
-                  </button>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
         </div>
       </div>
       <Footer />
