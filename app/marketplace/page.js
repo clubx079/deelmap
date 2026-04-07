@@ -36,6 +36,7 @@ export default function DealsPage() {
   })
 
   const [selectedProperty, setSelectedProperty] = useState(null)
+  const [mapBounds, setMapBounds] = useState(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const sortDropdownRef = useRef(null)
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
@@ -118,9 +119,25 @@ export default function DealsPage() {
     }
   }, [user, properties, loadFavorites])
 
-  const resultCount = typeof totalCount === 'number'
-    ? totalCount
-    : properties.length
+  const isInBounds = (property, bounds) => {
+    if (!bounds) return true
+    let lat = parseFloat(property.address_google_lat)
+    let lng = parseFloat(property.address_google_lng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      lat = parseFloat(property.latitude)
+      lng = parseFloat(property.longitude)
+    }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return true
+    return bounds.contains({ lat, lng })
+  }
+
+  const visibleProperties = mapBounds && mapPins.length > 0
+    ? mapPins.filter(p => isInBounds(p, mapBounds))
+    : properties
+
+  const resultCount = mapBounds && mapPins.length > 0
+    ? visibleProperties.length
+    : (typeof totalCount === 'number' ? totalCount : properties.length)
 
   const RightHeader = () => (
     <div className="px-5 py-4 border-b border-[#E8E8E4] bg-white">
@@ -246,6 +263,7 @@ const LoadingState = () => (
             <PropertyMap
               properties={mapPins.length > 0 ? mapPins : properties}
               onMarkerClick={(p) => { handleMarkerClick(p); setMobileView('list') }}
+              onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
@@ -277,10 +295,10 @@ const LoadingState = () => (
               <ErrorState />
             ) : (
               <div className="p-3 grid grid-cols-2 gap-3">
-                {properties.map((p) => (
+                {visibleProperties.map((p) => (
                   <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="vertical" />
                 ))}
-                {properties.length === 0 && !loading && !loadingMore && !error && <div className="col-span-2"><EmptyState /></div>}
+                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <div className="col-span-2"><EmptyState /></div>}
                 {hasMore && properties.length > 0 && (
                   <button
                     onClick={loadMore}
@@ -308,6 +326,7 @@ const LoadingState = () => (
             <PropertyMap
               properties={mapPins.length > 0 ? mapPins : properties}
               onMarkerClick={handleMarkerClick}
+              onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
@@ -326,10 +345,10 @@ const LoadingState = () => (
               return (
               <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
                 <div className="space-y-4">
-                  {properties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
+                  {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
                 </div>
-                {properties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
-                {hasMore && properties.length > 0 && (
+                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
+                {!mapBounds && hasMore && properties.length > 0 && (
                   <div className="py-4 flex justify-center">
                     <button
                       onClick={loadMore}

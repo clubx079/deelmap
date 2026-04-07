@@ -21,7 +21,7 @@ const STATE_CENTROIDS = {
   WI: [43.7844, -88.7879], WY: [43.0760, -107.2903], DC: [38.9072, -77.0369]
 }
 
-export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedIn = false }) {
+export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, filters, isLoggedIn = false }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
@@ -29,6 +29,8 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
   const router = useRouter()
   const propertiesRef = useRef(properties)
   const filtersRef = useRef(filters)
+  const onBoundsChangeRef = useRef(onBoundsChange)
+  useEffect(() => { onBoundsChangeRef.current = onBoundsChange }, [onBoundsChange])
 
   // Keep refs in sync so callbacks always see latest values
   useEffect(() => { propertiesRef.current = properties }, [properties])
@@ -71,6 +73,11 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
       mapInstanceRef.current = map
       
+      // Notify parent of bounds after every pan/zoom settles
+      map.addListener('idle', () => {
+        onBoundsChangeRef.current?.(map.getBounds())
+      })
+
       // Close popup when clicking anywhere on the map
       map.addListener('click', (e) => {
         if (e.placeId === undefined) {
@@ -169,7 +176,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         'transform: translate(-50%, -100%)',
         'z-index: 1000',
         'cursor: pointer',
-        'transition: all 0.15s ease',
+        'transition: transform 0.15s ease',
         'width: 20px',
         'height: 26px',
         'display: flex',
