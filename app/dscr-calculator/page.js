@@ -1,9 +1,10 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
-import { Lock, RotateCcw, Download } from 'lucide-react'
+import { RegistrationModal } from '@/components/RegistrationModal'
+import { RotateCcw, Download } from 'lucide-react'
 import Link from 'next/link'
 
 // ── Helper components ──────────────────────────────────────────────
@@ -117,9 +118,15 @@ const DEFAULTS = {
 // ── Main page ──────────────────────────────────────────────────────
 
 export default function DSCRCalculatorPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [inputs, setInputs] = useState(DEFAULTS)
   const [activeTab, setActiveTab] = useState('acquisition')
+
+  useEffect(() => {
+    if (loading) return
+    setShowLoginModal(!user)
+  }, [user, loading])
 
   const upd = (key) => (e) => setInputs(p => ({ ...p, [key]: e.target.value }))
   const updSel = (key) => (e) => setInputs(p => ({ ...p, [key]: e.target.value }))
@@ -355,28 +362,6 @@ export default function DSCRCalculatorPage() {
     }
   }, [inputs])
 
-  // ── Auth gate ──────────────────────────────────────────────────
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-14 h-14 bg-[#F3F3F0] border border-[#E8E8E4] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-6 h-6 text-[#737370]" />
-            </div>
-            <h2 className="text-[18px] font-semibold text-[#1A1816] mb-2">Sign in to access the underwriting tool</h2>
-            <p className="text-[13px] text-[#737370] mb-6">This tool is available to DeelMap members.</p>
-            <Link href="/login" className="inline-block bg-[#D03839] text-white text-[13px] font-semibold px-6 py-3 rounded hover:bg-[#b83233] transition-colors">
-              Login
-            </Link>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    )
-  }
-
   // ── DSCR badge helper ──────────────────────────────────────────
   function DscrBadge({ ratio, min }) {
     const isGood = ratio >= min
@@ -560,9 +545,16 @@ export default function DSCRCalculatorPage() {
   const TAB_LABELS = { acquisition: 'Acquisition', financing: 'Financing', income: 'Income', expenses: 'Expenses', refi: 'Refi / Exit', results: 'Results' }
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
+    <div className="min-h-screen bg-[#FAFAF8] relative">
+      <RegistrationModal
+        isOpen={showLoginModal}
+        onClose={() => {}}
+        initialStep="login"
+        preventClose={true}
+        backUrl="/resources"
+      />
       <Navbar />
-      <div className="pt-[80px]">
+      <div className={`pt-[80px] ${showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}`}>
         <div className="w-full px-4 md:px-6 py-6 md:py-8">
 
           {/* Header */}

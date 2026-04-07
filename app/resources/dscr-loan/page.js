@@ -3,10 +3,17 @@ import { useState, useEffect, useRef } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
-import { Info, Download, RotateCcw, Lock } from 'lucide-react'
+import { RegistrationModal } from '@/components/RegistrationModal'
+import { Info, Download, RotateCcw } from 'lucide-react'
 
 export default function DSCRLoanPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  const [showLoginModal, setShowLoginModal] = useState(false)
+
+  useEffect(() => {
+    if (loading) return
+    setShowLoginModal(!user)
+  }, [user, loading])
 
   // Input states
   const [loanType, setLoanType] = useState('amortizing')
@@ -358,35 +365,17 @@ export default function DSCRLoanPage() {
 
   const totalPITIA = monthlyPayment + (annualTaxes / 12) + (annualInsurance / 12) + (annualHOA / 12)
 
-  // Auth gate
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#FAFAF8]">
-        <Navbar />
-        <div className="pt-[80px] flex items-center justify-center min-h-screen">
-          <div className="text-center max-w-sm mx-auto px-6 py-16">
-            <div className="w-14 h-14 rounded-full bg-[#FEF0EF] flex items-center justify-center mx-auto mb-5">
-              <Lock className="w-6 h-6 text-[#D03839]" />
-            </div>
-            <h2 className="text-xl font-semibold text-[#1A1816] mb-2">Sign in to access</h2>
-            <p className="text-sm text-[#737370] mb-6">The DSCR Calculator is available to logged-in users only.</p>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login', role: 'buyer' } }))}
-              className="inline-block px-6 py-2.5 bg-[#D03839] text-white text-sm font-semibold rounded hover:bg-[#E0493B] transition-colors"
-            >
-              Log in
-            </button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-[#FAFAF8]">
+    <div className="min-h-screen bg-[#FAFAF8] relative">
+      <RegistrationModal
+        isOpen={showLoginModal}
+        onClose={() => {}}
+        initialStep="login"
+        preventClose={true}
+        backUrl="/resources"
+      />
       <Navbar />
-      <div className="pt-[80px]">
+      <div className={`pt-[80px] ${showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}`}>
 
         {/* Page Header */}
         <div className="border-b border-[#E8E8E4] bg-white">
