@@ -402,7 +402,7 @@ export default function DSCRCalculatorPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <div className="pt-[80px]">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="w-full px-6 py-8">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#E8E8E4]">
