@@ -563,10 +563,10 @@ export default function DSCRCalculatorPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <div className="pt-[80px]">
-        <div className="w-full px-6 py-8">
+        <div className="w-full px-4 md:px-6 py-6 md:py-8">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#E8E8E4]">
+          <div className="flex items-start sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[#E8E8E4]">
             <div>
               <h1 className="text-[18px] font-bold text-[#1A1816]">Advanced REI Underwriting Tool</h1>
               <div className="text-[10.5px] text-[#737370] uppercase tracking-[0.1em] mt-0.5">DeelMap | Investment Analysis</div>
@@ -580,7 +580,7 @@ export default function DSCRCalculatorPage() {
           </div>
 
           {/* Hero KPI bar */}
-          <div className="bg-white border border-[#E8E8E4] rounded grid grid-cols-6 mb-4 overflow-hidden">
+          <div className="bg-white border border-[#E8E8E4] rounded grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 mb-4 overflow-hidden">
             {[
               { label: 'Total Cash In', value: money(r.totalCashIn), cls: 'text-[#D03839]' },
               { label: 'Cash Back at Refi', value: money(r.cashBack), cls: 'text-[#1A6B3C]' },
@@ -597,7 +597,7 @@ export default function DSCRCalculatorPage() {
               { label: 'Cash-on-Cash', value: isFinite(r.coc) ? pctFmt(r.coc) : '∞', cls: 'text-[#A06800]' },
               { label: 'Est. IRR', value: isNaN(r.irr) ? 'N/A' : (r.irr * 100).toFixed(2) + '%', cls: 'text-[#A06800]' },
             ].map((s, idx) => (
-              <div key={idx} className={`p-4 ${idx < 5 ? 'border-r border-[#E8E8E4]' : ''}`}>
+              <div key={idx} className="p-4 border-b border-r border-[#E8E8E4] last:border-r-0 lg:[&:nth-child(6n)]:border-r-0">
                 <div className={`text-[17px] font-semibold leading-none mb-1.5 ${s.cls}`}>{s.value}</div>
                 <div className="text-[9.5px] font-medium text-[#737370] uppercase tracking-[0.06em] leading-tight">{s.label}</div>
               </div>
@@ -624,7 +624,7 @@ export default function DSCRCalculatorPage() {
           {activeTab === 'acquisition' && (
             <div>
               <Card title="Property & Strategy">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Purchase Price ($)" type="number" value={inputs.purchasePrice} onChange={upd('purchasePrice')} />
                   <InputField label="After-Repair Value ($)" type="number" value={inputs.arv} onChange={upd('arv')} hint="For LTV, cap rate, equity calcs" />
                   <SelectField label="Property Type" value={inputs.propType} onChange={updSel('propType')}>
@@ -656,7 +656,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Acquisition Costs">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Down Payment (%)" type="number" step="0.5" value={inputs.downPct} onChange={upd('downPct')} hint="Used only when HML LTV = 0%" />
                   <InputField label="Buyer Closing Costs ($)" type="number" value={inputs.closingCosts} onChange={upd('closingCosts')} hint="Title, escrow, transfer tax" />
                   <InputField label="Inspection & Due Diligence ($)" type="number" value={inputs.inspectionFees} onChange={upd('inspectionFees')} />
@@ -669,7 +669,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Rehab / Construction Budget">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Estimated Rehab Budget ($)" type="number" value={inputs.repairs} onChange={upd('repairs')} />
                   <InputField label="Contingency Reserve (%)" type="number" step="5" value={inputs.contingencyPct} onChange={upd('contingencyPct')} hint="Added to rehab budget" />
                   <InputField label="GC / Labor Markup ($)" type="number" value={inputs.gcFees} onChange={upd('gcFees')} />
@@ -687,7 +687,7 @@ export default function DSCRCalculatorPage() {
           {activeTab === 'financing' && (
             <div>
               <Card title="Hard Money / Bridge Loan">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="HML Interest Rate (%)" type="number" step="0.25" value={inputs.hmlRate} onChange={upd('hmlRate')} />
                   <InputField label="HML Origination Points (%)" type="number" step="0.25" value={inputs.hmlOriginPts} onChange={upd('hmlOriginPts')} />
                   <InputField label="HML Doc Fees ($)" type="number" value={inputs.hmlDocFees} onChange={upd('hmlDocFees')} />
@@ -706,7 +706,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Private Money / Equity Partner">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Private Money Amount ($)" type="number" value={inputs.privateMoney} onChange={upd('privateMoney')} hint="Supplements or replaces HML" />
                   <InputField label="Private Money Rate (%)" type="number" step="0.5" value={inputs.privateRate} onChange={upd('privateRate')} />
                   <InputField label="Partner Equity Share (%)" type="number" step="5" value={inputs.partnerEquity} onChange={upd('partnerEquity')} hint="% of profits / cash flow" />
@@ -715,7 +715,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Long-Term / Permanent Loan">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <SelectField label="Loan Type" value={inputs.loanType} onChange={updSel('loanType')}>
                     <option value="dscr">DSCR Loan</option>
                     <option value="conv">Conventional</option>
@@ -745,7 +745,7 @@ export default function DSCRCalculatorPage() {
           {activeTab === 'income' && (
             <div>
               <Card title="Rental Income">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Monthly Gross Rent ($)" type="number" value={inputs.grossRent} onChange={upd('grossRent')} />
                   <InputField label="Other Monthly Income ($)" type="number" value={inputs.otherIncome} onChange={upd('otherIncome')} hint="Laundry, storage, pet fees" />
                   <InputField label="Parking / Garage Income ($)" type="number" value={inputs.parkingIncome} onChange={upd('parkingIncome')} />
@@ -763,7 +763,7 @@ export default function DSCRCalculatorPage() {
 
               {inputs.leaseType === 'str' && (
                 <Card title="Short-Term Rental (STR) Details">
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <InputField label="Avg Nightly Rate ($)" type="number" value={inputs.strNightly} onChange={upd('strNightly')} />
                     <InputField label="Occupancy Rate (%)" type="number" step="5" value={inputs.strOccupancy} onChange={upd('strOccupancy')} />
                     <InputField label="Platform Fee (%)" type="number" step="0.5" value={inputs.strPlatformFee} onChange={upd('strPlatformFee')} hint="Airbnb / VRBO host fee" />
@@ -782,7 +782,7 @@ export default function DSCRCalculatorPage() {
           {activeTab === 'expenses' && (
             <div>
               <Card title="Fixed Operating Expenses — Annual">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Property Tax ($)" type="number" value={inputs.propTax} onChange={upd('propTax')} />
                   <InputField label="Hazard Insurance ($)" type="number" value={inputs.insurance} onChange={upd('insurance')} />
                   <InputField label="Flood Insurance ($)" type="number" value={inputs.floodIns} onChange={upd('floodIns')} />
@@ -799,7 +799,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Variable & Percentage-Based Expenses">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Maintenance % of Rent" type="number" step="0.5" value={inputs.maintPct} onChange={upd('maintPct')} hint="Rule of thumb: 5–10%" />
                   <InputField label="CapEx Reserve % of Rent" type="number" step="0.5" value={inputs.capexPct} onChange={upd('capexPct')} hint="Roof, HVAC, plumbing, etc." />
                   <InputField label="Property Management (%)" type="number" step="1" value={inputs.mgmtPct} onChange={upd('mgmtPct')} />
@@ -816,7 +816,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Growth & Inflation Assumptions (5-yr Projection)">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <InputField label="Annual Expense Growth (%)" type="number" step="0.5" value={inputs.expenseGrowth} onChange={upd('expenseGrowth')} />
                   <InputField label="Property Tax Growth (%/yr)" type="number" step="1" value={inputs.taxGrowth} onChange={upd('taxGrowth')} />
                   <InputField label="Insurance Inflation (%/yr)" type="number" step="1" value={inputs.insGrowth} onChange={upd('insGrowth')} />
@@ -829,7 +829,7 @@ export default function DSCRCalculatorPage() {
           {activeTab === 'refi' && (
             <div>
               <Card title="Refinance Assumptions">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Appraised Value at Refi ($)" type="number" value={inputs.appraisal} onChange={upd('appraisal')} />
                   <InputField label="Appraisal Fee ($)" type="number" value={inputs.appraisalFee} onChange={upd('appraisalFee')} />
                   <InputField label="Months Until Refi" type="number" step="1" value={inputs.monthsBeforeRefi} onChange={upd('monthsBeforeRefi')} />
@@ -838,7 +838,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Hold & Sale Analysis">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Hold Period (years)" type="number" step="1" value={inputs.holdYears} onChange={upd('holdYears')} />
                   <InputField label="Annual Appreciation (%)" type="number" step="0.5" value={inputs.appreciation} onChange={upd('appreciation')} />
                   <InputField label="Seller Agent Commission (%)" type="number" step="0.5" value={inputs.sellerCommission} onChange={upd('sellerCommission')} />
@@ -854,7 +854,7 @@ export default function DSCRCalculatorPage() {
               </Card>
 
               <Card title="Fix & Flip Analysis">
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <InputField label="Flip Sale Price ($)" type="number" value={inputs.flipSalePrice} onChange={upd('flipSalePrice')} />
                   <InputField label="Seller Agent Commission (%)" type="number" step="0.5" value={inputs.flipCommission} onChange={upd('flipCommission')} />
                   <InputField label="Flip Closing Costs (%)" type="number" step="0.25" value={inputs.flipClose} onChange={upd('flipClose')} />
@@ -870,7 +870,7 @@ export default function DSCRCalculatorPage() {
           {activeTab === 'results' && (
             <div>
               {/* Export bar */}
-              <div className="flex items-center justify-between mb-4 px-4 py-3 bg-[#1A1816] border border-[#1A1816] rounded">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 px-4 py-3 bg-[#1A1816] border border-[#1A1816] rounded">
                 <span className="text-[12px] font-medium text-white/60">Generate a professional investment report with all metrics</span>
                 <button
                   onClick={handleExport}
@@ -881,7 +881,7 @@ export default function DSCRCalculatorPage() {
               </div>
 
               {/* Phase cards */}
-              <div className="grid grid-cols-3 gap-3 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 {/* Phase 1 */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
                   <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#EEF3FB] text-[#1B4F9B] mb-3">Phase 1 — All-In Entry Cost</span>
@@ -937,7 +937,7 @@ export default function DSCRCalculatorPage() {
               </div>
 
               {/* Annual + Metrics */}
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
                   <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Annual Breakdown</div>
                   <LineItem label="Effective gross income" value={money(r.annEGI)} />
@@ -983,7 +983,7 @@ export default function DSCRCalculatorPage() {
               </div>
 
               {/* 3-col bottom */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* 5-Year Projection */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
                   <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">5-Year Cash Flow Projection</div>
