@@ -8,12 +8,21 @@ import Link from 'next/link'
 
 // ── Helper components ──────────────────────────────────────────────
 
-function InputField({ label, hint, ...props }) {
+function InputField({ label, hint, placeholder, ...props }) {
+  const autoPlaceholder = placeholder ?? (
+    /\(\$\)/.test(label) ? 'e.g. $0' :
+    /\(%\)/.test(label) ? 'e.g. 0%' :
+    /\(months\)/i.test(label) ? 'months' :
+    /\(years\)/i.test(label) ? 'years' :
+    /nights|nightly/i.test(label) ? 'per night' :
+    'e.g. 0'
+  )
   return (
     <div className="flex flex-col gap-1">
       <label className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
       <input
         className="text-[13px] font-medium text-[#1A1816] bg-[#F3F3F0] border border-[#E8E8E4] rounded px-3 py-2 outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 w-full"
+        placeholder={autoPlaceholder}
         {...props}
       />
       {hint && <span className="text-[9.5px] text-[#A8A8A4] leading-tight">{hint}</span>}
