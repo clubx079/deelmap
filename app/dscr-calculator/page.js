@@ -86,26 +86,26 @@ function pctFmt(n) { return (n * 100).toFixed(2) + '%' }
 const DEFAULTS = {
   purchasePrice: 80000, arv: 165000, propType: 'sfr', strategy: 'brrrr',
   condition: 'distressed', market: 'primary', yearBuilt: 1978, sqft: 1400,
-  downPct: 10, closingCosts: 1900, inspectionFees: 375, assignmentFee: 0,
-  agentBuy: 0, envSurvey: 0, hoaTransfer: 0, otherAcqCosts: 0,
-  repairs: 18000, contingencyPct: 10, gcFees: 0, permits: 400,
-  staging: 0, landscaping: 300, appliances: 1000, furnishing: 0,
+  downPct: 10, closingCosts: 1900, inspectionFees: 375, assignmentFee: '',
+  agentBuy: '', envSurvey: '', hoaTransfer: '', otherAcqCosts: '',
+  repairs: 18000, contingencyPct: 10, gcFees: '', permits: 400,
+  staging: '', landscaping: 300, appliances: 1000, furnishing: '',
   hmlRate: 11, hmlOriginPts: 2, hmlDocFees: 500, hmlLtv: 90,
-  hmlCarry: 4, hmlExtension: 0, drawSchedule: 'upfront', hmlInterestType: 'io',
-  privateMoney: 0, privateRate: 0, partnerEquity: 0, prefReturn: 0,
+  hmlCarry: 4, hmlExtension: '', drawSchedule: 'upfront', hmlInterestType: 'io',
+  privateMoney: '', privateRate: '', partnerEquity: '', prefReturn: '',
   loanType: 'dscr', dscrRate: 7.25, dscrTerm: 30, dscrAmort: 30,
-  balloonTerm: 0, dscrLtv: 75, refiClosePct: 3, dscrPoints: 1,
-  pmi: 0, prepayPenalty: 0, rateBuydown: 0, lenderReserves: 6, minDscr: 1.25,
-  grossRent: 1800, otherIncome: 0, parkingIncome: 0, laundryIncome: 0,
-  vacancyPct: 8, creditLossPct: 0, rentGrowth: 3, leaseType: 'annual',
-  strNightly: 0, strOccupancy: 0, strPlatformFee: 0, strMgmtFee: 0,
-  strCleaning: 0, strStays: 0, strSupplies: 0, strLicense: 0,
-  propTax: 1600, insurance: 1000, floodIns: 0, umbrellaIns: 150,
-  hoa: 0, utilities: 0, trash: 0, lawn: 220, pest: 110,
-  security: 0, internet: 0, llcFees: 100,
-  maintPct: 7, capexPct: 5, mgmtPct: 0, leasingFee: 0,
-  eviction: 0, turnover: 350, accounting: 250, legal: 0,
-  software: 0, travel: 0, advertising: 0, otherExpenses: 0,
+  balloonTerm: '', dscrLtv: 75, refiClosePct: 3, dscrPoints: 1,
+  pmi: '', prepayPenalty: '', rateBuydown: '', lenderReserves: 6, minDscr: 1.25,
+  grossRent: 1800, otherIncome: '', parkingIncome: '', laundryIncome: '',
+  vacancyPct: 8, creditLossPct: '', rentGrowth: 3, leaseType: 'annual',
+  strNightly: '', strOccupancy: '', strPlatformFee: '', strMgmtFee: '',
+  strCleaning: '', strStays: '', strSupplies: '', strLicense: '',
+  propTax: 1600, insurance: 1000, floodIns: '', umbrellaIns: 150,
+  hoa: '', utilities: '', trash: '', lawn: 220, pest: 110,
+  security: '', internet: '', llcFees: 100,
+  maintPct: 7, capexPct: 5, mgmtPct: '', leasingFee: '',
+  eviction: '', turnover: 350, accounting: 250, legal: '',
+  software: '', travel: '', advertising: '', otherExpenses: '',
   expenseGrowth: 2, taxGrowth: 3, insGrowth: 5,
   appraisal: 165000, appraisalFee: 550, monthsBeforeRefi: 4, seasoning: 6,
   holdYears: 5, appreciation: 4, sellerCommission: 5, sellerClose: 1.5,
@@ -121,12 +121,16 @@ export default function DSCRCalculatorPage() {
   const [inputs, setInputs] = useState(DEFAULTS)
   const [activeTab, setActiveTab] = useState('acquisition')
 
-  const upd = (key) => (e) => setInputs(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))
+  const upd = (key) => (e) => setInputs(p => ({ ...p, [key]: e.target.value }))
   const updSel = (key) => (e) => setInputs(p => ({ ...p, [key]: e.target.value }))
 
   // ── Calculations ────────────────────────────────────────────────
   const r = useMemo(() => {
-    const i = inputs
+    const n = (v) => parseFloat(v) || 0
+    // Coerce numeric string inputs to numbers; leave select strings (e.g. 'sfr', 'dscr') as-is
+    const i = Object.fromEntries(
+      Object.entries(inputs).map(([k, v]) => [k, typeof v === 'string' && !isNaN(Number(v)) ? n(v) : v])
+    )
 
     // Acquisition
     const purchase = i.purchasePrice
