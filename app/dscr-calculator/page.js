@@ -395,7 +395,164 @@ export default function DSCRCalculatorPage() {
 
   // ── PDF export ─────────────────────────────────────────────────
   function handleExport() {
-    window.print()
+    const n = (v) => parseFloat(v) || 0
+    const win = window.open('', '_blank')
+    const row = (label, value, highlight = '') => `
+      <tr style="border-bottom:1px solid #f0f0ee">
+        <td style="padding:5px 8px;color:#555;font-size:12px">${label}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:600;font-size:12px;color:${highlight || '#1A1816'}">${value}</td>
+      </tr>`
+    const section = (title, rows) => `
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#D03839;border-bottom:2px solid #D03839;padding-bottom:4px;margin-bottom:8px">${title}</div>
+        <table style="width:100%;border-collapse:collapse">${rows}</table>
+      </div>`
+    const col2 = (left, right) => `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">${left}${right}</div>`
+
+    const acqRows = section('Acquisition', [
+      row('Purchase Price', money(n(inputs.purchasePrice))),
+      row('After-Repair Value (ARV)', money(n(inputs.arv))),
+      row('Year Built', inputs.yearBuilt || '—'),
+      row('Square Footage', n(inputs.sqft) ? n(inputs.sqft).toLocaleString() + ' sq ft' : '—'),
+      row('Down Payment', n(inputs.downPct) + '%'),
+      row('Buyer Closing Costs', money(n(inputs.closingCosts))),
+      row('Inspection Fees', money(n(inputs.inspectionFees))),
+      row('Assignment Fee', money(n(inputs.assignmentFee))),
+      row('Other Acquisition Costs', money(n(inputs.otherAcqCosts))),
+    ].join(''))
+
+    const rehabRows = section('Rehab', [
+      row('Estimated Rehab Budget', money(n(inputs.repairs))),
+      row('Contingency Reserve', n(inputs.contingencyPct) + '%'),
+      row('GC / Labor Markup', money(n(inputs.gcFees))),
+      row('Permits & Plans', money(n(inputs.permits))),
+      row('Appliances', money(n(inputs.appliances))),
+      row('Landscaping', money(n(inputs.landscaping))),
+    ].join(''))
+
+    const hmlRows = section('Hard Money Loan', [
+      row('HML Interest Rate', n(inputs.hmlRate) + '%'),
+      row('HML Origination Points', n(inputs.hmlOriginPts) + '%'),
+      row('HML Doc Fees', money(n(inputs.hmlDocFees))),
+      row('HML LTV', n(inputs.hmlLtv) + '%'),
+      row('Carry Period', n(inputs.hmlCarry) + ' months'),
+    ].join(''))
+
+    const dscrRows = section('DSCR / Refi Loan', [
+      row('Loan Type', inputs.loanType?.toUpperCase() || '—'),
+      row('Interest Rate', n(inputs.dscrRate) + '%'),
+      row('Term', n(inputs.dscrTerm) + ' years'),
+      row('Amortization', n(inputs.dscrAmort) + ' years'),
+      row('LTV', n(inputs.dscrLtv) + '%'),
+      row('Refi Closing Costs', n(inputs.refiClosePct) + '%'),
+      row('Points', n(inputs.dscrPoints) + '%'),
+      row('Min DSCR Required', n(inputs.minDscr).toFixed(2) + 'x'),
+      row('Appraised Value', money(n(inputs.appraisal))),
+      row('Months Before Refi', n(inputs.monthsBeforeRefi)),
+    ].join(''))
+
+    const incomeRows = section('Income', [
+      row('Gross Monthly Rent', money(n(inputs.grossRent))),
+      row('Other Income', money(n(inputs.otherIncome))),
+      row('Parking Income', money(n(inputs.parkingIncome))),
+      row('Vacancy Rate', n(inputs.vacancyPct) + '%'),
+      row('Credit Loss', n(inputs.creditLossPct) + '%'),
+      row('Annual Rent Growth', n(inputs.rentGrowth) + '%'),
+    ].join(''))
+
+    const expRows = section('Expenses (Annual)', [
+      row('Property Tax', money(n(inputs.propTax))),
+      row('Insurance', money(n(inputs.insurance))),
+      row('Flood Insurance', money(n(inputs.floodIns))),
+      row('HOA', money(n(inputs.hoa))),
+      row('Utilities', money(n(inputs.utilities))),
+      row('Lawn / Pest / Misc', money(n(inputs.lawn) + n(inputs.pest))),
+      row('LLC Fees', money(n(inputs.llcFees))),
+      row('Maintenance Reserve', n(inputs.maintPct) + '% of rent'),
+      row('CapEx Reserve', n(inputs.capexPct) + '% of rent'),
+      row('Property Mgmt', n(inputs.mgmtPct) + '% of rent'),
+      row('Accounting / Legal', money(n(inputs.accounting) + n(inputs.legal))),
+      row('Turnover Reserve', money(n(inputs.turnover))),
+    ].join(''))
+
+    const phase1 = section('Phase 1 — All-In Entry Cost', [
+      row('Purchase Price', money(r.purchase)),
+      row('Down Payment', '−' + money(r.downAmt), '#D03839'),
+      row('Hard Money Loan', money(r.hmlLoan), '#1B4F9B'),
+      row('HML Origination + Doc', '−' + money(r.hmlOrig + r.hmlDoc), '#D03839'),
+      row('HML Carry Interest', '−' + money(r.hmlInt + r.hmlExt), '#D03839'),
+      row('Rehab (w/ contingency)', '−' + money(r.totalRehab), '#D03839'),
+      row('Closing + Acq Costs', '−' + money(r.otherEntry), '#D03839'),
+      row('Total Cash Deployed', money(r.totalCashIn), '#D03839'),
+    ].join(''))
+
+    const phase2 = section('Phase 2 — DSCR Refi', [
+      row('Appraised Value', money(r.appraisal || n(inputs.appraisal))),
+      row(`New Loan @ ${Math.round(r.dscrLtvPct * 100)}% LTV`, money(r.dscrLoan), '#1B4F9B'),
+      row('Pay Off Hard Money', '−' + money(r.hmlLoan), '#D03839'),
+      row('Refi Closing + Points', '−' + money(r.refiClose + r.dscrPtsAmt), '#D03839'),
+      row('Appraisal Fee', '−' + money(r.apprFee), '#D03839'),
+      row('Net Proceeds', (r.netProceeds >= 0 ? '+' : '−') + money(r.netProceeds), r.netProceeds >= 0 ? '#1A6B3C' : '#D03839'),
+      row('Cash Back at Refi', '+' + money(r.cashBack), '#1A6B3C'),
+      row('Cash Left in Deal', r.cashLeftInDeal < 100 ? '$0 — full recycle' : money(r.cashLeftInDeal), r.cashLeftInDeal < 100 ? '#1A6B3C' : '#1A1816'),
+    ].join(''))
+
+    const phase3 = section('Phase 3 — Monthly P&L', [
+      row('Gross Rent + Other Income', money(r.grossRentMo), '#1A6B3C'),
+      row('Vacancy + Credit Loss', '−' + money(r.vacancyMo), '#D03839'),
+      row('Effective Gross Income', money(r.egiMo)),
+      row('DSCR P&I Payment', '−' + money(r.piMo + r.pmiMo), '#D03839'),
+      row('Tax + Insurance', '−' + money(r.taxInsMo), '#D03839'),
+      row('HOA + Utilities', '−' + money(r.fixedMo), '#D03839'),
+      row('Mgmt + Leasing', '−' + money(r.mgmtMo), '#D03839'),
+      row('Maint + CapEx Reserve', '−' + money(r.maintMo), '#D03839'),
+      row('Monthly Cash Flow', (r.moCF >= 0 ? '+' : '−') + money(r.moCF), r.moCF >= 0 ? '#1A6B3C' : '#D03839'),
+    ].join(''))
+
+    const metricsRows = section('Key Metrics', [
+      row('DSCR', r.dscr.toFixed(3) + 'x'),
+      row('Cap Rate', (r.capRate * 100).toFixed(2) + '%'),
+      row('Cash-on-Cash Return', (r.coc * 100).toFixed(2) + '%'),
+      row('Gross Yield', (r.grossYield * 100).toFixed(2) + '%'),
+      row('Estimated IRR', r.irr !== null ? (r.irr * 100).toFixed(1) + '%' : '—'),
+      row('Annual Net Cash Flow', money(r.annNOI), r.annNOI >= 0 ? '#1A6B3C' : '#D03839'),
+      row('Break-even Occupancy', (r.breakeven * 100).toFixed(1) + '%'),
+      row('Equity at Purchase', money(r.equityAtPurchase)),
+    ].join(''))
+
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DSCR Investment Report</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1A1816; background: #fff; padding: 32px; }
+    h1 { font-size: 20px; font-weight: 800; color: #1A1816; margin-bottom: 4px; }
+    .subtitle { font-size: 11px; color: #737370; margin-bottom: 28px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media print {
+      body { padding: 16px; }
+      @page { margin: 12mm; }
+    }
+  </style>
+</head>
+<body>
+  <h1>DSCR Investment Underwriter</h1>
+  <div class="subtitle">Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} &nbsp;·&nbsp; DeelMap</div>
+  <div class="grid2">${acqRows}${rehabRows}</div>
+  <div class="grid2">${hmlRows}${dscrRows}</div>
+  <div class="grid2">${incomeRows}${expRows}</div>
+  <hr style="border:none;border-top:2px solid #1A1816;margin:24px 0">
+  <div class="grid2">${phase1}${phase2}</div>
+  ${phase3}
+  <div class="grid2">${metricsRows}</div>
+</body>
+</html>`)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print(); win.close() }, 300)
   }
 
   // ── Tab content ────────────────────────────────────────────────
