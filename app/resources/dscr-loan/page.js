@@ -377,15 +377,15 @@ export default function DSCRLoanPage() {
       <Navbar />
       <div className={`pt-[80px] ${showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}`}>
 
-        {/* Page Header */}
-        <div className="border-b border-[#E8E8E4] bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1816]">DSCR Calculator</h1>
-            <p className="text-sm text-[#737370] mt-1">Calculate your Debt Service Coverage Ratio for investment properties</p>
-          </div>
-        </div>
+        <div className="w-full px-4 md:px-6 py-6 md:py-8">
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="flex items-start sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[#E8E8E4]">
+            <div>
+              <h1 className="text-[18px] font-bold text-[#1A1816]">DSCR Calculator</h1>
+              <div className="text-[10.5px] text-[#737370] uppercase tracking-[0.1em] mt-0.5">DeelMap | Investment Analysis</div>
+            </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2 mb-6">
