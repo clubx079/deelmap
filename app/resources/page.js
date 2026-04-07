@@ -2,98 +2,80 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { Home } from 'lucide-react'
+import { Calculator, BarChart3, ArrowRight } from 'lucide-react'
+
+const TOOLS = [
+  {
+    icon: Calculator,
+    label: 'Tool',
+    title: 'DSCR Calculator',
+    description: 'Calculate loan eligibility based on property cash flow. Enter your rent, loan amount, rate, and expenses to instantly see your DSCR ratio, monthly cash flow, cap rate, and cash-on-cash return.',
+    features: ['DSCR ratio & loan eligibility', 'Monthly & annual cash flow', 'Cap rate & cash-on-cash return', 'Purchase & refinance scenarios'],
+    href: '/resources/dscr-loan',
+    cta: 'Open Calculator',
+  },
+  {
+    icon: BarChart3,
+    label: 'Tool',
+    title: 'Advanced REI Underwriter',
+    description: 'Full BRRRR / buy-and-hold / flip underwriting tool. Model the complete deal lifecycle from acquisition through refinance and exit with 60+ inputs across 6 tabs.',
+    features: ['Full BRRRR deal modeling', 'Hard money + DSCR refi waterfall', '5-year cash flow projection & IRR', 'Flip / sale exit analysis'],
+    href: '/dscr-calculator',
+    cta: 'Open Underwriter',
+  },
+]
 
 export default function ResourcesPage() {
   return (
-    <div className="min-h-screen">
-      <Navbar currentPage="resources" />
+    <div className="min-h-screen bg-[#FAFAF8]">
+      <Navbar />
+      <div className="pt-[80px]">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">
 
-      {/* Resources Grid Section */}
-      <section className="py-16 lg:py-24" style={{ backgroundColor: '#F6F4F1' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: '#022b41' }}>
-              Available Resources
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Access finance calculators and tools designed for real estate investors
-            </p>
+          {/* Header */}
+          <div className="mb-10">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-[#D03839] mb-2">Resources</p>
+            <h1 className="text-[26px] font-bold text-[#1A1816] mb-2">Investment Tools</h1>
+            <p className="text-[14px] text-[#737370]">Calculators and underwriting tools built for real estate investors.</p>
           </div>
 
-          {/* Resources Grid */}
-          <div className="flex justify-center">
-            {/* DSCR Loan Card */}
-            <Link href="/resources/dscr-loan" className="max-w-md w-full">
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer group h-full">
-                <div
-                  className="p-8 text-center transition-colors duration-300"
-                  style={{ backgroundColor: '#022b41' }}
-                >
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: '#b29578' }}>
-                    <Home className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">
-                    DSCR Loan
-                  </h3>
-                  <p className="text-white/80 text-sm">
-                    Debt Service Coverage Ratio
-                  </p>
-                </div>
-
-                <div className="p-6">
-                  <p className="text-gray-600 mb-6 leading-relaxed">
-                    Calculate loan eligibility based on property cash flow rather than personal income. Perfect for real estate investors.
-                  </p>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: '#b29578' }} />
-                      <span className="text-sm text-gray-700">No personal income verification required</span>
+          {/* Tool cards */}
+          <div className="flex flex-col gap-4">
+            {TOOLS.map((tool) => {
+              const Icon = tool.icon
+              return (
+                <Link key={tool.href} href={tool.href}>
+                  <div className="bg-white border border-[#E8E8E4] rounded hover:shadow-md hover:border-[#D03839] transition-all duration-200 p-6 flex flex-col sm:flex-row gap-5">
+                    {/* Icon */}
+                    <div className="flex-shrink-0 w-11 h-11 bg-[#FEF0EF] border border-[#F5C4C0] rounded flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-[#D03839]" />
                     </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: '#b29578' }} />
-                      <span className="text-sm text-gray-700">Based on property rental income</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full mt-2" style={{ backgroundColor: '#b29578' }} />
-                      <span className="text-sm text-gray-700">Ideal for investment properties</span>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#737370] mb-1">{tool.label}</p>
+                      <h2 className="text-[16px] font-bold text-[#1A1816] mb-2">{tool.title}</h2>
+                      <p className="text-[13px] text-[#737370] leading-relaxed mb-4">{tool.description}</p>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-4">
+                        {tool.features.map((f) => (
+                          <li key={f} className="flex items-center gap-2 text-[12px] text-[#444441]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] flex-shrink-0" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#D03839]">
+                        {tool.cta} <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-center gap-2 text-sm font-semibold transition-colors group-hover:text-[#b29578]" style={{ color: '#022b41' }}>
-                    <span>Calculate Now</span>
-                    <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </Link>
+                </Link>
+              )
+            })}
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-16 lg:py-20" style={{ backgroundColor: '#022b41' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            Need Help Getting Started?
-          </h2>
-          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-            Our team is here to help you understand these resources and find the right finance solution for your investment property.
-          </p>
-          <Link href="/contact">
-            <button
-              className="px-8 py-4 rounded-lg font-semibold text-lg text-white transition-all duration-300 hover:shadow-xl hover:scale-105"
-              style={{ backgroundColor: '#b29578' }}
-            >
-              Contact Us Today
-            </button>
-          </Link>
         </div>
-      </section>
-
+      </div>
       <Footer />
     </div>
   )
