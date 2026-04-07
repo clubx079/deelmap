@@ -123,6 +123,7 @@ export function Navbar() {
     { label: 'About', href: '/our-story' },
     { label: 'Contact us', href: '/contact' },
     { label: 'DSCR Calculator', href: '/dscr-calculator' },
+    { label: 'Advertise with us', href: '/advertise' },
   ]
 
   const navItems = [
@@ -136,7 +137,7 @@ export function Navbar() {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
-    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/dscr-calculator'
+    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/dscr-calculator' || pathname === '/advertise'
     return false
   }
 

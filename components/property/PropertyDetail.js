@@ -7,7 +7,7 @@ import {
   ArrowLeft, Heart, Share2,
   MapPin, Building2, Calendar, Square, Map, Bed, Droplets, Car,
   ChevronLeft, ChevronRight,
-  TrendingUp, Shield, Star, DollarSign, Wrench, Home
+  TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X
 } from 'lucide-react'
 import { useProperties } from '@/hooks/useProperties'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
@@ -33,6 +33,7 @@ export function PropertyDetail({ property }) {
   const [downPaymentPercent, setDownPaymentPercent] = useState(25)
   const [estimatedRent, setEstimatedRent] = useState(property.estimated_rent ?? null)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showPhonePopup, setShowPhonePopup] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showOfferModal] = useState(false)
@@ -774,24 +775,46 @@ export function PropertyDetail({ property }) {
                   </span>
                 </div>
 
-                {/* Call Agent */}
-                {property.agent?.phone ? (
-                  <a
-                    href={`tel:${property.agent.phone}`}
-                    className="flex items-center justify-center gap-2 w-full bg-[#1A1816] hover:bg-[#2C2A28] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.63a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    Call Agent
-                  </a>
-                ) : (
+                {/* Call Seller */}
+                <div className="relative mb-3">
                   <button
-                    disabled
-                    className="flex items-center justify-center gap-2 w-full bg-[#E8E8E4] text-[#A8A8A4] font-semibold py-2.5 px-4 rounded text-center text-sm cursor-not-allowed mb-3"
+                    onClick={() => property.agent?.phone && setShowPhonePopup(true)}
+                    disabled={!property.agent?.phone}
+                    className={`flex items-center justify-center gap-2 w-full font-semibold py-2.5 px-4 rounded text-sm transition-colors ${
+                      property.agent?.phone
+                        ? 'bg-[#1A1816] hover:bg-[#2C2A28] text-white'
+                        : 'bg-[#E8E8E4] text-[#A8A8A4] cursor-not-allowed'
+                    }`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.63a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    Call Agent
+                    <Phone className="w-4 h-4" />
+                    Call Seller
                   </button>
-                )}
+
+                  {/* Phone number popup */}
+                  {showPhonePopup && property.agent?.phone && (
+                    <>
+                      <div className="fixed inset-0 z-[9]" onClick={() => setShowPhonePopup(false)} />
+                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#E8E8E4] rounded shadow-lg p-4 z-10">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737370]">Seller Phone</p>
+                        <button onClick={() => setShowPhonePopup(false)} className="p-0.5 text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <a
+                        href={`tel:${property.agent.phone}`}
+                        className="flex items-center gap-2.5 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FEF0EF] transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center shrink-0 group-hover:bg-[#D03839] transition-colors">
+                          <Phone className="w-4 h-4 text-[#D03839] group-hover:text-white transition-colors" />
+                        </div>
+                        <span className="text-[15px] font-semibold text-[#1A1816]">{property.agent.phone}</span>
+                      </a>
+                      <p className="text-[11px] text-[#A8A8A4] mt-2 text-center">Tap the number to call</p>
+                    </div>
+                    </>
+                  )}
+                </div>
 
                 {/* Message Seller */}
                 <Link

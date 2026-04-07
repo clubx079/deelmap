@@ -315,7 +315,7 @@ const LoadingState = () => (
           </div>
 
           {/* Listings - right */}
-          <div className="flex flex-col bg-white border-l border-[#E8E8E4] flex-shrink-0 w-[700px]">
+          <div className="flex flex-col bg-white border-l border-[#E8E8E4] flex-shrink-0 w-[680px]">
             <RightHeader />
 
             {(loading && properties.length === 0) ? (
