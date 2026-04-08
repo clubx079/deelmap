@@ -651,45 +651,6 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
               <div className="border-t border-[#F0F0EC]" />
 
-              {/* Beds & Baths */}
-              <div>
-                <h3 className="text-[15px] font-bold text-[#1A1816] mb-4">Beds & Baths</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Bedrooms</p>
-                    <div className="flex gap-2">
-                      {['Any', 1, 2, 3, 4, 5].map((n) => {
-                        const val = n === 'Any' ? '' : String(n)
-                        const active = tempFilters.minBeds === val
-                        return (
-                          <button key={n} onClick={() => setTempFilters({ ...tempFilters, minBeds: val })}
-                            className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
-                            {n === 'Any' ? 'Any' : `${n}+`}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Bathrooms</p>
-                    <div className="flex gap-2">
-                      {['Any', 1, 2, 3, 4, 5].map((n) => {
-                        const val = n === 'Any' ? '' : String(n)
-                        const active = tempFilters.minBaths === val
-                        return (
-                          <button key={n} onClick={() => setTempFilters({ ...tempFilters, minBaths: val })}
-                            className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
-                            {n === 'Any' ? 'Any' : `${n}+`}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-[#F0F0EC]" />
-
               {/* States */}
               <div>
                 <div className="flex items-center justify-between mb-4">
