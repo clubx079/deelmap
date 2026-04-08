@@ -161,7 +161,7 @@ export function Navbar() {
                     <div key={item.label} className="relative" ref={aboutButtonRef}>
                       <button
                         onClick={() => setShowAboutDropdown(!showAboutDropdown)}
-                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[18px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
+                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[16px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                       >
                         {item.label}
                         {/* Filled triangle arrow */}
@@ -207,7 +207,7 @@ export function Navbar() {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className={`px-4 pt-2 pb-0.5 text-[18px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
+                    className={`px-4 pt-2 pb-0.5 text-[16px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                   >
                     {item.label}
                   </Link>
