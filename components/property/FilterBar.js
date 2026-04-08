@@ -192,10 +192,10 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   return (
     <>
       <div className="bg-white border-b border-[#E8E8E4] fixed top-[80px] left-0 right-0 z-40">
-        <div className="w-full px-6 lg:px-10 py-3 flex items-center gap-3">
-
-          {/* Search */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden flex-1 min-w-0 lg:w-[480px] lg:flex-none focus-within:border-[#1A1816] transition-colors">
+        {/* Mobile layout: search on top, filters below */}
+        <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
+          {/* Search row */}
+          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-full focus-within:border-[#1A1816] transition-colors">
             <input
               type="text"
               placeholder="Search markets, cities, or ZIP codes"
@@ -203,13 +203,46 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               onChange={(e) => onSearchChange?.(e.target.value)}
               className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
             />
-            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors hidden lg:flex items-center justify-center flex-shrink-0">
+            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
+              <Search className="w-4 h-4 text-white" />
+            </button>
+          </div>
+          {/* Filters row */}
+          <div className="flex items-center gap-2 pb-1">
+            <button
+              className={filterBtn(hasActiveFilters)}
+              onClick={() => { closeAll(); setShowAllFilters(true) }}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              All Filters
+              {hasActiveFilters && (
+                <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
+                  {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop layout: all in one row */}
+        <div className="hidden lg:flex w-full px-10 py-3 items-center gap-3">
+
+          {/* Search */}
+          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-[480px] flex-none focus-within:border-[#1A1816] transition-colors">
+            <input
+              type="text"
+              placeholder="Search markets, cities, or ZIP codes"
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
+            />
+            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
               <Search className="w-4 h-4 text-white" />
             </button>
           </div>
 
           {/* Property Types */}
-          <div className="relative hidden lg:block" ref={propertyTypesRef}>
+          <div className="relative" ref={propertyTypesRef}>
             <button
               className={filterBtn(hasPropertyTypesFilter)}
               onClick={() => { setShowPropertyTypes(!showPropertyTypes); setShowPrice(false); setShowBedsBaths(false) }}
@@ -428,7 +461,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               </span>
             )}
           </button>
-        </div>
+        </div>{/* end desktop row */}
       </div>
 
       {/* All Filters Modal */}

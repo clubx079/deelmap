@@ -233,7 +233,7 @@ const LoadingState = () => (
       {/* Mobile Layout */}
       <div className="lg:hidden">
         {/* Toggle bar — fixed below filterbar */}
-        <div className="fixed top-[148px] left-0 right-0 z-30 bg-white border-b border-[#E8E8E4] px-4 py-2 flex items-center justify-between gap-3">
+        <div className="fixed top-[172px] left-0 right-0 z-30 bg-white border-b border-[#E8E8E4] px-4 py-2 flex items-center justify-between gap-3">
           <div className="flex items-center bg-[#F3F3F0] rounded p-0.5 gap-0.5">
             <button
               onClick={() => setMobileView('map')}
@@ -259,7 +259,7 @@ const LoadingState = () => (
 
         {/* Map view */}
         {mobileView === 'map' && (
-          <div className="fixed inset-0 top-[196px]">
+          <div className="fixed inset-0 top-[220px]">
             <PropertyMap
               properties={mapPins.length > 0 ? mapPins : properties}
               onMarkerClick={(p) => { handleMarkerClick(p); setMobileView('list') }}
@@ -273,7 +273,7 @@ const LoadingState = () => (
 
         {/* List view */}
         {mobileView === 'list' && (
-          <div className="fixed inset-0 top-[196px] overflow-y-auto bg-[#FAFAF8]">
+          <div className="fixed inset-0 top-[220px] overflow-y-auto bg-[#FAFAF8]">
             {/* Sort bar */}
             <div className="sticky top-0 z-10 px-4 py-2.5 bg-white border-b border-[#E8E8E4] flex items-center justify-end gap-1.5">
               <span className="text-[12px] text-[#737370]">Sort:</span>
