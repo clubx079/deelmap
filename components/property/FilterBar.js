@@ -203,7 +203,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               onChange={(e) => onSearchChange?.(e.target.value)}
               className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
             />
-            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
+            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors hidden lg:flex items-center justify-center flex-shrink-0">
               <Search className="w-4 h-4 text-white" />
             </button>
           </div>
