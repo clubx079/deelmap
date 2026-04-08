@@ -50,6 +50,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const propertyTypesRef = useRef(null)
   const priceRef = useRef(null)
   const mobilePriceRef = useRef(null)
+  const mobileBedsBathsRef = useRef(null)
   const bedsBathsRef = useRef(null)
 
   const STATE_NAMES = {
@@ -71,7 +72,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     const handleClickOutside = (e) => {
       if (propertyTypesRef.current && !propertyTypesRef.current.contains(e.target)) setShowPropertyTypes(false)
       if (priceRef.current && !priceRef.current.contains(e.target) && mobilePriceRef.current && !mobilePriceRef.current.contains(e.target)) setShowPrice(false)
-      if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
+      if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target) && mobileBedsBathsRef.current && !mobileBedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -270,6 +271,64 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                         <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">Clear</button>
                       )}
                       <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">Apply</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Beds/Baths button */}
+            <div className="relative" ref={mobileBedsBathsRef}>
+              <button
+                className={filterBtn(hasBedsBathsFilter)}
+                onClick={() => {
+                  setShowBedsBaths(!showBedsBaths)
+                  setTempBedsBaths({ minBeds: filters.minBeds || '', minBaths: filters.minBaths || '' })
+                }}
+              >
+                {bedsBathsLabel()}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showBedsBaths ? 'rotate-180' : ''}`} />
+              </button>
+              {showBedsBaths && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-72 overflow-hidden">
+                  <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
+                    <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Beds & Baths</p>
+                  </div>
+                  <div className="px-4 py-4 space-y-5">
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Bedrooms</p>
+                      <div className="flex gap-2">
+                        {['Any', 1, 2, 3, 4, 5].map((n) => {
+                          const val = n === 'Any' ? '' : String(n)
+                          const active = tempBedsBaths.minBeds === val
+                          return (
+                            <button key={n} onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBeds: val })}
+                              className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
+                              {n === 'Any' ? 'Any' : `${n}+`}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Bathrooms</p>
+                      <div className="flex gap-2">
+                        {['Any', 1, 2, 3, 4, 5].map((n) => {
+                          const val = n === 'Any' ? '' : String(n)
+                          const active = tempBedsBaths.minBaths === val
+                          return (
+                            <button key={n} onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBaths: val })}
+                              className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
+                              {n === 'Any' ? 'Any' : `${n}+`}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      {hasBedsBathsFilter && (
+                        <button onClick={clearBedsBaths} className="flex-1 h-10 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">Clear</button>
+                      )}
+                      <button onClick={applyBedsBaths} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">Apply</button>
                     </div>
                   </div>
                 </div>
