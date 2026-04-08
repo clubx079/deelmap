@@ -610,10 +610,10 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       {/* All Filters Modal */}
       {showAllFilters && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[88vh] overflow-y-auto shadow-2xl">
+          <div className="bg-white rounded max-w-3xl w-full max-h-[88vh] overflow-y-auto shadow-2xl">
 
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+            <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-t z-10">
               <div>
                 <h2 className="text-[18px] font-bold text-[#1A1816]">All Filters</h2>
                 <p className="text-[12px] text-[#A8A8A4] mt-0.5">Refine your search results</p>
@@ -785,7 +785,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-b-2xl">
+            <div className="sticky bottom-0 bg-white border-t border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-b">
               <button onClick={resetAllFilters} className="text-[14px] font-medium text-[#737370] hover:text-[#1A1816] transition-colors underline underline-offset-2">
                 Clear all
               </button>
