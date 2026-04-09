@@ -901,7 +901,7 @@ export function PropertyDetail({ property }) {
                   const roiVal = p.cash_on_cash ?? p.gross_yield
                   const roi = roiVal && Number(roiVal) > 0 ? `+${Number(roiVal).toFixed(0)}% ROI` : null
                   const clean = v => (v && String(v).toLowerCase() !== 'unknown' ? v : null)
-                  const title = clean(p.title) || clean(p.name) || clean(p.property_type) || 'Investment Property'
+                  const title = clean(p.full_address) || clean(p.display_address) || clean(p.address) || cityState || 'Address unavailable'
                   const dealType = (p.deal_type || '').toLowerCase()
                   const dealBadge = dealType.includes('quick')
                     ? { label: 'Quick Sale', cls: 'bg-[#D03839] text-white' }
