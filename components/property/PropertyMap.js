@@ -508,6 +508,11 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     overlay.onRemove = function () { el.remove() }
     overlay.setMap(map)
 
+    // Reposition after map settles — projection is unstable during fitBounds animation
+    window.google.maps.event.addListenerOnce(map, 'idle', () => {
+      if (infoOverlayRef.current === overlay) overlay.draw()
+    })
+
     infoOverlayRef.current = overlay
   }
 
