@@ -219,6 +219,13 @@ export function Navbar() {
             <div className="flex items-center gap-3">
               {user ? (
                 <div className="flex items-center gap-3">
+                  {/* Post a Deal */}
+                  <Link
+                    href="/buyer/listings"
+                    className="hidden sm:flex items-center gap-1.5 h-[36px] px-4 bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors"
+                  >
+                    + Post a Deal
+                  </Link>
                   {/* Notifications */}
                   <div className="relative" ref={notifBellRef}>
                     <button
