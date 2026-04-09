@@ -959,7 +959,7 @@ export function PropertyDetail({ property }) {
                   return (
                     <div key={p.id} className="bg-white rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
                       {/* Photo */}
-                      <Link href={`/${p.slug || p.id}${isPreview ? '?preview=1' : ''}`} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
+                      <Link href={isPreview ? '#' : `/${p.slug || p.id}`} onClick={isPreview ? (e) => { e.preventDefault(); setShowPreviewModal(true) } : undefined} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
                         {thumbUrl ? (
                           <Image
                             src={thumbUrl}
@@ -1026,12 +1026,21 @@ export function PropertyDetail({ property }) {
                         )}
                         {/* Invest Now */}
                         <div className="mt-auto pt-3 flex justify-end">
-                          <Link
-                            href={`/${p.slug || p.id}${isPreview ? '?preview=1' : ''}`}
-                            className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
-                          >
-                            View Listing
-                          </Link>
+                          {isPreview ? (
+                            <button
+                              onClick={() => setShowPreviewModal(true)}
+                              className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
+                            >
+                              View Listing
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/${p.slug || p.id}`}
+                              className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
+                            >
+                              View Listing
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>
