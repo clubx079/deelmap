@@ -70,7 +70,7 @@ export async function POST(request) {
         payment_type: 'listing_fee',
         property_id: data.id,
         stripe_payment_intent_id: body.stripe_payment_intent_id,
-        amount: body.amount || 1999,
+        amount: body.amount || 2900,
         currency: 'usd',
         status: 'succeeded',
         description: `Listing fee for property: ${body.title || data.slug}`,

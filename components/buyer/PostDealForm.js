@@ -19,7 +19,7 @@ const STEPS = [
   { label: 'Basic Info', desc: 'Address & price' },
   { label: 'Photos',     desc: 'Upload images' },
   { label: 'Details',    desc: 'Description' },
-  { label: 'Payment',    desc: '$19.99 listing fee' },
+  { label: 'Payment',    desc: '$29 listing fee' },
 ]
 const EDIT_STEPS = STEPS.slice(0, 3)
 
@@ -399,7 +399,7 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
         const res = await fetch('/api/buyer/listings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-          body: JSON.stringify({ ...formData, stripe_payment_intent_id: paymentIntent.id, amount: 1999 }),
+          body: JSON.stringify({ ...formData, stripe_payment_intent_id: paymentIntent.id, amount: 2900 }),
         })
         const data = await res.json()
         if (!data.success) {
@@ -444,7 +444,7 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
         {processing ? (
           <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Processing...</>
         ) : (
-          <><DollarSign className="w-4 h-4" />Pay $19.99 & Publish</>
+          <><DollarSign className="w-4 h-4" />Pay $29 & Publish</>
         )}
       </button>
     </form>
@@ -510,7 +510,7 @@ function StepPayment({ formData, photos, user, onSuccess }) {
         </div>
         <div className="pt-3 border-t border-[#E8E8E4] flex justify-between items-center">
           <span className="text-[13px] font-medium text-[#1A1816]">One-time listing fee</span>
-          <span className="text-[16px] font-bold text-[#1A1816]">$19.99</span>
+          <span className="text-[16px] font-bold text-[#1A1816]">$29</span>
         </div>
       </div>
 
