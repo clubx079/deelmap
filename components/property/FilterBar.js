@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, SlidersHorizontal, X, Search, Check } from 'lucide-react'
 import { supabaseMarketplace } from '@/lib/supabase'
+import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const PROPERTY_TYPES = [
   'Single Family',
@@ -204,16 +205,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
           {/* Search row */}
           <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-full focus-within:border-[#1A1816] transition-colors">
-            <input
-              type="text"
-              placeholder="Search markets, cities, or ZIP codes"
+            <LocationAutocomplete
               value={searchQuery}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
+              onChange={onSearchChange}
+              onSelect={({ label }) => onSearchChange?.(label)}
+              onSubmit={(val) => onSearchChange?.(val)}
             />
-            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
-              <Search className="w-4 h-4 text-white" />
-            </button>
           </div>
           {/* Filters row */}
           <div className="flex items-center gap-2 pb-1">
@@ -372,16 +369,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
           {/* Search */}
           <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-[480px] flex-none focus-within:border-[#1A1816] transition-colors">
-            <input
-              type="text"
-              placeholder="Search markets, cities, or ZIP codes"
+            <LocationAutocomplete
               value={searchQuery}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
+              onChange={onSearchChange}
+              onSelect={({ label }) => onSearchChange?.(label)}
+              onSubmit={(val) => onSearchChange?.(val)}
             />
-            <button className="h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
-              <Search className="w-4 h-4 text-white" />
-            </button>
           </div>
 
           {/* Property Types */}

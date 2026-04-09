@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Search, Star, ShieldCheck, MessageSquare, Check, BadgeCheck, SlidersHorizontal, Rocket } from 'lucide-react'
+import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const TESTIMONIALS = [
   { initials: 'MC', color: 'bg-[#D03839]', name: 'Michael Carter', role: 'Property Investor', metric: '23', metricLabel: 'deals closed', text: 'Deelmap helped me discover off-market deals I wouldn\'t have found anywhere else. The ARV data alone saves me a full underwriting session per deal. I open the platform and have real deals in under 5 minutes.' },
@@ -144,20 +145,20 @@ export default function HomePage() {
 
               {/* Search bar */}
               <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded overflow-hidden mb-5 max-w-[580px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
-                <input
-                  type="text"
-                  placeholder="Search markets, cities, or ZIP codes"
+                <LocationAutocomplete
                   value={heroSearch}
-                  onChange={(e) => setHeroSearch(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/marketplace${heroSearch ? `?search=${encodeURIComponent(heroSearch)}` : ''}` }}
-                  className="flex-1 h-full px-4 text-[15px] text-[#1A1816] placeholder:text-[#737370] focus:outline-none bg-transparent"
+                  onChange={setHeroSearch}
+                  onSelect={({ label }) => {
+                    setHeroSearch(label)
+                    window.location.href = `/marketplace?search=${encodeURIComponent(label)}`
+                  }}
+                  onSubmit={(val) => {
+                    window.location.href = `/marketplace${val ? `?search=${encodeURIComponent(val)}` : ''}`
+                  }}
+                  placeholder="Search markets, cities, or ZIP codes"
+                  inputStyle={{ fontSize: '15px' }}
+                  buttonClassName="px-5 w-auto"
                 />
-                <Link
-                  href={`/marketplace${heroSearch ? `?search=${encodeURIComponent(heroSearch)}` : ''}`}
-                  className="h-full px-5 bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] active:scale-[0.98] transition-all duration-200 flex items-center justify-center flex-shrink-0"
-                >
-                  <Search className="w-5 h-5 text-white" />
-                </Link>
               </div>
 
               {/* Trust badges */}
