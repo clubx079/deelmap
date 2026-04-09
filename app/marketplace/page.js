@@ -131,9 +131,15 @@ export default function DealsPage() {
     return bounds.contains({ lat, lng })
   }
 
-  const visibleProperties = mapBounds && mapPins.length > 0
-    ? mapPins.filter(p => isInBounds(p, mapBounds))
-    : properties
+  const visibleProperties = (() => {
+    const list = mapBounds && mapPins.length > 0
+      ? mapPins.filter(p => isInBounds(p, mapBounds))
+      : properties
+    if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
+    if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
+    if (sortBy === 'roi') return [...list].sort((a, b) => (b.gross_yield || b.cap_rate || 0) - (a.gross_yield || a.cap_rate || 0))
+    return list // 'newest' — already ordered by API/insertion order
+  })()
 
   const resultCount = mapBounds && mapPins.length > 0
     ? visibleProperties.length
