@@ -1,5 +1,6 @@
 //app/[slug]/page.js
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { supabaseMarketplace } from '@/lib/supabase'
 import { PropertyDetail } from '@/components/property/PropertyDetail'
@@ -234,5 +235,9 @@ export default async function PropertyPage({ params }) {
     notFound()
   }
 
-  return <PropertyDetail property={property} />
+  return (
+    <Suspense>
+      <PropertyDetail property={property} />
+    </Suspense>
+  )
 }

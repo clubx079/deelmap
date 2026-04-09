@@ -1,6 +1,7 @@
 // /components/property/PropertyDetail.js
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
@@ -21,6 +22,9 @@ import { PropertyImageModal } from './PropertyImageModal'
 import { Footer } from '@/components/layout/Footer'
 
 export function PropertyDetail({ property }) {
+  const searchParams = useSearchParams()
+  const isPreview = searchParams.get('preview') === '1'
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
   const { user, loading } = useAuth()
   const { isFavorited, toggleFavorite, loadFavorites } = useFavorites()
 
@@ -128,15 +132,15 @@ export function PropertyDetail({ property }) {
   const fullAddress = property.full_address || property.display_address ||
     `${property.address || ''}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim()
 
-  // Show login modal if user is not authenticated
+  // Show login modal if user is not authenticated (skip in preview mode)
   useEffect(() => {
-    if (loading) return
+    if (loading || isPreview) return
     if (!user) {
       setShowLoginModal(true)
     } else {
       setShowLoginModal(false)
     }
-  }, [user, loading])
+  }, [user, loading, isPreview])
 
   useEffect(() => {
     if (user && showLoginModal && !loading) {
@@ -349,8 +353,39 @@ export function PropertyDetail({ property }) {
 
   const hasRehabData = property.rehab_cost || property.rehab_description || property.condition
 
+  // Helper: intercept action clicks in preview mode
+  const handlePreviewAction = (e) => {
+    if (isPreview) { e.preventDefault(); setShowPreviewModal(true) }
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] relative overflow-x-hidden">
+      {/* Preview mode modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded w-full max-w-sm p-6 text-center shadow-xl">
+            <div className="w-12 h-12 bg-[#FEF3E2] rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-[22px]">👁️</span>
+            </div>
+            <h3 className="text-[16px] font-bold text-[#1A1816] mb-2">You're in Preview Mode</h3>
+            <p className="text-[13px] text-[#737370] mb-5">This is how buyers see your listing. When a buyer clicks this button, they'll be prompted to log in before taking any action.</p>
+            <button
+              onClick={() => setShowPreviewModal(false)}
+              className="w-full h-[40px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview banner */}
+      {isPreview && (
+        <div className="sticky top-0 z-[100] bg-[#1A1816] text-white text-center py-2 px-4 text-[13px] font-medium">
+          👁️ Preview Mode — this is how your listing appears to buyers
+        </div>
+      )}
+
       {/* Login Modal */}
       <RegistrationModal
         isOpen={showLoginModal}
@@ -408,7 +443,8 @@ export function PropertyDetail({ property }) {
               <span className="hidden sm:inline">Share</span>
             </button>
             <button
-              onClick={async () => {
+              onClick={async (e) => {
+                if (isPreview) { setShowPreviewModal(true); return }
                 if (!user) { setShowLoginModal(true); return }
                 setFavoriteLoading(true)
                 try {
@@ -778,7 +814,7 @@ export function PropertyDetail({ property }) {
                 {/* Call Seller */}
                 <div className="relative mb-3">
                   <button
-                    onClick={() => property.agent?.phone && setShowPhonePopup(true)}
+                    onClick={() => { if (isPreview) { setShowPreviewModal(true); return } property.agent?.phone && setShowPhonePopup(true) }}
                     disabled={!property.agent?.phone}
                     className={`flex items-center justify-center gap-2 w-full font-semibold py-2.5 px-4 rounded text-sm transition-colors ${
                       property.agent?.phone
@@ -825,13 +861,14 @@ export function PropertyDetail({ property }) {
                         ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
                         : user ? '/buyer/inbox' : '/login'
                       }
+                      onClick={handlePreviewAction}
                       className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
                     >
                       Message Seller
                     </Link>
 
                     {/* Make Offer */}
-                    {user ? (
+                    {user && !isPreview ? (
                       <Link
                         href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
                         className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
@@ -840,7 +877,7 @@ export function PropertyDetail({ property }) {
                       </Link>
                     ) : (
                       <button
-                        onClick={() => setShowLoginModal(true)}
+                        onClick={() => isPreview ? setShowPreviewModal(true) : setShowLoginModal(true)}
                         className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
                       >
                         Make Offer
