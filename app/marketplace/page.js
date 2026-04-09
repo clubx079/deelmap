@@ -262,7 +262,7 @@ const LoadingState = () => (
           <div className="fixed inset-0 top-[240px]">
             <PropertyMap
               properties={mapPins.length > 0 ? mapPins : properties}
-              onMarkerClick={(p) => { handleMarkerClick(p); setMobileView('list') }}
+              onMarkerClick={handleMarkerClick}
               onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
               filters={filters}
