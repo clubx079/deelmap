@@ -24,6 +24,7 @@ const PRICE_PRESETS = [
 ]
 
 export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange }) {
+  const [localSearch, setLocalSearch] = useState(searchQuery || '')
   const [showAllFilters, setShowAllFilters] = useState(false)
   const [availableStates, setAvailableStates] = useState([])
 
@@ -206,9 +207,9 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
           {/* Search row */}
           <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-full focus-within:border-[#1A1816] transition-colors">
             <LocationAutocomplete
-              value={searchQuery}
-              onChange={onSearchChange}
-              onSelect={({ label }) => onSearchChange?.(label)}
+              value={localSearch}
+              onChange={setLocalSearch}
+              onSelect={({ label }) => { setLocalSearch(label); onSearchChange?.(label) }}
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
@@ -370,9 +371,9 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
           {/* Search */}
           <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-[480px] flex-none focus-within:border-[#1A1816] transition-colors">
             <LocationAutocomplete
-              value={searchQuery}
-              onChange={onSearchChange}
-              onSelect={({ label }) => onSearchChange?.(label)}
+              value={localSearch}
+              onChange={setLocalSearch}
+              onSelect={({ label }) => { setLocalSearch(label); onSearchChange?.(label) }}
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>

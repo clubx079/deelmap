@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { FilterBar } from '@/components/property/FilterBar'
 import { PropertyMap } from '@/components/property/PropertyMap'
@@ -10,9 +11,10 @@ import { useFavorites } from '@/hooks/useFavorites'
 import { Button } from '@/components/ui/Button'
 import { ChevronDown, Map, List } from 'lucide-react'
 
-export default function DealsPage() {
+function DealsPageInner() {
   const { user } = useAuth()
   const { loadFavorites } = useFavorites()
+  const searchParams = useSearchParams()
   const [mapPins, setMapPins] = useState([])
 
   const [filters, setFilters] = useState({
@@ -41,7 +43,7 @@ export default function DealsPage() {
   const sortDropdownRef = useRef(null)
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
   const [mobileView, setMobileView] = useState('map') // 'map' | 'list'
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(() => searchParams?.get('search') || '')
   const {
     properties,
     loading,
@@ -380,5 +382,13 @@ const LoadingState = () => (
       </div>
 
     </>
+  )
+}
+
+export default function DealsPage() {
+  return (
+    <Suspense>
+      <DealsPageInner />
+    </Suspense>
   )
 }
