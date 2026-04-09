@@ -158,89 +158,139 @@ function StepBasicInfo({ data, onChange }) {
 
 // ─── Step 2: Photos ────────────────────────────────────────────────────
 function StepPhotos({ photos, onPhotosChange, userId }) {
-  const [uploading, setUploading] = useState(false)
+  // photos entries: { image_url, preview_url?, is_featured, sort_order, uploading? }
 
   const handleFiles = async (files) => {
-    setUploading(true)
-    const uploaded = []
-    for (const file of files) {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
+    if (!imageFiles.length) return
+
+    // 1. Show local previews immediately
+    const previews = imageFiles.map((file, i) => ({
+      image_url: null,
+      preview_url: URL.createObjectURL(file),
+      is_featured: false,
+      sort_order: photos.length + i,
+      uploading: true,
+    }))
+    const baseIndex = photos.length
+    onPhotosChange([...photos, ...previews])
+
+    // 2. Upload each file and swap preview → remote URL
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i]
       try {
         const ext = file.name.split('.').pop()
         const path = `property-images/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error } = await supabaseMarketplace.storage
           .from('property-images')
           .upload(path, file, { cacheControl: '3600', upsert: false })
-        if (!error) {
-          const { data: urlData } = supabaseMarketplace.storage.from('property-images').getPublicUrl(path)
-          uploaded.push({ image_url: urlData.publicUrl, is_featured: false, sort_order: photos.length + uploaded.length })
-        }
-      } catch {}
+        const remoteUrl = !error
+          ? supabaseMarketplace.storage.from('property-images').getPublicUrl(path).data.publicUrl
+          : null
+        onPhotosChange(prev => prev.map((p, idx) =>
+          idx === baseIndex + i
+            ? { ...p, image_url: remoteUrl || p.preview_url, uploading: false }
+            : p
+        ))
+      } catch {
+        onPhotosChange(prev => prev.map((p, idx) =>
+          idx === baseIndex + i ? { ...p, uploading: false } : p
+        ))
+      }
     }
-    onPhotosChange([...photos, ...uploaded])
-    setUploading(false)
   }
 
   const handleDrop = (e) => {
     e.preventDefault()
-    handleFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')))
+    handleFiles(e.dataTransfer.files)
   }
 
+  const anyUploading = photos.some(p => p.uploading)
+
   return (
-    <div className="space-y-5">
-      <div
+    <div className="space-y-4">
+
+      {/* Yellow note */}
+      <div className="flex items-start gap-2.5 bg-[#FFFBEB] border border-[#FDE68A] rounded-lg px-4 py-3">
+        <span className="text-[16px] leading-none mt-0.5">💡</span>
+        <p className="text-[13px] text-[#92400E]">
+          <span className="font-semibold">Tip:</span> Click the <Star className="inline w-3 h-3 mx-0.5 text-[#92400E]" fill="currentColor" /> star on any photo to set it as the <span className="font-semibold">thumbnail</span> shown in search results.
+        </p>
+      </div>
+
+      {/* Drop zone */}
+      <label
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
-        className="border-2 border-dashed border-[#E8E8E4] rounded-xl p-10 text-center hover:border-[#1A1816] hover:bg-[#FAFAF8] transition-all cursor-pointer"
+        className="flex flex-col items-center justify-center border-2 border-dashed border-[#E8E8E4] rounded-xl p-8 text-center hover:border-[#1A1816] hover:bg-[#FAFAF8] transition-all cursor-pointer"
       >
-        <div className="w-12 h-12 bg-[#F3F3F0] rounded-full flex items-center justify-center mx-auto mb-3">
+        <div className="w-12 h-12 bg-[#F3F3F0] rounded-full flex items-center justify-center mb-3">
           <Upload className="w-5 h-5 text-[#737370]" />
         </div>
         <p className="text-[14px] font-medium text-[#1A1816] mb-1">Drag & drop photos here</p>
         <p className="text-[13px] text-[#A8A8A4] mb-4">PNG, JPG up to 10MB each</p>
-        <label className="cursor-pointer inline-flex h-[38px] px-5 items-center bg-[#1A1816] text-white text-[13px] font-semibold rounded-lg hover:bg-[#2A2825] transition-colors">
-          {uploading ? (
-            <><span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full mr-2" />Uploading...</>
-          ) : 'Browse files'}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={e => handleFiles(Array.from(e.target.files))}
-            disabled={uploading}
-          />
-        </label>
-      </div>
+        <span className="inline-flex h-[38px] px-5 items-center bg-[#1A1816] text-white text-[13px] font-semibold rounded-lg hover:bg-[#2A2825] transition-colors pointer-events-none">
+          Browse files
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={e => handleFiles(e.target.files)}
+        />
+      </label>
 
+      {/* Photo grid */}
       {photos.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[13px] font-medium text-[#1A1816]">{photos.length} photo{photos.length !== 1 ? 's' : ''} added</p>
-            <p className="text-[12px] text-[#A8A8A4]">Star = featured cover photo</p>
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[13px] font-medium text-[#1A1816]">
+              {photos.length} photo{photos.length !== 1 ? 's' : ''}
+              {anyUploading && <span className="text-[#A8A8A4] font-normal ml-1.5">— uploading...</span>}
+            </p>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-            {photos.map((photo, idx) => (
-              <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-[#F3F3F0] border border-[#E8E8E4]">
-                <img src={photo.image_url} alt="" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => onPhotosChange(photos.map((p, i) => ({ ...p, is_featured: i === idx })))}
-                  className={`absolute top-1.5 left-1.5 p-1 rounded-full shadow transition-all ${photo.is_featured ? 'bg-[#D03839] text-white' : 'bg-white/90 text-[#737370] hover:text-[#D03839]'}`}
-                >
-                  <Star className="w-3 h-3" fill={photo.is_featured ? 'currentColor' : 'none'} />
-                </button>
-                <button
-                  onClick={() => onPhotosChange(photos.filter((_, i) => i !== idx))}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/90 text-[#737370] hover:text-[#D03839] shadow opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                {photo.is_featured && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-[#D03839] py-0.5 text-center">
-                    <span className="text-[10px] font-semibold text-white uppercase tracking-wide">Cover</span>
-                  </div>
-                )}
-              </div>
-            ))}
+            {photos.map((photo, idx) => {
+              const src = photo.preview_url || photo.image_url
+              return (
+                <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-[#F3F3F0] border border-[#E8E8E4]">
+                  {src && <img src={src} alt="" className="w-full h-full object-cover" />}
+
+                  {/* Upload spinner overlay */}
+                  {photo.uploading && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
+
+                  {/* Star (featured) */}
+                  {!photo.uploading && (
+                    <button
+                      onClick={() => onPhotosChange(photos.map((p, i) => ({ ...p, is_featured: i === idx })))}
+                      className={`absolute top-1.5 left-1.5 p-1 rounded-full shadow transition-all ${photo.is_featured ? 'bg-[#D03839] text-white' : 'bg-white/90 text-[#737370] hover:text-[#D03839]'}`}
+                    >
+                      <Star className="w-3 h-3" fill={photo.is_featured ? 'currentColor' : 'none'} />
+                    </button>
+                  )}
+
+                  {/* Remove */}
+                  <button
+                    onClick={() => onPhotosChange(photos.filter((_, i) => i !== idx))}
+                    className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/90 text-[#737370] hover:text-[#D03839] shadow opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+
+                  {/* Cover badge */}
+                  {photo.is_featured && !photo.uploading && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#D03839] py-0.5 text-center">
+                      <span className="text-[10px] font-semibold text-white uppercase tracking-wide">Cover</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
