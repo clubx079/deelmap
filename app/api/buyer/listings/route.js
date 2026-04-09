@@ -118,6 +118,9 @@ export async function DELETE(request) {
     const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
+    // Delete images first (foreign key constraint)
+    await supabaseMarketplace.from('property_images').delete().eq('property_id', id)
+
     const { error } = await supabaseMarketplace
       .from('properties')
       .delete()
