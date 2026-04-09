@@ -2,7 +2,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
-import { Plus, Pencil, Trash2, X, Home, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Home } from 'lucide-react'
 import Image from 'next/image'
 import PostDealForm from '@/components/buyer/PostDealForm'
 
@@ -16,7 +16,9 @@ export default function MyListingsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => { setPageTitle('My Listings') }, [setPageTitle])
+  useEffect(() => {
+    setPageTitle(showForm ? 'Post a Deal' : editListing ? 'Edit Listing' : 'My Listings')
+  }, [setPageTitle, showForm, editListing])
 
   const fetchListings = async () => {
     if (!user?.id) return
@@ -66,7 +68,7 @@ export default function MyListingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-6" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

@@ -476,11 +476,11 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
 
   if (done) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
+      <div className="p-4 lg:p-6 flex flex-col items-center justify-center min-h-[400px] text-center" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
         <div className="w-14 h-14 bg-[#E4F5EC] rounded-full flex items-center justify-center mb-4">
           <Check className="w-7 h-7 text-[#0F6E56]" />
         </div>
-        <h2 className="text-[20px] font-bold text-[#1A1816] mb-2">Deal Published!</h2>
+        <h1 className="text-[22px] font-bold text-[#1A1816] mb-2">Deal Published!</h1>
         <p className="text-[14px] text-[#737370] mb-6">Your listing is now live on the marketplace.</p>
         <button
           onClick={onSuccess}
@@ -493,16 +493,21 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <button onClick={onClose} className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors">
+    <div className="p-4 lg:p-6" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+      {/* Page header — consistent with other buyer pages */}
+      <div className="mb-5">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors mb-3"
+        >
           <ChevronLeft className="w-4 h-4" />
-          Back
+          Back to My Listings
         </button>
-        <h2 className="text-[16px] font-bold text-[#1A1816]">{isEdit ? 'Edit Listing' : 'Post a Deal'}</h2>
-        <div className="w-16" />
+        <h1 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.44px]">{isEdit ? 'Edit Listing' : 'Post a Deal'}</h1>
+        <p className="text-[14px] text-[#737370] mt-1">{isEdit ? 'Update your property details.' : 'Fill in the details below to list your property on the marketplace.'}</p>
       </div>
+
+    <div className="max-w-xl bg-white border border-[#E8E8E4] rounded-xl p-6">
 
       {/* Progress steps */}
       <div className="flex items-center gap-1 mb-8">
@@ -562,6 +567,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
           ) : null}
         </div>
       )}
+    </div>
     </div>
   )
 }
