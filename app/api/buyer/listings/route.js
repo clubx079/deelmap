@@ -15,7 +15,7 @@ export async function GET(request) {
 
     const { data, error } = await supabaseMarketplace
       .from('properties')
-      .select('id, slug, seo_title, address, state, price, status, created_at, posted_by, property_images(image_url, sort_order)')
+      .select('id, slug, seo_title, address, state, latitude, longitude, price, property_type, bedrooms, bathrooms, floor_area, description, repairs, inspection_report_url, status, created_at, posted_by, property_images(image_url, image_key, sort_order)')
       .eq('posted_by', userId)
       .order('created_at', { ascending: false })
 

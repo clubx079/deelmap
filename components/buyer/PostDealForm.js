@@ -65,6 +65,8 @@ function StepBasicInfo({ data, onChange }) {
     loadGoogleMapsAPI().then(() => {
       const input = document.getElementById('listing-location-input')
       if (!input || !window.google?.maps?.places) return
+      // Pre-fill the address input for edit mode
+      if (data.location && !input.value) input.value = data.location
       const ac = new window.google.maps.places.Autocomplete(input, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
@@ -105,7 +107,7 @@ function StepBasicInfo({ data, onChange }) {
           <input
             id="listing-location-input"
             type="text"
-            defaultValue={data.location || ''}
+            defaultValue={data.location || data.address || ''}
             placeholder="Start typing an address..."
             className={`${inputCls} pl-9`}
             autoComplete="off"
@@ -503,8 +505,8 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const isEdit = !!existing
   const [step, setStep] = useState(0)
   const [formData, setFormData] = useState({
-    title:                existing?.title || '',
-    location:             existing?.location || existing?.address || '',
+    title:                existing?.seo_title || existing?.title || '',
+    location:             existing?.address || '',
     address:              existing?.address || '',
     city:                 existing?.city || '',
     state:                existing?.state || '',
