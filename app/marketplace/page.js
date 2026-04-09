@@ -57,7 +57,7 @@ function DealsPageInner() {
     filters,
     sortBy,
     searchQuery,
-    pageSize: 30,
+    pageSize: 1000,
     authToken: user?.id ? `Bearer ${user.id}` : undefined
   })
   const handleMarkerClick = (property) => setSelectedProperty(property)
@@ -134,8 +134,8 @@ function DealsPageInner() {
   }
 
   const visibleProperties = (() => {
-    const list = mapBounds && mapPins.length > 0
-      ? mapPins.filter(p => isInBounds(p, mapBounds))
+    const list = mapBounds && properties.length > 0
+      ? properties.filter(p => isInBounds(p, mapBounds))
       : properties
     if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
     if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
@@ -143,9 +143,7 @@ function DealsPageInner() {
     return list // 'newest' — already ordered by API/insertion order
   })()
 
-  const resultCount = mapBounds && mapPins.length > 0
-    ? visibleProperties.length
-    : (typeof totalCount === 'number' ? totalCount : properties.length)
+  const resultCount = typeof totalCount === 'number' ? totalCount : properties.length
 
   const RightHeader = () => (
     <div className="px-5 py-4 border-b border-[#E8E8E4] bg-white">
@@ -356,7 +354,7 @@ const LoadingState = () => (
                   {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
                 </div>
                 {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
-                {!mapBounds && hasMore && properties.length > 0 && (
+                {hasMore && properties.length > 0 && (
                   <div className="py-4 flex justify-center">
                     <button
                       onClick={loadMore}
