@@ -333,7 +333,7 @@ export default function MyListingsPage() {
       {/* Delete confirmation modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
+          <div className="bg-white rounded p-6 max-w-sm w-full shadow-xl">
             <h3 className="text-[16px] font-bold text-[#1A1816] mb-2">Delete listing?</h3>
             <p className="text-[13px] text-[#737370] mb-5">
               This will permanently remove <span className="font-medium text-[#1A1816]">{deleteTarget.seo_title || deleteTarget.address || 'this listing'}</span> from the marketplace.
