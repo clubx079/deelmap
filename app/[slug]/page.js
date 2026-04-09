@@ -125,9 +125,23 @@ async function getProperty(slugParam) {
   }
 
   if (manualProperty) {
-    // Fetch seller info if seller_id exists
     let agent = null
-    if (manualProperty.seller_id) {
+
+    // Buyer-posted deal: fetch buyer's phone from users table
+    if (manualProperty.posted_by) {
+      const { data: buyer } = await supabaseMarketplace
+        .from('users')
+        .select('full_name, phone')
+        .eq('id', manualProperty.posted_by)
+        .single()
+      if (buyer) {
+        agent = {
+          name: buyer.full_name || 'Buyer',
+          phone: buyer.phone || null
+        }
+      }
+    } else if (manualProperty.seller_id) {
+      // Fetch seller info if seller_id exists
       const { data: seller } = await supabaseMarketplace
         .from('users')
         .select('full_name, phone')
@@ -146,6 +160,7 @@ async function getProperty(slugParam) {
     return {
       ...normalized,
       agent,
+      posted_by: manualProperty.posted_by || null,
       source: 'manual'
     }
   }

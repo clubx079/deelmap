@@ -816,32 +816,37 @@ export function PropertyDetail({ property }) {
                   )}
                 </div>
 
-                {/* Message Seller */}
-                <Link
-                  href={user && (property.temp_seller_id || property.seller_id)
-                    ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
-                    : user ? '/buyer/inbox' : '/login'
-                  }
-                  className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
-                >
-                  Message Seller
-                </Link>
+                {/* Buyer-posted: only show Call Seller, hide Message Seller + Make Offer */}
+                {!property.posted_by && (
+                  <>
+                    {/* Message Seller */}
+                    <Link
+                      href={user && (property.temp_seller_id || property.seller_id)
+                        ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
+                        : user ? '/buyer/inbox' : '/login'
+                      }
+                      className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
+                    >
+                      Message Seller
+                    </Link>
 
-                {/* Make Offer */}
-                {user ? (
-                  <Link
-                    href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
-                    className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
-                  >
-                    Make Offer
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => setShowLoginModal(true)}
-                    className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
-                  >
-                    Make Offer
-                  </button>
+                    {/* Make Offer */}
+                    {user ? (
+                      <Link
+                        href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
+                        className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                      >
+                        Make Offer
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => setShowLoginModal(true)}
+                        className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                      >
+                        Make Offer
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
