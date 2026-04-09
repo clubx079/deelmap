@@ -134,7 +134,11 @@ export function PropertyDetail({ property }) {
 
   // Show login modal if user is not authenticated (skip in preview mode)
   useEffect(() => {
-    if (loading || isPreview) return
+    if (loading) return
+    if (isPreview) {
+      setShowLoginModal(false)
+      return
+    }
     if (!user) {
       setShowLoginModal(true)
     } else {
