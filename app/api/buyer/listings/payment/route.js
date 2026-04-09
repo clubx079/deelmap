@@ -11,14 +11,31 @@ export async function POST(request) {
 
     const body = await request.json()
 
+    // Only store essential fields in metadata (Stripe limit: 500 chars per value)
+    // description/repairs are omitted — listing can be edited after if webhook fallback triggers
+    const f = body.formData || {}
+    const essentialData = JSON.stringify({
+      title: f.title || '',
+      address: f.address || '',
+      state: f.state || '',
+      latitude: f.latitude || null,
+      longitude: f.longitude || null,
+      price: f.price || '',
+      property_type: f.property_type || '',
+      bedrooms: f.bedrooms || '',
+      bathrooms: f.bathrooms || '',
+      floor_area: f.floor_area || '',
+      inspection_report_url: f.inspection_report_url || null,
+    })
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 2000, // $20.00 in cents
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: {
         userId,
-        listingTitle: body.title || '',
-        formData: JSON.stringify(body.formData || {}),
+        listingTitle: (f.title || '').slice(0, 100),
+        formData: essentialData,
       },
     })
 
