@@ -179,17 +179,17 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i]
       try {
-        const ext = file.name.split('.').pop()
-        const path = `property-images/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        const imageKey = `manual/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error } = await supabaseMarketplace.storage
-          .from('property-images')
-          .upload(path, file, { cacheControl: '3600', upsert: false })
+          .from('scraperpropertyphotos')
+          .upload(imageKey, file, { cacheControl: '3600', upsert: false })
         const remoteUrl = !error
-          ? supabaseMarketplace.storage.from('property-images').getPublicUrl(path).data.publicUrl
+          ? supabaseMarketplace.storage.from('scraperpropertyphotos').getPublicUrl(imageKey).data.publicUrl
           : null
         onPhotosChange(prev => prev.map((p, idx) =>
           idx === baseIndex + i
-            ? { ...p, image_url: remoteUrl || p.preview_url, uploading: false }
+            ? { ...p, image_url: remoteUrl || p.preview_url, image_key: imageKey, uploading: false }
             : p
         ))
       } catch {
@@ -306,9 +306,9 @@ function StepDetails({ data, onChange }) {
     setInspectionUploading(true)
     try {
       const path = `inspection-reports/${Date.now()}-${file.name}`
-      const { error } = await supabaseMarketplace.storage.from('property-images').upload(path, file)
+      const { error } = await supabaseMarketplace.storage.from('scraperpropertyphotos').upload(path, file)
       if (!error) {
-        const { data: urlData } = supabaseMarketplace.storage.from('property-images').getPublicUrl(path)
+        const { data: urlData } = supabaseMarketplace.storage.from('scraperpropertyphotos').getPublicUrl(path)
         onChange({ inspection_report_url: urlData.publicUrl })
       }
     } catch {}
@@ -402,6 +402,7 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
           const photoRows = sorted.map((p, i) => ({
             property_id: data.id,
             image_url: p.image_url || p.preview_url,
+            image_key: p.image_key || null,
             sort_order: i,
           }))
           await supabaseMarketplace.from('property_images').insert(photoRows)
@@ -541,7 +542,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
         if (photos.length > 0) {
           const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
           await supabaseMarketplace.from('property_images').insert(
-            sorted.map((p, i) => ({ property_id: existing.id, image_url: p.image_url || p.preview_url, sort_order: i }))
+            sorted.map((p, i) => ({ property_id: existing.id, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
           )
         }
         onSuccess()
