@@ -18,6 +18,7 @@ export async function POST(request) {
       metadata: {
         userId,
         listingTitle: body.title || '',
+        formData: JSON.stringify(body.formData || {}),
       },
     })
 

@@ -177,9 +177,9 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
     const baseIndex = photos.length
     onPhotosChange([...photos, ...previews])
 
-    // 2. Upload each file and swap preview → remote URL
-    for (let i = 0; i < imageFiles.length; i++) {
-      const file = imageFiles[i]
+    // 2. Upload with concurrency limit of 5
+    const CONCURRENCY = 5
+    const queue = imageFiles.map((file, i) => async () => {
       try {
         const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
         const imageKey = `manual/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -199,7 +199,11 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
           idx === baseIndex + i ? { ...p, uploading: false } : p
         ))
       }
-    }
+    })
+    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async (_, w) => {
+      for (let i = w; i < queue.length; i += CONCURRENCY) await queue[i]()
+    })
+    await Promise.all(workers)
   }
 
   const handleDrop = (e) => {
@@ -395,11 +399,15 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
         const res = await fetch('/api/buyer/listings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({ ...formData, stripe_payment_intent_id: paymentIntent.id, amount: 2000 }),
         })
         const data = await res.json()
-        if (data.success && photos.length > 0) {
-          // Sort so the starred photo is first (sort_order 0 = cover)
+        if (!data.success) {
+          setError('Payment succeeded but listing could not be created. Please contact support with reference: ' + paymentIntent.id)
+          setProcessing(false)
+          return
+        }
+        if (photos.length > 0) {
           const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
           const photoRows = sorted.map((p, i) => ({
             property_id: data.id,
@@ -407,8 +415,13 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
             image_key: p.image_key || null,
             sort_order: i,
           }))
-          await supabaseMarketplace.from('property_images').insert(photoRows)
+          const { error: photoError } = await supabaseMarketplace.from('property_images').insert(photoRows)
+          if (photoError) {
+            // Listing exists — don't block success, but log it
+            console.error('[Photos] Insert failed:', photoError.message)
+          }
         }
+        sessionStorage.removeItem(SESSION_KEY)
         onSuccess()
       }
     } catch {
@@ -438,21 +451,35 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
   )
 }
 
+const SESSION_KEY = 'deelmap_listing_client_secret'
+
 function StepPayment({ formData, photos, user, onSuccess }) {
   const [clientSecret, setClientSecret] = useState(null)
   const [loadingSecret, setLoadingSecret] = useState(true)
   const [secretError, setSecretError] = useState(null)
 
   useEffect(() => {
+    // Reuse existing PaymentIntent if user navigated back and returned
+    const cached = sessionStorage.getItem(SESSION_KEY)
+    if (cached) {
+      setClientSecret(cached)
+      setLoadingSecret(false)
+      return
+    }
+
     fetch('/api/buyer/listings/payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-      body: JSON.stringify({ title: formData.title }),
+      body: JSON.stringify({ title: formData.title, formData }),
     })
       .then(r => r.json())
       .then(d => {
-        if (d.clientSecret) setClientSecret(d.clientSecret)
-        else setSecretError(d.error || 'Failed to initialize payment')
+        if (d.clientSecret) {
+          sessionStorage.setItem(SESSION_KEY, d.clientSecret)
+          setClientSecret(d.clientSecret)
+        } else {
+          setSecretError(d.error || 'Failed to initialize payment')
+        }
       })
       .catch(() => setSecretError('Failed to initialize payment'))
       .finally(() => setLoadingSecret(false))
@@ -530,7 +557,11 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const [done, setDone] = useState(false)
 
   const update = (fields) => setFormData(prev => ({ ...prev, ...fields }))
-  const canNext = () => step === 0 ? !!(formData.title?.trim() && formData.address?.trim()) : true
+  const canNext = () => {
+    if (step === 0) return !!(formData.title?.trim() && formData.address?.trim())
+    if (step === 1) return !photos.some(p => p.uploading)
+    return true
+  }
 
   const handleEditSave = async () => {
     setSaving(true)

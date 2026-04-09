@@ -62,6 +62,21 @@ export async function POST(request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    // Record payment if stripe_payment_intent_id provided
+    if (body.stripe_payment_intent_id) {
+      await supabaseMarketplace.from('payments').insert({
+        user_id: userId,
+        user_type: 'buyer',
+        payment_type: 'listing_fee',
+        property_id: data.id,
+        stripe_payment_intent_id: body.stripe_payment_intent_id,
+        amount: body.amount || 2000,
+        currency: 'usd',
+        status: 'succeeded',
+        description: `Listing fee for property: ${body.title || data.slug}`,
+      })
+    }
+
     return NextResponse.json({ success: true, id: data.id, slug: data.slug })
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
