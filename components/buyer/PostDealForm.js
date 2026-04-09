@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, X, Upload, Star, Trash2, MapPin, Check } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronLeft, X, Upload, Star, MapPin, Check, FileText, DollarSign } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { supabaseMarketplace } from '@/lib/supabase'
@@ -15,12 +15,52 @@ const PROPERTY_TYPES = [
   'Apartment Building', 'Commercial', 'Land', 'Other'
 ]
 
-const STEPS = ['Basic Info', 'Photos', 'Details', 'Payment']
+const STEPS = [
+  { label: 'Basic Info', desc: 'Address & price' },
+  { label: 'Photos',     desc: 'Upload images' },
+  { label: 'Details',    desc: 'Description' },
+  { label: 'Payment',    desc: '$20 listing fee' },
+]
+const EDIT_STEPS = STEPS.slice(0, 3)
+
+// ─── Shared input/label classes ────────────────────────────────────────
+const inputCls = 'w-full h-[42px] px-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors bg-white'
+const labelCls = 'block text-[13px] font-medium text-[#1A1816] mb-1.5'
+
+// ─── Step indicator ────────────────────────────────────────────────────
+function StepIndicator({ steps, current }) {
+  return (
+    <div className="flex items-start gap-0 mb-8">
+      {steps.map((s, i) => {
+        const done    = i < current
+        const active  = i === current
+        const last    = i === steps.length - 1
+        return (
+          <div key={i} className="flex items-start flex-1 min-w-0">
+            <div className="flex flex-col items-center flex-shrink-0">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all
+                ${done   ? 'bg-[#1A1816] text-white'
+                : active ? 'bg-[#D03839] text-white ring-4 ring-[#D03839]/15'
+                :          'bg-[#F3F3F0] text-[#A8A8A4]'}`}>
+                {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
+              </div>
+              <span className={`mt-1.5 text-[11px] font-semibold text-center leading-tight hidden sm:block
+                ${active ? 'text-[#1A1816]' : done ? 'text-[#737370]' : 'text-[#A8A8A4]'}`}>
+                {s.label}
+              </span>
+            </div>
+            {!last && (
+              <div className={`flex-1 h-px mt-4 mx-2 transition-colors ${done ? 'bg-[#1A1816]' : 'bg-[#E8E8E4]'}`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 // ─── Step 1: Basic Info ────────────────────────────────────────────────
 function StepBasicInfo({ data, onChange }) {
-  const autocompleteRef = { current: null }
-
   useEffect(() => {
     loadGoogleMapsAPI().then(() => {
       const input = document.getElementById('listing-location-input')
@@ -46,86 +86,70 @@ function StepBasicInfo({ data, onChange }) {
   }, [])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Property Title <span className="text-[#D03839]">*</span></label>
+        <label className={labelCls}>Property Title <span className="text-[#D03839]">*</span></label>
         <input
           type="text"
           value={data.title || ''}
           onChange={e => onChange({ title: e.target.value })}
           placeholder="e.g. 3 Bed Single Family in Indianapolis"
-          className="w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816]"
+          className={inputCls}
         />
       </div>
+
       <div>
-        <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Location <span className="text-[#D03839]">*</span></label>
+        <label className={labelCls}>Property Address <span className="text-[#D03839]">*</span></label>
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4] pointer-events-none" />
           <input
             id="listing-location-input"
             type="text"
             defaultValue={data.location || ''}
             placeholder="Start typing an address..."
-            className="w-full h-[42px] pl-9 pr-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816]"
+            className={`${inputCls} pl-9`}
             autoComplete="off"
           />
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Price ($)</label>
+          <label className={labelCls}>Asking Price ($)</label>
           <input
             type="number"
             value={data.price || ''}
             onChange={e => onChange({ price: e.target.value })}
-            placeholder="e.g. 75000"
+            placeholder="e.g. 75,000"
             min={0}
-            className="w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816]"
+            className={inputCls}
           />
         </div>
         <div>
-          <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Property Type</label>
+          <label className={labelCls}>Property Type</label>
           <select
             value={data.property_type || ''}
             onChange={e => onChange({ property_type: e.target.value })}
-            className="w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816] bg-white"
+            className={inputCls}
           >
             <option value="">Select type</option>
             {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       </div>
+
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Bedrooms</label>
-          <input
-            type="number"
-            value={data.bedrooms || ''}
-            onChange={e => onChange({ bedrooms: e.target.value })}
-            min={0}
-            className="w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816]"
-          />
+          <label className={labelCls}>Beds</label>
+          <input type="number" value={data.bedrooms || ''} onChange={e => onChange({ bedrooms: e.target.value })} min={0} placeholder="0" className={inputCls} />
         </div>
         <div>
-          <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Bathrooms</label>
-          <input
-            type="number"
-            value={data.bathrooms || ''}
-            onChange={e => onChange({ bathrooms: e.target.value })}
-            step={0.5}
-            min={0}
-            className="w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816]"
-          />
+          <label className={labelCls}>Baths</label>
+          <input type="number" value={data.bathrooms || ''} onChange={e => onChange({ bathrooms: e.target.value })} step={0.5} min={0} placeholder="0" className={inputCls} />
         </div>
         <div>
-          <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Sqft</label>
-          <input
-            type="number"
-            value={data.floor_area || ''}
-            onChange={e => onChange({ floor_area: e.target.value })}
-            min={0}
-            className="w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816]"
-          />
+          <label className={labelCls}>Sq Ft</label>
+          <input type="number" value={data.floor_area || ''} onChange={e => onChange({ floor_area: e.target.value })} min={0} placeholder="0" className={inputCls} />
         </div>
       </div>
     </div>
@@ -143,7 +167,7 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
       try {
         const ext = file.name.split('.').pop()
         const path = `property-images/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const { data, error } = await supabaseMarketplace.storage
+        const { error } = await supabaseMarketplace.storage
           .from('property-images')
           .upload(path, file, { cacheControl: '3600', upsert: false })
         if (!error) {
@@ -161,26 +185,22 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
     handleFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')))
   }
 
-  const setFeatured = (idx) => {
-    onPhotosChange(photos.map((p, i) => ({ ...p, is_featured: i === idx })))
-  }
-
-  const removePhoto = (idx) => {
-    onPhotosChange(photos.filter((_, i) => i !== idx))
-  }
-
   return (
-    <div className="space-y-4">
-      {/* Upload area */}
+    <div className="space-y-5">
       <div
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
-        className="border-2 border-dashed border-[#E8E8E4] rounded-lg p-8 text-center hover:border-[#1A1816] transition-colors"
+        className="border-2 border-dashed border-[#E8E8E4] rounded-xl p-10 text-center hover:border-[#1A1816] hover:bg-[#FAFAF8] transition-all cursor-pointer"
       >
-        <Upload className="w-8 h-8 text-[#A8A8A4] mx-auto mb-2" />
-        <p className="text-[14px] text-[#737370] mb-3">Drag & drop photos here, or</p>
-        <label className="cursor-pointer inline-flex h-[36px] px-4 items-center bg-[#1A1816] text-white text-[13px] font-medium rounded hover:bg-[#2A2825] transition-colors">
-          {uploading ? 'Uploading...' : 'Browse files'}
+        <div className="w-12 h-12 bg-[#F3F3F0] rounded-full flex items-center justify-center mx-auto mb-3">
+          <Upload className="w-5 h-5 text-[#737370]" />
+        </div>
+        <p className="text-[14px] font-medium text-[#1A1816] mb-1">Drag & drop photos here</p>
+        <p className="text-[13px] text-[#A8A8A4] mb-4">PNG, JPG up to 10MB each</p>
+        <label className="cursor-pointer inline-flex h-[38px] px-5 items-center bg-[#1A1816] text-white text-[13px] font-semibold rounded-lg hover:bg-[#2A2825] transition-colors">
+          {uploading ? (
+            <><span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full mr-2" />Uploading...</>
+          ) : 'Browse files'}
           <input
             type="file"
             accept="image/*"
@@ -194,25 +214,31 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
 
       {photos.length > 0 && (
         <div>
-          <p className="text-[12px] text-[#737370] mb-2">Click the star to set as featured photo</p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[13px] font-medium text-[#1A1816]">{photos.length} photo{photos.length !== 1 ? 's' : ''} added</p>
+            <p className="text-[12px] text-[#A8A8A4]">Star = featured cover photo</p>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
             {photos.map((photo, idx) => (
-              <div key={idx} className="relative group aspect-square rounded overflow-hidden bg-[#FAFAF8]">
+              <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-[#F3F3F0] border border-[#E8E8E4]">
                 <img src={photo.image_url} alt="" className="w-full h-full object-cover" />
-                {/* Featured star */}
                 <button
-                  onClick={() => setFeatured(idx)}
-                  className={`absolute top-1 left-1 p-1 rounded-full transition-colors ${photo.is_featured ? 'bg-[#D03839] text-white' : 'bg-white/80 text-[#737370] hover:text-[#D03839]'}`}
+                  onClick={() => onPhotosChange(photos.map((p, i) => ({ ...p, is_featured: i === idx })))}
+                  className={`absolute top-1.5 left-1.5 p-1 rounded-full shadow transition-all ${photo.is_featured ? 'bg-[#D03839] text-white' : 'bg-white/90 text-[#737370] hover:text-[#D03839]'}`}
                 >
                   <Star className="w-3 h-3" fill={photo.is_featured ? 'currentColor' : 'none'} />
                 </button>
-                {/* Remove */}
                 <button
-                  onClick={() => removePhoto(idx)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-[#737370] hover:text-[#D03839] opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onPhotosChange(photos.filter((_, i) => i !== idx))}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-white/90 text-[#737370] hover:text-[#D03839] shadow opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <X className="w-3 h-3" />
                 </button>
+                {photo.is_featured && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-[#D03839] py-0.5 text-center">
+                    <span className="text-[10px] font-semibold text-white uppercase tracking-wide">Cover</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -240,38 +266,43 @@ function StepDetails({ data, onChange }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Property Description</label>
+        <label className={labelCls}>Property Description</label>
         <textarea
           value={data.description || ''}
           onChange={e => onChange({ description: e.target.value })}
-          placeholder="Describe the property, its features, and unique selling points..."
+          placeholder="Describe the property, its features, condition, and unique selling points..."
           rows={5}
-          className="w-full px-3 py-2 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816] resize-none"
+          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors resize-none"
         />
       </div>
       <div>
-        <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Repairs & Renovation</label>
+        <label className={labelCls}>Repairs & Renovation Notes</label>
         <textarea
           value={data.repairs || ''}
           onChange={e => onChange({ repairs: e.target.value })}
-          placeholder="Detail any repairs needed, recent renovations, or planned improvements..."
+          placeholder="Detail repairs needed, recent renovations, or planned improvements..."
           rows={4}
-          className="w-full px-3 py-2 border border-[#E8E8E4] rounded text-[14px] focus:outline-none focus:border-[#1A1816] resize-none"
+          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors resize-none"
         />
       </div>
       <div>
-        <label className="block text-[13px] font-medium text-[#1A1816] mb-1">Inspection Report <span className="text-[#A8A8A4] font-normal">(optional)</span></label>
+        <label className={labelCls}>
+          Inspection Report <span className="text-[#A8A8A4] font-normal ml-1">(optional)</span>
+        </label>
         {data.inspection_report_url ? (
-          <div className="flex items-center gap-2 text-[13px] text-[#0F6E56]">
-            <Check className="w-4 h-4" />
-            <span>Report uploaded</span>
-            <button onClick={() => onChange({ inspection_report_url: null })} className="text-[#D03839] ml-2">Remove</button>
+          <div className="flex items-center gap-3 p-3 bg-[#E4F5EC] border border-[#B6E4CE] rounded-lg text-[13px]">
+            <div className="w-7 h-7 bg-[#0F6E56] rounded-full flex items-center justify-center flex-shrink-0">
+              <Check className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="text-[#0F6E56] font-medium flex-1">Report uploaded</span>
+            <button onClick={() => onChange({ inspection_report_url: null })} className="text-[#D03839] text-[12px] font-medium hover:underline">Remove</button>
           </div>
         ) : (
-          <label className="cursor-pointer inline-flex h-[36px] px-4 items-center border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] hover:border-[#1A1816] transition-colors">
-            {inspectionUploading ? 'Uploading...' : 'Upload PDF / DOC'}
+          <label className="cursor-pointer flex items-center gap-3 h-[42px] px-4 border border-dashed border-[#E8E8E4] rounded-lg text-[13px] text-[#737370] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors">
+            <FileText className="w-4 h-4 flex-shrink-0" />
+            {inspectionUploading ? 'Uploading...' : 'Upload PDF or DOC'}
             <input
               type="file"
               accept=".pdf,.doc,.docx"
@@ -286,7 +317,7 @@ function StepDetails({ data, onChange }) {
   )
 }
 
-// ─── Step 4: Payment (Stripe) ──────────────────────────────────────────
+// ─── Step 4: Payment ───────────────────────────────────────────────────
 function CheckoutForm({ formData, photos, user, onSuccess }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -298,7 +329,6 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
     if (!stripe || !elements) return
     setProcessing(true)
     setError(null)
-
     try {
       const { error: submitError } = await elements.submit()
       if (submitError) { setError(submitError.message); setProcessing(false); return }
@@ -307,20 +337,16 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
         elements,
         redirect: 'if_required',
       })
-
       if (confirmError) { setError(confirmError.message); setProcessing(false); return }
 
       if (paymentIntent?.status === 'succeeded') {
-        // Save the listing
         const res = await fetch('/api/buyer/listings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
           body: JSON.stringify(formData),
         })
         const data = await res.json()
-
         if (data.success && photos.length > 0) {
-          // Save photos linked to the new property
           const photoRows = photos.map((p, i) => ({
             property_id: data.id,
             image_url: p.image_url,
@@ -329,10 +355,9 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
           }))
           await supabaseMarketplace.from('property_images').insert(photoRows)
         }
-
         onSuccess()
       }
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
     }
     setProcessing(false)
@@ -341,13 +366,19 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
   return (
     <form onSubmit={handlePay} className="space-y-5">
       <PaymentElement />
-      {error && <p className="text-[13px] text-[#D03839]">{error}</p>}
+      {error && (
+        <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded-lg text-[13px] text-[#D03839]">{error}</div>
+      )}
       <button
         type="submit"
         disabled={!stripe || processing}
-        className="w-full h-[44px] bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors disabled:opacity-50"
+        className="w-full h-[46px] bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {processing ? 'Processing...' : 'Pay $20 & Publish'}
+        {processing ? (
+          <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Processing...</>
+        ) : (
+          <><DollarSign className="w-4 h-4" />Pay $20.00 & Publish</>
+        )}
       </button>
     </form>
   )
@@ -374,29 +405,31 @@ function StepPayment({ formData, photos, user, onSuccess }) {
   }, [])
 
   if (loadingSecret) return (
-    <div className="flex items-center justify-center py-10">
-      <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#E8E8E4] border-t-[#D03839]" />
+    <div className="flex items-center justify-center py-12">
+      <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#E8E8E4] border-t-[#D03839]" />
     </div>
   )
 
   if (secretError) return (
-    <p className="text-[13px] text-[#D03839] text-center py-6">{secretError}</p>
+    <div className="p-4 bg-[#FEF0EF] border border-[#F5C0BF] rounded-lg text-[13px] text-[#D03839] text-center">{secretError}</div>
   )
 
   return (
-    <div className="space-y-4">
-      {/* Summary */}
-      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded-lg p-4 text-[13px]">
-        <p className="font-semibold text-[#1A1816] mb-2">Listing Summary</p>
-        <div className="space-y-1 text-[#737370]">
-          <p>{formData.title}</p>
-          <p>{formData.address}</p>
-          {formData.price && <p>${Number(formData.price).toLocaleString()}</p>}
-          <p>{photos.length} photo{photos.length !== 1 ? 's' : ''}</p>
+    <div className="space-y-5">
+      {/* Summary card */}
+      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded-xl p-4">
+        <p className="text-[12px] font-semibold text-[#A8A8A4] uppercase tracking-wide mb-3">Listing Summary</p>
+        <div className="space-y-1.5 mb-4">
+          <p className="text-[14px] font-semibold text-[#1A1816]">{formData.title}</p>
+          <p className="text-[13px] text-[#737370]">{formData.address}</p>
+          {formData.price && (
+            <p className="text-[13px] text-[#737370]">${Number(formData.price).toLocaleString()}</p>
+          )}
+          <p className="text-[13px] text-[#737370]">{photos.length} photo{photos.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="mt-3 pt-3 border-t border-[#E8E8E4] flex justify-between font-semibold text-[#1A1816]">
-          <span>Listing fee</span>
-          <span>$20.00</span>
+        <div className="pt-3 border-t border-[#E8E8E4] flex justify-between items-center">
+          <span className="text-[13px] font-medium text-[#1A1816]">One-time listing fee</span>
+          <span className="text-[16px] font-bold text-[#1A1816]">$20.00</span>
         </div>
       </div>
 
@@ -405,7 +438,9 @@ function StepPayment({ formData, photos, user, onSuccess }) {
           <CheckoutForm formData={formData} photos={photos} user={user} onSuccess={onSuccess} />
         </Elements>
       ) : (
-        <p className="text-[13px] text-[#D03839] text-center">Stripe is not configured yet. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.local</p>
+        <div className="p-4 bg-[#FEF3E2] border border-[#F5D9A0] rounded-lg text-[13px] text-[#B5620A] text-center">
+          Stripe is not configured. Add <code className="font-mono bg-[#FEF0D4] px-1 rounded">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to .env.local
+        </div>
       )}
     </div>
   )
@@ -416,21 +451,21 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const isEdit = !!existing
   const [step, setStep] = useState(0)
   const [formData, setFormData] = useState({
-    title: existing?.title || '',
-    location: existing?.location || existing?.address || '',
-    address: existing?.address || '',
-    city: existing?.city || '',
-    state: existing?.state || '',
-    zipcode: existing?.zipcode || '',
-    latitude: existing?.latitude || null,
-    longitude: existing?.longitude || null,
-    price: existing?.price || '',
-    property_type: existing?.property_type || '',
-    bedrooms: existing?.bedrooms || '',
-    bathrooms: existing?.bathrooms || '',
-    floor_area: existing?.floor_area || '',
-    description: existing?.description || '',
-    repairs: existing?.repairs || '',
+    title:                existing?.title || '',
+    location:             existing?.location || existing?.address || '',
+    address:              existing?.address || '',
+    city:                 existing?.city || '',
+    state:                existing?.state || '',
+    zipcode:              existing?.zipcode || '',
+    latitude:             existing?.latitude || null,
+    longitude:            existing?.longitude || null,
+    price:                existing?.price || '',
+    property_type:        existing?.property_type || '',
+    bedrooms:             existing?.bedrooms || '',
+    bathrooms:            existing?.bathrooms || '',
+    floor_area:           existing?.floor_area || '',
+    description:          existing?.description || '',
+    repairs:              existing?.repairs || '',
     inspection_report_url: existing?.inspection_report_url || null,
   })
   const [photos, setPhotos] = useState(
@@ -440,11 +475,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const [done, setDone] = useState(false)
 
   const update = (fields) => setFormData(prev => ({ ...prev, ...fields }))
-
-  const canNext = () => {
-    if (step === 0) return !!(formData.title?.trim() && formData.address?.trim())
-    return true
-  }
+  const canNext = () => step === 0 ? !!(formData.title?.trim() && formData.address?.trim()) : true
 
   const handleEditSave = async () => {
     setSaving(true)
@@ -455,16 +486,11 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
         body: JSON.stringify({ id: existing.id, ...formData }),
       })
       if (res.ok) {
-        // Update photos
         await supabaseMarketplace.from('property_images').delete().eq('property_id', existing.id)
         if (photos.length > 0) {
-          const rows = photos.map((p, i) => ({
-            property_id: existing.id,
-            image_url: p.image_url,
-            is_featured: p.is_featured || i === 0,
-            sort_order: i,
-          }))
-          await supabaseMarketplace.from('property_images').insert(rows)
+          await supabaseMarketplace.from('property_images').insert(
+            photos.map((p, i) => ({ property_id: existing.id, image_url: p.image_url, is_featured: p.is_featured || i === 0, sort_order: i }))
+          )
         }
         onSuccess()
       }
@@ -472,19 +498,20 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
     setSaving(false)
   }
 
-  const stepsToShow = isEdit ? ['Basic Info', 'Photos', 'Details'] : STEPS
+  const stepsToShow = isEdit ? EDIT_STEPS : STEPS
 
+  // ─── Success state ────────────────────────────────────────────────
   if (done) {
     return (
-      <div className="p-4 lg:p-6 flex flex-col items-center justify-center min-h-[400px] text-center" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
-        <div className="w-14 h-14 bg-[#E4F5EC] rounded-full flex items-center justify-center mb-4">
-          <Check className="w-7 h-7 text-[#0F6E56]" />
+      <div className="p-4 lg:p-8 flex flex-col items-center justify-center min-h-[500px] text-center" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        <div className="w-16 h-16 bg-[#E4F5EC] rounded-full flex items-center justify-center mb-5">
+          <Check className="w-8 h-8 text-[#0F6E56]" />
         </div>
-        <h1 className="text-[22px] font-bold text-[#1A1816] mb-2">Deal Published!</h1>
-        <p className="text-[14px] text-[#737370] mb-6">Your listing is now live on the marketplace.</p>
+        <h1 className="text-[24px] font-bold text-[#1A1816] mb-2">Deal Published!</h1>
+        <p className="text-[15px] text-[#737370] mb-8 max-w-sm">Your listing is now live on the marketplace and visible to buyers.</p>
         <button
           onClick={onSuccess}
-          className="h-[40px] px-6 bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors"
+          className="h-[44px] px-8 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors"
         >
           View My Listings
         </button>
@@ -492,82 +519,77 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
     )
   }
 
+  // ─── Form ─────────────────────────────────────────────────────────
   return (
-    <div className="p-4 lg:p-6" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
-      {/* Page header — consistent with other buyer pages */}
-      <div className="mb-5">
-        <button
-          onClick={onClose}
-          className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors mb-3"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back to My Listings
-        </button>
-        <h1 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.44px]">{isEdit ? 'Edit Listing' : 'Post a Deal'}</h1>
-        <p className="text-[14px] text-[#737370] mt-1">{isEdit ? 'Update your property details.' : 'Fill in the details below to list your property on the marketplace.'}</p>
-      </div>
+    <div className="p-4 lg:p-8" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+      <div className="max-w-2xl mx-auto">
 
-    <div className="max-w-xl bg-white border border-[#E8E8E4] rounded-xl p-6">
-
-      {/* Progress steps */}
-      <div className="flex items-center gap-1 mb-8">
-        {stepsToShow.map((label, i) => (
-          <div key={i} className="flex items-center gap-1 flex-1">
-            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold flex-shrink-0 transition-colors ${i < step ? 'bg-[#0F6E56] text-white' : i === step ? 'bg-[#D03839] text-white' : 'bg-[#E8E8E4] text-[#737370]'}`}>
-              {i < step ? <Check className="w-3 h-3" /> : i + 1}
-            </div>
-            <span className={`text-[11px] font-medium hidden sm:block ${i === step ? 'text-[#1A1816]' : 'text-[#A8A8A4]'}`}>{label}</span>
-            {i < stepsToShow.length - 1 && <div className={`flex-1 h-px ml-1 ${i < step ? 'bg-[#0F6E56]' : 'bg-[#E8E8E4]'}`} />}
-          </div>
-        ))}
-      </div>
-
-      {/* Step content */}
-      <div className="mb-8">
-        {step === 0 && <StepBasicInfo data={formData} onChange={update} />}
-        {step === 1 && <StepPhotos photos={photos} onPhotosChange={setPhotos} userId={user?.id} />}
-        {step === 2 && <StepDetails data={formData} onChange={update} />}
-        {step === 3 && !isEdit && (
-          <StepPayment
-            formData={formData}
-            photos={photos}
-            user={user}
-            onSuccess={() => setDone(true)}
-          />
-        )}
-      </div>
-
-      {/* Navigation — hide on payment step */}
-      {!(step === 3 && !isEdit) && (
-        <div className="flex gap-3">
-          {step > 0 && (
-            <button
-              onClick={() => setStep(s => s - 1)}
-              className="flex-1 h-[42px] border border-[#E8E8E4] rounded text-[13px] font-medium text-[#1A1816] hover:border-[#1A1816] transition-colors"
-            >
-              Back
-            </button>
-          )}
-          {step < stepsToShow.length - 1 ? (
-            <button
-              onClick={() => setStep(s => s + 1)}
-              disabled={!canNext()}
-              className="flex-1 h-[42px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-40"
-            >
-              Next
-            </button>
-          ) : isEdit ? (
-            <button
-              onClick={handleEditSave}
-              disabled={saving}
-              className="flex-1 h-[42px] bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          ) : null}
+        {/* Page header */}
+        <div className="mb-6">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors mb-4"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to My Listings
+          </button>
+          <h1 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.44px]">
+            {isEdit ? 'Edit Listing' : 'Post a Deal'}
+          </h1>
+          <p className="text-[14px] text-[#737370] mt-1">
+            {isEdit ? 'Update your property details below.' : 'Fill in the details to list your property on the marketplace.'}
+          </p>
         </div>
-      )}
-    </div>
+
+        {/* Card */}
+        <div className="bg-white border border-[#E8E8E4] rounded-xl p-6 lg:p-8">
+
+          {/* Step indicator */}
+          <StepIndicator steps={stepsToShow} current={step} />
+
+          {/* Step content */}
+          <div className="mb-8">
+            {step === 0 && <StepBasicInfo data={formData} onChange={update} />}
+            {step === 1 && <StepPhotos photos={photos} onPhotosChange={setPhotos} userId={user?.id} />}
+            {step === 2 && <StepDetails data={formData} onChange={update} />}
+            {step === 3 && !isEdit && (
+              <StepPayment formData={formData} photos={photos} user={user} onSuccess={() => setDone(true)} />
+            )}
+          </div>
+
+          {/* Navigation — hidden on payment step */}
+          {!(step === 3 && !isEdit) && (
+            <div className="flex gap-3 pt-2 border-t border-[#F3F3F0]">
+              {step > 0 && (
+                <button
+                  onClick={() => setStep(s => s - 1)}
+                  className="h-[42px] px-5 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#1A1816] hover:border-[#1A1816] transition-colors"
+                >
+                  Back
+                </button>
+              )}
+              {step < stepsToShow.length - 1 ? (
+                <button
+                  onClick={() => setStep(s => s + 1)}
+                  disabled={!canNext()}
+                  className="flex-1 h-[42px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded-lg transition-colors disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              ) : isEdit ? (
+                <button
+                  onClick={handleEditSave}
+                  disabled={saving}
+                  className="flex-1 h-[42px] bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              ) : null}
+            </div>
+          )}
+
+        </div>
+      </div>
     </div>
   )
 }
