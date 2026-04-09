@@ -52,8 +52,7 @@ export default function MyListingsPage() {
   const getFeaturedImage = (listing) => {
     const images = listing.property_images || []
     const sorted = [...images].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    const featured = sorted.find(i => i.is_featured) || sorted[0]
-    return featured?.image_url || null
+    return sorted[0]?.image_url || null
   }
 
   if (showForm || editListing) {
@@ -127,7 +126,7 @@ export default function MyListingsPage() {
                 {/* Info */}
                 <div className="p-4">
                   <p className="text-[14px] font-bold text-[#1A1816] truncate mb-0.5">
-                    {listing.address || listing.city || 'No address'}
+                    {listing.seo_title || listing.address || 'No address'}
                   </p>
                   <p className="text-[13px] text-[#737370] mb-3">
                     {listing.price ? `$${Number(listing.price).toLocaleString()}` : 'Price not set'}

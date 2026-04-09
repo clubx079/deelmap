@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server'
-import { supabaseMarketplace } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+// Use service role key to bypass RLS in server-side routes
+const supabaseMarketplace = createClient(
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+  process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
+)
 
 // GET — fetch all listings posted by this buyer
 export async function GET(request) {
@@ -9,7 +15,7 @@ export async function GET(request) {
 
     const { data, error } = await supabaseMarketplace
       .from('properties')
-      .select('id, slug, title, address, city, state, price, status, created_at, posted_by, property_images(image_url, is_featured, sort_order)')
+      .select('id, slug, seo_title, address, state, price, status, created_at, posted_by, property_images(image_url, sort_order)')
       .eq('posted_by', userId)
       .order('created_at', { ascending: false })
 
@@ -35,12 +41,9 @@ export async function POST(request) {
       .from('properties')
       .insert({
         slug,
-        title: body.title,
-        location: body.location,
+        seo_title: body.title || null,
         address: body.address,
-        city: body.city,
         state: body.state,
-        zipcode: body.zipcode,
         latitude: body.latitude,
         longitude: body.longitude,
         price: body.price,
@@ -78,12 +81,9 @@ export async function PATCH(request) {
     const { data, error } = await supabaseMarketplace
       .from('properties')
       .update({
-        title: fields.title,
-        location: fields.location,
+        seo_title: fields.title || null,
         address: fields.address,
-        city: fields.city,
         state: fields.state,
-        zipcode: fields.zipcode,
         latitude: fields.latitude,
         longitude: fields.longitude,
         price: fields.price,

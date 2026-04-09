@@ -397,10 +397,11 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
         })
         const data = await res.json()
         if (data.success && photos.length > 0) {
-          const photoRows = photos.map((p, i) => ({
+          // Sort so the starred photo is first (sort_order 0 = cover)
+          const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
+          const photoRows = sorted.map((p, i) => ({
             property_id: data.id,
-            image_url: p.image_url,
-            is_featured: p.is_featured || i === 0,
+            image_url: p.image_url || p.preview_url,
             sort_order: i,
           }))
           await supabaseMarketplace.from('property_images').insert(photoRows)
@@ -538,8 +539,9 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
       if (res.ok) {
         await supabaseMarketplace.from('property_images').delete().eq('property_id', existing.id)
         if (photos.length > 0) {
+          const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
           await supabaseMarketplace.from('property_images').insert(
-            photos.map((p, i) => ({ property_id: existing.id, image_url: p.image_url, is_featured: p.is_featured || i === 0, sort_order: i }))
+            sorted.map((p, i) => ({ property_id: existing.id, image_url: p.image_url || p.preview_url, sort_order: i }))
           )
         }
         onSuccess()
