@@ -132,25 +132,24 @@ async function getProperty(slugParam) {
     if (manualProperty.posted_by) {
       const { data: buyer } = await supabaseMarketplace
         .from('users')
-        .select('full_name, phone')
+        .select('first_name, last_name, phone')
         .eq('id', manualProperty.posted_by)
         .single()
       if (buyer) {
         agent = {
-          name: buyer.full_name || 'Buyer',
+          name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || 'Buyer',
           phone: buyer.phone || null
         }
       }
     } else if (manualProperty.seller_id) {
-      // Fetch seller info if seller_id exists
       const { data: seller } = await supabaseMarketplace
         .from('users')
-        .select('full_name, phone')
+        .select('first_name, last_name, phone')
         .eq('id', manualProperty.seller_id)
         .single()
       if (seller) {
         agent = {
-          name: seller.full_name || 'Seller',
+          name: [seller.first_name, seller.last_name].filter(Boolean).join(' ') || 'Seller',
           phone: seller.phone || null
         }
       }
