@@ -522,9 +522,10 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
     repairs:              existing?.repairs || '',
     inspection_report_url: existing?.inspection_report_url || null,
   })
-  const [photos, setPhotos] = useState(
-    (existing?.property_images || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-  )
+  const [photos, setPhotos] = useState(() => {
+    const sorted = (existing?.property_images || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    return sorted.map((p, i) => ({ ...p, is_featured: i === 0 }))
+  })
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
 
