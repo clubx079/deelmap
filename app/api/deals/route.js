@@ -96,16 +96,32 @@ export async function GET(request) {
         'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
       };
 
-      let searchTerm = searchQuery.trim().replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
-      if (!searchTerm) searchTerm = searchQuery.trim();
-      const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
+      const rawTerm = searchQuery.trim();
 
-      // If user typed a full state name, search by abbreviation too
-      const q = `%${searchTerm}%`;
-      if (stateAbbr) {
-        query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
+      // Handle "City, State" format from Google Places autocomplete (e.g. "Lexington, Kentucky")
+      const commaIdx = rawTerm.indexOf(',');
+      if (commaIdx > 0) {
+        const cityPart = rawTerm.substring(0, commaIdx).trim();
+        const statePart = rawTerm.substring(commaIdx + 1).trim();
+        const stateAbbrFromName = stateNameToAbbr[statePart.toLowerCase()];
+        // State could be full name ("Kentucky") or abbreviation ("KY")
+        const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
+        const cq = `%${cityPart}%`;
+        if (stateAbbrFinal) {
+          query = query.ilike('city', cq).eq('state', stateAbbrFinal);
+        } else {
+          query = query.or(`address.ilike.${cq},full_address.ilike.${cq},city.ilike.${cq}`);
+        }
       } else {
-        query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+        let searchTerm = rawTerm.replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!searchTerm) searchTerm = rawTerm;
+        const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
+        const q = `%${searchTerm}%`;
+        if (stateAbbr) {
+          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
+        } else {
+          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+        }
       }
     }
 

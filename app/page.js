@@ -118,7 +118,7 @@ export default function HomePage() {
           alt="Deelmap map view"
           fill
           className="object-cover"
-          style={{ objectPosition: '35% center' }}
+          style={{ objectPosition: '0% center' }}
           priority
           sizes="100vw"
         />
@@ -144,7 +144,7 @@ export default function HomePage() {
               </p>
 
               {/* Search bar */}
-              <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded overflow-hidden mb-5 max-w-[580px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
+              <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded mb-5 max-w-[580px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
                 <LocationAutocomplete
                   value={heroSearch}
                   onChange={setHeroSearch}

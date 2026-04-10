@@ -135,7 +135,7 @@ export default function LocationAutocomplete({
       <button
         type="button"
         onClick={() => { setOpen(false); onSubmit?.(value) }}
-        className={`h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0 ${buttonClassName}`}
+        className={`h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0 rounded-r ${buttonClassName}`}
       >
         <Search className="w-4 h-4 text-white" />
       </button>

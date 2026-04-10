@@ -44,6 +44,7 @@ function DealsPageInner() {
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
   const [mobileView, setMobileView] = useState('map') // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState(() => searchParams?.get('search') || '')
+  const [searchLocation, setSearchLocation] = useState(null)
   const {
     properties,
     loading,
@@ -143,7 +144,7 @@ function DealsPageInner() {
     return list // 'newest' — already ordered by API/insertion order
   })()
 
-  const resultCount = typeof totalCount === 'number' ? totalCount : properties.length
+  const resultCount = visibleProperties.length
 
   const RightHeader = () => (
     <div className="px-5 py-4 border-b border-[#E8E8E4] bg-white">
@@ -233,7 +234,8 @@ const LoadingState = () => (
         filters={filters}
         onFiltersChange={handleFiltersChange}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(val) => { setSearchQuery(val); if (!val) setSearchLocation(null) }}
+        onLocationSelect={setSearchLocation}
       />
 
       {/* Mobile Layout */}
@@ -273,6 +275,7 @@ const LoadingState = () => (
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
+              searchLocation={searchLocation}
             />
           </div>
         )}
@@ -336,6 +339,7 @@ const LoadingState = () => (
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
+              searchLocation={searchLocation}
             />
           </div>
 

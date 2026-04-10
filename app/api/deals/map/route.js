@@ -67,13 +67,27 @@ export async function GET(request) {
         'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
         'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
       };
-      let searchTerm = searchQuery.trim();
-      const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
-      const q = `%${searchTerm}%`;
-      if (stateAbbr) {
-        query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
+      const rawTerm = searchQuery.trim();
+      const commaIdx = rawTerm.indexOf(',');
+      if (commaIdx > 0) {
+        const cityPart = rawTerm.substring(0, commaIdx).trim();
+        const statePart = rawTerm.substring(commaIdx + 1).trim();
+        const stateAbbrFromName = stateNameToAbbr[statePart.toLowerCase()];
+        const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
+        const cq = `%${cityPart}%`;
+        if (stateAbbrFinal) {
+          query = query.ilike('city', cq).eq('state', stateAbbrFinal);
+        } else {
+          query = query.or(`address.ilike.${cq},full_address.ilike.${cq},city.ilike.${cq}`);
+        }
       } else {
-        query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+        const stateAbbr = stateNameToAbbr[rawTerm.toLowerCase()];
+        const q = `%${rawTerm}%`;
+        if (stateAbbr) {
+          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
+        } else {
+          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+        }
       }
     }
 

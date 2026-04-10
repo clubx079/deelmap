@@ -21,7 +21,7 @@ const STATE_CENTROIDS = {
   WI: [43.7844, -88.7879], WY: [43.0760, -107.2903], DC: [38.9072, -77.0369]
 }
 
-export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, filters, isLoggedIn = false }) {
+export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, filters, isLoggedIn = false, searchLocation = null }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
@@ -43,6 +43,69 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
       if (filters?.states?.length) zoomToStates(filters.states)
     }
   }, [properties, filters])
+
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map) return
+
+    // Clear previous boundary
+    map.data.forEach(f => map.data.remove(f))
+
+    if (!searchLocation?.city) return
+
+    const stateNameToAbbr = {
+      'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+      'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+      'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+      'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+      'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+      'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+      'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+      'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+      'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+      'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
+    }
+
+    const stateFullName = stateNameToAbbr[searchLocation.state?.toUpperCase()] || searchLocation.state || ''
+    const params = new URLSearchParams({
+      city: searchLocation.city,
+      state: stateFullName,
+      country: 'US',
+      polygon_geojson: '1',
+      format: 'json',
+      limit: '1',
+    })
+
+    fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+      headers: { 'Accept-Language': 'en', 'User-Agent': 'Deelmap/1.0' }
+    })
+      .then(r => r.json())
+      .then(results => {
+        if (!results?.length || !results[0].geojson) return
+        const map = mapInstanceRef.current
+        if (!map) return
+
+        map.data.addGeoJson({ type: 'Feature', geometry: results[0].geojson })
+        map.data.setStyle({
+          fillOpacity: 0,
+          strokeColor: '#D03839',
+          strokeWeight: 2,
+          strokeOpacity: 0.7,
+          clickable: false,
+        })
+
+        // Zoom map to the boundary
+        const bbox = results[0].boundingbox // [minLat, maxLat, minLng, maxLng]
+        if (bbox) {
+          const bounds = new window.google.maps.LatLngBounds(
+            { lat: parseFloat(bbox[0]), lng: parseFloat(bbox[2]) },
+            { lat: parseFloat(bbox[1]), lng: parseFloat(bbox[3]) }
+          )
+          map.fitBounds(bounds)
+        }
+      })
+      .catch(() => {})
+  }, [searchLocation])
 
   const initMap = () => {
     if (typeof window === 'undefined') return

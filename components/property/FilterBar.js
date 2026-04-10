@@ -23,7 +23,7 @@ const PRICE_PRESETS = [
   { label: 'Over $1M', min: 1000000, max: undefined },
 ]
 
-export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange }) {
+export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange, onLocationSelect }) {
   const [localSearch, setLocalSearch] = useState(searchQuery || '')
   const [showAllFilters, setShowAllFilters] = useState(false)
   const [availableStates, setAvailableStates] = useState([])
@@ -205,11 +205,11 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         {/* Mobile layout: search on top, filters below */}
         <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
           {/* Search row */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-full focus-within:border-[#1A1816] transition-colors">
+          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded w-full focus-within:border-[#1A1816] transition-colors">
             <LocationAutocomplete
               value={localSearch}
               onChange={setLocalSearch}
-              onSelect={({ label }) => { setLocalSearch(label); onSearchChange?.(label) }}
+              onSelect={({ label, city, state }) => { setLocalSearch(label); onSearchChange?.(label); onLocationSelect?.({ city, state }) }}
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
@@ -369,11 +369,11 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         <div className="hidden lg:flex w-full px-10 py-3 items-center gap-3">
 
           {/* Search */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden w-[480px] flex-none focus-within:border-[#1A1816] transition-colors">
+          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded w-[480px] flex-none focus-within:border-[#1A1816] transition-colors">
             <LocationAutocomplete
               value={localSearch}
               onChange={setLocalSearch}
-              onSelect={({ label }) => { setLocalSearch(label); onSearchChange?.(label) }}
+              onSelect={({ label, city, state }) => { setLocalSearch(label); onSearchChange?.(label); onLocationSelect?.({ city, state }) }}
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
