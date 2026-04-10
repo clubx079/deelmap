@@ -1,6 +1,7 @@
 'use client'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { AuthModal } from '@/components/AuthModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect, useRef } from 'react'
 import { supabaseMarketplace } from '@/lib/supabase'
@@ -72,11 +73,7 @@ export default function FinancingPage() {
   const [propertyList, setPropertyList] = useState([])
   const [loadingProperties, setLoadingProperties] = useState(true)
   const [selectedPropertyPrice, setSelectedPropertyPrice] = useState(null)
-  useEffect(() => {
-    if (!authLoading && !user) {
-      window.dispatchEvent(new CustomEvent('showAuth'))
-    }
-  }, [authLoading, user])
+  const showLoginModal = !authLoading && !user
 
   const formatPhoneNumber = (value) => {
     const cleaned = value.replace(/\D/g, '').slice(0, 10)
@@ -223,6 +220,8 @@ export default function FinancingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <AuthModal isOpen={showLoginModal} onClose={() => {}} hideClose={true} />
+      <div className={showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}>
       <Navbar currentPage="financing" />
 
       {/* Success toast */}
@@ -495,6 +494,7 @@ export default function FinancingPage() {
       </section>
 
       <Footer />
+      </div>{/* end blur wrapper */}
     </div>
   )
 }

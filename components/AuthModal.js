@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, ChevronDown, X, Check } from 'lucide-react'
 import { US_STATES } from '@/utils/constants'
 
-export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
+export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = false }) {
   const { signIn, sendOTP, verifyOTP, forgotPassword } = useAuth()
   const [authStep, setAuthStep] = useState(initialStep)
   const [authData, setAuthData] = useState({
@@ -347,7 +347,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
+    <Modal isOpen={isOpen} onClose={handleClose} hideClose={hideClose}>
       <div className="p-6 sm:p-8">
         {authStep === 'login' && (
           <>
