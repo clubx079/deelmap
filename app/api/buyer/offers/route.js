@@ -379,7 +379,7 @@ export async function PATCH(request) {
 
     if (offerErr || !offer) return NextResponse.json({ error: 'Offer not found' }, { status: 404 });
 
-    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production.up.railway.app').replace(/\/$/, '');
+    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app').replace(/\/$/, '');
     const logoUrl = `${sellerBase}/deelmap.png`;
     // offer.conversation_id is UUID — convert back to numeric for URL
     const convNumeric = uuidToNumeric(offer.conversation_id) ?? offer.conversation_id;
