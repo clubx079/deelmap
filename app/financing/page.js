@@ -3,7 +3,6 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabaseMarketplace } from '@/lib/supabase'
 import { Lock, ChevronDown } from 'lucide-react'
 
@@ -54,7 +53,6 @@ function CustomSelect({ value, onChange, options, placeholder, disabled }) {
 
 export default function FinancingPage() {
   const { user, loading: authLoading } = useAuth()
-  const router = useRouter()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -76,9 +74,9 @@ export default function FinancingPage() {
   const [selectedPropertyPrice, setSelectedPropertyPrice] = useState(null)
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace('/login?redirect=/financing')
+      window.dispatchEvent(new CustomEvent('showAuth'))
     }
-  }, [authLoading, user, router])
+  }, [authLoading, user])
 
   const formatPhoneNumber = (value) => {
     const cleaned = value.replace(/\D/g, '').slice(0, 10)
