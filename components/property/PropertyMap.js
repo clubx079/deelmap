@@ -26,6 +26,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
   const infoOverlayRef = useRef(null)
+  const boundaryPolygonsRef = useRef([])
   const router = useRouter()
   const propertiesRef = useRef(properties)
   const filtersRef = useRef(filters)
@@ -45,15 +46,13 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
   }, [properties, filters])
 
   useEffect(() => {
-    const map = mapInstanceRef.current
-    if (!map) return
-
-    // Clear previous boundary
-    map.data.forEach(f => map.data.remove(f))
+    // Clear previous boundary polygons
+    boundaryPolygonsRef.current.forEach(p => p.setMap(null))
+    boundaryPolygonsRef.current = []
 
     if (!searchLocation?.city) return
 
-    const stateNameToAbbr = {
+    const abbrToFull = {
       'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
       'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
       'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
@@ -65,8 +64,8 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
       'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
       'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
     }
+    const stateFullName = abbrToFull[searchLocation.state?.toUpperCase()] || searchLocation.state || ''
 
-    const stateFullName = stateNameToAbbr[searchLocation.state?.toUpperCase()] || searchLocation.state || ''
     const params = new URLSearchParams({
       city: searchLocation.city,
       state: stateFullName,
@@ -77,34 +76,47 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     })
 
     fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-      headers: { 'Accept-Language': 'en', 'User-Agent': 'Deelmap/1.0' }
+      headers: { 'Accept-Language': 'en' }
     })
       .then(r => r.json())
       .then(results => {
-        if (!results?.length || !results[0].geojson) return
         const map = mapInstanceRef.current
-        if (!map) return
+        if (!map || !window.google || !results?.length) return
 
-        map.data.addGeoJson({ type: 'Feature', geometry: results[0].geojson })
-        map.data.setStyle({
-          fillOpacity: 0,
-          strokeColor: '#D03839',
-          strokeWeight: 2,
-          strokeOpacity: 0.7,
-          clickable: false,
-        })
+        const geojson = results[0].geojson
+        if (!geojson) return
 
-        // Zoom map to the boundary
+        const drawRing = (coordinates) => {
+          // GeoJSON coords are [lng, lat], Google Maps needs {lat, lng}
+          const path = coordinates[0].map(([lng, lat]) => ({ lat, lng }))
+          const poly = new window.google.maps.Polygon({
+            paths: path,
+            strokeColor: '#D03839',
+            strokeOpacity: 0.8,
+            strokeWeight: 2.5,
+            fillOpacity: 0,
+            map,
+            zIndex: 1,
+          })
+          boundaryPolygonsRef.current.push(poly)
+        }
+
+        if (geojson.type === 'Polygon') {
+          drawRing(geojson.coordinates)
+        } else if (geojson.type === 'MultiPolygon') {
+          geojson.coordinates.forEach(coords => drawRing(coords))
+        }
+
+        // Zoom to the boundary
         const bbox = results[0].boundingbox // [minLat, maxLat, minLng, maxLng]
         if (bbox) {
-          const bounds = new window.google.maps.LatLngBounds(
+          map.fitBounds(new window.google.maps.LatLngBounds(
             { lat: parseFloat(bbox[0]), lng: parseFloat(bbox[2]) },
             { lat: parseFloat(bbox[1]), lng: parseFloat(bbox[3]) }
-          )
-          map.fitBounds(bounds)
+          ))
         }
       })
-      .catch(() => {})
+      .catch(err => console.error('[BOUNDARY]', err))
   }, [searchLocation])
 
   const initMap = () => {
@@ -211,19 +223,9 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
         lng = parseFloat(p.longitude)
       }
       
-      // Fallback 2: Try state centroid
+      // Skip properties with no real coordinates — don't place fallback pins
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        const state = (p.state || '').trim().toUpperCase().slice(0, 2)
-        const centroid = state && STATE_CENTROIDS[state]
-        if (centroid) {
-          lat = centroid[0]
-          lng = centroid[1]
-        } else {
-          // Fallback 3: Default US center as last resort
-          console.warn(`Property ${p.id} missing coordinates and state, using US center`)
-          lat = 39.8283
-          lng = -98.5795
-        }
+        return
       }
 
       const anchor = new window.google.maps.Marker({

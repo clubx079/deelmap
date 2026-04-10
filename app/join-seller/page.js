@@ -342,13 +342,12 @@ export default function SellPage() {
                 >
                   Log in
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowSellerForm(true)}
+                <a
+                  href={`${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/onboarding`}
                   className="w-full h-12 bg-white border border-[#1A1816] text-[#1A1816] font-semibold text-[15px] rounded flex items-center justify-center hover:bg-[#FAFAF8] transition-colors"
                 >
                   Sign up as seller
-                </button>
+                </a>
                 </div>
               </div>
             </div>

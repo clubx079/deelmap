@@ -122,7 +122,8 @@ function StepBasicInfo({ data, onChange }) {
             type="number"
             value={data.price || ''}
             onChange={e => onChange({ price: e.target.value })}
-            placeholder="e.g. 75,000"
+            onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
+            placeholder="e.g. 75000"
             min={0}
             className={inputCls}
           />
@@ -143,15 +144,15 @@ function StepBasicInfo({ data, onChange }) {
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className={labelCls}>Beds</label>
-          <input type="number" value={data.bedrooms || ''} onChange={e => onChange({ bedrooms: e.target.value })} min={0} placeholder="0" className={inputCls} />
+          <input type="number" value={data.bedrooms || ''} onChange={e => onChange({ bedrooms: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} min={0} placeholder="0" className={inputCls} />
         </div>
         <div>
           <label className={labelCls}>Baths</label>
-          <input type="number" value={data.bathrooms || ''} onChange={e => onChange({ bathrooms: e.target.value })} step={0.5} min={0} placeholder="0" className={inputCls} />
+          <input type="number" value={data.bathrooms || ''} onChange={e => onChange({ bathrooms: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} step={0.5} min={0} placeholder="0" className={inputCls} />
         </div>
         <div>
           <label className={labelCls}>Sq Ft</label>
-          <input type="number" value={data.floor_area || ''} onChange={e => onChange({ floor_area: e.target.value })} min={0} placeholder="0" className={inputCls} />
+          <input type="number" value={data.floor_area || ''} onChange={e => onChange({ floor_area: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} min={0} placeholder="0" className={inputCls} />
         </div>
       </div>
     </div>
@@ -163,40 +164,58 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
   // photos entries: { image_url, preview_url?, is_featured, sort_order, uploading? }
 
   const handleFiles = async (files) => {
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
-    if (!imageFiles.length) return
+    const checkHeic = f => f.type === 'image/heic' || f.type === 'image/heif' || /\.(heic|heif)$/i.test(f.name)
+    const isImage = f => f.type.startsWith('image/') || checkHeic(f)
+    const rawFiles = Array.from(files).filter(isImage)
+    if (!rawFiles.length) return
 
-    // 1. Show local previews immediately
-    const previews = imageFiles.map((file, i) => ({
-      image_url: null,
-      preview_url: URL.createObjectURL(file),
-      is_featured: false,
-      sort_order: photos.length + i,
-      uploading: true,
-    }))
+    // 1. Show placeholders immediately so user sees tiles right away
     const baseIndex = photos.length
-    onPhotosChange([...photos, ...previews])
+    const placeholders = rawFiles.map((file, i) => ({
+      image_url: null,
+      preview_url: checkHeic(file) ? null : URL.createObjectURL(file),
+      is_featured: false,
+      sort_order: baseIndex + i,
+      uploading: true,
+      converting: checkHeic(file),
+    }))
+    onPhotosChange(prev => [...prev, ...placeholders])
 
-    // 2. Upload with concurrency limit of 5
+    // 2. Process + upload each file independently with concurrency limit of 5
     const CONCURRENCY = 5
-    const queue = imageFiles.map((file, i) => async () => {
+    const queue = rawFiles.map((file, i) => async () => {
       try {
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        let uploadFile = file
+
+        if (checkHeic(file)) {
+          const fd = new FormData()
+          fd.append('file', file)
+          const res = await fetch('/api/convert-heic', { method: 'POST', body: fd })
+          if (!res.ok) throw new Error('HEIC conversion failed')
+          const blob = await res.blob()
+          uploadFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
+          // Show preview as soon as conversion is done
+          onPhotosChange(prev => prev.map((p, idx) =>
+            idx === baseIndex + i ? { ...p, preview_url: URL.createObjectURL(uploadFile), converting: false } : p
+          ))
+        }
+
+        const ext = (uploadFile.name.split('.').pop() || 'jpg').toLowerCase()
         const imageKey = `manual/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         const { error } = await supabaseMarketplace.storage
           .from('scraperpropertyphotos')
-          .upload(imageKey, file, { cacheControl: '3600', upsert: false })
+          .upload(imageKey, uploadFile, { cacheControl: '3600', upsert: false })
         const remoteUrl = !error
           ? supabaseMarketplace.storage.from('scraperpropertyphotos').getPublicUrl(imageKey).data.publicUrl
           : null
         onPhotosChange(prev => prev.map((p, idx) =>
           idx === baseIndex + i
-            ? { ...p, image_url: remoteUrl || p.preview_url, image_key: imageKey, uploading: false }
+            ? { ...p, image_url: remoteUrl || p.preview_url, image_key: imageKey, uploading: false, converting: false }
             : p
         ))
       } catch {
         onPhotosChange(prev => prev.map((p, idx) =>
-          idx === baseIndex + i ? { ...p, uploading: false } : p
+          idx === baseIndex + i ? { ...p, uploading: false, converting: false } : p
         ))
       }
     })
@@ -212,6 +231,7 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
   }
 
   const anyUploading = photos.some(p => p.uploading)
+  const anyConverting = photos.some(p => p.converting)
 
   return (
     <div className="space-y-4">
@@ -240,7 +260,7 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
         </span>
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           multiple
           className="hidden"
           onChange={e => handleFiles(e.target.files)}
@@ -253,7 +273,8 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
           <div className="flex items-center justify-between mb-2.5">
             <p className="text-[13px] font-medium text-[#1A1816]">
               {photos.length} photo{photos.length !== 1 ? 's' : ''}
-              {anyUploading && <span className="text-[#A8A8A4] font-normal ml-1.5">— uploading...</span>}
+              {anyConverting && <span className="text-[#A8A8A4] font-normal ml-1.5">— converting...</span>}
+              {!anyConverting && anyUploading && <span className="text-[#A8A8A4] font-normal ml-1.5">— uploading...</span>}
             </p>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
@@ -263,10 +284,13 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
                 <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-[#F3F3F0] border border-[#E8E8E4]">
                   {src && <img src={src} alt="" className="w-full h-full object-cover" />}
 
-                  {/* Upload spinner overlay */}
+                  {/* Upload / convert spinner overlay */}
                   {photo.uploading && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1.5">
                       <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      {photo.converting && (
+                        <span className="text-white text-[10px] font-semibold tracking-wide">Converting...</span>
+                      )}
                     </div>
                   )}
 
@@ -609,7 +633,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   // ─── Form ─────────────────────────────────────────────────────────
   return (
     <div className="p-4 lg:p-8" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-3xl mx-auto">
 
         {/* Page header */}
         <div className="mb-6">

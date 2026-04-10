@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['heic-convert', 'libheif-js'],
   async redirects() {
     return [
       // Old property URLs used /property/:id — redirect to /:slug so [slug] page can resolve by slug or id
