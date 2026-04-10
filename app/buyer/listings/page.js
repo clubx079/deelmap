@@ -2,10 +2,11 @@
 import { useState, useEffect, useContext } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
-import { Plus, Pencil, Trash2, X, Home, MapPin, Eye } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import PostDealForm from '@/components/buyer/PostDealForm'
+import PropertyAnalyticsSidebar from '@/components/buyer/PropertyAnalyticsSidebar'
 
 export default function MyListingsPage() {
   const { user } = useAuth()
@@ -16,6 +17,7 @@ export default function MyListingsPage() {
   const [editListing, setEditListing] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [analyticTarget, setAnalyticTarget] = useState(null)
 
   useEffect(() => {
     setPageTitle(showForm ? 'Post a Deal' : editListing ? 'Edit Listing' : 'My Listings')
@@ -210,6 +212,13 @@ export default function MyListingsPage() {
                       {/* Actions */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-0.5">
+                          <button
+                            onClick={() => setAnalyticTarget(listing)}
+                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
+                            title="Analytics"
+                          >
+                            <BarChart2 className="w-4 h-4" />
+                          </button>
                           <Link
                             href={`/${listing.slug || listing.id}`}
                             target="_blank"
@@ -301,6 +310,12 @@ export default function MyListingsPage() {
                       {listing.property_type ? ` · ${listing.property_type}` : ''}
                     </p>
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setAnalyticTarget(listing)}
+                        className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
+                      >
+                        <BarChart2 className="w-3.5 h-3.5" />
+                      </button>
                       <Link
                         href={`/${listing.slug || listing.id}`}
                         target="_blank"
@@ -329,6 +344,16 @@ export default function MyListingsPage() {
         </div>
 
       </div>
+
+      {/* Analytics sidebar */}
+      {analyticTarget && (
+        <PropertyAnalyticsSidebar
+          propertyId={analyticTarget.id}
+          propertyAddress={analyticTarget.seo_title || analyticTarget.address}
+          userId={user?.id}
+          onClose={() => setAnalyticTarget(null)}
+        />
+      )}
 
       {/* Delete confirmation modal */}
       {deleteTarget && (

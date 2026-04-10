@@ -130,6 +130,7 @@ export function Navbar() {
     { label: 'Buy', href: '/marketplace' },
     { label: 'Sell', href: '/join-seller' },
     { label: 'Finance', href: '/financing' },
+    { label: 'Pricing', href: '/pricing' },
     { label: 'About us', href: '/our-story', hasDropdown: true },
   ]
 
@@ -137,6 +138,7 @@ export function Navbar() {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
+    if (href === '/pricing') return pathname === '/pricing'
     if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/resources' || pathname.startsWith('/resources/') || pathname === '/advertise'
     return false
   }

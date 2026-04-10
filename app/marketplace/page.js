@@ -44,7 +44,14 @@ function DealsPageInner() {
   const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
   const [mobileView, setMobileView] = useState('map') // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState(() => searchParams?.get('search') || '')
-  const [searchLocation, setSearchLocation] = useState(null)
+  const [searchLocation, setSearchLocation] = useState(() => {
+    const s = searchParams?.get('search') || ''
+    const commaIdx = s.indexOf(',')
+    if (commaIdx > 0) {
+      return { city: s.substring(0, commaIdx).trim(), state: s.substring(commaIdx + 1).trim() }
+    }
+    return null
+  })
   const {
     properties,
     loading,

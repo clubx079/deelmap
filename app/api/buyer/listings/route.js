@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 
 // Use service role key to bypass RLS in server-side routes
 const supabaseMarketplace = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
   process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
 )
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 // GET — fetch all listings posted by this buyer
 export async function GET(request) {
@@ -35,6 +38,34 @@ export async function POST(request) {
 
     const body = await request.json()
 
+    // Require a Stripe PaymentIntent — no payment, no listing
+    if (!body.stripe_payment_intent_id) {
+      return NextResponse.json({ error: 'Payment required to publish a listing.' }, { status: 402 })
+    }
+
+    // Verify the PaymentIntent succeeded via Stripe API
+    let paymentIntent
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(body.stripe_payment_intent_id)
+    } catch {
+      return NextResponse.json({ error: 'Could not verify payment. Please contact support.' }, { status: 402 })
+    }
+
+    if (paymentIntent.status !== 'succeeded') {
+      return NextResponse.json({ error: 'Payment has not been completed.' }, { status: 402 })
+    }
+
+    // Prevent the same PaymentIntent from creating a duplicate listing
+    const { data: existing } = await supabaseMarketplace
+      .from('payments')
+      .select('id')
+      .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
+      .maybeSingle()
+
+    if (existing) {
+      return NextResponse.json({ error: 'This payment has already been used.' }, { status: 409 })
+    }
+
     const slug = generateSlug()
 
     const { data, error } = await supabaseMarketplace
@@ -62,20 +93,18 @@ export async function POST(request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Record payment if stripe_payment_intent_id provided
-    if (body.stripe_payment_intent_id) {
-      await supabaseMarketplace.from('payments').insert({
-        user_id: userId,
-        user_type: 'buyer',
-        payment_type: 'listing_fee',
-        property_id: data.id,
-        stripe_payment_intent_id: body.stripe_payment_intent_id,
-        amount: body.amount || 2900,
-        currency: 'usd',
-        status: 'succeeded',
-        description: `Listing fee for property: ${body.title || data.slug}`,
-      })
-    }
+    // Record the payment
+    await supabaseMarketplace.from('payments').insert({
+      user_id: userId,
+      user_type: 'buyer',
+      payment_type: 'listing_fee',
+      property_id: data.id,
+      stripe_payment_intent_id: body.stripe_payment_intent_id,
+      amount: body.amount || 2900,
+      currency: 'usd',
+      status: 'succeeded',
+      description: `Listing fee for property: ${body.title || data.slug}`,
+    })
 
     return NextResponse.json({ success: true, id: data.id, slug: data.slug })
   } catch (err) {
