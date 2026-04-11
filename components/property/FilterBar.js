@@ -31,6 +31,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const [showPropertyTypes, setShowPropertyTypes] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showBedsBaths, setShowBedsBaths] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
 
   const [tempPrice, setTempPrice] = useState({ min: filters.minPrice || '', max: filters.maxPrice || '' })
   const [tempBedsBaths, setTempBedsBaths] = useState({ minBeds: filters.minBeds || '', minBaths: filters.minBaths || '' })
@@ -205,7 +206,15 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         {/* Mobile layout: search on top, filters below */}
         <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
           {/* Search row */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded w-full focus-within:border-[#1A1816] transition-colors">
+          <div
+            onFocus={() => setSearchFocused(true)}
+            onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setSearchFocused(false) }}
+            className="flex items-center h-[42px] rounded w-full transition-all duration-200"
+            style={{
+              border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
+              boxShadow: searchFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
+            }}
+          >
             <LocationAutocomplete
               value={localSearch}
               onChange={setLocalSearch}
@@ -369,7 +378,15 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         <div className="hidden lg:flex w-full px-10 py-3 items-center gap-3">
 
           {/* Search */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded w-[480px] flex-none focus-within:border-[#1A1816] transition-colors">
+          <div
+            onFocus={() => setSearchFocused(true)}
+            onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setSearchFocused(false) }}
+            className="flex items-center h-[42px] rounded w-[480px] flex-none transition-all duration-200"
+            style={{
+              border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
+              boxShadow: searchFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
+            }}
+          >
             <LocationAutocomplete
               value={localSearch}
               onChange={setLocalSearch}
