@@ -207,8 +207,6 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
           {/* Search row */}
           <div
-            onFocus={() => setSearchFocused(true)}
-            onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setSearchFocused(false) }}
             className="flex items-center h-[42px] rounded w-full transition-all duration-200"
             style={{
               border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
@@ -218,6 +216,8 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             <LocationAutocomplete
               value={localSearch}
               onChange={setLocalSearch}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               onSelect={({ label, city, state }) => { setLocalSearch(label); onSearchChange?.(label); onLocationSelect?.({ city, state }) }}
               onSubmit={(val) => onSearchChange?.(val)}
             />
@@ -379,8 +379,6 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
           {/* Search */}
           <div
-            onFocus={() => setSearchFocused(true)}
-            onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setSearchFocused(false) }}
             className="flex items-center h-[42px] rounded w-[480px] flex-none transition-all duration-200"
             style={{
               border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
@@ -390,6 +388,8 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             <LocationAutocomplete
               value={localSearch}
               onChange={setLocalSearch}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
               onSelect={({ label, city, state }) => { setLocalSearch(label); onSearchChange?.(label); onLocationSelect?.({ city, state }) }}
               onSubmit={(val) => onSearchChange?.(val)}
             />

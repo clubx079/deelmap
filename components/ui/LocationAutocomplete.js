@@ -127,7 +127,7 @@ export default function LocationAutocomplete({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onFocus={() => { if (suggestions.length > 0) setOpen(true); onFocus?.() }}
-        onBlur={() => onBlur?.()}
+        onBlur={(e) => { if (!wrapperRef.current?.contains(e.relatedTarget)) onBlur?.() }}
         style={inputStyle}
         className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
         autoComplete="off"
