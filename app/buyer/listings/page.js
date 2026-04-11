@@ -5,16 +5,27 @@ import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import PostDealForm from '@/components/buyer/PostDealForm'
 import PropertyAnalyticsSidebar from '@/components/buyer/PropertyAnalyticsSidebar'
 
 export default function MyListingsPage() {
   const { user } = useAuth()
   const { setPageTitle } = useContext(BuyerPageTitleContext)
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm] = useState(() => false)
   const [editListing, setEditListing] = useState(null)
+
+  // Auto-open form if ?new=1 is in the URL
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setShowForm(true)
+      router.replace('/buyer/listings', { scroll: false })
+    }
+  }, [searchParams, router])
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [analyticTarget, setAnalyticTarget] = useState(null)
