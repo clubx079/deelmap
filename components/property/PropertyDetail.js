@@ -368,8 +368,8 @@ export function PropertyDetail({ property }) {
       {showPreviewModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded w-full max-w-sm p-6 text-center shadow-xl">
-            <div className="w-12 h-12 bg-[#FEF3E2] rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-[22px]">👁️</span>
+            <div className="w-12 h-12 bg-[#FEF0EF] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-[#D03839]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </div>
             <h3 className="text-[16px] font-bold text-[#1A1816] mb-2">You're in Preview Mode</h3>
             <p className="text-[13px] text-[#737370] mb-5">This is how buyers see your listing. When a buyer clicks this button, they'll be prompted to log in before taking any action.</p>
@@ -386,8 +386,16 @@ export function PropertyDetail({ property }) {
       {/* Preview banner */}
       {isPreview && (
         <div className="sticky top-0 z-[100] bg-[#1A1816] text-white text-center py-2 px-4 text-[13px] font-medium">
-          👁️ Preview Mode — this is how your listing appears to buyers
+          Preview Mode — this is how your listing appears to buyers
         </div>
+      )}
+
+      {/* Preview overlay — blocks all content below the nav */}
+      {isPreview && (
+        <div
+          className="fixed inset-0 z-[45] cursor-default"
+          onClick={() => setShowPreviewModal(true)}
+        />
       )}
 
       {/* Login Modal */}
@@ -417,11 +425,11 @@ export function PropertyDetail({ property }) {
         <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
           {/* Left: Back link */}
           <Link
-            href="/marketplace"
-            className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors"
+            href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/listings` : '/marketplace'}
+            className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors relative z-[50]"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to listings</span>
+            <span>{isPreview ? 'Back to listings' : 'Back to listings'}</span>
           </Link>
 
           {/* Center: Logo */}

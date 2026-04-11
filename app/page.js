@@ -97,6 +97,7 @@ const HOW_IT_WORKS = [
 export default function HomePage() {
   const [showRegistration, setShowRegistration] = useState(false)
   const [heroSearch, setHeroSearch] = useState('')
+  const [heroFocused, setHeroFocused] = useState(false)
   const [activeStep, setActiveStep] = useState(1)
 
   useEffect(() => {
@@ -111,14 +112,14 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '100vh' }}>
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh' }}>
         {/* Background: Figma map image */}
         <Image
           src="/assets/hero-map-new.png"
           alt="Deelmap map view"
           fill
           className="object-cover"
-          style={{ objectPosition: '0% center' }}
+          style={{ objectPosition: '0% 60%' }}
           priority
           sizes="100vw"
         />
@@ -127,8 +128,8 @@ export default function HomePage() {
         <div className="absolute inset-0 lg:hidden" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.88) 42%, white 65%)' }} />
 
         {/* Left: Text (overlaid) */}
-        <div className="relative z-10 flex items-center h-full" style={{ minHeight: '100vh' }}>
-          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0 lg:pt-[70px]">
+        <div className="relative z-10 flex items-center h-full" style={{ minHeight: '88vh' }}>
+          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0 lg:pt-0 lg:mt-[-60px]">
             <div className="w-full max-w-[620px]">
 
               {/* Heading */}
@@ -140,14 +141,21 @@ export default function HomePage() {
 
               {/* Subtext */}
               <p className="text-[16px] text-[#444441] leading-relaxed mb-8 max-w-[420px]">
-                Browse investment opportunities from wholesalers and sellers across the United States— all in one trusted marketplace.
+                Browse investment opportunities from wholesalers and sellers across the United States— all in one trusted marketplace.{' '}
+                <span className="text-[#D03839] font-semibold">Free for all buyers — We never share your information</span>
               </p>
 
               {/* Search bar */}
-              <div className="flex items-center h-[56px] border border-[#E8E8E4] bg-white rounded mb-5 max-w-[580px] focus-within:border-[#D03839] focus-within:shadow-[0_0_0_3px_rgba(208,56,57,0.12)] transition-all duration-200">
+              <div className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[580px] transition-all duration-200"
+                style={{
+                  border: heroFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
+                  boxShadow: heroFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
+                }}>
                 <LocationAutocomplete
                   value={heroSearch}
                   onChange={setHeroSearch}
+                  onFocus={() => setHeroFocused(true)}
+                  onBlur={() => setHeroFocused(false)}
                   onSelect={({ label }) => {
                     setHeroSearch(label)
                     window.location.href = `/marketplace?search=${encodeURIComponent(label)}`

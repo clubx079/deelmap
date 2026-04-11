@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ChevronLeft, X, Upload, Star, MapPin, Check, FileText, DollarSign } from 'lucide-react'
+import { ChevronLeft, X, Upload, Star, MapPin, Check, FileText, DollarSign, Home, Sparkles, TrendingUp, Zap, Package } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { supabaseMarketplace } from '@/lib/supabase'
@@ -16,45 +16,57 @@ const PROPERTY_TYPES = [
 ]
 
 const STEPS = [
-  { label: 'Basic Info', desc: 'Address & price' },
-  { label: 'Photos',     desc: 'Upload images' },
-  { label: 'Details',    desc: 'Description' },
-  { label: 'Payment',    desc: '$29 listing fee' },
+  { label: 'Basic Info',   desc: 'Address & price' },
+  { label: 'Photos',       desc: 'Upload images' },
+  { label: 'Seller Type',  desc: 'Owner or wholesaler' },
+  { label: 'Details',      desc: 'Description' },
+  { label: 'Payment',      desc: 'Publish listing' },
 ]
-const EDIT_STEPS = STEPS.slice(0, 3)
+const EDIT_STEPS = [STEPS[0], STEPS[1], STEPS[3]]
+
+const ADD_ONS = [
+  { id: 'highlight',  label: 'Highlight Listing',      desc: 'Stand out in search results',          price: 999,  icon: Sparkles },
+  { id: 'homepage',  label: 'Feature on Homepage',    desc: 'Shown to all visitors for 30 days',    price: 2900, icon: TrendingUp },
+  { id: 'boost',     label: 'Boost Listing',          desc: 'Priority placement for 14 days',       price: 1499, icon: Zap },
+  { id: 'bundle',    label: 'Full Visibility Bundle',  desc: 'Highlight + Homepage + Boost',         price: 4900, icon: Package },
+]
 
 // ─── Shared input/label classes ────────────────────────────────────────
-const inputCls = 'w-full h-[42px] px-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors bg-white'
-const labelCls = 'block text-[13px] font-medium text-[#1A1816] mb-1.5'
+const inputCls = 'w-full h-[42px] px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-2 focus:ring-[#D03839]/12 transition-colors bg-white'
+const labelCls = 'block text-[12px] font-medium text-[#1A1816] mb-1.5'
 
 // ─── Step indicator ────────────────────────────────────────────────────
 function StepIndicator({ steps, current }) {
   return (
-    <div className="flex items-start gap-0 mb-8">
-      {steps.map((s, i) => {
-        const done    = i < current
-        const active  = i === current
-        const last    = i === steps.length - 1
-        return (
-          <div key={i} className="flex items-start flex-1 min-w-0">
-            <div className="flex flex-col items-center flex-shrink-0">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all
+    <div className="w-full mb-8">
+      {/* Progress bar */}
+      <div className="relative h-1 bg-[#E8E8E4] rounded-full mb-5 w-full overflow-hidden">
+        <div
+          className="absolute left-0 top-0 h-full bg-[#D03839] transition-all duration-500"
+          style={{ width: `${((current) / (steps.length - 1)) * 100}%` }}
+        />
+      </div>
+      {/* Step circles row */}
+      <div className="flex items-start justify-between w-full">
+        {steps.map((s, i) => {
+          const done   = i < current
+          const active = i === current
+          return (
+            <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all flex-shrink-0
                 ${done   ? 'bg-[#1A1816] text-white'
                 : active ? 'bg-[#D03839] text-white ring-4 ring-[#D03839]/15'
                 :          'bg-[#F3F3F0] text-[#A8A8A4]'}`}>
-                {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                {done ? <Check className="w-3 h-3" /> : i + 1}
               </div>
-              <span className={`mt-1.5 text-[11px] font-semibold text-center leading-tight hidden sm:block
+              <span className={`text-[10px] font-semibold text-center leading-tight hidden sm:block
                 ${active ? 'text-[#1A1816]' : done ? 'text-[#737370]' : 'text-[#A8A8A4]'}`}>
                 {s.label}
               </span>
             </div>
-            {!last && (
-              <div className={`flex-1 h-px mt-4 mx-2 transition-colors ${done ? 'bg-[#1A1816]' : 'bg-[#E8E8E4]'}`} />
-            )}
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -117,7 +129,7 @@ function StepBasicInfo({ data, onChange }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className={labelCls}>Asking Price ($)</label>
+          <label className={labelCls}>Asking Price ($) <span className="text-[#D03839]">*</span></label>
           <input
             type="number"
             value={data.price || ''}
@@ -129,7 +141,7 @@ function StepBasicInfo({ data, onChange }) {
           />
         </div>
         <div>
-          <label className={labelCls}>Property Type</label>
+          <label className={labelCls}>Property Type <span className="text-[#D03839]">*</span></label>
           <select
             value={data.property_type || ''}
             onChange={e => onChange({ property_type: e.target.value })}
@@ -143,15 +155,15 @@ function StepBasicInfo({ data, onChange }) {
 
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label className={labelCls}>Beds</label>
+          <label className={labelCls}>Beds <span className="text-[#D03839]">*</span></label>
           <input type="number" value={data.bedrooms || ''} onChange={e => onChange({ bedrooms: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} min={0} placeholder="0" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Baths</label>
+          <label className={labelCls}>Baths <span className="text-[#D03839]">*</span></label>
           <input type="number" value={data.bathrooms || ''} onChange={e => onChange({ bathrooms: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} step={0.5} min={0} placeholder="0" className={inputCls} />
         </div>
         <div>
-          <label className={labelCls}>Sq Ft</label>
+          <label className={labelCls}>Sq Ft <span className="text-[#D03839]">*</span></label>
           <input type="number" value={data.floor_area || ''} onChange={e => onChange({ floor_area: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} min={0} placeholder="0" className={inputCls} />
         </div>
       </div>
@@ -237,10 +249,10 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
     <div className="space-y-4">
 
       {/* Yellow note */}
-      <div className="flex items-start gap-2.5 bg-[#FFFBEB] border border-[#FDE68A] rounded-lg px-4 py-3">
-        <span className="text-[16px] leading-none mt-0.5">💡</span>
+      <div className="flex items-start gap-2.5 bg-[#FFFBEB] border border-[#FDE68A] rounded px-4 py-3">
+        <svg className="w-4 h-4 text-[#92400E] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
         <p className="text-[13px] text-[#92400E]">
-          <span className="font-semibold">Tip:</span> Click the <Star className="inline w-3 h-3 mx-0.5 text-[#92400E]" fill="currentColor" /> star on any photo to set it as the <span className="font-semibold">thumbnail</span> shown in search results.
+          <span className="font-semibold">Tip:</span> Click the <Star className="inline w-3 h-3 mx-0.5 text-[#92400E]" fill="currentColor" /> star on any photo to set it as the <span className="font-semibold">thumbnail</span> shown in search results. At least 1 photo is required.
         </p>
       </div>
 
@@ -248,14 +260,14 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
       <label
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
-        className="flex flex-col items-center justify-center border-2 border-dashed border-[#E8E8E4] rounded-xl p-8 text-center hover:border-[#1A1816] hover:bg-[#FAFAF8] transition-all cursor-pointer"
+        className="flex flex-col items-center justify-center border-2 border-dashed border-[#E8E8E4] rounded p-8 text-center hover:border-[#D03839] hover:bg-[#FAFAF8] transition-all cursor-pointer"
       >
-        <div className="w-12 h-12 bg-[#F3F3F0] rounded-full flex items-center justify-center mb-3">
+        <div className="w-12 h-12 bg-[#F3F3F0] rounded flex items-center justify-center mb-3">
           <Upload className="w-5 h-5 text-[#737370]" />
         </div>
         <p className="text-[14px] font-medium text-[#1A1816] mb-1">Drag & drop photos here</p>
         <p className="text-[13px] text-[#A8A8A4] mb-4">PNG, JPG up to 10MB each</p>
-        <span className="inline-flex h-[38px] px-5 items-center bg-[#1A1816] text-white text-[13px] font-semibold rounded-lg hover:bg-[#2A2825] transition-colors pointer-events-none">
+        <span className="inline-flex h-[38px] px-5 items-center bg-[#1A1816] text-white text-[13px] font-semibold rounded hover:bg-[#2A2825] transition-colors pointer-events-none">
           Browse files
         </span>
         <input
@@ -281,7 +293,7 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
             {photos.map((photo, idx) => {
               const src = photo.preview_url || photo.image_url
               return (
-                <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-[#F3F3F0] border border-[#E8E8E4]">
+                <div key={idx} className="relative group aspect-square rounded overflow-hidden bg-[#F3F3F0] border border-[#E8E8E4]">
                   {src && <img src={src} alt="" className="w-full h-full object-cover" />}
 
                   {/* Upload / convert spinner overlay */}
@@ -328,7 +340,101 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
   )
 }
 
-// ─── Step 3: Details ───────────────────────────────────────────────────
+// ─── Step 3: Seller Type ───────────────────────────────────────────────
+function StepSellerType({ data, onChange }) {
+  const [contractUploading, setContractUploading] = useState(false)
+
+  const handleContractUpload = async (file) => {
+    setContractUploading(true)
+    try {
+      const path = `contracts/${Date.now()}-${file.name}`
+      const { error } = await supabaseMarketplace.storage.from('scraperpropertyphotos').upload(path, file)
+      if (!error) {
+        const { data: urlData } = supabaseMarketplace.storage.from('scraperpropertyphotos').getPublicUrl(path)
+        onChange({ contract_url: urlData.publicUrl })
+      }
+    } catch {}
+    setContractUploading(false)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Are you the owner or a wholesaler? <span className="text-[#D03839]">*</span></p>
+        <p className="text-[13px] text-[#737370] mb-4">This helps us verify your listing and protect buyers.</p>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => onChange({ seller_type: 'owner', contract_url: null })}
+            className={`flex flex-col items-center gap-3 p-5 border-2 rounded text-center transition-all ${data.seller_type === 'owner' ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+          >
+            <div className={`w-12 h-12 rounded flex items-center justify-center ${data.seller_type === 'owner' ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+              <Home className={`w-6 h-6 ${data.seller_type === 'owner' ? 'text-white' : 'text-[#737370]'}`} />
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-[#1A1816]">I&apos;m the Owner</p>
+              <p className="text-[12px] text-[#737370] mt-0.5">I own this property directly</p>
+            </div>
+            {data.seller_type === 'owner' && (
+              <div className="w-5 h-5 rounded-full bg-[#D03839] flex items-center justify-center">
+                <Check className="w-3 h-3 text-white" />
+              </div>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onChange({ seller_type: 'wholesaler' })}
+            className={`flex flex-col items-center gap-3 p-5 border-2 rounded text-center transition-all ${data.seller_type === 'wholesaler' ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+          >
+            <div className={`w-12 h-12 rounded flex items-center justify-center ${data.seller_type === 'wholesaler' ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+              <FileText className={`w-6 h-6 ${data.seller_type === 'wholesaler' ? 'text-white' : 'text-[#737370]'}`} />
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-[#1A1816]">I&apos;m a Wholesaler</p>
+              <p className="text-[12px] text-[#737370] mt-0.5">I have a contract on this property</p>
+            </div>
+            {data.seller_type === 'wholesaler' && (
+              <div className="w-5 h-5 rounded-full bg-[#D03839] flex items-center justify-center">
+                <Check className="w-3 h-3 text-white" />
+              </div>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {data.seller_type === 'wholesaler' && (
+        <div>
+          <label className={labelCls}>Purchase Contract <span className="text-[#D03839]">*</span></label>
+          <p className="text-[12px] text-[#737370] mb-2">As a wholesaler, you must upload a copy of your executed purchase contract to proceed.</p>
+          {data.contract_url ? (
+            <div className="flex items-center gap-3 p-3 bg-[#E4F5EC] border border-[#B6E4CE] rounded text-[13px]">
+              <div className="w-7 h-7 bg-[#0F6E56] rounded-full flex items-center justify-center flex-shrink-0">
+                <Check className="w-3.5 h-3.5 text-white" />
+              </div>
+              <span className="text-[#0F6E56] font-medium flex-1">Contract uploaded</span>
+              <button onClick={() => onChange({ contract_url: null })} className="text-[#D03839] text-[12px] font-medium hover:underline">Remove</button>
+            </div>
+          ) : (
+            <label className="cursor-pointer flex items-center gap-3 h-[42px] px-4 border border-dashed border-[#E8E8E4] rounded text-[13px] text-[#737370] hover:border-[#D03839] hover:text-[#1A1816] transition-colors">
+              <FileText className="w-4 h-4 flex-shrink-0" />
+              {contractUploading ? 'Uploading...' : 'Upload PDF or DOC'}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={e => e.target.files[0] && handleContractUpload(e.target.files[0])}
+                disabled={contractUploading}
+              />
+            </label>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Step 4: Details ───────────────────────────────────────────────────
 function StepDetails({ data, onChange }) {
   const [inspectionUploading, setInspectionUploading] = useState(false)
 
@@ -354,7 +460,7 @@ function StepDetails({ data, onChange }) {
           onChange={e => onChange({ description: e.target.value })}
           placeholder="Describe the property, its features, condition, and unique selling points..."
           rows={5}
-          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors resize-none"
+          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none"
         />
       </div>
       <div>
@@ -364,7 +470,7 @@ function StepDetails({ data, onChange }) {
           onChange={e => onChange({ repairs: e.target.value })}
           placeholder="Detail repairs needed, recent renovations, or planned improvements..."
           rows={4}
-          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors resize-none"
+          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none"
         />
       </div>
       <div>
@@ -372,7 +478,7 @@ function StepDetails({ data, onChange }) {
           Inspection Report <span className="text-[#A8A8A4] font-normal ml-1">(optional)</span>
         </label>
         {data.inspection_report_url ? (
-          <div className="flex items-center gap-3 p-3 bg-[#E4F5EC] border border-[#B6E4CE] rounded-lg text-[13px]">
+          <div className="flex items-center gap-3 p-3 bg-[#E4F5EC] border border-[#B6E4CE] rounded text-[13px]">
             <div className="w-7 h-7 bg-[#0F6E56] rounded-full flex items-center justify-center flex-shrink-0">
               <Check className="w-3.5 h-3.5 text-white" />
             </div>
@@ -380,7 +486,7 @@ function StepDetails({ data, onChange }) {
             <button onClick={() => onChange({ inspection_report_url: null })} className="text-[#D03839] text-[12px] font-medium hover:underline">Remove</button>
           </div>
         ) : (
-          <label className="cursor-pointer flex items-center gap-3 h-[42px] px-4 border border-dashed border-[#E8E8E4] rounded-lg text-[13px] text-[#737370] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors">
+          <label className="cursor-pointer flex items-center gap-3 h-[42px] px-4 border border-dashed border-[#E8E8E4] rounded text-[13px] text-[#737370] hover:border-[#D03839] hover:text-[#1A1816] transition-colors">
             <FileText className="w-4 h-4 flex-shrink-0" />
             {inspectionUploading ? 'Uploading...' : 'Upload PDF or DOC'}
             <input
@@ -397,8 +503,8 @@ function StepDetails({ data, onChange }) {
   )
 }
 
-// ─── Step 4: Payment ───────────────────────────────────────────────────
-function CheckoutForm({ formData, photos, user, onSuccess }) {
+// ─── Step 5: Payment ───────────────────────────────────────────────────
+function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSuccess }) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
@@ -423,7 +529,13 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
         const res = await fetch('/api/buyer/listings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-          body: JSON.stringify({ ...formData, stripe_payment_intent_id: paymentIntent.id, amount: 2900 }),
+          body: JSON.stringify({
+            ...formData,
+            stripe_payment_intent_id: paymentIntent.id,
+            amount: totalCents,
+            add_ons: selectedAddOns,
+            status: 'under_review',
+          }),
         })
         const data = await res.json()
         if (!data.success) {
@@ -439,11 +551,7 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
             image_key: p.image_key || null,
             sort_order: i,
           }))
-          const { error: photoError } = await supabaseMarketplace.from('property_images').insert(photoRows)
-          if (photoError) {
-            // Listing exists — don't block success, but log it
-            console.error('[Photos] Insert failed:', photoError.message)
-          }
+          await supabaseMarketplace.from('property_images').insert(photoRows)
         }
         sessionStorage.removeItem(SESSION_KEY)
         onSuccess()
@@ -458,17 +566,17 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
     <form onSubmit={handlePay} className="space-y-5">
       <PaymentElement />
       {error && (
-        <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded-lg text-[13px] text-[#D03839]">{error}</div>
+        <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{error}</div>
       )}
       <button
         type="submit"
         disabled={!stripe || processing}
-        className="w-full h-[46px] bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full h-[48px] bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] active:scale-[0.98] text-white text-[15px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {processing ? (
           <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Processing...</>
         ) : (
-          <><DollarSign className="w-4 h-4" />Pay $29 & Publish</>
+          <>Confirm and Publish</>
         )}
       </button>
     </form>
@@ -478,74 +586,169 @@ function CheckoutForm({ formData, photos, user, onSuccess }) {
 const SESSION_KEY = 'deelmap_listing_client_secret'
 
 function StepPayment({ formData, photos, user, onSuccess }) {
+  const [selectedAddOns, setSelectedAddOns] = useState([])
   const [clientSecret, setClientSecret] = useState(null)
-  const [loadingSecret, setLoadingSecret] = useState(true)
+  const [loadingSecret, setLoadingSecret] = useState(false)
   const [secretError, setSecretError] = useState(null)
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
 
-  useEffect(() => {
-    // Reuse existing PaymentIntent if user navigated back and returned
-    const cached = sessionStorage.getItem(SESSION_KEY)
-    if (cached) {
-      setClientSecret(cached)
-      setLoadingSecret(false)
-      return
+  const BASE_PRICE = 2900 // $29.00 in cents
+  const addOnTotal = selectedAddOns.reduce((sum, id) => {
+    const addon = ADD_ONS.find(a => a.id === id)
+    return sum + (addon?.price || 0)
+  }, 0)
+  const totalCents = BASE_PRICE + addOnTotal
+
+  const toggleAddOn = (id) => {
+    setSelectedAddOns(prev =>
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    )
+    // Reset payment form if add-ons change after proceeding
+    if (showPaymentForm) {
+      setShowPaymentForm(false)
+      setClientSecret(null)
+      sessionStorage.removeItem(SESSION_KEY)
     }
+  }
 
-    fetch('/api/buyer/listings/payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-      body: JSON.stringify({ title: formData.title, formData }),
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (d.clientSecret) {
-          sessionStorage.setItem(SESSION_KEY, d.clientSecret)
-          setClientSecret(d.clientSecret)
-        } else {
-          setSecretError(d.error || 'Failed to initialize payment')
-        }
+  const proceedToPayment = async () => {
+    setLoadingSecret(true)
+    setSecretError(null)
+    try {
+      const res = await fetch('/api/buyer/listings/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        body: JSON.stringify({ title: formData.title, formData, amount: totalCents }),
       })
-      .catch(() => setSecretError('Failed to initialize payment'))
-      .finally(() => setLoadingSecret(false))
-  }, [])
-
-  if (loadingSecret) return (
-    <div className="flex items-center justify-center py-12">
-      <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#E8E8E4] border-t-[#D03839]" />
-    </div>
-  )
-
-  if (secretError) return (
-    <div className="p-4 bg-[#FEF0EF] border border-[#F5C0BF] rounded-lg text-[13px] text-[#D03839] text-center">{secretError}</div>
-  )
+      const d = await res.json()
+      if (d.clientSecret) {
+        sessionStorage.setItem(SESSION_KEY, d.clientSecret)
+        setClientSecret(d.clientSecret)
+        setShowPaymentForm(true)
+      } else {
+        setSecretError(d.error || 'Failed to initialize payment')
+      }
+    } catch {
+      setSecretError('Failed to initialize payment')
+    }
+    setLoadingSecret(false)
+  }
 
   return (
     <div className="space-y-5">
-      {/* Summary card */}
-      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded-xl p-4">
-        <p className="text-[12px] font-semibold text-[#A8A8A4] uppercase tracking-wide mb-3">Listing Summary</p>
-        <div className="space-y-1.5 mb-4">
-          <p className="text-[14px] font-semibold text-[#1A1816]">{formData.title}</p>
-          <p className="text-[13px] text-[#737370]">{formData.address}</p>
-          {formData.price && (
-            <p className="text-[13px] text-[#737370]">${Number(formData.price).toLocaleString()}</p>
-          )}
-          <p className="text-[13px] text-[#737370]">{photos.length} photo{photos.length !== 1 ? 's' : ''}</p>
-        </div>
-        <div className="pt-3 border-t border-[#E8E8E4] flex justify-between items-center">
-          <span className="text-[13px] font-medium text-[#1A1816]">One-time listing fee</span>
-          <span className="text-[16px] font-bold text-[#1A1816]">$29</span>
-        </div>
-      </div>
 
-      {stripePromise && clientSecret ? (
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <CheckoutForm formData={formData} photos={photos} user={user} onSuccess={onSuccess} />
-        </Elements>
-      ) : (
-        <div className="p-4 bg-[#FEF3E2] border border-[#F5D9A0] rounded-lg text-[13px] text-[#B5620A] text-center">
-          Stripe is not configured. Add <code className="font-mono bg-[#FEF0D4] px-1 rounded">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to .env.local
+      {/* Payment card / Stripe form */}
+      {showPaymentForm && clientSecret ? (
+        <div className="space-y-5">
+          <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4">
+            <p className="text-[12px] font-semibold text-[#A8A8A4] uppercase tracking-wide mb-1">Payment</p>
+            <p className="text-[13px] text-[#737370]">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span></p>
+          </div>
+          {stripePromise ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm
+                formData={formData}
+                photos={photos}
+                user={user}
+                selectedAddOns={selectedAddOns}
+                totalCents={totalCents}
+                onSuccess={onSuccess}
+              />
+            </Elements>
+          ) : (
+            <div className="p-4 bg-[#FEF3E2] border border-[#F5D9A0] rounded text-[13px] text-[#B5620A] text-center">
+              Stripe is not configured. Add <code className="font-mono bg-[#FEF0D4] px-1 rounded">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to .env.local
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => { setShowPaymentForm(false); setClientSecret(null); sessionStorage.removeItem(SESSION_KEY) }}
+            className="w-full text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors text-center"
+          >
+            ← Back to add-ons
+          </button>
         </div>
+      ) : (
+        <>
+          {/* Add-ons */}
+          <div>
+            <p className="text-[13px] font-semibold text-[#1A1816] mb-1">Boost your listing <span className="text-[12px] font-normal text-[#737370]">(optional)</span></p>
+            <p className="text-[12px] text-[#737370] mb-3">Add extras to get more visibility and close faster.</p>
+            <div className="space-y-2">
+              {ADD_ONS.map(({ id, label, desc, price, icon: Icon }) => {
+                const selected = selectedAddOns.includes(id)
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggleAddOn(id)}
+                    className={`w-full flex items-center gap-3 p-3.5 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+                  >
+                    <div className={`w-9 h-9 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+                      <Icon className={`w-4 h-4 ${selected ? 'text-white' : 'text-[#737370]'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
+                      <p className="text-[12px] text-[#737370]">{desc}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-[13px] font-bold text-[#1A1816]">+${(price / 100).toFixed(2)}</span>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
+                        {selected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Listing summary */}
+          <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4">
+            <p className="text-[12px] font-semibold text-[#A8A8A4] uppercase tracking-wide mb-3">Order Summary</p>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-[13px]">
+                <span className="text-[#444441]">Pay Per Listing (30 days)</span>
+                <span className="font-medium text-[#1A1816]">$29.00</span>
+              </div>
+              {selectedAddOns.map(id => {
+                const addon = ADD_ONS.find(a => a.id === id)
+                if (!addon) return null
+                return (
+                  <div key={id} className="flex justify-between text-[13px]">
+                    <span className="text-[#444441]">{addon.label}</span>
+                    <span className="font-medium text-[#1A1816]">+${(addon.price / 100).toFixed(2)}</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="pt-3 border-t border-[#E8E8E4] flex justify-between items-center">
+              <span className="text-[14px] font-semibold text-[#1A1816]">Total</span>
+              <span className="text-[18px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
+            </div>
+            <div className="mt-2 text-[12px] text-[#737370]">
+              <span className="font-medium text-[#1A1816]">{formData.title}</span>
+              {formData.address && <span> · {formData.address}</span>}
+            </div>
+          </div>
+
+          {secretError && (
+            <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{secretError}</div>
+          )}
+
+          <button
+            type="button"
+            onClick={proceedToPayment}
+            disabled={loadingSecret}
+            className="w-full h-[48px] bg-[#D03839] hover:bg-[#E0493B] active:scale-[0.98] text-white text-[15px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loadingSecret ? (
+              <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Preparing payment...</>
+            ) : (
+              <>Proceed to Payment — ${(totalCents / 100).toFixed(2)}</>
+            )}
+          </button>
+        </>
       )}
     </div>
   )
@@ -572,6 +775,8 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
     description:          existing?.description || '',
     repairs:              existing?.repairs || '',
     inspection_report_url: existing?.inspection_report_url || null,
+    seller_type:          existing?.seller_type || '',
+    contract_url:         existing?.contract_url || null,
   })
   const [photos, setPhotos] = useState(() => {
     const sorted = (existing?.property_images || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -582,8 +787,20 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
 
   const update = (fields) => setFormData(prev => ({ ...prev, ...fields }))
   const canNext = () => {
-    if (step === 0) return !!(formData.title?.trim() && formData.address?.trim())
-    if (step === 1) return !photos.some(p => p.uploading)
+    if (step === 0) return !!(
+      formData.title?.trim() &&
+      formData.address?.trim() &&
+      formData.price &&
+      formData.property_type &&
+      formData.bedrooms !== '' &&
+      formData.bathrooms !== '' &&
+      formData.floor_area !== ''
+    )
+    if (step === 1) return photos.length > 0 && !photos.some(p => p.uploading)
+    if (step === 2 && !isEdit) return !!(
+      formData.seller_type &&
+      (formData.seller_type !== 'wholesaler' || formData.contract_url)
+    )
     return true
   }
 
@@ -618,11 +835,12 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
         <div className="w-16 h-16 bg-[#E4F5EC] rounded-full flex items-center justify-center mb-5">
           <Check className="w-8 h-8 text-[#0F6E56]" />
         </div>
-        <h1 className="text-[24px] font-bold text-[#1A1816] mb-2">Deal Published!</h1>
-        <p className="text-[15px] text-[#737370] mb-8 max-w-sm">Your listing is now live on the marketplace and visible to buyers.</p>
+        <h1 className="text-[24px] font-bold text-[#1A1816] mb-2">Submitted for Review</h1>
+        <p className="text-[15px] text-[#737370] mb-2 max-w-sm">Your listing is being reviewed by our team. We check every photo and listing for quality before publishing.</p>
+        <p className="text-[13px] text-[#A8A8A4] mb-8 max-w-sm">You&apos;ll be notified once your listing is approved and goes live on the marketplace.</p>
         <button
           onClick={onSuccess}
-          className="h-[44px] px-8 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors"
+          className="h-[44px] px-8 bg-[#D03839] hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-colors"
         >
           View My Listings
         </button>
@@ -653,7 +871,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-[#E8E8E4] rounded-xl p-6 lg:p-8">
+        <div className="bg-white border border-[#E8E8E4] rounded p-6 lg:p-8">
 
           {/* Step indicator */}
           <StepIndicator steps={stepsToShow} current={step} />
@@ -662,19 +880,20 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
           <div className="mb-8">
             {step === 0 && <StepBasicInfo data={formData} onChange={update} />}
             {step === 1 && <StepPhotos photos={photos} onPhotosChange={setPhotos} userId={user?.id} />}
-            {step === 2 && <StepDetails data={formData} onChange={update} />}
-            {step === 3 && !isEdit && (
+            {step === 2 && !isEdit && <StepSellerType data={formData} onChange={update} />}
+            {((step === 3 && !isEdit) || (step === 2 && isEdit)) && <StepDetails data={formData} onChange={update} />}
+            {step === 4 && !isEdit && (
               <StepPayment formData={formData} photos={photos} user={user} onSuccess={() => setDone(true)} />
             )}
           </div>
 
           {/* Navigation — hidden on payment step */}
-          {!(step === 3 && !isEdit) && (
+          {!(step === 4 && !isEdit) && (
             <div className="flex gap-3 pt-2 border-t border-[#F3F3F0]">
               {step > 0 && (
                 <button
                   onClick={() => setStep(s => s - 1)}
-                  className="h-[42px] px-5 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#1A1816] hover:border-[#1A1816] transition-colors"
+                  className="h-[42px] px-5 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#1A1816] hover:border-[#1A1816] transition-colors"
                 >
                   Back
                 </button>
@@ -683,7 +902,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
                 <button
                   onClick={() => setStep(s => s + 1)}
                   disabled={!canNext()}
-                  className="flex-1 h-[42px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded-lg transition-colors disabled:opacity-40"
+                  className="flex-1 h-[42px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-40"
                 >
                   Continue
                 </button>
@@ -691,7 +910,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
                 <button
                   onClick={handleEditSave}
                   disabled={saving}
-                  className="flex-1 h-[42px] bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 h-[42px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>

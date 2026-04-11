@@ -20,6 +20,8 @@ export default function LocationAutocomplete({
   onChange,
   onSelect,
   onSubmit,
+  onFocus,
+  onBlur,
   placeholder = 'Search markets, cities, or ZIP codes',
   inputClassName = '',
   buttonClassName = '',
@@ -58,16 +60,22 @@ export default function LocationAutocomplete({
       return
     }
     autocompleteService.current.getPlacePredictions(
-      { input, types: ['(cities)'], componentRestrictions: { country: 'us' } },
+      { input, types: ['(regions)'], componentRestrictions: { country: 'us' } },
       (predictions, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
           const results = predictions.slice(0, 6).map((p) => {
-            // Extract city and state from structured_formatting or description
             const terms = p.terms || []
+            const types = p.types || []
+            // State-level result: administrative_area_level_1
+            if (types.includes('administrative_area_level_1') || terms.length === 1) {
+              const state = terms[0]?.value || ''
+              return { city: '', state, label: state, placeId: p.place_id, isState: true }
+            }
+            // City result
             const city = terms[0]?.value || ''
             const state = terms[1]?.value || ''
             const label = state ? `${city}, ${state}` : city
-            return { city, state, label, placeId: p.place_id }
+            return { city, state, label, placeId: p.place_id, isState: false }
           })
           setSuggestions(results)
           setOpen(true)
@@ -118,7 +126,8 @@ export default function LocationAutocomplete({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
+        onFocus={() => { if (suggestions.length > 0) setOpen(true); onFocus?.() }}
+        onBlur={() => onBlur?.()}
         style={inputStyle}
         className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
         autoComplete="off"

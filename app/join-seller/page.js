@@ -4,211 +4,10 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
-import { ChevronDown, ChevronUp, Check, BadgeCheck, Rocket, TrendingUp, ShieldCheck, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Check, BadgeCheck, Rocket, TrendingUp, ShieldCheck } from 'lucide-react'
 
 function openAuth(step) {
   window.dispatchEvent(new CustomEvent('showAuth', { detail: { step, role: 'seller' } }))
-}
-
-const PROPERTY_TYPE_OPTIONS = [
-  { value: 'single-family', label: 'Single-Family' },
-  { value: 'multi-family', label: 'Multi-Family' },
-  { value: 'commercial', label: 'Commercial' },
-  { value: 'land', label: 'Land' },
-]
-
-function formatPhone(value) {
-  const d = value.replace(/\D/g, '')
-  if (d.length <= 3) return d
-  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`
-}
-
-function SellerApplicationModal({ onClose }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [formData, setFormData] = useState({
-    businessName: '', contactPersonName: '', email: '', phone: '',
-    businessType: 'individual', dealsPerMonth: '1-2', primaryMarkets: '',
-    propertyTypes: [], website: '', linkedin: '', description: '',
-  })
-
-  const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }))
-
-  const togglePropertyType = (val) => {
-    set('propertyTypes', formData.propertyTypes.includes(val)
-      ? formData.propertyTypes.filter(t => t !== val)
-      : [...formData.propertyTypes, val])
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (formData.propertyTypes.length === 0) { setError('Please select at least one property type'); return }
-    if (formData.description.length > 300) { setError('Description must be 300 characters or less'); return }
-    setLoading(true)
-    try {
-      const res = await fetch('/api/seller-applications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to submit application')
-      setSubmitted(true)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-8 pt-20 pb-8 bg-black/50 backdrop-blur-sm" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="relative bg-white rounded shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-8 py-5 flex items-center justify-between z-10">
-          <div>
-            <h2 className="text-[20px] font-bold text-[#1A1816]">Apply to Become a Seller</h2>
-            <p className="text-[13px] text-[#737370]">Complete the form to get started on Deelmap</p>
-          </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#737370] hover:text-[#1A1816] hover:border-[#1A1816] transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="px-8 py-6">
-          {submitted ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-[#DCFCE7] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-[#16A34A] stroke-[2.5]" />
-              </div>
-              <h3 className="text-[22px] font-bold text-[#1A1816] mb-2">Application Received!</h3>
-              <p className="text-[14px] text-[#737370] mb-2">Our team will review it within <strong className="text-[#1A1816]">24–48 hours</strong>.</p>
-              <p className="text-[14px] text-[#737370] mb-6">You'll receive an email at <strong className="text-[#1A1816]">{formData.email}</strong> once reviewed.</p>
-              <button onClick={onClose} className="h-11 px-6 bg-[#1A1816] text-white text-[14px] font-semibold rounded hover:bg-[#2C2A27] transition-colors">
-                Close
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-[#FEF0EF] border border-[#D03839] text-[#D03839] px-4 py-3 rounded-lg text-[13px]">{error}</div>
-              )}
-
-              {/* Business Information */}
-              <div>
-                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Business Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Business Name <span className="text-[#D03839]">*</span></label>
-                    <input required value={formData.businessName} onChange={e => set('businessName', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="Your Company Name" />
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Contact Person Name <span className="text-[#D03839]">*</span></label>
-                    <input required value={formData.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="John Doe" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Email Address <span className="text-[#D03839]">*</span></label>
-                      <input type="email" required value={formData.email} onChange={e => set('email', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="john@example.com" />
-                    </div>
-                    <div>
-                      <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Phone Number <span className="text-[#D03839]">*</span></label>
-                      <input type="tel" required value={formData.phone} onChange={e => set('phone', formatPhone(e.target.value))} maxLength={14} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="(555) 555-5555" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Experience & Supply */}
-              <div>
-                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Experience & Supply</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-2">Are you an individual or company? <span className="text-[#D03839]">*</span></label>
-                    <div className="flex gap-3">
-                      {['individual', 'company'].map(type => (
-                        <label key={type} className={`flex items-center gap-2 cursor-pointer border rounded-lg px-5 py-2.5 text-[13px] font-medium transition-colors ${formData.businessType === type ? 'border-[#1A1816] bg-[#FAFAF8] text-[#1A1816]' : 'border-[#E8E8E4] text-[#737370] hover:border-[#1A1816]'}`}>
-                          <input type="radio" name="businessType" value={type} checked={formData.businessType === type} onChange={() => set('businessType', type)} className="sr-only" />
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Deals sourced per month <span className="text-[#D03839]">*</span></label>
-                    <select value={formData.dealsPerMonth} onChange={e => set('dealsPerMonth', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] focus:border-[#1A1816] focus:outline-none transition-colors">
-                      <option value="1-2">1–2</option>
-                      <option value="3-5">3–5</option>
-                      <option value="6-10">6–10</option>
-                      <option value="10+">10+</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Market Information */}
-              <div>
-                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Market Information</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Primary Markets (City, State) <span className="text-[#D03839]">*</span></label>
-                    <input required value={formData.primaryMarkets} onChange={e => set('primaryMarkets', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="e.g., Atlanta, GA; Dallas, TX" />
-                    <p className="text-[11px] text-[#A8A8A4] mt-1">Separate multiple markets with semicolons</p>
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-2">Property Types <span className="text-[#D03839]">*</span></label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {PROPERTY_TYPE_OPTIONS.map(opt => (
-                        <label key={opt.value} className={`flex items-center gap-2.5 cursor-pointer border rounded-lg px-4 py-3 text-[13px] font-medium transition-colors ${formData.propertyTypes.includes(opt.value) ? 'border-[#1A1816] bg-[#FAFAF8] text-[#1A1816]' : 'border-[#E8E8E4] text-[#737370] hover:border-[#1A1816]'}`}>
-                          <input type="checkbox" checked={formData.propertyTypes.includes(opt.value)} onChange={() => togglePropertyType(opt.value)} className="sr-only" />
-                          <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${formData.propertyTypes.includes(opt.value) ? 'bg-[#1A1816] border-[#1A1816]' : 'border-[#E8E8E4]'}`}>
-                            {formData.propertyTypes.includes(opt.value) && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
-                          </span>
-                          {opt.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Optional */}
-              <div>
-                <h3 className="text-[14px] font-bold text-[#1A1816] uppercase tracking-wide mb-4">Additional Information <span className="text-[#A8A8A4] font-normal normal-case">(optional)</span></h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Website</label>
-                    <input type="url" value={formData.website} onChange={e => set('website', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="https://yourwebsite.com" />
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">LinkedIn Profile</label>
-                    <input type="url" value={formData.linkedin} onChange={e => set('linkedin', e.target.value)} className="w-full h-11 px-4 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors" placeholder="https://linkedin.com/in/yourprofile" />
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#444441] mb-1.5">Tell us about your operation <span className="text-[#A8A8A4] font-normal">(max 300 chars)</span></label>
-                    <textarea value={formData.description} onChange={e => set('description', e.target.value)} maxLength={300} rows={3} className="w-full px-4 py-3 bg-white border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:border-[#1A1816] focus:outline-none transition-colors resize-none" placeholder="Brief description of your business and experience..." />
-                    <p className="text-[11px] text-[#A8A8A4] mt-1 text-right">{formData.description.length}/300</p>
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className="w-full h-12 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold text-[15px] rounded flex items-center justify-center transition-colors disabled:opacity-50">
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                    Submitting...
-                  </span>
-                ) : 'Submit Application'}
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 const FAQ_ITEMS = [
@@ -272,12 +71,29 @@ const WHY_FEATURES = [
   { Icon: ShieldCheck, title: 'Private communication', desc: 'Your contact details stay protected while communicating securely with buyers.' },
 ]
 
+const PricingCheckIcon = ({ filled }) => (
+  <span className={`flex-shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${filled ? 'bg-[#1A1816] border-[#1A1816]' : 'border-[#E8E8E4]'}`}>
+    {filled && (
+      <svg width="7" height="5" viewBox="0 0 7 5" fill="none">
+        <path d="M1 2.5L2.8 4.2L6 1" stroke="#FAFAF8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )}
+  </span>
+)
+
+const SELLER_PORTAL_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'
+
+function savePlanAndGo(plan, href) {
+  try { localStorage.setItem('deelmap_selected_plan', plan) } catch {}
+  window.location.href = href
+}
+
 export default function SellPage() {
   const { user } = useAuth()
   const [openFaq, setOpenFaq] = useState(null)
   const [activeStep, setActiveStep] = useState(1)
   const [dealIndex, setDealIndex] = useState(0)
-  const [showSellerForm, setShowSellerForm] = useState(false)
+  const [annual, setAnnual] = useState(false)
   const visibleDeals = CLOSED_DEALS.slice(dealIndex, dealIndex + 4)
 
   useEffect(() => {
@@ -289,7 +105,6 @@ export default function SellPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {showSellerForm && <SellerApplicationModal onClose={() => setShowSellerForm(false)} />}
       <Navbar />
 
       {/* Hero */}
@@ -594,6 +409,159 @@ export default function SellPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Plans */}
+      <section className="py-20 lg:py-28 bg-[#FAFAF8]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">PRICING</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-3">Simple, transparent pricing</h2>
+            <p className="text-[16px] text-[#737370] leading-relaxed">List a single deal or run your entire pipeline. No hidden fees.</p>
+          </div>
+
+          {/* Billing Toggle */}
+          <div className="flex flex-col items-center gap-2.5 mb-10">
+            <div className="flex items-center gap-3">
+              <span className={`text-sm transition-colors ${!annual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Monthly</span>
+              <button
+                onClick={() => setAnnual(v => !v)}
+                className={`relative w-10 h-[22px] rounded-full flex-shrink-0 transition-colors cursor-pointer border-none ${annual ? 'bg-[#D03839]' : 'bg-[#1A1816]'}`}
+              >
+                <span className={`absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-[#FAFAF8] transition-transform ${annual ? 'translate-x-[18px]' : 'translate-x-0'}`} />
+              </button>
+              <span className={`text-sm transition-colors ${annual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Annual</span>
+            </div>
+            <span className="text-[11px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2.5 py-0.5 rounded-full">Save 20% on annual subscription</span>
+          </div>
+
+          {/* Plan Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* Pay Per Listing */}
+            <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
+              <div className="min-h-[24px] mb-2.5" />
+              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">One-time</p>
+              <h3 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Pay Per Listing</h3>
+              <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
+                List a single property. No subscription required.
+              </p>
+              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1">
+                <sup className="text-lg font-normal align-super">$</sup>29
+              </div>
+              <p className="text-xs text-[#737370] mb-1">per listing · 30-day expiry</p>
+              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">Listing goes live after review</p>
+              <button
+                onClick={() => savePlanAndGo('pay-per-listing', '/buyer/listings?new=1')}
+                className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase border border-[#D4D4CF] text-[#1A1816] rounded hover:bg-[#F3F3F0] transition-colors mb-5"
+              >
+                Post a listing
+              </button>
+              <hr className="border-t border-[#E8E8E4] mb-4" />
+              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-2.5">Includes</p>
+              <ul className="flex flex-col gap-1.5">
+                {[
+                  [true, 'Basic seller dashboard'],
+                  [true, 'Buyer inquiry inbox'],
+                  [true, 'Photo uploads'],
+                  [true, 'Basic analytics'],
+                  [true, 'Standard support'],
+                  [false, 'Verified seller badge'],
+                  [false, 'Priority search placement'],
+                  [false, 'CRM features'],
+                ].map(([on, label], i) => (
+                  <li key={i} className={`flex items-start gap-2 text-xs leading-snug ${on ? 'text-[#1A1816]' : 'text-[#A8A8A4]'}`}>
+                    <PricingCheckIcon filled={on} />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Pro Seller */}
+            <div className="bg-white border-2 border-[#D03839] rounded p-5 flex flex-col">
+              <div className="min-h-[24px] mb-2.5">
+                <span className="inline-block text-[11px] font-semibold bg-[#FEF0EF] text-[#D03839] px-2.5 py-0.5 rounded">Most popular</span>
+              </div>
+              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">Subscription</p>
+              <h3 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Pro seller</h3>
+              <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
+                For active investors and wholesalers moving deals consistently.
+              </p>
+              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1">
+                <sup className="text-lg font-normal align-super">$</sup>{annual ? '948' : '99'}
+              </div>
+              <p className="text-xs text-[#737370] mb-1">{annual ? 'per year · billed annually' : 'per month'} · 10 listings included</p>
+              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $240 vs monthly · $79/mo' : '$19 per additional listing'}</p>
+              <button
+                onClick={() => savePlanAndGo('pro', `${SELLER_PORTAL_URL}/onboarding?plan=pro&billing=${annual ? 'annual' : 'monthly'}`)}
+                className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase bg-[#D03839] text-white rounded hover:bg-[#E0493B] active:bg-[#C73022] transition-colors mb-5"
+              >
+                Start free 7-day trial
+              </button>
+              <hr className="border-t border-[#E8E8E4] mb-4" />
+              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-2.5">Includes</p>
+              <ul className="flex flex-col gap-1.5">
+                {[
+                  [true, 'Verified seller badge'],
+                  [true, 'Advanced seller dashboard'],
+                  [true, 'Advanced analytics'],
+                  [true, 'Priority search placement'],
+                  [true, 'Priority support'],
+                  [true, '10 listings / month'],
+                  [false, 'CRM features'],
+                  [false, 'Team accounts'],
+                ].map(([on, label], i) => (
+                  <li key={i} className={`flex items-start gap-2 text-xs leading-snug ${on ? 'text-[#1A1816]' : 'text-[#A8A8A4]'}`}>
+                    <PricingCheckIcon filled={on} />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Enterprise */}
+            <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
+              <div className="min-h-[24px] mb-2.5" />
+              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">Subscription</p>
+              <h3 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Enterprise</h3>
+              <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
+                For acquisition teams running high-volume pipelines.
+              </p>
+              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1">
+                <sup className="text-lg font-normal align-super">$</sup>{annual ? '2,868' : '299'}
+              </div>
+              <p className="text-xs text-[#737370] mb-1">{annual ? 'per year · billed annually' : 'per month'} · unlimited listings</p>
+              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $720 vs monthly · $239/mo' : '\u00a0'}</p>
+              <button
+                onClick={() => savePlanAndGo('enterprise', `${SELLER_PORTAL_URL}/onboarding?plan=enterprise&billing=${annual ? 'annual' : 'monthly'}`)}
+                className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase border border-[#D4D4CF] text-[#1A1816] rounded hover:bg-[#F3F3F0] transition-colors mb-5"
+              >
+                Talk to sales
+              </button>
+              <hr className="border-t border-[#E8E8E4] mb-4" />
+              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-2.5">Includes</p>
+              <ul className="flex flex-col gap-1.5">
+                {[
+                  [true, 'Everything in Pro'],
+                  [true, 'Unlimited listings'],
+                  [true, 'Basic CRM features'],
+                  [true, 'Lead management tools'],
+                  [true, 'Team accounts'],
+                  [true, 'Custom branding'],
+                  [true, 'Dedicated account support'],
+                  [true, 'API access'],
+                ].map(([on, label], i) => (
+                  <li key={i} className={`flex items-start gap-2 text-xs leading-snug ${on ? 'text-[#1A1816]' : 'text-[#A8A8A4]'}`}>
+                    <PricingCheckIcon filled={on} />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
           </div>
         </div>
       </section>

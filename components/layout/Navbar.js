@@ -120,32 +120,30 @@ export function Navbar() {
   }
 
   const aboutDropdownItems = [
-    { label: 'About', href: '/our-story' },
-    { label: 'Contact us', href: '/contact' },
+    { label: 'About Us', href: '/our-story' },
     { label: 'Resources', href: '/resources' },
-    { label: 'Advertise with us', href: '/advertise' },
+    { label: 'Advertise', href: '/advertise' },
+    { label: 'Contact Us', href: '/contact' },
   ]
 
   const navItems = [
     { label: 'Buy', href: '/marketplace' },
     { label: 'Sell', href: '/join-seller' },
     { label: 'Finance', href: '/financing' },
-    { label: 'Pricing', href: '/pricing' },
-    { label: 'About us', href: '/our-story', hasDropdown: true },
+    { label: 'More', href: '/our-story', hasDropdown: true },
   ]
 
   const isActive = (href) => {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
-    if (href === '/pricing') return pathname === '/pricing'
     if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/resources' || pathname.startsWith('/resources/') || pathname === '/advertise'
     return false
   }
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-colors duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-white/60 backdrop-blur-md border-b border-white/20' : 'bg-white border-b border-[#E8E8E4]'}`}>
         <div className="w-full px-6 lg:px-10">
           <div className="flex items-center justify-between h-[80px]">
 
@@ -223,7 +221,7 @@ export function Navbar() {
                 <div className="flex items-center gap-3">
                   {/* Post a Deal */}
                   <Link
-                    href="/buyer/listings"
+                    href="/buyer/listings?new=1"
                     className="hidden sm:flex items-center gap-1.5 h-[36px] px-4 bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors"
                   >
                     + Post a Deal
@@ -245,7 +243,7 @@ export function Navbar() {
                     </button>
 
                     {notifOpen && (
-                      <div className="fixed top-[84px] left-3 right-3 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:mt-2 sm:w-[380px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
+                      <div className="fixed top-[84px] left-3 right-3 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:mt-2 sm:w-[380px] bg-white border border-[#E8E8E4] rounded shadow-xl z-[99999] overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
                           <span className="text-[14px] font-semibold text-[#1A1816]">Notifications</span>
                           {notifUnread > 0 && (
@@ -300,16 +298,16 @@ export function Navbar() {
               ) : (
                 <div className="hidden md:flex items-center gap-[10px]">
                   <button
-                    onClick={() => { setAuthInitialStep('signup'); setShowAuth(true) }}
+                    onClick={() => { setAuthInitialStep('login'); setShowAuth(true) }}
                     className="py-2 px-[18px] text-[14px] font-semibold text-[#1A1816] border border-[#D1D1CE] rounded hover:bg-[#FAFAF8] transition-colors"
                   >
-                    Sign up
+                    Login
                   </button>
                   <button
-                    onClick={() => { setAuthInitialStep('login'); setShowAuth(true) }}
+                    onClick={() => { setAuthInitialStep('signup'); setShowAuth(true) }}
                     className="py-2 px-[18px] text-[14px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors"
                   >
-                    Log in
+                    Create account
                   </button>
                 </div>
               )}
@@ -383,13 +381,13 @@ export function Navbar() {
                 </Link>
               ) : (
                 <div className="space-y-2">
-                  <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('signup'); setShowAuth(true) }}
-                    className="w-full h-11 text-[14px] font-semibold text-[#1A1816] border border-[#E8E8E4] rounded hover:bg-[#FAFAF8] transition-colors">
-                    Sign up
-                  </button>
                   <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('login'); setShowAuth(true) }}
+                    className="w-full h-11 text-[14px] font-semibold text-[#1A1816] border border-[#E8E8E4] rounded hover:bg-[#FAFAF8] transition-colors">
+                    Login
+                  </button>
+                  <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('signup'); setShowAuth(true) }}
                     className="w-full h-11 text-[14px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors">
-                    Log in
+                    Create account
                   </button>
                 </div>
               )}

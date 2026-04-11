@@ -28,8 +28,10 @@ export async function POST(request) {
       inspection_report_url: f.inspection_report_url || null,
     })
 
+    const amount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 2900, // $29.00 in cents
+      amount, // dynamic total (base $29 + any add-ons)
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: {

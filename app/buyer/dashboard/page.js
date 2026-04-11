@@ -259,7 +259,7 @@ export default function BuyerDashboard() {
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 top-full mt-2 w-[380px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-[380px] bg-white border border-[#E8E8E4] rounded shadow-xl z-[99999] overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
                     <span className="text-[14px] font-semibold text-[#1A1816]">Notifications</span>
                     {notifUnread > 0 && (
@@ -304,11 +304,20 @@ export default function BuyerDashboard() {
               )}
             </div>
             <Link
+              href="/buyer/listings?new=1"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#D03839] hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-colors duration-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Post a Deal
+            </Link>
+            <Link
               href="/marketplace"
               className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1816] text-white text-[14px] font-semibold rounded hover:bg-[#2a2826] transition-colors duration-200"
             >
               <Search className="w-4 h-4" />
-              Search deals
+              Browse Deals
             </Link>
           </div>
         </div>

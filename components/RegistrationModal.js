@@ -12,6 +12,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
     role: defaultRole,
     fullName: '',
     email: '',
+    phone: '',
     password: '',
     firstName: '',
     lastName: '',
@@ -32,7 +33,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
 
   const handleClose = () => {
     onClose()
-    setAuthData({ contact: '', role: defaultRole, fullName: '', email: '', password: '', firstName: '', lastName: '', otp: '', agreedToPrivacy: false })
+    setAuthData({ contact: '', role: defaultRole, fullName: '', email: '', phone: '', password: '', firstName: '', lastName: '', otp: '', agreedToPrivacy: false })
     setError('')
     setLoading(false)
     setShowPassword(false)
@@ -118,12 +119,19 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
       return
     }
 
+    const rawPhone = authData.phone.replace(/\D/g, '')
+    if (!rawPhone || rawPhone.length < 10) {
+      setError('Please enter a valid 10-digit phone number')
+      setLoading(false)
+      return
+    }
+
     const nameParts = (authData.fullName || '').trim().split(' ')
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
 
     try {
-      await sendOTP(authData.email, firstName, lastName, 'email', '')
+      await sendOTP(authData.email, firstName, lastName, 'email', authData.phone)
       setAuthData(prev => ({ ...prev, firstName, lastName }))
       setAuthStep('otp')
     } catch (err) {
@@ -143,7 +151,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
         password: authData.password,
         firstName: authData.firstName,
         lastName: authData.lastName,
-        phone: '',
+        phone: authData.phone,
         statesOfInterest: [],
       })
       handleClose()
@@ -210,7 +218,16 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                   Back to listings
                 </a>
               )}
-              <h2 className="text-[24px] font-semibold text-[#1A1816] mb-6">Welcome to DeelMap</h2>
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Log In</p>
+              <h2 className="text-[24px] font-semibold text-[#1A1816] mb-3">Welcome to DeelMap</h2>
+
+              {/* Always free for buyers */}
+              <div className="flex items-center gap-1.5 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] text-[12px] font-medium px-3 py-2 rounded mb-5">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Always free for buyers — we never share your information
+              </div>
 
               <form onSubmit={handleLoginContinue} className="space-y-5">
                 <div>
@@ -266,6 +283,14 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                 </button>
               </form>
 
+              {/* Create account CTA — moved directly under form */}
+              <p className="text-[13px] text-center mt-4 text-[#737370]">
+                New to DeelMap?{' '}
+                <span onClick={() => { setError(''); setAuthStep('signup') }} className="cursor-pointer font-semibold underline" style={{ color: '#D03839' }}>
+                  Create an account
+                </span>
+              </p>
+
               {authData.role === 'buyer' && (
                 <>
                   <div className="flex items-center gap-3 my-5">
@@ -305,13 +330,6 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
 
               <p className="text-[11px] text-[#737370] text-center mt-5 leading-relaxed">
                 By creating an account, you agree to DeelMap&apos;s&nbsp;<a href="/terms-of-use" target="_blank" className="text-[#D03839] hover:underline">Terms of Service</a> and <a href="/privacy-policy" target="_blank" className="text-[#D03839] hover:underline">Privacy Policy</a>.
-              </p>
-
-              <p className="text-[13px] text-center mt-4 text-[#737370]">
-                New to DeelMap?{' '}
-                <span onClick={() => { setError(''); setAuthStep('signup') }} className="cursor-pointer font-semibold underline" style={{ color: '#D03839' }}>
-                  Create an account
-                </span>
               </p>
             </div>
           )}
@@ -379,7 +397,15 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
           {/* ── Signup: Create an account ── */}
           {authStep === 'signup' && (
             <div>
-              <h2 className="text-[24px] font-bold text-[#1A1816] mb-6">Create an account</h2>
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Create Account</p>
+              <h2 className="text-[24px] font-bold text-[#1A1816] mb-3">Join DeelMap</h2>
+              {/* Always free for buyers */}
+              <div className="flex items-center gap-1.5 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] text-[12px] font-medium px-3 py-2 rounded mb-5">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Always free for buyers — we never share your information
+              </div>
 
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
@@ -406,6 +432,28 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                     value={authData.email}
                     onChange={(e) => setAuthData(prev => ({ ...prev, email: e.target.value }))}
                     required
+                    className="w-full h-12 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
+                    Phone Number <span className="text-[#D03839]">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="(555) 555-5555"
+                    value={authData.phone}
+                    onChange={(e) => {
+                      const d = e.target.value.replace(/\D/g, '')
+                      let formatted = d
+                      if (d.length <= 3) formatted = d
+                      else if (d.length <= 6) formatted = `(${d.slice(0,3)}) ${d.slice(3)}`
+                      else formatted = `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6,10)}`
+                      setAuthData(prev => ({ ...prev, phone: formatted }))
+                    }}
+                    required
+                    maxLength={14}
                     className="w-full h-12 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors"
                   />
                 </div>
