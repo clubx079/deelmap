@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { FilterBar } from '@/components/property/FilterBar'
 import { PropertyMap } from '@/components/property/PropertyMap'
@@ -15,6 +15,7 @@ function DealsPageInner() {
   const { user } = useAuth()
   const { loadFavorites } = useFavorites()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [mapPins, setMapPins] = useState([])
 
   const [filters, setFilters] = useState({
@@ -241,7 +242,7 @@ const LoadingState = () => (
         filters={filters}
         onFiltersChange={handleFiltersChange}
         searchQuery={searchQuery}
-        onSearchChange={(val) => { setSearchQuery(val); if (!val) setSearchLocation(null) }}
+        onSearchChange={(val) => { setSearchQuery(val); if (!val) { setSearchLocation(null); router.replace('/marketplace') } }}
         onLocationSelect={setSearchLocation}
       />
 

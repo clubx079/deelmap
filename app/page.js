@@ -146,7 +146,10 @@ export default function HomePage() {
               </p>
 
               {/* Search bar */}
-              <div className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[580px] transition-all duration-200"
+              <div
+                onFocus={() => setHeroFocused(true)}
+                onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setHeroFocused(false) }}
+                className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[580px] transition-all duration-200"
                 style={{
                   border: heroFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
                   boxShadow: heroFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
@@ -154,8 +157,6 @@ export default function HomePage() {
                 <LocationAutocomplete
                   value={heroSearch}
                   onChange={setHeroSearch}
-                  onFocus={() => setHeroFocused(true)}
-                  onBlur={() => setHeroFocused(false)}
                   onSelect={({ label }) => {
                     setHeroSearch(label)
                     window.location.href = `/marketplace?search=${encodeURIComponent(label)}`

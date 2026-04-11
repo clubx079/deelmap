@@ -1,7 +1,7 @@
 'use client'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { AuthModal } from '@/components/AuthModal'
+import { RegistrationModal } from '@/components/RegistrationModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect, useRef } from 'react'
 import { supabaseMarketplace } from '@/lib/supabase'
@@ -220,7 +220,7 @@ export default function FinancingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <AuthModal isOpen={showLoginModal} onClose={() => {}} hideClose={true} />
+      <RegistrationModal isOpen={showLoginModal} onClose={() => {}} preventClose={true} />
       <div className={showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}>
       <Navbar currentPage="financing" />
 
