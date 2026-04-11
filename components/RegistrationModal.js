@@ -40,16 +40,34 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
   }
 
   // Login: detect email vs phone and route accordingly
-  const handleLoginContinue = (e) => {
+  const handleLoginContinue = async (e) => {
     e.preventDefault()
     setError('')
     const contact = authData.contact.trim()
     if (!contact) { setError('Please enter your phone or email'); return }
-    if (contact.includes('@')) {
+    if (!contact.includes('@')) {
+      setError('Phone login coming soon. Please enter your email address.')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact, role: authData.role }),
+      })
+      const data = await res.json()
+      if (!data.exists) {
+        setError('No account found with this email. Please create an account.')
+        setLoading(false)
+        return
+      }
       setAuthData(prev => ({ ...prev, email: contact }))
       setAuthStep('login-password')
-    } else {
-      setError('Phone login coming soon. Please enter your email address.')
+    } catch {
+      setError('Unable to verify email. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -225,7 +243,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
               <form onSubmit={handleLoginContinue} className="space-y-5">
                 <div>
                   <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
-                    Details <span className="text-[#D03839]">*</span>
+                    Phone / Email <span className="text-[#D03839]">*</span>
                   </label>
                   <input
                     type="text"
