@@ -238,7 +238,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
               )}
               <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Log In</p>
               <h2 className="text-[24px] font-semibold text-[#1A1816] mb-1">Welcome to DeelMap</h2>
-              <p className="text-[13px] text-[#D03839] font-medium mb-5">Always free for buyers — we never share your information</p>
+              <p className="text-[13px] text-[#737370] mb-5">Always free for buyers — we never share your information</p>
 
               <form onSubmit={handleLoginContinue} className="space-y-5">
                 <div>
@@ -402,7 +402,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
             <div>
               <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Create Account</p>
               <h2 className="text-[24px] font-bold text-[#1A1816] mb-1">Join DeelMap</h2>
-              <p className="text-[13px] text-[#D03839] font-medium mb-5">Always free for buyers — we never share your information</p>
+              <p className="text-[13px] text-[#737370] mb-5">Always free for buyers — we never share your information</p>
 
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
