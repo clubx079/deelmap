@@ -219,15 +219,8 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                 </a>
               )}
               <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Log In</p>
-              <h2 className="text-[24px] font-semibold text-[#1A1816] mb-3">Welcome to DeelMap</h2>
-
-              {/* Always free for buyers */}
-              <div className="flex items-center gap-1.5 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] text-[12px] font-medium px-3 py-2 rounded mb-5">
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Always free for buyers — we never share your information
-              </div>
+              <h2 className="text-[24px] font-semibold text-[#1A1816] mb-1">Welcome to DeelMap</h2>
+              <p className="text-[13px] text-[#D03839] font-medium mb-5">Always free for buyers — we never share your information</p>
 
               <form onSubmit={handleLoginContinue} className="space-y-5">
                 <div>
@@ -242,6 +235,12 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                     required
                     className="w-full h-12 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors"
                   />
+                  <p className="text-[13px] mt-2 text-[#737370]">
+                    New to DeelMap?{' '}
+                    <span onClick={() => { setError(''); setAuthStep('signup') }} className="cursor-pointer font-semibold underline" style={{ color: '#D03839' }}>
+                      Create an account
+                    </span>
+                  </p>
                 </div>
 
                 <div>
@@ -282,14 +281,6 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                   {loading ? 'Please wait...' : 'Continue'}
                 </button>
               </form>
-
-              {/* Create account CTA — moved directly under form */}
-              <p className="text-[13px] text-center mt-4 text-[#737370]">
-                New to DeelMap?{' '}
-                <span onClick={() => { setError(''); setAuthStep('signup') }} className="cursor-pointer font-semibold underline" style={{ color: '#D03839' }}>
-                  Create an account
-                </span>
-              </p>
 
               {authData.role === 'buyer' && (
                 <>
@@ -385,12 +376,6 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                 </button>
               </form>
 
-              <p className="text-[13px] text-center mt-5 text-[#737370]">
-                New to DeelMap?{' '}
-                <span onClick={() => { setError(''); setAuthStep('signup') }} className="cursor-pointer font-semibold underline" style={{ color: '#D03839' }}>
-                  Create an account
-                </span>
-              </p>
             </div>
           )}
 
@@ -398,14 +383,8 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
           {authStep === 'signup' && (
             <div>
               <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Create Account</p>
-              <h2 className="text-[24px] font-bold text-[#1A1816] mb-3">Join DeelMap</h2>
-              {/* Always free for buyers */}
-              <div className="flex items-center gap-1.5 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] text-[12px] font-medium px-3 py-2 rounded mb-5">
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Always free for buyers — we never share your information
-              </div>
+              <h2 className="text-[24px] font-bold text-[#1A1816] mb-1">Join DeelMap</h2>
+              <p className="text-[13px] text-[#D03839] font-medium mb-5">Always free for buyers — we never share your information</p>
 
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
