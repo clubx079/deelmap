@@ -10,6 +10,32 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null
 
+// Compress image client-side before upload (max 1920px, 85% JPEG quality)
+async function compressImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1920
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX }
+        else { width = Math.round(width * MAX / height); height = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      URL.revokeObjectURL(url)
+      canvas.toBlob(blob => {
+        resolve(blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }) : file)
+      }, 'image/jpeg', 0.85)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
+}
+
 const PROPERTY_TYPES = [
   'Single Family', 'Multi-Family', 'Condo', 'Townhouse',
   'Apartment Building', 'Commercial', 'Land', 'Other'
@@ -206,14 +232,15 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
           if (!res.ok) throw new Error('HEIC conversion failed')
           const blob = await res.blob()
           uploadFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' })
-          // Show preview as soon as conversion is done
           onPhotosChange(prev => prev.map((p, idx) =>
             idx === baseIndex + i ? { ...p, preview_url: URL.createObjectURL(uploadFile), converting: false } : p
           ))
         }
 
-        const ext = (uploadFile.name.split('.').pop() || 'jpg').toLowerCase()
-        const imageKey = `manual/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        // Compress before upload
+        uploadFile = await compressImage(uploadFile)
+
+        const imageKey = `manual/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
         const { error } = await supabaseMarketplace.storage
           .from('scraperpropertyphotos')
           .upload(imageKey, uploadFile, { cacheControl: '3600', upsert: false })
