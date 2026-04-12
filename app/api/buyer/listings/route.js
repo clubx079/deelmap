@@ -18,7 +18,7 @@ export async function GET(request) {
 
     const { data, error } = await supabaseMarketplace
       .from('properties')
-      .select('id, slug, seo_title, address, state, latitude, longitude, price, property_type, bedrooms, bathrooms, floor_area, description, repairs, inspection_report_url, status, created_at, posted_by, property_images(image_url, image_key, sort_order)')
+      .select('id, slug, seo_title, address, city, state, zipcode, latitude, longitude, price, property_type, bedrooms, bathrooms, floor_area, description, repairs, inspection_report_url, seller_type, contract_url, status, created_at, posted_by, property_images(image_url, image_key, sort_order)')
       .eq('posted_by', userId)
       .order('created_at', { ascending: false })
 
@@ -74,7 +74,9 @@ export async function POST(request) {
         slug,
         seo_title: body.title || null,
         address: body.address,
+        city: body.city || null,
         state: body.state,
+        zipcode: body.zipcode || null,
         latitude: body.latitude,
         longitude: body.longitude,
         price: body.price,
@@ -85,6 +87,8 @@ export async function POST(request) {
         description: body.description,
         repairs: body.repairs,
         inspection_report_url: body.inspection_report_url || null,
+        seller_type: body.seller_type || null,
+        contract_url: body.contract_url || null,
         status: 'active',
         posted_by: userId,
       })
@@ -127,7 +131,9 @@ export async function PATCH(request) {
       .update({
         seo_title: fields.title || null,
         address: fields.address,
+        city: fields.city || null,
         state: fields.state,
+        zipcode: fields.zipcode || null,
         latitude: fields.latitude,
         longitude: fields.longitude,
         price: fields.price,
@@ -138,6 +144,8 @@ export async function PATCH(request) {
         description: fields.description,
         repairs: fields.repairs,
         inspection_report_url: fields.inspection_report_url || null,
+        seller_type: fields.seller_type || null,
+        contract_url: fields.contract_url || null,
       })
       .eq('id', id)
       .eq('posted_by', userId)

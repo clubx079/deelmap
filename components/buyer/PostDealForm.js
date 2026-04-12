@@ -531,7 +531,7 @@ function StepDetails({ data, onChange }) {
 }
 
 // ─── Step 5: Payment ───────────────────────────────────────────────────
-function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSuccess }) {
+function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSuccess, onBack }) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
@@ -591,7 +591,11 @@ function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSu
 
   return (
     <form onSubmit={handlePay} className="space-y-5">
-      <PaymentElement />
+      <div>
+        <p className="text-[15px] font-semibold text-[#1A1816] mb-1">Payment Details</p>
+        <p className="text-[13px] text-[#737370] mb-5">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span> upon submission.</p>
+        <PaymentElement />
+      </div>
       {error && (
         <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{error}</div>
       )}
@@ -603,8 +607,15 @@ function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSu
         {processing ? (
           <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Processing...</>
         ) : (
-          <>Confirm and Publish</>
+          <>Confirm and Publish — ${(totalCents / 100).toFixed(2)}</>
         )}
+      </button>
+      <button
+        type="button"
+        onClick={onBack}
+        className="w-full text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors text-center"
+      >
+        ← Back to add-ons
       </button>
     </form>
   )
@@ -619,7 +630,7 @@ function StepPayment({ formData, photos, user, onSuccess }) {
   const [secretError, setSecretError] = useState(null)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
 
-  const BASE_PRICE = 2900 // $29.00 in cents
+  const BASE_PRICE = 2900
   const addOnTotal = selectedAddOns.reduce((sum, id) => {
     const addon = ADD_ONS.find(a => a.id === id)
     return sum + (addon?.price || 0)
@@ -630,7 +641,6 @@ function StepPayment({ formData, photos, user, onSuccess }) {
     setSelectedAddOns(prev =>
       prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
     )
-    // Reset payment form if add-ons change after proceeding
     if (showPaymentForm) {
       setShowPaymentForm(false)
       setClientSecret(null)
@@ -661,17 +671,15 @@ function StepPayment({ formData, photos, user, onSuccess }) {
     setLoadingSecret(false)
   }
 
-  return (
-    <div className="space-y-5">
+  const featuredPhoto = photos.find(p => p.is_featured) || photos[0]
 
-      {/* Payment card / Stripe form */}
-      {showPaymentForm && clientSecret ? (
-        <div className="space-y-5">
-          <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4">
-            <p className="text-[12px] font-semibold text-[#A8A8A4] uppercase tracking-wide mb-1">Payment</p>
-            <p className="text-[13px] text-[#737370]">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span></p>
-          </div>
-          {stripePromise ? (
+  return (
+    <div className="grid grid-cols-[1fr_360px] gap-6 items-stretch">
+
+      {/* Left column — add-ons or payment form */}
+      <div>
+        {showPaymentForm && clientSecret ? (
+          stripePromise ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <CheckoutForm
                 formData={formData}
@@ -680,27 +688,18 @@ function StepPayment({ formData, photos, user, onSuccess }) {
                 selectedAddOns={selectedAddOns}
                 totalCents={totalCents}
                 onSuccess={onSuccess}
+                onBack={() => { setShowPaymentForm(false); setClientSecret(null); sessionStorage.removeItem(SESSION_KEY) }}
               />
             </Elements>
           ) : (
             <div className="p-4 bg-[#FEF3E2] border border-[#F5D9A0] rounded text-[13px] text-[#B5620A] text-center">
               Stripe is not configured. Add <code className="font-mono bg-[#FEF0D4] px-1 rounded">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to .env.local
             </div>
-          )}
-          <button
-            type="button"
-            onClick={() => { setShowPaymentForm(false); setClientSecret(null); sessionStorage.removeItem(SESSION_KEY) }}
-            className="w-full text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors text-center"
-          >
-            ← Back to add-ons
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Add-ons */}
+          )
+        ) : (
           <div>
-            <p className="text-[13px] font-semibold text-[#1A1816] mb-1">Boost your listing <span className="text-[12px] font-normal text-[#737370]">(optional)</span></p>
-            <p className="text-[12px] text-[#737370] mb-3">Add extras to get more visibility and close faster.</p>
+            <p className="text-[14px] font-semibold text-[#1A1816] mb-0.5">Boost your listing <span className="text-[12px] font-normal text-[#737370]">(optional)</span></p>
+            <p className="text-[12px] text-[#737370] mb-4">Add extras to get more visibility and close faster.</p>
             <div className="space-y-2">
               {ADD_ONS.map(({ id, label, desc, price, icon: Icon }) => {
                 const selected = selectedAddOns.includes(id)
@@ -709,10 +708,10 @@ function StepPayment({ formData, photos, user, onSuccess }) {
                     key={id}
                     type="button"
                     onClick={() => toggleAddOn(id)}
-                    className={`w-full flex items-center gap-3 p-3.5 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+                    className={`w-full flex items-center gap-4 p-[28px] border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
                   >
-                    <div className={`w-9 h-9 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
-                      <Icon className={`w-4 h-4 ${selected ? 'text-white' : 'text-[#737370]'}`} />
+                    <div className={`w-11 h-11 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+                      <Icon className={`w-5 h-5 ${selected ? 'text-white' : 'text-[#737370]'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
@@ -729,54 +728,95 @@ function StepPayment({ formData, photos, user, onSuccess }) {
               })}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Listing summary */}
-          <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4">
-            <p className="text-[12px] font-semibold text-[#A8A8A4] uppercase tracking-wide mb-3">Order Summary</p>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between text-[13px]">
-                <span className="text-[#444441]">Pay Per Listing (30 days)</span>
-                <span className="font-medium text-[#1A1816]">$29.00</span>
+      {/* Right column — sticky order summary */}
+      <div className="border border-[#E8E8E4] rounded overflow-hidden bg-white flex flex-col">
+
+        {/* Property preview */}
+        <div className="p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
+          <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Your Listing</p>
+          <div className="flex items-center gap-3">
+            {featuredPhoto ? (
+              <img
+                src={featuredPhoto.image_url || featuredPhoto.preview_url}
+                alt=""
+                className="w-14 h-14 rounded object-cover flex-shrink-0 border border-[#E8E8E4]"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded bg-[#F3F3F0] flex-shrink-0 flex items-center justify-center border border-[#E8E8E4]">
+                <Home className="w-6 h-6 text-[#A8A8A4]" />
               </div>
-              {selectedAddOns.map(id => {
-                const addon = ADD_ONS.find(a => a.id === id)
-                if (!addon) return null
-                return (
-                  <div key={id} className="flex justify-between text-[13px]">
-                    <span className="text-[#444441]">{addon.label}</span>
-                    <span className="font-medium text-[#1A1816]">+${(addon.price / 100).toFixed(2)}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <div className="pt-3 border-t border-[#E8E8E4] flex justify-between items-center">
-              <span className="text-[14px] font-semibold text-[#1A1816]">Total</span>
-              <span className="text-[18px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
-            </div>
-            <div className="mt-2 text-[12px] text-[#737370]">
-              <span className="font-medium text-[#1A1816]">{formData.title}</span>
-              {formData.address && <span> · {formData.address}</span>}
+            )}
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-[#1A1816] truncate leading-tight">{formData.title || 'Untitled'}</p>
+              <p className="text-[11px] text-[#737370] truncate mt-0.5">{formData.address}</p>
             </div>
           </div>
+        </div>
 
-          {secretError && (
-            <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{secretError}</div>
-          )}
+        {/* Order lines */}
+        <div className="p-4">
+          <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Order Summary</p>
+          <div className="space-y-2.5">
+            <div className="flex justify-between items-center">
+              <span className="text-[12px] text-[#444441]">Pay Per Listing (30 days)</span>
+              <span className="text-[12px] font-medium text-[#1A1816]">$29.00</span>
+            </div>
+            {selectedAddOns.map(id => {
+              const addon = ADD_ONS.find(a => a.id === id)
+              if (!addon) return null
+              return (
+                <div key={id} className="flex justify-between items-center">
+                  <span className="text-[12px] text-[#444441]">{addon.label}</span>
+                  <span className="text-[12px] font-medium text-[#1A1816]">+${(addon.price / 100).toFixed(2)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
-          <button
-            type="button"
-            onClick={proceedToPayment}
-            disabled={loadingSecret}
-            className="w-full h-[48px] bg-[#D03839] hover:bg-[#E0493B] active:scale-[0.98] text-white text-[15px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loadingSecret ? (
-              <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Preparing payment...</>
-            ) : (
-              <>Proceed to Payment — ${(totalCents / 100).toFixed(2)}</>
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Total */}
+        <div className="px-4 py-3 border-t border-[#E8E8E4]">
+          <div className="flex justify-between items-baseline">
+            <span className="text-[13px] font-semibold text-[#1A1816]">Total</span>
+            <span className="text-[20px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
+          </div>
+          <p className="text-[11px] text-[#A8A8A4] mt-0.5">30-day listing</p>
+        </div>
+
+        {/* CTA — only shown on add-ons step */}
+        {!showPaymentForm && (
+          <div className="px-4 pb-4">
+            {secretError && (
+              <div className="mb-3 p-2.5 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[12px] text-[#D03839]">{secretError}</div>
             )}
-          </button>
-        </>
-      )}
+            <button
+              type="button"
+              onClick={proceedToPayment}
+              disabled={loadingSecret}
+              className="w-full h-[44px] bg-[#D03839] hover:bg-[#E0493B] active:scale-[0.98] text-white text-[13px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loadingSecret ? (
+                <><span className="animate-spin w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" />Preparing...</>
+              ) : (
+                <>Proceed to Payment</>
+              )}
+            </button>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <svg className="w-3 h-3 text-[#A8A8A4]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              <span className="text-[11px] text-[#A8A8A4]">Secured by Stripe</span>
+            </div>
+          </div>
+        )}
+      </div>
+
     </div>
   )
 }
@@ -878,7 +918,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   // ─── Form ─────────────────────────────────────────────────────────
   return (
     <div className="p-4 lg:p-8" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
 
         {/* Page header */}
         <div className="mb-6">
