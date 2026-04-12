@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+  process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
+)
 
-// POST — create a Stripe PaymentIntent for $20 listing fee
 export async function POST(request) {
   try {
     const userId = request.headers.get('x-user-id')
@@ -11,8 +15,25 @@ export async function POST(request) {
 
     const body = await request.json()
 
-    // Only store essential fields in metadata (Stripe limit: 500 chars per value)
-    // description/repairs are omitted — listing can be edited after if webhook fallback triggers
+    // Get or create Stripe Customer for this buyer
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('email, first_name, last_name, stripe_customer_id')
+      .eq('id', userId)
+      .maybeSingle()
+
+    let customerId = userRow?.stripe_customer_id
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: userRow?.email || undefined,
+        name: [userRow?.first_name, userRow?.last_name].filter(Boolean).join(' ') || undefined,
+        metadata: { userId },
+      })
+      customerId = customer.id
+      await supabase.from('users').update({ stripe_customer_id: customerId }).eq('id', userId)
+    }
+
     const f = body.formData || {}
     const essentialData = JSON.stringify({
       title: f.title || '',
@@ -31,8 +52,10 @@ export async function POST(request) {
     const amount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount, // dynamic total (base $29 + any add-ons)
+      amount,
       currency: 'usd',
+      customer: customerId,
+      setup_future_usage: 'off_session',
       automatic_payment_methods: { enabled: true },
       metadata: {
         userId,

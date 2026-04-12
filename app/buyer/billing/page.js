@@ -6,8 +6,8 @@ import { CreditCard, Check, AlertCircle, Loader2, ExternalLink, Receipt } from '
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
 )
 
 const labelCls = 'block text-[12px] font-semibold text-[#737370] uppercase tracking-[0.08em] mb-1'
@@ -43,36 +43,27 @@ export default function BuyerBillingPage() {
     setLoading(true)
     setError(null)
     try {
-      // Load listing purchases (add-ons + listing fees)
+      // Load listing purchases from payments table
       const { data: listings } = await supabase
-        .from('wholesale_deals')
-        .select('id, title, address, city, state, created_at, price, add_ons, stripe_payment_intent_id, amount_paid')
-        .eq('buyer_id', user.id)
+        .from('payments')
+        .select('id, amount, currency, status, description, created_at, stripe_payment_intent_id, properties(seo_title, address, city, state)')
+        .eq('user_id', user.id)
+        .eq('user_type', 'buyer')
         .order('created_at', { ascending: false })
         .limit(20)
 
       setPurchases(listings || [])
 
-      // Load saved payment method via buyer Stripe customer
-      const { data: profile } = await supabase
-        .from('buyer_profiles')
-        .select('stripe_customer_id')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (profile?.stripe_customer_id) {
-        setPmLoading(true)
-        const res = await fetch('/api/buyer/billing/payment-methods', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customer_id: profile.stripe_customer_id }),
-        })
-        if (res.ok) {
-          const d = await res.json()
-          setPaymentMethod(d.default_payment_method || null)
-        }
-        setPmLoading(false)
+      // Load saved payment method via server-side lookup
+      setPmLoading(true)
+      const res = await fetch('/api/buyer/billing/payment-methods', {
+        headers: { 'x-user-id': user.id },
+      })
+      if (res.ok) {
+        const d = await res.json()
+        setPaymentMethod(d.default_payment_method || null)
       }
+      setPmLoading(false)
     } catch (err) {
       setError('Failed to load billing information.')
     } finally {
@@ -81,7 +72,7 @@ export default function BuyerBillingPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
+    <div className="p-4 lg:p-6 space-y-6" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
       <div>
         <h1 className="text-[20px] font-bold text-[#1A1816] tracking-tight">Billing</h1>
         <p className="text-[13px] text-[#737370] mt-0.5">Your listing purchases and payment information.</p>
@@ -143,32 +134,20 @@ export default function BuyerBillingPage() {
         ) : (
           <div className="divide-y divide-[#E8E8E4]">
             {purchases.map((item) => {
-              const addOns = item.add_ons || []
-              const total = item.amount_paid ? formatCents(item.amount_paid) : null
+              const prop = item.properties
+              const title = prop?.seo_title || prop?.address || item.description || 'Listing'
+              const location = [prop?.city, prop?.state].filter(Boolean).join(', ')
               return (
                 <div key={item.id} className="py-4 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-[14px] font-semibold text-[#1A1816] truncate">
-                        {item.address || item.title || 'Listing'}
-                        {(item.city || item.state) && (
-                          <span className="font-normal text-[#737370]"> · {[item.city, item.state].filter(Boolean).join(', ')}</span>
-                        )}
+                        {title}
+                        {location && <span className="font-normal text-[#737370]"> · {location}</span>}
                       </p>
                       <p className="text-[12px] text-[#737370] mt-0.5">{formatDate(item.created_at)}</p>
-                      {addOns.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {addOns.map(ao => (
-                            <span key={ao} className="text-[11px] font-medium bg-[#F3F3F0] text-[#444441] px-2 py-0.5 rounded border border-[#E8E8E4] capitalize">
-                              {ao.replace(/_/g, ' ')}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                    {total && (
-                      <p className="text-[14px] font-bold text-[#1A1816] flex-shrink-0">{total}</p>
-                    )}
+                    <p className="text-[14px] font-bold text-[#1A1816] flex-shrink-0">{formatCents(item.amount)}</p>
                   </div>
                 </div>
               )
