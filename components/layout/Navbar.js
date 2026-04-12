@@ -122,7 +122,7 @@ export function Navbar() {
   const aboutDropdownItems = [
     { label: 'About Us', href: '/our-story' },
     { label: 'Resources', href: '/resources' },
-    { label: 'Advertise', href: '/advertise' },
+    { label: 'Advertise with us', href: '/advertise' },
     { label: 'Contact Us', href: '/contact' },
   ]
 
