@@ -591,11 +591,11 @@ export default function SellPage() {
                 <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Placement</p>
                 <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Feature on Homepage</p>
                 <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
-                  Your listing rotates in the featured deals section seen by all visitors for 30 days.
+                  Your listing rotates in the featured deals section seen by all visitors for 7 days.
                 </p>
                 <div className="mt-auto">
                   <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$29</p>
-                  <p className="text-[11px] text-[#A8A8A4]">One-time · 30-day window</p>
+                  <p className="text-[11px] text-[#A8A8A4]">One-time · 7-day window</p>
                 </div>
               </div>
 

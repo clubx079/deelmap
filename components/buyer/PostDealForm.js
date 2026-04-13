@@ -52,7 +52,7 @@ const EDIT_STEPS = [STEPS[0], STEPS[1], STEPS[3]]
 
 const ADD_ONS = [
   { id: 'highlight',  label: 'Highlight Listing',      desc: 'Stand out in search results',          price: 999,  icon: Sparkles },
-  { id: 'homepage',  label: 'Feature on Homepage',    desc: 'Shown to all visitors for 30 days',    price: 2900, icon: TrendingUp },
+  { id: 'homepage',  label: 'Feature on Homepage',    desc: 'Shown to all visitors for 7 days',     price: 2900, icon: TrendingUp },
   { id: 'boost',     label: 'Boost Listing',          desc: 'Priority placement for 14 days',       price: 1499, icon: Zap },
   { id: 'bundle',    label: 'Full Visibility Bundle',  desc: 'Highlight + Homepage + Boost',         price: 4900, icon: Package },
 ]
