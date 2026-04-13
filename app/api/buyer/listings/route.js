@@ -70,6 +70,14 @@ export async function POST(request) {
         .select('property_id')
         .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
         .single()
+
+      // Clean up orphaned draft if webhook created a separate new property
+      if (body.draft_id && pmt?.property_id && body.draft_id !== pmt.property_id) {
+        await supabaseMarketplace.from('property_images').delete().eq('property_id', body.draft_id)
+        await supabaseMarketplace.from('properties').delete().eq('id', body.draft_id).eq('posted_by', userId)
+        console.log(`[listings] Cleaned up orphaned draft ${body.draft_id} — replaced by ${pmt.property_id}`)
+      }
+
       return NextResponse.json({ success: true, id: pmt?.property_id })
     }
 
