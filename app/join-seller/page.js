@@ -443,7 +443,6 @@ export default function SellPage() {
 
             {/* Pay Per Listing */}
             <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-              <div className="min-h-[24px] mb-2.5" />
               <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">One-time</p>
               <h3 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Pay Per Listing</h3>
               <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
@@ -483,10 +482,10 @@ export default function SellPage() {
 
             {/* Pro Seller */}
             <div className="bg-white border-2 border-[#D03839] rounded p-5 flex flex-col">
-              <div className="min-h-[24px] mb-2.5">
-                <span className="inline-block text-[11px] font-semibold bg-[#FEF0EF] text-[#D03839] px-2.5 py-0.5 rounded">Most popular</span>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4]">Subscription</p>
+                <span className="text-[11px] font-semibold bg-[#FEF0EF] text-[#D03839] px-2.5 py-0.5 rounded">Most popular</span>
               </div>
-              <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">Subscription</p>
               <h3 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Pro seller</h3>
               <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
                 For active investors and wholesalers moving deals consistently.
@@ -525,7 +524,6 @@ export default function SellPage() {
 
             {/* Enterprise */}
             <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-              <div className="min-h-[24px] mb-2.5" />
               <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">Subscription</p>
               <h3 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Enterprise</h3>
               <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
@@ -577,9 +575,6 @@ export default function SellPage() {
 
               {/* Highlight */}
               <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-                <div className="w-9 h-9 rounded bg-[#F3F3F1] border border-[#E8E8E4] flex items-center justify-center mb-4">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#737370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                </div>
                 <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Visibility</p>
                 <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Highlight Listing</p>
                 <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
@@ -593,9 +588,6 @@ export default function SellPage() {
 
               {/* Homepage */}
               <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-                <div className="w-9 h-9 rounded bg-[#FEF0EF] border border-[#F5C4C0] flex items-center justify-center mb-4">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D03839" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                </div>
                 <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Placement</p>
                 <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Feature on Homepage</p>
                 <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
@@ -609,9 +601,6 @@ export default function SellPage() {
 
               {/* Boost */}
               <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-                <div className="w-9 h-9 rounded bg-[#F3F3F1] border border-[#E8E8E4] flex items-center justify-center mb-4">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#737370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                </div>
                 <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Ranking</p>
                 <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Boost Listing</p>
                 <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
@@ -625,9 +614,6 @@ export default function SellPage() {
 
               {/* Bundle */}
               <div className="bg-[#1A1816] border border-[#1A1816] rounded p-5 flex flex-col">
-                <div className="w-9 h-9 rounded bg-white/10 border border-white/20 flex items-center justify-center mb-4">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FAFAF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                </div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-white/50">Bundle</p>
                   <span className="text-[10px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded">Best value</span>
