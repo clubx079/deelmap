@@ -142,7 +142,7 @@ export default function BuyerBillingPage() {
 
               const title = prop?.seo_title || breakdown?.title || prop?.address || 'Listing'
               const address = prop?.address || breakdown?.address || ''
-              const location = [prop?.city || breakdown?.city, prop?.state || breakdown?.state].filter(Boolean).join(', ')
+              const location = address ? '' : [prop?.city || breakdown?.city, prop?.state || breakdown?.state].filter(Boolean).join(', ')
 
               const lineItems = breakdown
                 ? [breakdown.base, ...(breakdown.addons || [])].filter(Boolean)

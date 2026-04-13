@@ -149,7 +149,7 @@ export async function POST(request) {
       highlight: { label: 'Highlight Listing',     amount: 999  },
       homepage:  { label: 'Feature on Homepage',   amount: 2900 },
       boost:     { label: 'Boost Listing',         amount: 1499 },
-      bundle:    { label: 'Full Visibility Bundle', amount: 2200 },
+      bundle:    { label: 'Full Visibility Bundle (Highlight + Boost)', amount: 2200 },
     }
     const addOnItems = (addOns).map(id => ({
       id,
