@@ -265,7 +265,13 @@ export function Navbar() {
                           ) : notifications.map(n => (
                             <Link
                               key={n.id}
-                              href={n.related_conversation_id ? `/buyer/inbox?conversation=${n.related_conversation_id}` : '/buyer/inbox'}
+                              href={
+                                n.related_conversation_id
+                                  ? `/buyer/inbox?conversation=${n.related_conversation_id}`
+                                  : (n.type === 'listing_approved' || n.type === 'listing_rejected')
+                                    ? '/buyer/listings'
+                                    : '/buyer/inbox'
+                              }
                               onClick={async () => {
                                 setNotifOpen(false)
                                 if (!n.is_read) {
