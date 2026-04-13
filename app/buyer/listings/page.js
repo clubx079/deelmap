@@ -2,7 +2,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
-import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -250,6 +250,17 @@ export default function MyListingsPage() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Link>
+                              {(listing.inspection_report_url || listing.contract_url) && (
+                                <a
+                                  href={listing.inspection_report_url || listing.contract_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#4F46E5] hover:bg-[#EEF2FF] transition-colors"
+                                  title="View document"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </a>
+                              )}
                               <button
                                 onClick={() => setEditListing(listing)}
                                 className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
@@ -362,6 +373,16 @@ export default function MyListingsPage() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </Link>
+                          {(listing.inspection_report_url || listing.contract_url) && (
+                            <a
+                              href={listing.inspection_report_url || listing.contract_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#4F46E5] hover:bg-[#EEF2FF] transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </a>
+                          )}
                           <button
                             onClick={() => setEditListing(listing)}
                             className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"

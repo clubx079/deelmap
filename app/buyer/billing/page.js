@@ -160,13 +160,19 @@ export default function BuyerBillingPage() {
                     <p className="text-[14px] font-bold text-[#1A1816] flex-shrink-0">{formatCents(item.amount)}</p>
                   </div>
                   {lineItems && (
-                    <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded px-3 py-2 space-y-1">
-                      {lineItems.map((line, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <span className="text-[12px] text-[#737370]">{line.label}</span>
-                          <span className="text-[12px] font-medium text-[#1A1816]">{formatCents(line.amount)}</span>
-                        </div>
-                      ))}
+                    <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded px-3 py-2">
+                      <div className="space-y-1.5">
+                        {lineItems.map((line, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <span className="text-[12px] font-medium text-[#1A1816]">{line.label}</span>
+                            <span className="text-[12px] font-semibold text-[#1A1816]">{formatCents(line.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-[#E8E8E4] mt-2 pt-2 flex items-center justify-between">
+                        <span className="text-[12px] font-bold text-[#1A1816]">Total</span>
+                        <span className="text-[12px] font-bold text-[#1A1816]">{formatCents(lineItems.reduce((s, l) => s + (l.amount || 0), 0))}</span>
+                      </div>
                     </div>
                   )}
                 </div>
