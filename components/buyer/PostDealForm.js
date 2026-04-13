@@ -675,7 +675,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
   const featuredPhoto = photos.find(p => p.is_featured) || photos[0]
 
   return (
-    <div className="grid grid-cols-[1fr_360px] gap-6 items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
 
       {/* Left column — add-ons or payment form */}
       <div>
@@ -710,18 +710,18 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
                     key={id}
                     type="button"
                     onClick={() => toggleAddOn(id)}
-                    className={`w-full flex items-center gap-4 p-[28px] border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+                    className={`w-full flex items-center gap-3 p-4 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
                   >
-                    <div className={`w-11 h-11 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
-                      <Icon className={`w-5 h-5 ${selected ? 'text-white' : 'text-[#737370]'}`} />
+                    <div className={`w-9 h-9 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+                      <Icon className={`w-4 h-4 ${selected ? 'text-white' : 'text-[#737370]'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
+                      <p className="text-[13px] font-semibold text-[#1A1816] leading-tight">{label}</p>
                       <p className="text-[12px] text-[#737370]">{desc}</p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-[13px] font-bold text-[#1A1816]">+${(price / 100).toFixed(2)}</span>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
                         {selected && <Check className="w-3 h-3 text-white" />}
                       </div>
                     </div>
@@ -733,7 +733,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
         )}
       </div>
 
-      {/* Right column — sticky order summary */}
+      {/* Right column — order summary */}
       <div className="border border-[#E8E8E4] rounded overflow-hidden bg-white flex flex-col">
 
         {/* Property preview */}
