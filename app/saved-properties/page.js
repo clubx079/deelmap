@@ -79,14 +79,16 @@ export default function SavedPropertiesPage() {
         {/* Content */}
         <div className="px-4 lg:px-6 pb-6">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-white rounded border border-[#E8E8E4] animate-pulse overflow-hidden">
-                  <div className="h-[200px] bg-[#F0F0EE]" />
-                  <div className="p-4 space-y-3">
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded border border-[#E8E8E4] animate-pulse overflow-hidden flex min-h-[230px]">
+                  <div className="w-[280px] flex-shrink-0 bg-[#F0F0EE]" />
+                  <div className="flex-1 p-5 space-y-3">
+                    <div className="h-3 bg-[#F0F0EE] rounded w-1/4" />
                     <div className="h-5 bg-[#F0F0EE] rounded w-3/4" />
                     <div className="h-4 bg-[#F0F0EE] rounded w-1/2" />
-                    <div className="h-4 bg-[#F0F0EE] rounded w-2/3" />
+                    <div className="h-4 bg-[#F0F0EE] rounded w-1/3" />
+                    <div className="mt-auto h-8 bg-[#F0F0EE] rounded w-28" />
                   </div>
                 </div>
               ))}
@@ -127,12 +129,12 @@ export default function SavedPropertiesPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="space-y-4">
               {favoriteProperties.map((property) => (
                 <PropertyCard
                   key={property.id}
                   property={property}
-                  layout="vertical"
+                  layout="horizontal"
                   isLoggedIn={!!user}
                 />
               ))}
