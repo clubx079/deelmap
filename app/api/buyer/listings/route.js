@@ -158,6 +158,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, id: data.id, slug: data.slug })
   } catch (err) {
+    console.error('[POST /api/buyer/listings] Unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
