@@ -161,7 +161,7 @@ export default function MyListingsPage() {
                   const statusBadge = {
                     active:       { label: 'Active',       cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' },
                     under_review: { label: 'Under Review', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' },
-                    draft:        { label: 'Draft',        cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' },
+                    draft:        { label: 'Draft',        cls: 'bg-[#FEF9E7] text-[#B7860B] border-[#F5D87A]' },
                     suspended:    { label: 'Suspended',    cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
                   }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
                   return (
@@ -310,7 +310,7 @@ export default function MyListingsPage() {
               const statusBadgeMobile = {
                 active:       { label: 'Active',       cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' },
                 under_review: { label: 'Under Review', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' },
-                draft:        { label: 'Draft',        cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' },
+                draft:        { label: 'Draft',        cls: 'bg-[#FEF9E7] text-[#B7860B] border-[#F5D87A]' },
                 suspended:    { label: 'Suspended',    cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
               }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
               return (
