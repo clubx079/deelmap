@@ -64,7 +64,13 @@ export async function POST(request) {
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ error: 'This payment has already been used.' }, { status: 409 })
+      // Webhook already handled this payment — return the property it created
+      const { data: pmt } = await supabaseMarketplace
+        .from('payments')
+        .select('property_id')
+        .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
+        .single()
+      return NextResponse.json({ success: true, id: pmt?.property_id })
     }
 
     const addOns = body.add_ons || []
@@ -152,13 +158,28 @@ export async function POST(request) {
     })
 
     if (paymentError) {
+      if (paymentError.code === '23505') {
+        // Race condition: webhook inserted the payment record first.
+        // Clean up duplicate property if this was a new listing (not a draft update).
+        const { data: existingPmt } = await supabaseMarketplace
+          .from('payments')
+          .select('property_id')
+          .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
+          .single()
+        if (!body.draft_id && existingPmt?.property_id && existingPmt.property_id !== data.id) {
+          await supabaseMarketplace.from('property_images').delete().eq('property_id', data.id)
+          await supabaseMarketplace.from('properties').delete().eq('id', data.id)
+        }
+        const propertyId = existingPmt?.property_id || data.id
+        setTimeout(() => moderateProperty(propertyId).catch(console.error), 0)
+        return NextResponse.json({ success: true, id: propertyId })
+      }
       console.error('[POST /api/buyer/listings] Payment record failed:', paymentError)
       return NextResponse.json({ error: paymentError.message }, { status: 500 })
     }
 
     // Kick off AI moderation in background — don't block the response
-    const propertyIdToModerate = data.id
-    setTimeout(() => moderateProperty(propertyIdToModerate).catch(console.error), 0)
+    setTimeout(() => moderateProperty(data.id).catch(console.error), 0)
 
     return NextResponse.json({ success: true, id: data.id, slug: data.slug })
   } catch (err) {
