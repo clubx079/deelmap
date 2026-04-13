@@ -79,7 +79,7 @@ export default function SavedPropertiesPage() {
         {/* Content */}
         <div className="px-4 lg:px-6 pb-6">
           {loading ? (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white rounded border border-[#E8E8E4] animate-pulse overflow-hidden flex min-h-[230px]">
                   <div className="w-[280px] flex-shrink-0 bg-[#F0F0EE]" />
@@ -129,7 +129,7 @@ export default function SavedPropertiesPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {favoriteProperties.map((property) => (
                 <PropertyCard
                   key={property.id}
