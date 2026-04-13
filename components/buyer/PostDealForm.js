@@ -915,8 +915,11 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   }
 
   const handleContinue = async () => {
+    if (saving) return
+    setSaving(true)
     if (!isEdit) await saveDraft(formData, photos, step)
     setStep(s => s + 1)
+    setSaving(false)
   }
 
   const canNext = () => {
@@ -1034,10 +1037,10 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
               {step < stepsToShow.length - 1 ? (
                 <button
                   onClick={handleContinue}
-                  disabled={!canNext()}
+                  disabled={!canNext() || saving}
                   className="flex-1 h-[42px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-40"
                 >
-                  Continue
+                  {saving ? 'Saving...' : 'Continue'}
                 </button>
               ) : isEdit ? (
                 <button
