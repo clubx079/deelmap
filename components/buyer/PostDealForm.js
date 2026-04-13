@@ -856,6 +856,27 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
 
+  // Auto-save photos to property_images whenever photos change and draftId exists
+  useEffect(() => {
+    if (!draftId) return
+    const readyPhotos = photos.filter(p => p.image_url && !p.uploading)
+    if (readyPhotos.length === 0) return
+    const timer = setTimeout(async () => {
+      try {
+        await supabaseMarketplace.from('property_images').delete().eq('property_id', draftId)
+        await supabaseMarketplace.from('property_images').insert(
+          readyPhotos.map((p, i) => ({
+            property_id: draftId,
+            image_url: p.image_url,
+            image_key: p.image_key || null,
+            sort_order: i,
+          }))
+        )
+      } catch {}
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [photos, draftId])
+
   const update = (fields) => setFormData(prev => ({ ...prev, ...fields }))
 
   const saveDraft = async (currentFormData, currentPhotos, currentStep) => {
