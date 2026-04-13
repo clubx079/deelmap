@@ -157,7 +157,13 @@ export default function MyListingsPage() {
               ) : (
                 listings.map((listing, index) => {
                   const img = getFeaturedImage(listing)
-                  const isActive = listing.status === 'active'
+                  const isDraft = listing.status === 'draft'
+                  const statusBadge = {
+                    active:       { label: 'Active',       cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' },
+                    under_review: { label: 'Under Review', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' },
+                    draft:        { label: 'Draft',        cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' },
+                    suspended:    { label: 'Suspended',    cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
+                  }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
                   return (
                     <tr key={listing.id} className="hover:bg-[#FAFAF8] transition-colors">
 
@@ -211,40 +217,47 @@ export default function MyListingsPage() {
 
                       {/* Status */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${
-                          isActive
-                            ? 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]'
-                            : 'bg-[#FEF3E2] text-[#B5620A] border-[#F5D9A0]'
-                        }`}>
-                          {isActive ? 'Active' : 'Draft'}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${statusBadge.cls}`}>
+                          {statusBadge.label}
                         </span>
                       </td>
 
                       {/* Actions */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-0.5">
-                          <button
-                            onClick={() => setAnalyticTarget(listing)}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
-                            title="Analytics"
-                          >
-                            <BarChart2 className="w-4 h-4" />
-                          </button>
-                          <Link
-                            href={`/${listing.slug || listing.id}`}
-                            target="_blank"
-                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                            title="View listing"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
-                          <button
-                            onClick={() => setEditListing(listing)}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
+                          {isDraft ? (
+                            <button
+                              onClick={() => setEditListing(listing)}
+                              className="h-7 px-3 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors"
+                            >
+                              Complete
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setAnalyticTarget(listing)}
+                                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
+                                title="Analytics"
+                              >
+                                <BarChart2 className="w-4 h-4" />
+                              </button>
+                              <Link
+                                href={`/${listing.slug || listing.id}`}
+                                target="_blank"
+                                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                                title="View listing"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Link>
+                              <button
+                                onClick={() => setEditListing(listing)}
+                                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                           <button
                             onClick={() => setDeleteTarget(listing)}
                             className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
@@ -293,7 +306,13 @@ export default function MyListingsPage() {
           ) : (
             listings.map((listing) => {
               const img = getFeaturedImage(listing)
-              const isActive = listing.status === 'active'
+              const isDraftMobile = listing.status === 'draft'
+              const statusBadgeMobile = {
+                active:       { label: 'Active',       cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' },
+                under_review: { label: 'Under Review', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' },
+                draft:        { label: 'Draft',        cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' },
+                suspended:    { label: 'Suspended',    cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
+              }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
               return (
                 <div key={listing.id} className="p-4 flex gap-3">
                   <div className="w-14 h-14 rounded-lg bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
@@ -310,10 +329,8 @@ export default function MyListingsPage() {
                       <p className="text-[13px] font-semibold text-[#1A1816] truncate">
                         {listing.seo_title || listing.address || 'No address'}
                       </p>
-                      <span className={`flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                        isActive ? 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' : 'bg-[#FEF3E2] text-[#B5620A] border-[#F5D9A0]'
-                      }`}>
-                        {isActive ? 'Active' : 'Draft'}
+                      <span className={`flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusBadgeMobile.cls}`}>
+                        {statusBadgeMobile.label}
                       </span>
                     </div>
                     <p className="text-[12px] text-[#737370] mb-2">
@@ -321,25 +338,36 @@ export default function MyListingsPage() {
                       {listing.property_type ? ` · ${listing.property_type}` : ''}
                     </p>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setAnalyticTarget(listing)}
-                        className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
-                      >
-                        <BarChart2 className="w-3.5 h-3.5" />
-                      </button>
-                      <Link
-                        href={`/${listing.slug || listing.id}`}
-                        target="_blank"
-                        className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </Link>
-                      <button
-                        onClick={() => setEditListing(listing)}
-                        className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
+                      {isDraftMobile ? (
+                        <button
+                          onClick={() => setEditListing(listing)}
+                          className="h-6 px-2.5 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors"
+                        >
+                          Complete
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setAnalyticTarget(listing)}
+                            className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
+                          >
+                            <BarChart2 className="w-3.5 h-3.5" />
+                          </button>
+                          <Link
+                            href={`/${listing.slug || listing.id}`}
+                            target="_blank"
+                            className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Link>
+                          <button
+                            onClick={() => setEditListing(listing)}
+                            className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => setDeleteTarget(listing)}
                         className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"

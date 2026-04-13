@@ -66,34 +66,65 @@ export async function POST(request) {
       return NextResponse.json({ error: 'This payment has already been used.' }, { status: 409 })
     }
 
-    const slug = generateSlug()
+    let data, error
 
-    const { data, error } = await supabaseMarketplace
-      .from('properties')
-      .insert({
-        slug,
-        seo_title: body.title || null,
-        address: body.address,
-        city: body.city || null,
-        state: body.state,
-        zipcode: body.zipcode || null,
-        latitude: body.latitude,
-        longitude: body.longitude,
-        price: body.price,
-        property_type: body.property_type,
-        bedrooms: body.bedrooms,
-        bathrooms: body.bathrooms,
-        floor_area: body.floor_area,
-        description: body.description,
-        repairs: body.repairs,
-        inspection_report_url: body.inspection_report_url || null,
-        seller_type: body.seller_type || null,
-        contract_url: body.contract_url || null,
-        status: 'active',
-        posted_by: userId,
-      })
-      .select('id, slug')
-      .single()
+    if (body.draft_id) {
+      // Resume from draft — update existing record instead of inserting
+      ;({ data, error } = await supabaseMarketplace
+        .from('properties')
+        .update({
+          seo_title: body.title || null,
+          address: body.address,
+          city: body.city || null,
+          state: body.state,
+          zipcode: body.zipcode || null,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          price: body.price,
+          property_type: body.property_type,
+          bedrooms: body.bedrooms,
+          bathrooms: body.bathrooms,
+          floor_area: body.floor_area,
+          description: body.description,
+          repairs: body.repairs,
+          inspection_report_url: body.inspection_report_url || null,
+          seller_type: body.seller_type || null,
+          contract_url: body.contract_url || null,
+          status: 'under_review',
+        })
+        .eq('id', body.draft_id)
+        .eq('posted_by', userId)
+        .select('id, slug')
+        .single())
+    } else {
+      const slug = generateSlug()
+      ;({ data, error } = await supabaseMarketplace
+        .from('properties')
+        .insert({
+          slug,
+          seo_title: body.title || null,
+          address: body.address,
+          city: body.city || null,
+          state: body.state,
+          zipcode: body.zipcode || null,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          price: body.price,
+          property_type: body.property_type,
+          bedrooms: body.bedrooms,
+          bathrooms: body.bathrooms,
+          floor_area: body.floor_area,
+          description: body.description,
+          repairs: body.repairs,
+          inspection_report_url: body.inspection_report_url || null,
+          seller_type: body.seller_type || null,
+          contract_url: body.contract_url || null,
+          status: 'under_review',
+          posted_by: userId,
+        })
+        .select('id, slug')
+        .single())
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

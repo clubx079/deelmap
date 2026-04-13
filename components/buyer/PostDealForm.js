@@ -531,7 +531,7 @@ function StepDetails({ data, onChange }) {
 }
 
 // ─── Step 5: Payment ───────────────────────────────────────────────────
-function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSuccess, onBack }) {
+function CheckoutForm({ formData, photos, user, draftId, selectedAddOns, totalCents, onSuccess, onBack }) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
@@ -561,7 +561,7 @@ function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSu
             stripe_payment_intent_id: paymentIntent.id,
             amount: totalCents,
             add_ons: selectedAddOns,
-            status: 'under_review',
+            ...(draftId ? { draft_id: draftId } : {}),
           }),
         })
         const data = await res.json()
@@ -570,7 +570,8 @@ function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSu
           setProcessing(false)
           return
         }
-        if (photos.length > 0) {
+        // Only insert photos for brand-new listings (drafts already have photos saved)
+        if (!draftId && photos.length > 0) {
           const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
           const photoRows = sorted.map((p, i) => ({
             property_id: data.id,
@@ -623,7 +624,7 @@ function CheckoutForm({ formData, photos, user, selectedAddOns, totalCents, onSu
 
 const SESSION_KEY = 'deelmap_listing_client_secret'
 
-function StepPayment({ formData, photos, user, onSuccess }) {
+function StepPayment({ formData, photos, user, draftId, onSuccess }) {
   const [selectedAddOns, setSelectedAddOns] = useState([])
   const [clientSecret, setClientSecret] = useState(null)
   const [loadingSecret, setLoadingSecret] = useState(false)
@@ -685,6 +686,7 @@ function StepPayment({ formData, photos, user, onSuccess }) {
                 formData={formData}
                 photos={photos}
                 user={user}
+                draftId={draftId}
                 selectedAddOns={selectedAddOns}
                 totalCents={totalCents}
                 onSuccess={onSuccess}
@@ -823,8 +825,10 @@ function StepPayment({ formData, photos, user, onSuccess }) {
 
 // ─── Main Form ─────────────────────────────────────────────────────────
 export default function PostDealForm({ user, existing, onClose, onSuccess }) {
-  const isEdit = !!existing
+  const isDraft = existing?.status === 'draft'
+  const isEdit = !!existing && !isDraft
   const [step, setStep] = useState(0)
+  const [draftId, setDraftId] = useState(isDraft ? existing?.id : null)
   const [formData, setFormData] = useState({
     title:                existing?.seo_title || existing?.title || '',
     location:             existing?.address || '',
@@ -853,6 +857,47 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const [done, setDone] = useState(false)
 
   const update = (fields) => setFormData(prev => ({ ...prev, ...fields }))
+
+  const saveDraft = async (currentFormData, currentPhotos, currentStep) => {
+    try {
+      if (!draftId) {
+        const res = await fetch('/api/buyer/listings/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+          body: JSON.stringify(currentFormData),
+        })
+        const d = await res.json()
+        if (d.id) {
+          setDraftId(d.id)
+          if (currentStep === 1 && currentPhotos.length > 0) {
+            await supabaseMarketplace.from('property_images').insert(
+              currentPhotos.map((p, i) => ({ property_id: d.id, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
+            )
+          }
+        }
+      } else {
+        await fetch('/api/buyer/listings/draft', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+          body: JSON.stringify({ id: draftId, ...currentFormData }),
+        })
+        if (currentStep === 1) {
+          await supabaseMarketplace.from('property_images').delete().eq('property_id', draftId)
+          if (currentPhotos.length > 0) {
+            await supabaseMarketplace.from('property_images').insert(
+              currentPhotos.map((p, i) => ({ property_id: draftId, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
+            )
+          }
+        }
+      }
+    } catch {}
+  }
+
+  const handleContinue = async () => {
+    if (!isEdit) await saveDraft(formData, photos, step)
+    setStep(s => s + 1)
+  }
+
   const canNext = () => {
     if (step === 0) return !!(
       formData.title?.trim() &&
@@ -950,7 +995,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
             {step === 2 && !isEdit && <StepSellerType data={formData} onChange={update} />}
             {((step === 3 && !isEdit) || (step === 2 && isEdit)) && <StepDetails data={formData} onChange={update} />}
             {step === 4 && !isEdit && (
-              <StepPayment formData={formData} photos={photos} user={user} onSuccess={() => setDone(true)} />
+              <StepPayment formData={formData} photos={photos} user={user} draftId={draftId} onSuccess={() => setDone(true)} />
             )}
           </div>
 
@@ -967,7 +1012,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
               )}
               {step < stepsToShow.length - 1 ? (
                 <button
-                  onClick={() => setStep(s => s + 1)}
+                  onClick={handleContinue}
                   disabled={!canNext()}
                   className="flex-1 h-[42px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-40"
                 >
