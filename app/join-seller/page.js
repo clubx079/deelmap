@@ -625,6 +625,7 @@ export default function SellPage() {
                 <div className="mt-auto">
                   <div className="flex items-baseline gap-2 mb-0.5">
                     <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none">$22</p>
+                    <p className="text-[12px] text-[#A8A8A4] line-through">$24.98</p>
                   </div>
                   <p className="text-[11px] text-[#A8A8A4]">One-time · saves $2.98</p>
                 </div>
