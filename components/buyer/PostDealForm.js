@@ -970,7 +970,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
         </div>
         <h1 className="text-[24px] font-bold text-[#1A1816] mb-2">Submitted for Review</h1>
         <p className="text-[15px] text-[#737370] mb-2 max-w-sm">Your listing is being reviewed by our team. We check every photo and listing for quality before publishing.</p>
-        <p className="text-[13px] text-[#A8A8A4] mb-8 max-w-sm">You&apos;ll be notified once your listing is approved and goes live on the marketplace.</p>
+        <p className="text-[13px] text-[#1A1816] mb-8 max-w-sm">You&apos;ll be notified once your listing is approved and goes live on the marketplace.</p>
         <button
           onClick={onSuccess}
           className="h-[44px] px-8 bg-[#D03839] hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-colors"
