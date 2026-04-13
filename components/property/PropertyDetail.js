@@ -965,7 +965,7 @@ export function PropertyDetail({ property }) {
                     ? { label: 'Just Listed', cls: 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]' }
                     : { label: 'New Deal', cls: 'bg-[#FEF3E2] text-[#B5620A] border border-[#F3C97D]' }
                   return (
-                    <div key={p.id} className="bg-white rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
+                    <div key={p.id} className="bg-white rounded overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
                       {/* Photo */}
                       <Link href={isPreview ? '#' : `/${p.slug || p.id}`} onClick={isPreview ? (e) => { e.preventDefault(); setShowPreviewModal(true) } : undefined} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
                         {thumbUrl ? (
