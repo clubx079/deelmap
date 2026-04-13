@@ -67,25 +67,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'This payment has already been used.' }, { status: 409 })
     }
 
-    // Record payment FIRST so the Stripe webhook idempotency check finds it immediately
-    const { data: paymentRow, error: paymentError } = await supabaseMarketplace.from('payments').insert({
-      user_id: userId,
-      user_type: 'buyer',
-      payment_type: 'listing_fee',
-      property_id: null,
-      stripe_payment_intent_id: body.stripe_payment_intent_id,
-      amount: body.amount || 2900,
-      currency: 'usd',
-      status: 'succeeded',
-      description: `Listing fee for: ${body.title || ''}`,
-    }).select('id').single()
-
-    if (paymentError) return NextResponse.json({ error: paymentError.message }, { status: 500 })
-
-    let data, error
-
     const addOns = body.add_ons || []
     const isHomepageFeatured = addOns.includes('homepage') || addOns.includes('bundle')
+
+    // Create/update property first so we have the id for the payment record
+    let data, error
 
     if (body.draft_id) {
       // Resume from draft — update existing record instead of inserting
@@ -147,10 +133,28 @@ export async function POST(request) {
         .single())
     }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[POST /api/buyer/listings] Property create/update failed:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
-    // Update payment record with the property_id now that we have it
-    await supabaseMarketplace.from('payments').update({ property_id: data.id }).eq('id', paymentRow.id)
+    // Record payment with property_id already known
+    const { error: paymentError } = await supabaseMarketplace.from('payments').insert({
+      user_id: userId,
+      user_type: 'buyer',
+      payment_type: 'listing_fee',
+      property_id: data.id,
+      stripe_payment_intent_id: body.stripe_payment_intent_id,
+      amount: body.amount || 2900,
+      currency: 'usd',
+      status: 'succeeded',
+      description: `Listing fee for: ${body.title || ''}`,
+    })
+
+    if (paymentError) {
+      console.error('[POST /api/buyer/listings] Payment record failed:', paymentError)
+      return NextResponse.json({ error: paymentError.message }, { status: 500 })
+    }
 
     // Kick off AI moderation in background — don't block the response
     const propertyIdToModerate = data.id
