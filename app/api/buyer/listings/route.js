@@ -83,6 +83,9 @@ export async function POST(request) {
 
     let data, error
 
+    const addOns = body.add_ons || []
+    const isHomepageFeatured = addOns.includes('homepage') || addOns.includes('bundle')
+
     if (body.draft_id) {
       // Resume from draft — update existing record instead of inserting
       ;({ data, error } = await supabaseMarketplace
@@ -106,6 +109,7 @@ export async function POST(request) {
           seller_type: body.seller_type || null,
           contract_url: body.contract_url || null,
           status: 'under_review',
+          is_homepage_featured: isHomepageFeatured,
         })
         .eq('id', body.draft_id)
         .eq('posted_by', userId)
@@ -136,6 +140,7 @@ export async function POST(request) {
           contract_url: body.contract_url || null,
           status: 'under_review',
           posted_by: userId,
+          is_homepage_featured: isHomepageFeatured,
         })
         .select('id, slug')
         .single())

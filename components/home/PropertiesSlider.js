@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useProperties } from '@/hooks/useProperties'
@@ -17,12 +17,20 @@ const AVATAR_COLORS = ['bg-orange-400', 'bg-blue-500', 'bg-emerald-500', 'bg-pur
 
 export function PropertiesSlider() {
   const [activeTab, setActiveTab] = useState('all')
+  const [featuredBuyerDeals, setFeaturedBuyerDeals] = useState([])
 
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'] },
     sortBy: 'newest',
     pageSize: 12,
   })
+
+  useEffect(() => {
+    fetch('/api/buyer/listings/featured')
+      .then(r => r.json())
+      .then(d => setFeaturedBuyerDeals(d.properties || []))
+      .catch(() => {})
+  }, [])
 
   const filterByTab = (props) => {
     if (activeTab === 'all') return props
@@ -35,7 +43,12 @@ export function PropertiesSlider() {
     })
   }
 
-  const displayProperties = filterByTab(properties).slice(0, 4)
+  const displayProperties = (() => {
+    const featuredFiltered = filterByTab(featuredBuyerDeals)
+    const featuredIds = new Set(featuredFiltered.map(p => p.id))
+    const regular = filterByTab(properties).filter(p => !featuredIds.has(p.id))
+    return [...featuredFiltered, ...regular].slice(0, 4)
+  })()
 
   const formatPrice = (val) => {
     if (!val) return 'Contact for Price'
@@ -73,19 +86,19 @@ export function PropertiesSlider() {
   }
 
   const getInitials = (p) => {
-    const name = p.seller_name || p.full_address || p.address || 'DM'
-    const words = name.trim().split(/\s+/)
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
-    return name.slice(0, 2).toUpperCase()
+    const name = p.seller_name || ''
+    if (name.trim()) {
+      const words = name.trim().split(/\s+/)
+      if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase()
+      return name.slice(0, 2).toUpperCase()
+    }
+    return 'VS'
   }
 
   const getAvatarColor = (p) => AVATAR_COLORS[(p.id?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
 
   const getSellerName = (p) => {
     if (p.seller_name) return p.seller_name
-    const addr = p.address || p.full_address || ''
-    const parts = addr.split(' ')
-    if (parts.length >= 2) return `${parts[0][0]}. ${parts[parts.length - 1]}`
     return 'Verified Seller'
   }
 

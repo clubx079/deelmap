@@ -46,7 +46,7 @@ export async function GET(request) {
 
     let query = supabaseMarketplace
       .from('wholesale_deals')
-      .select(`${dealCols}, property_photos(photo_url, optimized_url, is_featured)`, { count: 'exact' })
+      .select(`${dealCols}, property_photos(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
       .eq('status', 'active')
       .eq('is_incomplete', false);
 
@@ -157,9 +157,9 @@ export async function GET(request) {
       let manualQuery = supabaseMarketplace
         .from('properties')
         .select(`
-          id, slug, address, state, latitude, longitude,
+          id, slug, address, city, state, zipcode, latitude, longitude,
           price, bedrooms, bathrooms, floor_area, property_type, status,
-          created_at, updated_at, seller_id,
+          is_homepage_featured, created_at, updated_at, seller_id, posted_by,
           property_images (image_url, image_key, sort_order)
         `, { count: 'exact' })
         .in('status', ['active', 'published']);
