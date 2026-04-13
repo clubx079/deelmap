@@ -656,7 +656,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
       const res = await fetch('/api/buyer/listings/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-        body: JSON.stringify({ title: formData.title, formData, amount: totalCents, draft_id: draftId || undefined }),
+        body: JSON.stringify({ title: formData.title, formData, amount: totalCents, draft_id: draftId || undefined, add_ons: selectedAddOns }),
       })
       const d = await res.json()
       if (d.clientSecret) {

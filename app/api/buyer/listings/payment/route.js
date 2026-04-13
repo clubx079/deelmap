@@ -62,6 +62,7 @@ export async function POST(request) {
         listingTitle: (f.title || '').slice(0, 100),
         formData: essentialData,
         ...(body.draft_id ? { draft_id: body.draft_id } : {}),
+        ...(body.add_ons?.length ? { add_ons: body.add_ons.join(',') } : {}),
       },
     })
 

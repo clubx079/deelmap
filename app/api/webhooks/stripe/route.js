@@ -142,6 +142,22 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 })
     }
 
+    // Build itemized breakdown for billing display
+    const ADD_ON_PRICES = {
+      highlight: { label: 'Highlight Listing',                      amount: 999  },
+      homepage:  { label: 'Feature on Homepage',                    amount: 2900 },
+      boost:     { label: 'Boost Listing',                          amount: 1499 },
+      bundle:    { label: 'Full Visibility Bundle (Highlight + Boost)', amount: 2200 },
+    }
+    const addOns = paymentIntent.metadata.add_ons ? paymentIntent.metadata.add_ons.split(',').filter(Boolean) : []
+    const addOnItems = addOns.map(id => ({ id, label: ADD_ON_PRICES[id]?.label || id, amount: ADD_ON_PRICES[id]?.amount || 0 }))
+    const breakdown = JSON.stringify({
+      title: formData.title || '',
+      address: formData.address || '',
+      base: { label: 'Listing Fee', amount: 2900 },
+      addons: addOnItems,
+    })
+
     // Record payment
     await supabaseMarketplace.from('payments').insert({
       user_id: userId,
@@ -152,7 +168,7 @@ export async function POST(request) {
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
       status: 'succeeded',
-      description: `Listing fee for property: ${formData.title || property.slug}`,
+      description: breakdown,
     })
 
     console.log('[Stripe Webhook] Fallback listing created:', property.id)
