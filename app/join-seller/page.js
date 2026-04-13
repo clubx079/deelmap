@@ -490,10 +490,10 @@ export default function SellPage() {
               <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
                 For active investors and wholesalers moving deals consistently.
               </p>
-              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1">
-                <sup className="text-lg font-normal align-super">$</sup>{annual ? '79' : '99'}
+              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1 flex items-baseline gap-1.5">
+                <span><sup className="text-lg font-normal align-super">$</sup>{annual ? '79' : '99'}</span>
+                <span className="text-sm font-normal text-[#737370]">/ per month</span>
               </div>
-              <p className="text-xs text-[#737370] mb-1">{annual ? 'per month · billed annually ($948/yr)' : 'per month'} · 10 listings included</p>
               <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $240 vs monthly' : '$19 per additional listing'}</p>
               <button
                 onClick={() => savePlanAndGo('pro', `${SELLER_PORTAL_URL}/onboarding?plan=pro&billing=${annual ? 'annual' : 'monthly'}`)}
@@ -529,16 +529,16 @@ export default function SellPage() {
               <p className="text-xs text-[#737370] leading-relaxed mb-4 min-h-[2.4rem]">
                 For acquisition teams running high-volume pipelines.
               </p>
-              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1">
-                <sup className="text-lg font-normal align-super">$</sup>{annual ? '239' : '299'}
+              <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1 flex items-baseline gap-1.5">
+                <span><sup className="text-lg font-normal align-super">$</sup>{annual ? '239' : '299'}</span>
+                <span className="text-sm font-normal text-[#737370]">/ per month</span>
               </div>
-              <p className="text-xs text-[#737370] mb-1">{annual ? 'per month · billed annually ($2,868/yr)' : 'per month'} · unlimited listings</p>
               <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $720 vs monthly' : '\u00a0'}</p>
               <button
                 onClick={() => savePlanAndGo('enterprise', `${SELLER_PORTAL_URL}/onboarding?plan=enterprise&billing=${annual ? 'annual' : 'monthly'}`)}
                 className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase border border-[#D4D4CF] text-[#1A1816] rounded hover:bg-[#F3F3F0] transition-colors mb-5"
               >
-                Talk to sales
+                Start 7 day free trial
               </button>
               <hr className="border-t border-[#E8E8E4] mb-4" />
               <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-2.5">Includes</p>
