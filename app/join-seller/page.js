@@ -618,16 +618,16 @@ export default function SellPage() {
                   <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-white/50">Bundle</p>
                   <span className="text-[10px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded">Best value</span>
                 </div>
-                <p className="text-[15px] font-bold text-white mb-2 leading-snug">Full Visibility Bundle</p>
+                <p className="text-[15px] font-bold text-white mb-2 leading-snug">Highlight + Boost</p>
                 <p className="text-[13px] text-white/60 leading-relaxed flex-1 mb-4">
-                  Highlight + Homepage + Boost all in one. Everything you need to maximize deal exposure.
+                  Full 30-day highlight plus a 7-day boost to top of search. Best value.
                 </p>
                 <div className="mt-auto">
                   <div className="flex items-baseline gap-2 mb-0.5">
-                    <p className="text-[26px] font-bold text-white tracking-tight leading-none">$49</p>
-                    <p className="text-[12px] text-white/40 line-through">$53.98</p>
+                    <p className="text-[26px] font-bold text-white tracking-tight leading-none">$22</p>
+                    <p className="text-[12px] text-white/40 line-through">$24.98</p>
                   </div>
-                  <p className="text-[11px] text-white/50">One-time · saves $4.98</p>
+                  <p className="text-[11px] text-white/50">One-time · saves $2.98</p>
                 </div>
               </div>
 
