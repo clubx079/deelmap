@@ -144,6 +144,27 @@ export async function POST(request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Build itemized breakdown for billing display
+    const ADD_ON_PRICES = {
+      highlight: { label: 'Highlight Listing',     amount: 999  },
+      homepage:  { label: 'Feature on Homepage',   amount: 2900 },
+      boost:     { label: 'Boost Listing',         amount: 1499 },
+      bundle:    { label: 'Full Visibility Bundle', amount: 2200 },
+    }
+    const addOnItems = (addOns).map(id => ({
+      id,
+      label: ADD_ON_PRICES[id]?.label || id,
+      amount: ADD_ON_PRICES[id]?.amount || 0,
+    }))
+    const breakdown = JSON.stringify({
+      title: body.title || '',
+      address: body.address || '',
+      city: body.city || '',
+      state: body.state || '',
+      base: { label: 'Listing Fee', amount: 2900 },
+      addons: addOnItems,
+    })
+
     // Record payment with property_id already known
     const { error: paymentError } = await supabaseMarketplace.from('payments').insert({
       user_id: userId,
@@ -154,7 +175,7 @@ export async function POST(request) {
       amount: body.amount || 2900,
       currency: 'usd',
       status: 'succeeded',
-      description: `Listing fee for: ${body.title || ''}`,
+      description: breakdown,
     })
 
     if (paymentError) {

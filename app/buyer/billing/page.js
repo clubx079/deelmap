@@ -135,20 +135,40 @@ export default function BuyerBillingPage() {
           <div className="divide-y divide-[#E8E8E4]">
             {purchases.map((item) => {
               const prop = item.properties
-              const title = prop?.seo_title || prop?.address || item.description || 'Listing'
-              const location = [prop?.city, prop?.state].filter(Boolean).join(', ')
+
+              // Parse structured breakdown if available, fall back to plain string
+              let breakdown = null
+              try { breakdown = JSON.parse(item.description) } catch {}
+
+              const title = prop?.seo_title || breakdown?.title || prop?.address || 'Listing'
+              const address = prop?.address || breakdown?.address || ''
+              const location = [prop?.city || breakdown?.city, prop?.state || breakdown?.state].filter(Boolean).join(', ')
+
+              const lineItems = breakdown
+                ? [breakdown.base, ...(breakdown.addons || [])].filter(Boolean)
+                : null
+
               return (
                 <div key={item.id} className="py-4 first:pt-0 last:pb-0">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-[#1A1816] truncate">
-                        {title}
-                        {location && <span className="font-normal text-[#737370]"> · {location}</span>}
-                      </p>
-                      <p className="text-[12px] text-[#737370] mt-0.5">{formatDate(item.created_at)}</p>
+                      <p className="text-[14px] font-semibold text-[#1A1816]">{title}</p>
+                      {address && <p className="text-[12px] text-[#737370] mt-0.5">{address}{location ? `, ${location}` : ''}</p>}
+                      {!address && location && <p className="text-[12px] text-[#737370] mt-0.5">{location}</p>}
+                      <p className="text-[11px] text-[#A8A8A4] mt-0.5">{formatDate(item.created_at)}</p>
                     </div>
                     <p className="text-[14px] font-bold text-[#1A1816] flex-shrink-0">{formatCents(item.amount)}</p>
                   </div>
+                  {lineItems && (
+                    <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded px-3 py-2 space-y-1">
+                      {lineItems.map((line, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <span className="text-[12px] text-[#737370]">{line.label}</span>
+                          <span className="text-[12px] font-medium text-[#1A1816]">{formatCents(line.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })}
