@@ -104,7 +104,7 @@ export async function POST(request) {
         description: formData.description,
         repairs: formData.repairs,
         inspection_report_url: formData.inspection_report_url || null,
-        status: 'active',
+        status: 'under_review',
         posted_by: userId,
       })
       .select('id, slug')

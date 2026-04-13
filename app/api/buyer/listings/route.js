@@ -66,6 +66,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'This payment has already been used.' }, { status: 409 })
     }
 
+    // Record payment FIRST so the Stripe webhook idempotency check finds it immediately
+    const { data: paymentRow, error: paymentError } = await supabaseMarketplace.from('payments').insert({
+      user_id: userId,
+      user_type: 'buyer',
+      payment_type: 'listing_fee',
+      property_id: null,
+      stripe_payment_intent_id: body.stripe_payment_intent_id,
+      amount: body.amount || 2900,
+      currency: 'usd',
+      status: 'succeeded',
+      description: `Listing fee for: ${body.title || ''}`,
+    }).select('id').single()
+
+    if (paymentError) return NextResponse.json({ error: paymentError.message }, { status: 500 })
+
     let data, error
 
     if (body.draft_id) {
@@ -128,18 +143,8 @@ export async function POST(request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Record the payment
-    await supabaseMarketplace.from('payments').insert({
-      user_id: userId,
-      user_type: 'buyer',
-      payment_type: 'listing_fee',
-      property_id: data.id,
-      stripe_payment_intent_id: body.stripe_payment_intent_id,
-      amount: body.amount || 2900,
-      currency: 'usd',
-      status: 'succeeded',
-      description: `Listing fee for property: ${body.title || data.slug}`,
-    })
+    // Update payment record with the property_id now that we have it
+    await supabaseMarketplace.from('payments').update({ property_id: data.id }).eq('id', paymentRow.id)
 
     return NextResponse.json({ success: true, id: data.id, slug: data.slug })
   } catch (err) {
