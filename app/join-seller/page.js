@@ -604,30 +604,30 @@ export default function SellPage() {
                 <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Ranking</p>
                 <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Boost Listing</p>
                 <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
-                  Pushed to the top of search results for 14 days, then decays organically.
+                  Pushed to the top of search results for 7 days, then decays organically.
                 </p>
                 <div className="mt-auto">
                   <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$14.99</p>
-                  <p className="text-[11px] text-[#A8A8A4]">One-time · 14-day boost</p>
+                  <p className="text-[11px] text-[#A8A8A4]">One-time · 7-day boost</p>
                 </div>
               </div>
 
               {/* Bundle */}
-              <div className="bg-[#1A1816] border border-[#1A1816] rounded p-5 flex flex-col">
+              <div className="bg-white border-2 border-[#D03839] rounded p-5 flex flex-col">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-white/50">Bundle</p>
+                  <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4]">Bundle</p>
                   <span className="text-[10px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded">Best value</span>
                 </div>
-                <p className="text-[15px] font-bold text-white mb-2 leading-snug">Highlight + Boost</p>
-                <p className="text-[13px] text-white/60 leading-relaxed flex-1 mb-4">
+                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Highlight + Boost</p>
+                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
                   Full 30-day highlight plus a 7-day boost to top of search. Best value.
                 </p>
                 <div className="mt-auto">
                   <div className="flex items-baseline gap-2 mb-0.5">
-                    <p className="text-[26px] font-bold text-white tracking-tight leading-none">$22</p>
-                    <p className="text-[12px] text-white/40 line-through">$24.98</p>
+                    <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none">$22</p>
+                    <p className="text-[12px] text-[#A8A8A4] line-through">$24.98</p>
                   </div>
-                  <p className="text-[11px] text-white/50">One-time · saves $2.98</p>
+                  <p className="text-[11px] text-[#A8A8A4]">One-time · saves $2.98</p>
                 </div>
               </div>
 
