@@ -61,6 +61,7 @@ export async function POST(request) {
         userId,
         listingTitle: (f.title || '').slice(0, 100),
         formData: essentialData,
+        ...(body.draft_id ? { draft_id: body.draft_id } : {}),
       },
     })
 

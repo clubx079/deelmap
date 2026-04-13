@@ -87,29 +87,55 @@ export async function POST(request) {
       return NextResponse.json({ received: true })
     }
 
-    const slug = generateSlug()
-    const { data: property, error: propError } = await supabaseMarketplace
-      .from('properties')
-      .insert({
-        slug,
-        seo_title: formData.title || null,
-        address: formData.address,
-        state: formData.state,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        price: formData.price,
-        property_type: formData.property_type,
-        bedrooms: formData.bedrooms,
-        bathrooms: formData.bathrooms,
-        floor_area: formData.floor_area,
-        description: formData.description,
-        repairs: formData.repairs,
-        inspection_report_url: formData.inspection_report_url || null,
-        status: 'under_review',
-        posted_by: userId,
-      })
-      .select('id, slug')
-      .single()
+    const draftId = paymentIntent.metadata.draft_id || null
+
+    let property, propError
+
+    if (draftId) {
+      // Resume from draft — update existing record
+      ;({ data: property, error: propError } = await supabaseMarketplace
+        .from('properties')
+        .update({
+          seo_title: formData.title || null,
+          address: formData.address,
+          state: formData.state,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          price: formData.price,
+          property_type: formData.property_type,
+          bedrooms: formData.bedrooms,
+          bathrooms: formData.bathrooms,
+          floor_area: formData.floor_area,
+          inspection_report_url: formData.inspection_report_url || null,
+          status: 'under_review',
+        })
+        .eq('id', draftId)
+        .eq('posted_by', userId)
+        .select('id, slug')
+        .single())
+    } else {
+      const slug = generateSlug()
+      ;({ data: property, error: propError } = await supabaseMarketplace
+        .from('properties')
+        .insert({
+          slug,
+          seo_title: formData.title || null,
+          address: formData.address,
+          state: formData.state,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          price: formData.price,
+          property_type: formData.property_type,
+          bedrooms: formData.bedrooms,
+          bathrooms: formData.bathrooms,
+          floor_area: formData.floor_area,
+          inspection_report_url: formData.inspection_report_url || null,
+          status: 'under_review',
+          posted_by: userId,
+        })
+        .select('id, slug')
+        .single())
+    }
 
     if (propError) {
       console.error('[Stripe Webhook] Failed to create listing:', propError.message)
