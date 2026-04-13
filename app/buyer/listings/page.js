@@ -73,7 +73,7 @@ export default function MyListingsPage() {
       <PostDealForm
         user={user}
         existing={editListing}
-        onClose={() => { setShowForm(false); setEditListing(null) }}
+        onClose={() => { setShowForm(false); setEditListing(null); fetchListings() }}
         onSuccess={() => { setShowForm(false); setEditListing(null); fetchListings() }}
       />
     )
