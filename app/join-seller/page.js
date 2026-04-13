@@ -614,7 +614,7 @@ export default function SellPage() {
 
               {/* Bundle */}
               <div className="bg-white border-2 border-[#D03839] rounded p-5 flex flex-col">
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4]">Bundle</p>
                   <span className="text-[10px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded">Best value</span>
                 </div>
