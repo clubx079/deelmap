@@ -564,6 +564,94 @@ export default function SellPage() {
             </div>
 
           </div>
+
+          {/* Add-ons */}
+          <div className="mt-16 pt-14 border-t border-[#E8E8E4]">
+            <div className="text-center mb-8">
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">LISTING ENHANCEMENTS</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-[#1A1816] mb-2">Boost your listing visibility</h3>
+              <p className="text-[15px] text-[#737370]">Available on any plan. Add them at checkout — no commitment required.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+              {/* Highlight */}
+              <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
+                <div className="w-9 h-9 rounded bg-[#F3F3F1] border border-[#E8E8E4] flex items-center justify-center mb-4">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#737370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Visibility</p>
+                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Highlight Listing</p>
+                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
+                  Gold-bordered card in search results so your deal stands out from the crowd.
+                </p>
+                <div className="mt-auto">
+                  <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$9.99</p>
+                  <p className="text-[11px] text-[#A8A8A4]">One-time · per listing</p>
+                </div>
+              </div>
+
+              {/* Homepage */}
+              <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
+                <div className="w-9 h-9 rounded bg-[#FEF0EF] border border-[#F5C4C0] flex items-center justify-center mb-4">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D03839" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                </div>
+                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Placement</p>
+                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Feature on Homepage</p>
+                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
+                  Your listing rotates in the featured deals section seen by all visitors for 30 days.
+                </p>
+                <div className="mt-auto">
+                  <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$29</p>
+                  <p className="text-[11px] text-[#A8A8A4]">One-time · 30-day window</p>
+                </div>
+              </div>
+
+              {/* Boost */}
+              <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
+                <div className="w-9 h-9 rounded bg-[#F3F3F1] border border-[#E8E8E4] flex items-center justify-center mb-4">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#737370" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Ranking</p>
+                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Boost Listing</p>
+                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
+                  Pushed to the top of search results for 14 days, then decays organically.
+                </p>
+                <div className="mt-auto">
+                  <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$14.99</p>
+                  <p className="text-[11px] text-[#A8A8A4]">One-time · 14-day boost</p>
+                </div>
+              </div>
+
+              {/* Bundle */}
+              <div className="bg-[#1A1816] border border-[#1A1816] rounded p-5 flex flex-col">
+                <div className="w-9 h-9 rounded bg-white/10 border border-white/20 flex items-center justify-center mb-4">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FAFAF8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-white/50">Bundle</p>
+                  <span className="text-[10px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded">Best value</span>
+                </div>
+                <p className="text-[15px] font-bold text-white mb-2 leading-snug">Full Visibility Bundle</p>
+                <p className="text-[13px] text-white/60 leading-relaxed flex-1 mb-4">
+                  Highlight + Homepage + Boost all in one. Everything you need to maximize deal exposure.
+                </p>
+                <div className="mt-auto">
+                  <div className="flex items-baseline gap-2 mb-0.5">
+                    <p className="text-[26px] font-bold text-white tracking-tight leading-none">$49</p>
+                    <p className="text-[12px] text-white/40 line-through">$53.98</p>
+                  </div>
+                  <p className="text-[11px] text-white/50">One-time · saves $4.98</p>
+                </div>
+              </div>
+
+            </div>
+
+            <p className="text-center text-[12px] text-[#A8A8A4] mt-6">
+              Add-ons are selected at checkout when posting your listing. No separate purchase needed.
+            </p>
+          </div>
+
         </div>
       </section>
 
