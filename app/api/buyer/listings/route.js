@@ -197,6 +197,16 @@ export async function PATCH(request) {
     const body = await request.json()
     const { id, ...fields } = body
 
+    // Check current status before updating
+    const { data: current } = await supabaseMarketplace
+      .from('properties')
+      .select('status')
+      .eq('id', id)
+      .eq('posted_by', userId)
+      .single()
+
+    const resubmitting = current?.status === 'rejected'
+
     // Ensure buyer can only edit their own listing
     const { data, error } = await supabaseMarketplace
       .from('properties')
@@ -218,6 +228,7 @@ export async function PATCH(request) {
         inspection_report_url: fields.inspection_report_url || null,
         seller_type: fields.seller_type || null,
         contract_url: fields.contract_url || null,
+        ...(resubmitting ? { status: 'under_review', rejection_reason: null } : {}),
       })
       .eq('id', id)
       .eq('posted_by', userId)
@@ -225,6 +236,11 @@ export async function PATCH(request) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Re-run moderation if this was a rejected listing being resubmitted
+    if (resubmitting) {
+      setTimeout(() => moderateProperty(id).catch(console.error), 0)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {
