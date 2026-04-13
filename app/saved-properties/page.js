@@ -132,6 +132,7 @@ export default function SavedPropertiesPage() {
                 <PropertyCard
                   key={property.id}
                   property={property}
+                  layout="vertical"
                   isLoggedIn={!!user}
                 />
               ))}
