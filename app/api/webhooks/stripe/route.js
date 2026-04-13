@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { moderateProperty } from '@/lib/moderateProperty'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -129,6 +130,9 @@ export async function POST(request) {
     })
 
     console.log('[Stripe Webhook] Fallback listing created:', property.id)
+
+    // Kick off AI moderation in background
+    setTimeout(() => moderateProperty(property.id).catch(console.error), 0)
   }
 
   return NextResponse.json({ received: true })

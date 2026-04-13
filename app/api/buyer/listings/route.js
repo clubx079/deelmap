@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+import { moderateProperty } from '@/lib/moderateProperty'
 
 // Use service role key to bypass RLS in server-side routes
 const supabaseMarketplace = createClient(
@@ -150,6 +151,10 @@ export async function POST(request) {
 
     // Update payment record with the property_id now that we have it
     await supabaseMarketplace.from('payments').update({ property_id: data.id }).eq('id', paymentRow.id)
+
+    // Kick off AI moderation in background — don't block the response
+    const propertyIdToModerate = data.id
+    setTimeout(() => moderateProperty(propertyIdToModerate).catch(console.error), 0)
 
     return NextResponse.json({ success: true, id: data.id, slug: data.slug })
   } catch (err) {
