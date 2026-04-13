@@ -171,7 +171,7 @@ export async function POST(request) {
           await supabaseMarketplace.from('properties').delete().eq('id', data.id)
         }
         const propertyId = existingPmt?.property_id || data.id
-        setTimeout(() => moderateProperty(propertyId).catch(console.error), 0)
+        // Webhook already triggered moderation — don't fire it again
         return NextResponse.json({ success: true, id: propertyId })
       }
       console.error('[POST /api/buyer/listings] Payment record failed:', paymentError)
