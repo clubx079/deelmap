@@ -35,7 +35,10 @@ function DealsPageInner() {
     minCapRate: undefined,
     maxCapRate: undefined,
     minCashOnCash: undefined,
-    maxCashOnCash: undefined
+    maxCashOnCash: undefined,
+    isHighlighted: false,
+    isBoosted: false,
+    isHomepageFeatured: false,
   })
 
   const [selectedProperty, setSelectedProperty] = useState(null)

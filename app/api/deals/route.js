@@ -32,6 +32,9 @@ export async function GET(request) {
     const maxCapRate = parseFloat(searchParams.get('maxCapRate')) || null;
     const cities = searchParams.get('cities')?.split(',').filter(Boolean) || [];
     const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
+    const isHighlighted = searchParams.get('isHighlighted') === 'true';
+    const isBoosted = searchParams.get('isBoosted') === 'true';
+    const isHomepageFeatured = searchParams.get('isHomepageFeatured') === 'true';
 
     // Query 1: Get deals with ONLY featured photo (using Supabase transform for speed)
     const dealCols = [
@@ -159,7 +162,7 @@ export async function GET(request) {
         .select(`
           id, slug, address, city, state, zipcode, latitude, longitude,
           price, bedrooms, bathrooms, floor_area, property_type, status,
-          is_homepage_featured, created_at, updated_at, seller_id, posted_by,
+          is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
           property_images (image_url, image_key, sort_order)
         `, { count: 'exact' })
         .in('status', ['active', 'published']);
@@ -188,6 +191,9 @@ export async function GET(request) {
         const q = `%${searchQuery.trim()}%`;
         manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
       }
+      if (isHighlighted) manualQuery = manualQuery.eq('is_highlighted', true);
+      if (isBoosted) manualQuery = manualQuery.eq('is_boosted', true);
+      if (isHomepageFeatured) manualQuery = manualQuery.eq('is_homepage_featured', true);
 
       manualQuery = manualQuery.range(offset, offset + limit - 1);
 

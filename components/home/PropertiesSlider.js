@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useProperties } from '@/hooks/useProperties'
 import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
-import { MapPin } from 'lucide-react'
+import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const TABS = [
   { label: 'All deals', value: 'all' },
@@ -15,9 +15,14 @@ const TABS = [
 
 const AVATAR_COLORS = ['bg-orange-400', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-rose-500', 'bg-amber-500']
 
+const VISIBLE = 4
+
 export function PropertiesSlider() {
   const [activeTab, setActiveTab] = useState('all')
   const [featuredBuyerDeals, setFeaturedBuyerDeals] = useState([])
+  const [startIndex, setStartIndex] = useState(0)
+  const [fading, setFading] = useState(false)
+  const pausedRef = useRef(false)
 
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'] },
@@ -32,6 +37,9 @@ export function PropertiesSlider() {
       .catch(() => {})
   }, [])
 
+  // Reset index on tab change
+  useEffect(() => { setStartIndex(0) }, [activeTab])
+
   const filterByTab = (props) => {
     if (activeTab === 'all') return props
     return props.filter(p => {
@@ -43,12 +51,33 @@ export function PropertiesSlider() {
     })
   }
 
-  const displayProperties = (() => {
+  const allCards = (() => {
     const featuredFiltered = filterByTab(featuredBuyerDeals)
     const featuredIds = new Set(featuredFiltered.map(p => p.id))
     const regular = filterByTab(properties).filter(p => !featuredIds.has(p.id))
-    return [...featuredFiltered, ...regular].slice(0, 4)
+    return [...featuredFiltered, ...regular]
   })()
+
+  const canScroll = allCards.length > VISIBLE
+  const displayProperties = allCards.slice(startIndex, startIndex + VISIBLE)
+
+  const moveTo = (newIdx) => {
+    setFading(true)
+    setTimeout(() => { setStartIndex(newIdx); setFading(false) }, 180)
+  }
+
+  const prev = () => moveTo(startIndex === 0 ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1)
+  const next = () => moveTo(startIndex + VISIBLE >= allCards.length ? 0 : startIndex + 1)
+
+  // Auto-rotate
+  useEffect(() => {
+    if (!canScroll) return
+    const id = setInterval(() => {
+      if (pausedRef.current) return
+      setStartIndex(i => (i + 1 + VISIBLE > allCards.length ? 0 : i + 1))
+    }, 4000)
+    return () => clearInterval(id)
+  }, [canScroll, allCards.length])
 
   const formatPrice = (val) => {
     if (!val) return 'Contact for Price'
@@ -133,21 +162,40 @@ export function PropertiesSlider() {
                 Verified off-market properties — deduplicated, structured, investor-ready.
               </p>
             </div>
-            {/* Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto lg:flex-shrink-0 pb-0.5">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`h-9 px-4 rounded border text-[13px] font-medium transition-all whitespace-nowrap ${
-                    activeTab === tab.value
-                      ? 'bg-[#D03839] border-[#D03839] text-white'
-                      : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between lg:justify-end gap-3 w-full lg:w-auto lg:flex-shrink-0">
+              {/* Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveTab(tab.value)}
+                    className={`h-9 px-4 rounded border text-[13px] font-medium transition-all whitespace-nowrap ${
+                      activeTab === tab.value
+                        ? 'bg-[#D03839] border-[#D03839] text-white'
+                        : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              {/* Arrows */}
+              {canScroll && (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={prev}
+                    className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] hover:border-[#1A1816] transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={next}
+                    className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] hover:border-[#1A1816] transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -162,7 +210,11 @@ export function PropertiesSlider() {
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}
+            onMouseEnter={() => { pausedRef.current = true }}
+            onMouseLeave={() => { pausedRef.current = false }}
+          >
             {displayProperties.map((p) => {
               const img = getPrimaryPhotoUrl(p.property_photos)
               const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')

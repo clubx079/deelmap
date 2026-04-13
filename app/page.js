@@ -250,13 +250,13 @@ export default function HomePage() {
             Our streamlined process helps investors discover opportunities and connect with sellers quickly.
           </p>
 
-          {/* Circles row with dashed line */}
-          <div className="relative mb-8">
-            <div className="hidden lg:block absolute top-1/2 -translate-y-1/2 border-t-2 border-dashed border-[#D4D4CF]" style={{ left: '12.5%', right: '12.5%' }} />
-            <div className="grid grid-cols-2 lg:grid-cols-4">
+          {/* Steps — mobile: circle+text per cell; desktop: circles row then text row */}
+          <div className="relative">
+            <div className="hidden lg:block absolute top-[48px] -translate-y-1/2 border-t-2 border-dashed border-[#D4D4CF]" style={{ left: '12.5%', right: '12.5%' }} />
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-8">
               {HOW_IT_WORKS.map((step) => (
-                <div key={step.n} className="flex justify-center">
-                  <div className="relative flex items-center justify-center w-24 h-24">
+                <div key={step.n} className="flex flex-col items-center">
+                  <div className="relative flex items-center justify-center w-24 h-24 mb-4">
                     {activeStep === step.n && (
                       <svg key={`ring-${activeStep}`} className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 96 96">
                         <circle cx="48" cy="48" r="40" fill="none" stroke="#E8E8E4" strokeWidth="2.5" />
@@ -281,23 +281,17 @@ export default function HomePage() {
                       {step.n}
                     </div>
                   </div>
+                  <div className="text-center px-2">
+                    <h3 className={`text-[16px] font-semibold mb-2 transition-colors duration-500 ${activeStep === step.n ? 'text-[#1A1816]' : 'text-[#737370]'}`}>
+                      {step.title}
+                    </h3>
+                    <p className={`text-[14px] leading-relaxed transition-colors duration-500 ${activeStep === step.n ? 'text-[#444441]' : 'text-[#A8A8A4]'}`}>
+                      {step.desc}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Content grid */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-8">
-            {HOW_IT_WORKS.map((step) => (
-              <div key={step.n} className="text-center px-4">
-                <h3 className={`text-[16px] font-semibold mb-3 transition-colors duration-500 ${activeStep === step.n ? 'text-[#1A1816]' : 'text-[#737370]'}`}>
-                  {step.title}
-                </h3>
-                <p className={`text-[14px] leading-relaxed transition-colors duration-500 ${activeStep === step.n ? 'text-[#444441]' : 'text-[#A8A8A4]'}`}>
-                  {step.desc}
-                </p>
-              </div>
-            ))}
           </div>
         </div>
       </section>

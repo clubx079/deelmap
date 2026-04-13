@@ -110,7 +110,11 @@ export const useProperties = ({
     if (filters.maxCapRate && filters.maxCapRate > 0) {
       params.append('maxCapRate', filters.maxCapRate.toString())
     }
-    
+
+    if (filters.isHighlighted) params.append('isHighlighted', 'true')
+    if (filters.isBoosted) params.append('isBoosted', 'true')
+    if (filters.isHomepageFeatured) params.append('isHomepageFeatured', 'true')
+
     return params
   }
 
