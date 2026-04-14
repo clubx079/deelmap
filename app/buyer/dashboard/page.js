@@ -106,9 +106,7 @@ export default function BuyerDashboard() {
       // Favorites / Saved deals
       if (favoritesRes.status === 'fulfilled' && favoritesRes.value.ok) {
         const data = await favoritesRes.value.json();
-        if (data.success) {
-          setStats(prev => ({ ...prev, savedDeals: (data.favorites || []).length }));
-        }
+        setStats(prev => ({ ...prev, savedDeals: data.count ?? (data.properties || []).length }));
       }
 
       // Offers made

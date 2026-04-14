@@ -580,6 +580,8 @@ function CheckoutForm({ formData, photos, user, draftId, selectedAddOns, totalCe
     setProcessing(false)
   }
 
+  const featuredPhoto = photos.find(p => p.is_featured) || photos[0]
+
   return (
     <form onSubmit={handlePay} className="space-y-5">
       <div>
@@ -587,6 +589,31 @@ function CheckoutForm({ formData, photos, user, draftId, selectedAddOns, totalCe
         <p className="text-[13px] text-[#737370] mb-5">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span> upon submission.</p>
         <PaymentElement />
       </div>
+
+      {/* Your Listing — mobile only, shown between payment element and checkbox */}
+      <div className="lg:hidden border border-[#E8E8E4] rounded overflow-hidden bg-white">
+        <div className="p-4 bg-[#FAFAF8]">
+          <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Your Listing</p>
+          <div className="flex items-center gap-3">
+            {featuredPhoto ? (
+              <img
+                src={featuredPhoto.image_url || featuredPhoto.preview_url}
+                alt=""
+                className="w-14 h-14 rounded object-cover flex-shrink-0 border border-[#E8E8E4]"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded bg-[#F3F3F0] flex-shrink-0 flex items-center justify-center border border-[#E8E8E4]">
+                <Home className="w-6 h-6 text-[#A8A8A4]" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-[#1A1816] truncate leading-tight">{formData.address || 'Untitled'}</p>
+              <p className="text-[11px] text-[#737370] truncate mt-0.5">{formData.address}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <label className="flex items-start gap-2.5 cursor-pointer">
         <input
           type="checkbox"
@@ -742,8 +769,8 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
       {/* Right column — order summary */}
       <div className="border border-[#E8E8E4] rounded overflow-hidden bg-white flex flex-col">
 
-        {/* Property preview */}
-        <div className="p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
+        {/* Property preview — hidden on mobile (shown inline in CheckoutForm) */}
+        <div className="hidden lg:block p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
           <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Your Listing</p>
           <div className="flex items-center gap-3">
             {featuredPhoto ? (
