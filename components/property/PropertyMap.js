@@ -623,12 +623,14 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
   return (
     <div className="relative w-full h-full min-h-[600px]">
       <div ref={mapRef} className="w-full h-full map-container" />
-      {searchLocation?.city && onRemoveBoundary && (
+      {searchLocation && (searchLocation.city || searchLocation.state) && onRemoveBoundary && (
         <button
           onClick={onRemoveBoundary}
-          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 h-8 px-3 bg-white border border-[#E8E8E4] rounded-full shadow-sm text-[12px] font-medium text-[#444441] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 h-8 px-3 bg-white border border-[#D03839] rounded-full shadow-sm text-[12px] font-semibold text-[#D03839] hover:bg-[#D03839] hover:text-white transition-all"
         >
-          <span>×</span>
+          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
           <span>Remove Boundary</span>
         </button>
       )}

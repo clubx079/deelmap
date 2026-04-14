@@ -625,6 +625,17 @@ export function PropertyDetail({ property }) {
                 </div>
               )}
 
+              {/* Repairs & Renovations */}
+              {property.repairs && (
+                <div className="mb-4">
+                  <h3 className="text-[13px] font-semibold text-[#1A1816] uppercase tracking-[0.8px] mb-2">Repairs &amp; Renovations</h3>
+                  <div
+                    className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap break-words"
+                    dangerouslySetInnerHTML={{ __html: property.repairs }}
+                  />
+                </div>
+              )}
+
               {/* Tags */}
               {Array.isArray(property.deal_tags) && property.deal_tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">

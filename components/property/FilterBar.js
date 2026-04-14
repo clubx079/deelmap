@@ -25,6 +25,7 @@ const PRICE_PRESETS = [
 
 export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange, onLocationSelect }) {
   const [localSearch, setLocalSearch] = useState(searchQuery || '')
+  useEffect(() => { setLocalSearch(searchQuery || '') }, [searchQuery])
   const [showAllFilters, setShowAllFilters] = useState(false)
   const [availableStates, setAvailableStates] = useState([])
 
@@ -48,9 +49,6 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     maxCapRate: filters.maxCapRate || '',
     minCashOnCash: filters.minCashOnCash || '',
     maxCashOnCash: filters.maxCashOnCash || '',
-    isHighlighted: filters.isHighlighted || false,
-    isBoosted: filters.isBoosted || false,
-    isHomepageFeatured: filters.isHomepageFeatured || false,
   })
 
   const propertyTypesRef = useRef(null)
@@ -148,15 +146,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       maxCapRate: tempFilters.maxCapRate ? parseFloat(tempFilters.maxCapRate) : undefined,
       minCashOnCash: tempFilters.minCashOnCash ? parseFloat(tempFilters.minCashOnCash) : undefined,
       maxCashOnCash: tempFilters.maxCashOnCash ? parseFloat(tempFilters.maxCashOnCash) : undefined,
-      isHighlighted: tempFilters.isHighlighted || false,
-      isBoosted: tempFilters.isBoosted || false,
-      isHomepageFeatured: tempFilters.isHomepageFeatured || false,
     })
     setShowAllFilters(false)
   }
 
   const resetAllFilters = () => {
-    setTempFilters({ states: [], propertyTypes: [], minBeds: '', minBaths: '', minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '', isHighlighted: false, isBoosted: false, isHomepageFeatured: false })
+    setTempFilters({ states: [], propertyTypes: [], minBeds: '', minBaths: '', minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '' })
   }
 
   const formatPrice = (val) => {
@@ -197,8 +192,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const hasActiveFilters = filters.states?.length > 0 || hasPriceFilter || hasBedsBathsFilter ||
     hasPropertyTypesFilter || filters.minFloorArea || filters.maxFloorArea ||
     filters.minGrossYield || filters.maxGrossYield || filters.minCapRate || filters.maxCapRate ||
-    filters.minCashOnCash || filters.maxCashOnCash ||
-    filters.isHighlighted || filters.isBoosted || filters.isHomepageFeatured
+    filters.minCashOnCash || filters.maxCashOnCash
 
   const filterBtn = (active) =>
     `flex items-center gap-2 h-[42px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
@@ -366,9 +360,6 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                   maxCapRate: filters.maxCapRate || '',
                   minCashOnCash: filters.minCashOnCash || '',
                   maxCashOnCash: filters.maxCashOnCash || '',
-                  isHighlighted: filters.isHighlighted || false,
-                  isBoosted: filters.isBoosted || false,
-                  isHomepageFeatured: filters.isHomepageFeatured || false,
                 })
                 setShowAllFilters(true)
               }}
@@ -377,7 +368,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               All Filters
               {hasActiveFilters && (
                 <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
-                  {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash, filters.isHighlighted || filters.isBoosted || filters.isHomepageFeatured].filter(Boolean).length}
+                  {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -621,7 +612,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             All Filters
             {hasActiveFilters && (
               <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
-                {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash, filters.isHighlighted || filters.isBoosted || filters.isHomepageFeatured].filter(Boolean).length}
+                {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
               </span>
             )}
           </button>
@@ -765,33 +756,6 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                 </div>
               </div>
 
-              <div className="border-t border-[#F0F0EC]" />
-
-              {/* Listing Features */}
-              <div>
-                <h3 className="text-[15px] font-bold text-[#1A1816] mb-4">Listing Features</h3>
-                <div className="space-y-2">
-                  {[
-                    { key: 'isHighlighted', label: 'Highlighted listings', desc: 'Properties promoted with a highlight add-on' },
-                    { key: 'isBoosted', label: 'Boosted listings', desc: 'Properties with a top-of-search boost' },
-                    { key: 'isHomepageFeatured', label: 'Featured on homepage', desc: 'Properties featured on the homepage' },
-                  ].map(({ key, label, desc }) => {
-                    const active = tempFilters[key]
-                    return (
-                      <label key={key} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${active ? 'bg-[#FAFAF8] border-[#1A1816]' : 'border-[#E8E8E4] hover:border-[#C0C0BC]'}`}>
-                        <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all ${active ? 'bg-[#D03839] border-[#D03839]' : 'border-[#C0C0BC]'}`}>
-                          {active && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-                        </span>
-                        <input type="checkbox" checked={active} onChange={(e) => setTempFilters({ ...tempFilters, [key]: e.target.checked })} className="sr-only" />
-                        <div>
-                          <p className={`text-[13px] ${active ? 'font-semibold text-[#1A1816]' : 'text-[#444441]'}`}>{label}</p>
-                          <p className="text-[11px] text-[#A8A8A4]">{desc}</p>
-                        </div>
-                      </label>
-                    )
-                  })}
-                </div>
-              </div>
             </div>
 
             {/* Footer */}

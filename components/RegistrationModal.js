@@ -22,6 +22,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [verifyMethod, setVerifyMethod] = useState('email')
 
   useEffect(() => {
     if (isOpen) {
@@ -148,9 +149,19 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
     const firstName = nameParts[0] || ''
     const lastName = nameParts.slice(1).join(' ') || ''
 
+    setAuthData(prev => ({ ...prev, firstName, lastName }))
+    setLoading(false)
+    setAuthStep('verify-method')
+  }
+
+  const handleChooseMethod = async (method) => {
+    setVerifyMethod(method)
+    setLoading(true)
+    setError('')
     try {
-      await sendOTP(authData.email, firstName, lastName, 'email', authData.phone)
-      setAuthData(prev => ({ ...prev, firstName, lastName }))
+      const rawPhone = authData.phone.replace(/\D/g, '')
+      const e164Phone = rawPhone.length === 10 ? `+1${rawPhone}` : `+${rawPhone}`
+      await sendOTP(authData.email, authData.firstName, authData.lastName, method, e164Phone)
       setAuthStep('otp')
     } catch (err) {
       setError(err.message || 'Failed to send verification code')
@@ -513,12 +524,74 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
             </div>
           )}
 
+          {/* ── Verify Method Choice ── */}
+          {authStep === 'verify-method' && (
+            <div>
+              <button
+                onClick={() => { setError(''); setAuthStep('signup') }}
+                className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] mb-5 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Verification</p>
+              <h2 className="text-[24px] font-bold text-[#1A1816] mb-1">Verify your account</h2>
+              <p className="text-[13px] text-[#737370] mb-6">Choose how you&apos;d like to receive your verification code</p>
+
+              {error && <p className="text-[13px] text-[#D03839] mb-4">{error}</p>}
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleChooseMethod('email')}
+                  disabled={loading}
+                  className="w-full h-16 flex items-center gap-4 px-4 border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FFF8F8] transition-colors disabled:opacity-50 text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#FFF0F0] flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-[#D03839]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-semibold text-[#1A1816]">Verify via Email</p>
+                    <p className="text-[12px] text-[#737370]">{authData.email}</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleChooseMethod('sms')}
+                  disabled={loading}
+                  className="w-full h-16 flex items-center gap-4 px-4 border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FFF8F8] transition-colors disabled:opacity-50 text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#FFF0F0] flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-[#D03839]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-semibold text-[#1A1816]">Verify via Phone</p>
+                    <p className="text-[12px] text-[#737370]">{authData.phone}</p>
+                  </div>
+                </button>
+              </div>
+
+              {loading && <p className="text-[13px] text-[#737370] text-center mt-4">Sending code...</p>}
+            </div>
+          )}
+
           {/* ── OTP Verification ── */}
           {authStep === 'otp' && (
             <div>
-              <h2 className="text-[24px] font-bold text-[#1A1816] mb-2">Verify your email</h2>
+              <h2 className="text-[24px] font-bold text-[#1A1816] mb-2">
+                {verifyMethod === 'sms' ? 'Verify your phone' : 'Verify your email'}
+              </h2>
               <p className="text-[13px] text-[#737370] mb-6">
-                We sent a 6-digit code to <span className="font-medium text-[#1A1816]">{authData.email}</span>
+                We sent a 6-digit code to{' '}
+                <span className="font-medium text-[#1A1816]">
+                  {verifyMethod === 'sms' ? authData.phone : authData.email}
+                </span>
               </p>
 
               <form onSubmit={handleVerifyOTP} className="space-y-4">
@@ -549,7 +622,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
               </form>
 
               <p className="text-[13px] text-center mt-5 text-[#737370]">
-                <button onClick={() => { setError(''); setAuthStep('signup') }} className="font-semibold hover:underline" style={{ color: '#D03839' }}>
+                <button onClick={() => { setError(''); setAuthStep('verify-method') }} className="font-semibold hover:underline" style={{ color: '#D03839' }}>
                   Back
                 </button>
               </p>

@@ -11,6 +11,26 @@ import { useFavorites } from '@/hooks/useFavorites'
 import { Button } from '@/components/ui/Button'
 import { ChevronDown, Map, List } from 'lucide-react'
 
+const STATE_TO_ABBR = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+  'district of columbia': 'DC',
+}
+const normalizeStateToAbbr = (s) => {
+  if (!s) return null
+  const lower = s.trim().toLowerCase()
+  if (lower.length === 2) return lower.toUpperCase()
+  return STATE_TO_ABBR[lower] || null
+}
+
 function DealsPageInner() {
   const { user } = useAuth()
   const { loadFavorites } = useFavorites()
@@ -95,6 +115,29 @@ function DealsPageInner() {
   const sortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest'
   const handleFiltersChange = (newFilters) => setFilters(newFilters)
 
+  const handleRemoveBoundary = () => {
+    setSearchLocation(null)
+    setSearchQuery('')
+    router.replace('/marketplace')
+  }
+
+  const filterPinsByLocation = (pins) => {
+    if (!searchLocation?.state && !searchLocation?.city) return pins
+    const targetAbbr = normalizeStateToAbbr(searchLocation.state)
+    return pins.filter(p => {
+      if (targetAbbr) {
+        const pState = (p.state || '').toUpperCase().trim()
+        if (pState !== targetAbbr) return false
+      }
+      if (searchLocation.city) {
+        const pCity = (p.city || '').toLowerCase().trim()
+        const searchCity = searchLocation.city.toLowerCase().trim()
+        if (!pCity.includes(searchCity) && !searchCity.includes(pCity)) return false
+      }
+      return true
+    })
+  }
+
   // Fetch map pins with current filters — abort previous in-flight request on each change
   useEffect(() => {
     const controller = new AbortController()
@@ -147,14 +190,17 @@ function DealsPageInner() {
     return bounds.contains({ lat, lng })
   }
 
+  const locationFilteredPins = filterPinsByLocation(mapPins.length > 0 ? mapPins : properties)
+
   const visibleProperties = (() => {
-    const list = mapBounds && properties.length > 0
+    let list = mapBounds && properties.length > 0
       ? properties.filter(p => isInBounds(p, mapBounds))
       : properties
+    list = filterPinsByLocation(list)
     if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
     if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
     if (sortBy === 'roi') return [...list].sort((a, b) => (b.gross_yield || b.cap_rate || 0) - (a.gross_yield || a.cap_rate || 0))
-    return list // 'newest' — already ordered by API/insertion order
+    return list
   })()
 
   const resultCount = visibleProperties.length
@@ -282,14 +328,14 @@ const LoadingState = () => (
         {mobileView === 'map' && (
           <div className="fixed inset-0 top-[240px]">
             <PropertyMap
-              properties={mapPins.length > 0 ? mapPins : properties}
+              properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
               onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
               searchLocation={searchLocation}
-              onRemoveBoundary={() => setSearchLocation(null)}
+              onRemoveBoundary={handleRemoveBoundary}
             />
           </div>
         )}
@@ -347,14 +393,14 @@ const LoadingState = () => (
           {/* Map - left */}
           <div className="flex-1 bg-[#FAFAF8] relative min-w-[300px]">
             <PropertyMap
-              properties={mapPins.length > 0 ? mapPins : properties}
+              properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
               onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
               searchLocation={searchLocation}
-              onRemoveBoundary={() => setSearchLocation(null)}
+              onRemoveBoundary={handleRemoveBoundary}
             />
           </div>
 
