@@ -176,7 +176,7 @@ export function GuestLockModal({
           WebkitBackdropFilter: 'blur(8px)'
         }}
       />
-      <div className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl relative z-10">
+      <div className="bg-white rounded p-8 max-w-md w-full text-center shadow-2xl relative z-10">
         {canClose && (
           <button
             onClick={onClose}
@@ -200,7 +200,7 @@ export function GuestLockModal({
           </p>
 
           {lockoutTimeLeft > 0 && (
-            <div className="bg-[#FAFAF8] rounded-xl p-4 mb-4">
+            <div className="bg-[#FAFAF8] rounded p-4 mb-4">
               <div className="flex items-center justify-center gap-2 text-[#444441]">
                 <Clock className="w-5 h-5" />
                 <span className="text-sm">Or wait</span>
@@ -215,7 +215,7 @@ export function GuestLockModal({
         <div className="space-y-3">
           <button
             onClick={onSignUp}
-            className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-lg font-semibold rounded shadow-lg hover:shadow-xl transition-all duration-200"
           >
             Sign Up Free - Instant Access
           </button>
@@ -233,9 +233,9 @@ export function GuestViewBanner({ viewCount, remainingFreeViews, onSignUp }) {
   if (remainingFreeViews <= 0) return null
 
   return (
-    <div className="bg-gradient-to-r from-[#D03839] to-[#E0493B] text-white px-4 py-3 rounded-xl mb-4 flex items-center justify-between">
+    <div className="bg-gradient-to-r from-[#D03839] to-[#E0493B] text-white px-4 py-3 rounded mb-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="bg-white/20 p-2 rounded-lg">
+        <div className="bg-white/20 p-2 rounded">
           <Eye className="w-5 h-5" />
         </div>
         <div>
@@ -247,7 +247,7 @@ export function GuestViewBanner({ viewCount, remainingFreeViews, onSignUp }) {
       </div>
       <button
         onClick={onSignUp}
-        className="bg-[#D03839] hover:bg-[#E0493B] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        className="bg-[#D03839] hover:bg-[#E0493B] text-white px-4 py-2 rounded text-sm font-medium transition-colors"
       >
         Sign Up Free
       </button>
@@ -277,7 +277,7 @@ export function ContentBlurOverlay({ onSignUp }) {
         </p>
         <button
           onClick={onSignUp}
-          className="bg-[#D03839] hover:bg-[#E0493B] text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+          className="bg-[#D03839] hover:bg-[#E0493B] text-white px-6 py-3 rounded font-semibold shadow-md hover:shadow-lg transition-all duration-200"
         >
           Sign Up Free
         </button>

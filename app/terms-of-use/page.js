@@ -25,7 +25,7 @@ export default function TermsOfUsePage() {
         />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
+          <div className="bg-white rounded shadow-lg p-6 sm:p-8 lg:p-12">
 
             {/* Title */}
             <h1 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-4">
@@ -130,7 +130,7 @@ export default function TermsOfUsePage() {
             </div>
 
             {/* Closing Statement */}
-            <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="mt-8 p-4 bg-gray-50 rounded border border-gray-200">
               <p className="text-base leading-relaxed text-gray-700 font-medium">
                 By using the Site or Services, you acknowledge that you have read, understood, and agree to these Terms of Use.
               </p>
@@ -190,7 +190,7 @@ export default function TermsOfUsePage() {
             >
               <a
                 href="/contact"
-                className="inline-block bg-[#D03839] hover:bg-white hover:text-[#D03839] text-white px-8 lg:px-12 py-4 lg:py-5 rounded-lg font-bold text-sm lg:text-base uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-block bg-[#D03839] hover:bg-white hover:text-[#D03839] text-white px-8 lg:px-12 py-4 lg:py-5 rounded font-bold text-sm lg:text-base uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 CONTACT US TODAY!
               </a>

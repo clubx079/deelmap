@@ -129,7 +129,7 @@ function LoginForm() {
 
           {/* ── Suspended Banner + Inline Review Form ── */}
           {isSuspended && (
-            <div className="mb-4 rounded-xl border border-amber-200 overflow-hidden">
+            <div className="mb-4 rounded border border-amber-200 overflow-hidden">
               {/* Banner header */}
               <div className="bg-amber-50 px-4 py-3.5 flex items-start gap-3">
                 <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -142,7 +142,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => { setShowReviewForm(v => !v); setReviewSuccess(false); setReviewError(''); }}
-                  className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors"
+                  className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded transition-colors"
                 >
                   Request Review
                   {showReviewForm ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -172,11 +172,11 @@ function LoginForm() {
                           rows={3}
                           placeholder="Why should your account be unsuspended?"
                           required
-                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 resize-none"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-400 resize-none"
                         />
                       </div>
                       {reviewError && (
-                        <div className="flex items-center gap-2 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-3 py-2 rounded-lg text-xs">
+                        <div className="flex items-center gap-2 bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-3 py-2 rounded text-xs">
                           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                           {reviewError}
                         </div>
@@ -184,7 +184,7 @@ function LoginForm() {
                       <button
                         type="submit"
                         disabled={reviewLoading || !reviewMessage.trim()}
-                        className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                        className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded disabled:opacity-50 transition-colors"
                       >
                         {reviewLoading ? 'Submitting...' : 'Submit Request'}
                       </button>
@@ -196,7 +196,7 @@ function LoginForm() {
           )}
 
           {/* Form Card */}
-          {!(isSuspended && showReviewForm) && <div className="bg-white border-2 border-slate-200 rounded-xl p-8 shadow-lg">
+          {!(isSuspended && showReviewForm) && <div className="bg-white border-2 border-slate-200 rounded p-8 shadow-lg">
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email */}
               <div>
@@ -237,7 +237,7 @@ function LoginForm() {
 
               {/* Error Message */}
               {error && !isSuspended && (
-                <div className="bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-4 py-3 rounded-lg text-sm">
+                <div className="bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] px-4 py-3 rounded text-sm">
                   {error}
                 </div>
               )}
@@ -246,7 +246,7 @@ function LoginForm() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 text-sm font-semibold disabled:opacity-50 rounded-lg transition-all"
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 text-sm font-semibold disabled:opacity-50 rounded transition-all"
               >
                 {loading ? 'Signing In...' : 'Sign In'}
               </Button>
@@ -269,7 +269,7 @@ function LoginForm() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-slate-200 rounded hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -284,7 +284,7 @@ function LoginForm() {
                   type="button"
                   onClick={handleFacebookSignIn}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-slate-200 rounded hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

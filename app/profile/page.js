@@ -163,7 +163,7 @@ export default function ProfilePage() {
           )}
 
           {/* Profile card */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden mb-4">
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden mb-4">
             {/* Card header */}
             <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -265,7 +265,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Security */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden mb-4">
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden mb-4">
             <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center flex-shrink-0">
                 <Lock className="w-3.5 h-3.5 text-[#D03839]" />
@@ -287,7 +287,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Blocked users */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden mb-4">
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden mb-4">
             <button
               type="button" onClick={handleToggleBlockedUsers}
               className="w-full px-5 py-4 flex items-center justify-between hover:bg-[#FAFAF8] transition-colors"
@@ -357,7 +357,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Sign out */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg">
+          <div className="bg-white border border-[#E8E8E4] rounded">
             <div className="px-5 py-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-[14px] font-semibold text-[#1A1816]">Sign Out</p>

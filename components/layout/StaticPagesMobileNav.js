@@ -17,7 +17,7 @@ export function StaticPagesMobileNav({ isOpen, onClose, menuItems, currentPage }
           <h2 className="text-white text-xl font-bold">Menu</h2>
           <button
             onClick={onClose}
-            className="text-white hover:text-[#D03839] p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-white hover:text-[#D03839] p-2 rounded hover:bg-white/10 transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -32,7 +32,7 @@ export function StaticPagesMobileNav({ isOpen, onClose, menuItems, currentPage }
                 target={item.external ? '_blank' : '_self'}
                 rel={item.external ? 'noopener noreferrer' : undefined}
                 onClick={onClose}
-                className={`block py-4 px-4 text-base font-medium transition-colors duration-200 rounded-lg ${
+                className={`block py-4 px-4 text-base font-medium transition-colors duration-200 rounded ${
                   currentPage === item.page
                     ? 'text-[#D03839] bg-white/10'
                     : 'text-white hover:text-[#D03839] hover:bg-white/5'
@@ -58,7 +58,7 @@ export function StaticPagesMobileNav({ isOpen, onClose, menuItems, currentPage }
             target="_blank"
             rel="noopener noreferrer"
             onClick={onClose}
-            className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-base font-medium rounded-lg shadow-lg flex items-center justify-center transition-colors duration-200"
+            className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-base font-medium rounded shadow-lg flex items-center justify-center transition-colors duration-200"
           >
             Join Our Buyer's List
           </a>

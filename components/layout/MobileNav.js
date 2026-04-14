@@ -18,7 +18,7 @@ export function MobileNav({ isOpen, onClose, menuItems, user, onShowAuth, onLogo
           <h2 className="text-white text-xl font-bold">Menu</h2>
           <button
             onClick={onClose}
-            className="text-white hover:text-[#D03839] p-2 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-white hover:text-[#D03839] p-2 rounded hover:bg-white/10 transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -31,7 +31,7 @@ export function MobileNav({ isOpen, onClose, menuItems, user, onShowAuth, onLogo
               <Link
                 href={item.href}
                 onClick={onClose}
-                className={`block py-4 px-4 text-base font-medium transition-colors duration-200 rounded-lg ${
+                className={`block py-4 px-4 text-base font-medium transition-colors duration-200 rounded ${
                   item.active
                     ? 'text-[#D03839] bg-white/10'
                     : 'text-white hover:text-[#D03839] hover:bg-white/5'
@@ -72,7 +72,7 @@ export function MobileNav({ isOpen, onClose, menuItems, user, onShowAuth, onLogo
                   onLogout()
                   onClose()
                 }}
-                className="w-full text-left py-3 px-4 text-white hover:text-[#D03839] hover:bg-white/5 rounded-lg transition-colors font-medium"
+                className="w-full text-left py-3 px-4 text-white hover:text-[#D03839] hover:bg-white/5 rounded transition-colors font-medium"
               >
                 Sign Out
               </button>
@@ -83,7 +83,7 @@ export function MobileNav({ isOpen, onClose, menuItems, user, onShowAuth, onLogo
                 onShowAuth()
                 onClose()
               }}
-              className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-base font-medium rounded-lg shadow-lg"
+              className="w-full bg-[#D03839] hover:bg-[#E0493B] text-white py-4 text-base font-medium rounded shadow-lg"
             >
               Join Ableman
             </Button>

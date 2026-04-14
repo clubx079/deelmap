@@ -519,7 +519,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                               : <p className="text-[12px] font-medium text-[#444441] mb-1 text-right">You</p>
                             }
                             <div className={`flex ${isCounter ? 'justify-start' : 'justify-end'}`}>
-                            <div className="w-full max-w-[300px] bg-white border border-[#E8E8E4] rounded-lg px-4 py-3 shadow-sm">
+                            <div className="w-full max-w-[300px] bg-white border border-[#E8E8E4] rounded px-4 py-3 shadow-sm">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EBF3FC] text-[#4A90E2]">
                                   {isCounter ? 'Counter Offer' : 'Offer Submitted'}
@@ -886,13 +886,13 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         ) : (
         <div className="px-5 py-4">
           {latestOffer?.status === 'accepted' ? (
-            <div className="bg-[#E4F5EC] border border-[#A8DFBA] rounded-lg px-4 py-3 mb-3">
+            <div className="bg-[#E4F5EC] border border-[#A8DFBA] rounded px-4 py-3 mb-3">
               <p className="text-[13px] font-semibold text-[#0F6E56] mb-1">Next Steps</p>
               <p className="text-[12px] text-[#0F6E56]">Coordinate with the seller to proceed to contract signing.</p>
             </div>
           ) : latestOffer?.status === 'rejected' ? (
             <>
-              <div className="bg-[#FEF0EF] border border-[#F5C4C0] rounded-lg px-4 py-3 mb-3">
+              <div className="bg-[#FEF0EF] border border-[#F5C4C0] rounded px-4 py-3 mb-3">
                 <p className="text-[13px] font-semibold text-[#D03839]">Offer declined</p>
                 <p className="text-[12px] text-[#D03839] mt-1">You can submit a new offer or continue the conversation.</p>
               </div>

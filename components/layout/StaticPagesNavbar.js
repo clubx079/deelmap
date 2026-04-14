@@ -45,7 +45,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
                     href={item.href}
                     target={item.external ? '_blank' : '_self'}
                     rel={item.external ? 'noopener noreferrer' : undefined}
-                    className={`relative px-5 py-3 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                    className={`relative px-5 py-3 text-sm font-medium transition-colors duration-200 rounded ${
                       currentPage === item.page
                         ? 'text-[#D03839] bg-white/10'
                         : 'text-white hover:text-[#D03839] hover:bg-white/5'
@@ -68,7 +68,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
                 href="https://forms.monday.com/forms/160d7a7c32a951f6ab92b8812e440dc3?r=use1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#D03839] hover:bg-[#E0493B] text-white px-7 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                className="bg-[#D03839] hover:bg-[#E0493B] text-white px-7 py-3 rounded font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
               >
                 Join Our Buyer's List
               </a>
@@ -78,7 +78,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
             <div className="md:hidden">
               <button
                 onClick={() => setShowMobileMenu(true)}
-                className="p-2 text-white hover:text-[#D03839] hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 text-white hover:text-[#D03839] hover:bg-white/10 rounded transition-colors"
               >
                 <Menu className="h-6 w-6" />
               </button>

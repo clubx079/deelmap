@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
         />
         
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 lg:p-12">
+          <div className="bg-white rounded shadow-lg p-6 sm:p-8 lg:p-12">
             
             {/* Revised Date */}
             <p className="text-sm text-gray-600 mb-8">
@@ -339,7 +339,7 @@ export default function PrivacyPolicyPage() {
             >
               <a
                 href="/contact"
-                className="inline-block bg-[#022b41] hover:bg-white hover:text-[#022b41] text-white px-8 lg:px-12 py-4 lg:py-5 rounded-lg font-bold text-sm lg:text-base uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-block bg-[#022b41] hover:bg-white hover:text-[#022b41] text-white px-8 lg:px-12 py-4 lg:py-5 rounded font-bold text-sm lg:text-base uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 CONTACT US TODAY!
               </a>

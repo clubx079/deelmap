@@ -72,7 +72,7 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14">
 
             {/* Standard */}
-            <div className="bg-white border border-[#E8E8E4] rounded-lg p-5 flex flex-col">
+            <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
               <div className="min-h-[24px] mb-2.5" />
               <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">One-time</p>
               <h2 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Standard</h2>
@@ -112,7 +112,7 @@ export default function PricingPage() {
             </div>
 
             {/* Pro Seller — featured */}
-            <div className="bg-white border-2 border-[#D03839] rounded-lg p-5 flex flex-col">
+            <div className="bg-white border-2 border-[#D03839] rounded p-5 flex flex-col">
               <div className="min-h-[24px] mb-2.5">
                 <span className="inline-block text-[11px] font-semibold bg-[#FEF0EF] text-[#D03839] px-2.5 py-0.5 rounded">
                   Most popular
@@ -157,7 +157,7 @@ export default function PricingPage() {
             </div>
 
             {/* Enterprise */}
-            <div className="bg-white border border-[#E8E8E4] rounded-lg p-5 flex flex-col">
+            <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
               <div className="min-h-[24px] mb-2.5" />
               <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1">Subscription</p>
               <h2 className="text-2xl font-bold text-[#1A1816] tracking-tight mb-1">Enterprise</h2>
@@ -207,7 +207,7 @@ export default function PricingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-14">
 
-            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded-lg p-5 flex flex-col">
+            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded p-5 flex flex-col">
               <p className="text-[10px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-3">Visibility</p>
               <p className="text-base font-semibold text-[#1A1816] mb-2 leading-snug">Highlighted listing</p>
               <p className="text-[13px] text-[#737370] leading-relaxed mb-4 flex-1">
@@ -222,7 +222,7 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded-lg p-5 flex flex-col">
+            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded p-5 flex flex-col">
               <p className="text-[10px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-3">Placement</p>
               <p className="text-base font-semibold text-[#1A1816] mb-2 leading-snug">Homepage feature</p>
               <p className="text-[13px] text-[#737370] leading-relaxed mb-4 flex-1">
@@ -237,7 +237,7 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded-lg p-5 flex flex-col">
+            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded p-5 flex flex-col">
               <p className="text-[10px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-3">Ranking</p>
               <p className="text-base font-semibold text-[#1A1816] mb-2 leading-snug">Boost listing</p>
               <p className="text-[13px] text-[#737370] leading-relaxed mb-4 flex-1">
@@ -252,7 +252,7 @@ export default function PricingPage() {
               </div>
             </div>
 
-            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded-lg p-5 flex flex-col">
+            <div className="bg-[#F3F3F0] border border-[#E8E8E4] rounded p-5 flex flex-col">
               <p className="text-[10px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-3">Bundle</p>
               <p className="text-base font-semibold text-[#1A1816] mb-2 leading-snug">Highlight + Boost</p>
               <p className="text-[13px] text-[#737370] leading-relaxed mb-4 flex-1">

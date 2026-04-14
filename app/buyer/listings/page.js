@@ -123,7 +123,7 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={onBack}
-          className="p-2 rounded-lg text-[#737370] hover:bg-[#F3F3F0] hover:text-[#1A1816] transition-colors"
+          className="p-2 rounded text-[#737370] hover:bg-[#F3F3F0] hover:text-[#1A1816] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -137,7 +137,7 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
 
         {/* Left — add-ons or payment form */}
-        <div className="bg-white border border-[#E8E8E4] rounded-xl p-6">
+        <div className="bg-white border border-[#E8E8E4] rounded p-6">
           {showPayment && clientSecret ? (
             stripePromise ? (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
@@ -167,9 +167,9 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
                       key={id}
                       type="button"
                       onClick={() => toggle(id)}
-                      className={`w-full flex items-center gap-4 p-4 border rounded-lg text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+                      className={`w-full flex items-center gap-4 p-4 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
                     >
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+                      <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
                         <Icon className={`w-5 h-5 ${selected ? 'text-white' : 'text-[#737370]'}`} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
         </div>
 
         {/* Right — order summary */}
-        <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
           <div className="p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
             <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-2">Your Listing</p>
             <p className="text-[13px] font-semibold text-[#1A1816] truncate">{listing.address || listing.seo_title || 'Listing'}</p>
@@ -380,7 +380,7 @@ export default function MyListingsPage() {
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-xl border border-[#E8E8E4] overflow-hidden">
+      <div className="bg-white rounded border border-[#E8E8E4] overflow-hidden">
 
         {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto">
@@ -404,7 +404,7 @@ export default function MyListingsPage() {
                     <td className="px-4 py-3"><div className="h-3 w-4 bg-[#E8E8E4] rounded" /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-[#E8E8E4] rounded-lg flex-shrink-0" />
+                        <div className="w-10 h-10 bg-[#E8E8E4] rounded flex-shrink-0" />
                         <div className="space-y-1.5">
                           <div className="h-3 w-36 bg-[#E8E8E4] rounded" />
                           <div className="h-2.5 w-20 bg-[#E8E8E4] rounded" />
@@ -457,7 +457,7 @@ export default function MyListingsPage() {
                       {/* Property */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
+                          <div className="w-10 h-10 rounded bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
                             {img ? (
                               <img src={img} alt="" className="w-full h-full object-cover" />
                             ) : (
@@ -540,7 +540,7 @@ export default function MyListingsPage() {
                               )}
                               <button
                                 onClick={() => setAnalyticTarget(listing)}
-                                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
+                                className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
                                 title="Analytics"
                               >
                                 <BarChart2 className="w-4 h-4" />
@@ -548,7 +548,7 @@ export default function MyListingsPage() {
                               <Link
                                 href={`/${listing.slug || listing.id}`}
                                 target="_blank"
-                                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                                className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
                                 title="View listing"
                               >
                                 <Eye className="w-4 h-4" />
@@ -558,7 +558,7 @@ export default function MyListingsPage() {
                                   href={listing.inspection_report_url || listing.contract_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#4F46E5] hover:bg-[#EEF2FF] transition-colors"
+                                  className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#4F46E5] hover:bg-[#EEF2FF] transition-colors"
                                   title="View document"
                                 >
                                   <FileText className="w-4 h-4" />
@@ -566,7 +566,7 @@ export default function MyListingsPage() {
                               )}
                               <button
                                 onClick={() => setEditListing(listing)}
-                                className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                                className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
                                 title="Edit"
                               >
                                 <Pencil className="w-4 h-4" />
@@ -575,7 +575,7 @@ export default function MyListingsPage() {
                           )}
                           <button
                             onClick={() => setDeleteTarget(listing)}
-                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
+                            className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -595,7 +595,7 @@ export default function MyListingsPage() {
           {loading ? (
             [...Array(3)].map((_, i) => (
               <div key={i} className="p-4 animate-pulse flex gap-3">
-                <div className="w-14 h-14 bg-[#E8E8E4] rounded-lg flex-shrink-0" />
+                <div className="w-14 h-14 bg-[#E8E8E4] rounded flex-shrink-0" />
                 <div className="flex-1 space-y-2 pt-1">
                   <div className="h-3 w-3/4 bg-[#E8E8E4] rounded" />
                   <div className="h-3 w-1/2 bg-[#E8E8E4] rounded" />
@@ -633,7 +633,7 @@ export default function MyListingsPage() {
                 <div key={listing.id} className="p-4">
                   {/* Deal info */}
                   <div className="flex gap-3 mb-3">
-                    <div className="w-14 h-14 rounded-lg bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
+                    <div className="w-14 h-14 rounded bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
                       {img ? (
                         <img src={img} alt="" className="w-full h-full object-cover" />
                       ) : (

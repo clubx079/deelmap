@@ -73,7 +73,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right – Form */}
-            <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 shadow-sm">
+            <div className="bg-white border border-[#E8E8E4] rounded p-8 shadow-sm">
               <h2 className="text-[20px] font-bold text-[#1A1816] mb-6">Contact Us</h2>
 
               {success ? (

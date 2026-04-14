@@ -635,7 +635,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
                   {/* Selected states display */}
                   <div
                     onClick={() => setShowStatesDropdown(!showStatesDropdown)}
-                    className={`min-h-[44px] sm:min-h-[48px] w-full px-3 py-2 border rounded-lg cursor-pointer flex flex-wrap gap-1.5 items-center ${
+                    className={`min-h-[44px] sm:min-h-[48px] w-full px-3 py-2 border rounded cursor-pointer flex flex-wrap gap-1.5 items-center ${
                       showStatesDropdown ? 'border-[#b29578] ring-2 ring-[#b29578]/20' : 'border-gray-300'
                     } ${authData.statesOfInterest?.length === 0 ? 'text-gray-400' : ''}`}
                   >
@@ -647,7 +647,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
                         return (
                           <span
                             key={stateCode}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#b29578]/10 text-[#b29578] rounded-md text-xs font-medium"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#b29578]/10 text-[#b29578] rounded text-xs font-medium"
                           >
                             {state?.label || stateCode}
                             <button
@@ -672,7 +672,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
 
                   {/* Dropdown */}
                   {showStatesDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-60 overflow-hidden">
                       {/* Search input */}
                       <div className="p-2 border-b border-gray-100">
                         <input
@@ -680,7 +680,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
                           placeholder="Search states..."
                           value={statesSearch}
                           onChange={(e) => setStatesSearch(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-[#b29578]"
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-[#b29578]"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>

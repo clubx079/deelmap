@@ -171,7 +171,7 @@ export function PropertyImageSlider({
 
   if (images.length === 0) {
     return (
-      <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 shadow-lg" style={{ height: '420px' }}>
+      <div className="relative w-full rounded overflow-hidden bg-gray-100 shadow-lg" style={{ height: '420px' }}>
         <div className="flex items-center justify-center h-full">
           <span className="text-gray-400 text-lg">No images available</span>
         </div>
@@ -181,7 +181,7 @@ export function PropertyImageSlider({
 
   return (
     <>
-      <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 shadow-lg group" style={{ height: '420px' }}>
+      <div className="relative w-full rounded overflow-hidden bg-gray-100 shadow-lg group" style={{ height: '420px' }}>
         <div 
           className="relative w-full h-full cursor-pointer bg-gray-200"
           onClick={() => openLightbox(currentIndex)}
@@ -302,7 +302,7 @@ export function PropertyImageSlider({
               <p className="text-white text-lg font-semibold mb-2">
                 {allImages.length - images.length} More Photos Available
               </p>
-              <button className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-6 py-3 rounded-lg font-medium transition-colors">
+              <button className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-6 py-3 rounded font-medium transition-colors">
                 Join Ableman to View All
               </button>
             </div>
@@ -389,7 +389,7 @@ export function PropertyImageSlider({
                           setLightboxIndex(index);
                           setViewedImages(prev => new Set([...prev, index]));
                         }}
-                        className={`flex-shrink-0 relative rounded-lg overflow-hidden transition-all duration-200 ${
+                        className={`flex-shrink-0 relative rounded overflow-hidden transition-all duration-200 ${
                           index === lightboxIndex
                             ? 'opacity-100 scale-105'
                             : 'opacity-60 hover:opacity-100 hover:scale-105'
@@ -423,7 +423,7 @@ export function PropertyImageSlider({
           onClick={() => setShowJoinPrompt(false)}
         >
           <div
-            className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl"
+            className="bg-white rounded p-8 max-w-md w-full text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6">
@@ -446,7 +446,7 @@ export function PropertyImageSlider({
                   window.location.href = window.location.pathname; // Fallback: reload without special link
                 }
               }}
-              className="w-full bg-[#b29578] hover:bg-[#9a7e61] text-white py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 mb-3"
+              className="w-full bg-[#b29578] hover:bg-[#9a7e61] text-white py-4 text-lg font-semibold rounded shadow-lg hover:shadow-xl transition-all duration-200 mb-3"
             >
               Join Ableman For Free
             </button>

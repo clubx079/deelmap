@@ -175,7 +175,7 @@ export function Navbar() {
 
                       {showAboutDropdown && typeof window !== 'undefined' && createPortal(
                         <div
-                          className="fixed bg-white rounded-lg shadow-lg border border-[#E8E8E4] py-1.5 about-dropdown-menu"
+                          className="fixed bg-white rounded shadow-lg border border-[#E8E8E4] py-1.5 about-dropdown-menu"
                           style={{
                             top: aboutButtonRef.current ? aboutButtonRef.current.getBoundingClientRect().bottom + 4 : 68,
                             left: aboutButtonRef.current ? aboutButtonRef.current.getBoundingClientRect().left : 0,
@@ -376,7 +376,7 @@ export function Navbar() {
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#E8E8E4] bg-white">
               {user ? (
                 <Link href="/buyer/dashboard" onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1816] hover:bg-[#2A2825] transition-colors">
+                  className="flex items-center gap-3 p-3 rounded bg-[#1A1816] hover:bg-[#2A2825] transition-colors">
                   <div className="w-10 h-10 rounded-full bg-[#D03839] flex items-center justify-center text-white font-semibold">
                     {getUserInitials(user)}
                   </div>

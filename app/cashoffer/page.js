@@ -187,7 +187,7 @@ export default function CashOfferPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6 lg:p-8">
+          <form onSubmit={handleSubmit} className="bg-white rounded shadow-lg p-6 lg:p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* First Name */}
@@ -201,7 +201,7 @@ export default function CashOfferPage() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -216,7 +216,7 @@ export default function CashOfferPage() {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -231,7 +231,7 @@ export default function CashOfferPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export default function CashOfferPage() {
                   value={formData.phoneNumber}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -260,7 +260,7 @@ export default function CashOfferPage() {
                   value={formData.propertyType}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 >
                   <option value="Single Family House">Single Family House</option>
                   <option value="Multi Family House">Multi Family House</option>
@@ -281,7 +281,7 @@ export default function CashOfferPage() {
                   value={formData.fullAddress}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -295,7 +295,7 @@ export default function CashOfferPage() {
                   value={formData.state}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 >
                   {states.map(state => (
                     <option key={state} value={state}>{state}</option>
@@ -314,7 +314,7 @@ export default function CashOfferPage() {
                   value={formData.closingTime}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -329,7 +329,7 @@ export default function CashOfferPage() {
                   value={formData.askingPrice}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -375,7 +375,7 @@ export default function CashOfferPage() {
                   value={formData.contactDate}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839]"
                 />
               </div>
 
@@ -390,7 +390,7 @@ export default function CashOfferPage() {
                   onChange={handleInputChange}
                   rows={4}
                   placeholder="Ex: number of bedrooms, bathrooms, condition of roof, flooring, kitchen, etc."
-                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded-lg focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839] resize-none"
+                  className="w-full px-4 py-3 border border-[#E8E8E4] rounded focus:ring-2 focus:ring-[rgba(208,56,57,.12)] focus:border-[#D03839] resize-none"
                 />
               </div>
 
@@ -401,7 +401,7 @@ export default function CashOfferPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#D03839] hover:bg-[#E0493B] disabled:bg-gray-400 text-white py-4 px-6 rounded-lg font-bold text-lg uppercase tracking-wider transition-colors duration-200 shadow-lg hover:shadow-xl"
+                className="w-full bg-[#D03839] hover:bg-[#E0493B] disabled:bg-gray-400 text-white py-4 px-6 rounded font-bold text-lg uppercase tracking-wider transition-colors duration-200 shadow-lg hover:shadow-xl"
               >
                 {isSubmitting ? 'SENDING...' : 'SEND'}
               </button>
@@ -418,7 +418,7 @@ export default function CashOfferPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mb-16">
             
             {/* Step 1 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
                 <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">1</span>
@@ -437,7 +437,7 @@ export default function CashOfferPage() {
             </div>
 
             {/* Step 2 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
                 <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">2</span>
@@ -456,7 +456,7 @@ export default function CashOfferPage() {
             </div>
 
             {/* Step 3 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
                 <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">3</span>
@@ -475,7 +475,7 @@ export default function CashOfferPage() {
             </div>
 
             {/* Step 4 */}
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative mb-6">
                 <div className="w-16 h-16 bg-[#D03839] rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-2xl font-bold text-white">4</span>
@@ -498,7 +498,7 @@ export default function CashOfferPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
             
             {/* Get Paid */}
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="flex justify-center mb-6">
                 <Image
                   src="/assets/cash/6.svg"
@@ -520,7 +520,7 @@ export default function CashOfferPage() {
             </div>
 
             {/* Quick Close */}
-            <div className="bg-white rounded-lg shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+            <div className="bg-white rounded shadow-lg p-8 text-center border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="flex justify-center mb-6">
                 <Image
                   src="/assets/cash/7.svg"

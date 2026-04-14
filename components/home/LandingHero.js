@@ -63,7 +63,7 @@ export function LandingHero() {
         {/* Phone mockup */}
         <div className="relative w-[200px] sm:w-[240px] lg:w-[280px] aspect-[9/19] bg-[#1A1816] rounded-[2.5rem] shadow-2xl border-[10px] sm:border-[12px] border-[#1A1816] overflow-hidden">
           {/* Notch */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#1A1816] rounded-b-2xl z-10" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#1A1816] rounded-b z-10" />
           {/* Screen - map area */}
           <div className="absolute inset-0 pt-6 bg-[#E8E8E4] overflow-hidden">
             {/* Subtle map-like grid background */}
@@ -136,7 +136,7 @@ export function LandingHero() {
 
 function PropertyCard({ price, location, beds, baths, sqft, image }) {
   return (
-    <div className="bg-white rounded-xl shadow-xl border border-[#E8E8E4] overflow-hidden transition-shadow duration-300 hover:shadow-2xl">
+    <div className="bg-white rounded shadow-xl border border-[#E8E8E4] overflow-hidden transition-shadow duration-300 hover:shadow-2xl">
       <div className="relative aspect-[4/3] bg-[#FAFAF8]">
         <Image
           src={image}

@@ -35,7 +35,7 @@ export function Modal({ isOpen, onClose, children, className = '', hideClose = f
         />
         {/* Modal content */}
         <div
-          className={`relative bg-white rounded-xl shadow-2xl max-w-lg w-full ${className}`}
+          className={`relative bg-white rounded shadow-2xl max-w-lg w-full ${className}`}
           style={{ zIndex: 10000 }}
         >
           {!hideClose && (

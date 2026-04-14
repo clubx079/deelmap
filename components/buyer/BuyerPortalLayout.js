@@ -44,7 +44,7 @@ export default function BuyerPortalLayout({ children, pageTitle = '' }) {
           <div className="w-10 shrink-0 flex items-center justify-start">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
+              className="p-2 rounded bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
               aria-label="Open menu"
             >
               <Menu className="w-5 h-5" />

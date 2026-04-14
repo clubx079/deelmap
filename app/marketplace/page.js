@@ -214,13 +214,13 @@ function DealsPageInner() {
           <span className="text-[13px] font-medium text-[#1A1816]">Sort:</span>
           <button
             onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="flex items-center gap-2 h-9 px-3 bg-white border border-[#E8E8E4] rounded-lg text-[13px] font-semibold text-[#1A1816] hover:border-[#1A1816] transition-colors"
+            className="flex items-center gap-2 h-9 px-3 bg-white border border-[#E8E8E4] rounded text-[13px] font-semibold text-[#1A1816] hover:border-[#1A1816] transition-colors"
           >
             {sortLabel}
             <ChevronDown className={`w-3.5 h-3.5 text-[#737370] transition-transform duration-200 ${showSortDropdown ? 'rotate-180' : ''}`} />
           </button>
           {showSortDropdown && (
-            <div className="absolute top-full right-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-52 overflow-hidden">
+            <div className="absolute top-full right-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-52 overflow-hidden">
               <div className="px-4 pt-3 pb-1.5 border-b border-[#F0F0EC]">
                 <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Sort by</p>
               </div>

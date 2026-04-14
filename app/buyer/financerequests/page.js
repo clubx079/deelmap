@@ -353,7 +353,7 @@ export default function FinanceRequestsPage() {
           onClick={() => setConfirmDeleteId(null)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-sm border border-[#E8E8E4]"
+            className="bg-white rounded shadow-xl w-full max-w-sm border border-[#E8E8E4]"
             onClick={e => e.stopPropagation()}
           >
             <div className="p-5">

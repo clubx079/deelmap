@@ -209,21 +209,21 @@ export default function SettingsPage() {
       <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto">
         {/* Alerts */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded flex items-center gap-3">
             <X className="w-5 h-5 text-red-600 flex-shrink-0" />
             <p className="text-red-600">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
             <p className="text-green-600">{success}</p>
           </div>
         )}
 
         {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+        <div className="bg-white rounded shadow-sm border border-slate-200 mb-6">
           {/* Card Header */}
           <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function SettingsPage() {
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium transition-colors"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     required
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg transition-all ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded transition-all ${
                       isEditing
                         ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
                         : 'border-slate-200 bg-slate-50 cursor-not-allowed'
@@ -288,7 +288,7 @@ export default function SettingsPage() {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     required
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg transition-all ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded transition-all ${
                       isEditing
                         ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
                         : 'border-slate-200 bg-slate-50 cursor-not-allowed'
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                     name="email"
                     value={formData.email}
                     disabled
-                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 rounded-lg cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 rounded cursor-not-allowed"
                   />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     placeholder="Enter your phone number"
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg transition-all ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded transition-all ${
                       isEditing
                         ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
                         : 'border-slate-200 bg-slate-50 cursor-not-allowed'
@@ -348,7 +348,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={handleCancel}
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <X className="w-4 h-4" />
                   Cancel
@@ -356,7 +356,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   {isSubmitting ? 'Saving...' : 'Save Changes'}
@@ -367,9 +367,9 @@ export default function SettingsPage() {
         </div>
 
         {/* Security Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+        <div className="bg-white rounded shadow-sm border border-slate-200 mb-6">
           <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+            <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
               <Lock className="w-5 h-5 text-slate-700" />
             </div>
             <h2 className="text-lg font-semibold text-slate-900">Security</h2>
@@ -382,7 +382,7 @@ export default function SettingsPage() {
               </p>
               <Link
                 href="/forgot-password"
-                className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded hover:bg-slate-800 transition-colors"
               >
                 Reset Password
               </Link>
@@ -391,14 +391,14 @@ export default function SettingsPage() {
         </div>
 
         {/* Blocked users */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+        <div className="bg-white rounded shadow-sm border border-slate-200 mb-6 overflow-hidden">
           <button
             type="button"
             onClick={handleToggleBlockedUsers}
             className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
                 <ShieldBan className="w-5 h-5 text-slate-700" />
               </div>
               <div className="text-left">
@@ -424,7 +424,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={fetchBlockedUsers}
                   disabled={blockedLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 rounded transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${blockedLoading ? 'animate-spin' : ''}`} />
                   Refresh
@@ -437,7 +437,7 @@ export default function SettingsPage() {
               ) : (
                 <div className="space-y-2.5 max-h-64 overflow-y-auto">
                   {blockedUsers.map((row) => (
-                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 bg-white">
+                    <div key={row.conversation_id} className="flex items-center justify-between gap-3 p-3 rounded border border-slate-200 bg-white">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-900 truncate">{row.name || 'User'}</p>
                         <p className="text-xs text-slate-500">
@@ -448,7 +448,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={() => handleUnblock(row.conversation_id)}
                         disabled={unblockingId === row.conversation_id}
-                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {unblockSuccessId === row.conversation_id ? 'Unblocked' : unblockingId === row.conversation_id ? 'Unblocking…' : 'Unblock'}
                       </button>
@@ -461,7 +461,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Sign Out Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white rounded shadow-sm border border-slate-200">
           <div className="px-6 py-4 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900 mb-1">Sign Out</h2>
@@ -479,7 +479,7 @@ export default function SettingsPage() {
                   window.location.href = '/'
                 }
               }}
-              className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+              className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Sign Out

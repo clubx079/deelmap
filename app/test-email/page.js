@@ -660,7 +660,7 @@ export default function TestEmailPage() {
             <button
               key={key}
               onClick={() => setSelectedTemplate(key)}
-              className={`w-full text-left px-4 py-2 rounded-lg transition-all ${
+              className={`w-full text-left px-4 py-2 rounded transition-all ${
                 selectedTemplate === key
                   ? 'bg-slate-700 text-white font-semibold'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -684,9 +684,9 @@ export default function TestEmailPage() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-full mx-auto">
             {/* Preview */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded shadow-lg p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Preview</h2>
-              <div className="border-2 border-slate-200 rounded-lg overflow-hidden">
+              <div className="border-2 border-slate-200 rounded overflow-hidden">
                 <iframe
                   srcDoc={currentTemplate.html}
                   className="w-full"

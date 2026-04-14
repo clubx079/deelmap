@@ -129,7 +129,7 @@ function TempSellerOnboardContent() {
   if (success) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded shadow-lg p-8 max-w-md w-full text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile Completed!</h2>
           <p className="text-gray-600 mb-4">
@@ -143,7 +143,7 @@ function TempSellerOnboardContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+      <div className="bg-white rounded shadow-lg p-8 max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-brand-red mb-2">DeelMap</h1>
@@ -152,7 +152,7 @@ function TempSellerOnboardContent() {
 
         {/* Info Box */}
         {sellerData && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
             <h3 className="font-semibold text-blue-900 mb-1">Great News!</h3>
             <p className="text-sm text-blue-700">
               Your property has received {sellerData.viewer_count || 2} interested buyer views.
@@ -163,7 +163,7 @@ function TempSellerOnboardContent() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 rounded p-4 mb-6 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <p className="text-sm text-red-700">{error}</p>
           </div>
@@ -179,7 +179,7 @@ function TempSellerOnboardContent() {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red focus:border-transparent"
               placeholder="John Doe"
               required
             />
@@ -193,7 +193,7 @@ function TempSellerOnboardContent() {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red focus:border-transparent"
               placeholder="john@example.com"
               required
             />
@@ -207,7 +207,7 @@ function TempSellerOnboardContent() {
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red focus:border-transparent"
               placeholder="Minimum 8 characters"
               required
               minLength={8}
@@ -223,7 +223,7 @@ function TempSellerOnboardContent() {
               type="password"
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red focus:border-transparent"
               placeholder="Re-enter your password"
               required
               minLength={8}
@@ -233,7 +233,7 @@ function TempSellerOnboardContent() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-brand-red text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-brand-red text-white py-3 rounded font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 className="w-5 h-5 animate-spin" />}
             {submitting ? 'Creating Account...' : 'Complete Application'}
