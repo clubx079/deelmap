@@ -490,6 +490,15 @@ export default function MyListingsPage() {
                         <span className="text-[12px] font-semibold text-[#1A1816]">
                           {listing.price ? `$${Number(listing.price).toLocaleString()}` : '—'}
                         </span>
+                        {(listing.bedrooms || listing.bathrooms || listing.floor_area) && (
+                          <p className="text-[11px] text-[#A8A8A4] mt-0.5">
+                            {[
+                              listing.bedrooms && `${listing.bedrooms}bd`,
+                              listing.bathrooms && `${listing.bathrooms}ba`,
+                              listing.floor_area && `${Number(listing.floor_area).toLocaleString()} sqft`,
+                            ].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
                       </td>
 
                       {/* Type */}
@@ -649,6 +658,15 @@ export default function MyListingsPage() {
                         {listing.price ? `$${Number(listing.price).toLocaleString()}` : 'Price not set'}
                         {listing.property_type ? ` · ${listing.property_type}` : ''}
                       </p>
+                      {(listing.bedrooms || listing.bathrooms || listing.floor_area) && (
+                        <p className="text-[11px] text-[#A8A8A4]">
+                          {[
+                            listing.bedrooms && `${listing.bedrooms}bd`,
+                            listing.bathrooms && `${listing.bathrooms}ba`,
+                            listing.floor_area && `${Number(listing.floor_area).toLocaleString()} sqft`,
+                          ].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {/* Full-width action row */}
