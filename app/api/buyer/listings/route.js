@@ -83,6 +83,8 @@ export async function POST(request) {
 
     const addOns = body.add_ons || []
     const isHomepageFeatured = addOns.includes('homepage') || addOns.includes('bundle')
+    const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
 
     // Create/update property first so we have the id for the payment record
     let data, error
@@ -110,7 +112,12 @@ export async function POST(request) {
           seller_type: body.seller_type || null,
           contract_url: body.contract_url || null,
           status: 'under_review',
-          is_homepage_featured: isHomepageFeatured,
+          is_highlighted: addOns.includes('highlight') || addOns.includes('bundle') || undefined,
+          highlight_ends_at: (addOns.includes('highlight') || addOns.includes('bundle')) ? in30Days : undefined,
+          is_boosted: addOns.includes('boost') || addOns.includes('bundle') || undefined,
+          boost_ends_at: (addOns.includes('boost') || addOns.includes('bundle')) ? in7Days : undefined,
+          is_homepage_featured: isHomepageFeatured || undefined,
+          homepage_feature_ends_at: isHomepageFeatured ? in7Days : undefined,
         })
         .eq('id', body.draft_id)
         .eq('posted_by', userId)
@@ -141,7 +148,12 @@ export async function POST(request) {
           contract_url: body.contract_url || null,
           status: 'under_review',
           posted_by: userId,
-          is_homepage_featured: isHomepageFeatured,
+          is_highlighted: addOns.includes('highlight') || addOns.includes('bundle') || undefined,
+          highlight_ends_at: (addOns.includes('highlight') || addOns.includes('bundle')) ? in30Days : undefined,
+          is_boosted: addOns.includes('boost') || addOns.includes('bundle') || undefined,
+          boost_ends_at: (addOns.includes('boost') || addOns.includes('bundle')) ? in7Days : undefined,
+          is_homepage_featured: isHomepageFeatured || undefined,
+          homepage_feature_ends_at: isHomepageFeatured ? in7Days : undefined,
         })
         .select('id, slug')
         .single())
@@ -229,10 +241,12 @@ export async function PATCH(request) {
     // Enhancement flag update (after successful add-on payment)
     if (action === 'enhance') {
       const addOns = fields.add_ons || []
+      const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
       const flags = {}
-      if (addOns.includes('highlight') || addOns.includes('bundle')) flags.is_highlighted = true
-      if (addOns.includes('boost') || addOns.includes('bundle')) flags.is_boosted = true
-      if (addOns.includes('homepage')) flags.is_homepage_featured = true
+      if (addOns.includes('highlight') || addOns.includes('bundle')) { flags.is_highlighted = true; flags.highlight_ends_at = in30Days }
+      if (addOns.includes('boost') || addOns.includes('bundle')) { flags.is_boosted = true; flags.boost_ends_at = in7Days }
+      if (addOns.includes('homepage')) { flags.is_homepage_featured = true; flags.homepage_feature_ends_at = in7Days }
       const { error: enhError } = await supabaseMarketplace
         .from('properties')
         .update(flags)
