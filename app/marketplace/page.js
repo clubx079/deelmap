@@ -287,6 +287,7 @@ const LoadingState = () => (
               filters={filters}
               isLoggedIn={!!user}
               searchLocation={searchLocation}
+              onRemoveBoundary={() => setSearchLocation(null)}
             />
           </div>
         )}
@@ -351,6 +352,7 @@ const LoadingState = () => (
               filters={filters}
               isLoggedIn={!!user}
               searchLocation={searchLocation}
+              onRemoveBoundary={() => setSearchLocation(null)}
             />
           </div>
 

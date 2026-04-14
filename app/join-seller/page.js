@@ -159,7 +159,7 @@ export default function SellPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
                   className="w-full h-12 bg-white border border-[#1A1816] text-[#1A1816] font-semibold text-[15px] rounded flex items-center justify-center hover:bg-[#FAFAF8] transition-colors"
                 >
                   Sign up as seller
@@ -262,147 +262,6 @@ export default function SellPage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Closed Deals Nearby */}
-      <section className="py-16 lg:py-20 bg-[#FAFAF8]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-          {/* Header */}
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-2">RECENT SALES</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816]">Closed deals nearby</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setDealIndex(i => Math.max(0, i - 1))}
-                disabled={dealIndex === 0}
-                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
-              >
-                <ChevronDown className="w-4 h-4 rotate-90" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setDealIndex(i => Math.min(CLOSED_DEALS.length - 4, i + 1))}
-                disabled={dealIndex >= CLOSED_DEALS.length - 4}
-                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
-              >
-                <ChevronDown className="w-4 h-4 -rotate-90" />
-              </button>
-            </div>
-          </div>
-
-          {/* Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {visibleDeals.map((deal, i) => (
-              <div key={dealIndex + i} className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
-                {/* Image */}
-                <div className="relative h-[160px]">
-                  <img src={deal.img} alt={deal.location} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                  {deal.badge && (
-                    <span className="absolute top-2 left-2 bg-white text-[#1A1816] text-[10px] font-semibold px-2 py-1 rounded">
-                      {deal.badge}
-                    </span>
-                  )}
-                  <span className="absolute top-2 right-2 bg-[#1A1816] text-white text-[10px] font-bold px-2 py-1 rounded">
-                    {deal.roi}
-                  </span>
-                </div>
-                {/* Content */}
-                <div className="p-4">
-                  <p className="text-[11px] text-[#737370] mb-1.5 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] inline-block flex-shrink-0" />
-                    Sold – {deal.soldDate}
-                  </p>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[18px] font-bold text-[#1A1816]">${Number(deal.price).toLocaleString()}</span>
-                    <span className="text-[10px] font-semibold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded">ARV ${deal.arv}</span>
-                  </div>
-                  <p className="text-[11px] text-[#737370] mb-1">{deal.sqft} sq ft &nbsp;·&nbsp; {deal.beds} bed &nbsp;·&nbsp; {deal.baths} bath</p>
-                  <p className="text-[11px] text-[#737370] mb-3 flex items-center gap-1">
-                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {deal.location}
-                  </p>
-                  <div className="border-t border-[#E8E8E4] pt-3 grid grid-cols-3 gap-1">
-                    <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Spread</p>
-                      <p className="text-[11px] font-semibold text-[#D03839]">${(deal.spread / 1000).toFixed(0)}k</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Days on market</p>
-                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.days} days</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Type</p>
-                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.type}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-4 text-center">FREQUENTLY ASKED QUESTIONS</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-14 text-center">Everything you need to know</h2>
-          <div className="divide-y divide-[#E8E8E4]">
-            {FAQ_ITEMS.map((item, i) => (
-              <div key={i}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between py-6 text-left gap-6"
-                >
-                  <span className="text-[16px] font-semibold text-[#1A1816]">{item.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-[#1A1816] flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaq === i && (
-                  <p className="pb-6 text-[14px] leading-relaxed text-[#1A1816]">{item.a}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Seller Testimonials */}
-      <section className="py-16 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">SELLER STORIES</p>
-          <h2 className="text-3xl font-bold text-[#1A1816] mb-10">What our sellers say about us</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-white border border-[#E8E8E4] rounded-lg p-6 flex flex-col">
-                <div className="flex mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  ))}
-                </div>
-                <p className="text-[13px] text-[#444441] leading-relaxed mb-5 flex-1">"{t.text}"</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full ${t.color} flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0`}>
-                      {t.initials}
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-semibold text-[#1A1816] whitespace-nowrap">{t.name}</p>
-                      <p className="text-[11px] text-[#737370] whitespace-nowrap">{t.role}</p>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-[13px] font-bold text-[#1A1816]">{t.days}</p>
-                    <p className="text-[10px] text-[#A8A8A4]">Deals closed</p>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -556,81 +415,147 @@ export default function SellPage() {
 
           </div>
 
-          {/* Add-ons */}
-          <div className="mt-16 pt-14 border-t border-[#E8E8E4]">
-            <div className="text-center mb-8">
-              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">LISTING ENHANCEMENTS</p>
-              <h3 className="text-2xl sm:text-3xl font-bold text-[#1A1816] mb-2">Boost your listing visibility</h3>
-              <p className="text-[15px] text-[#737370]">Available on any plan. Add them at checkout — no commitment required.</p>
+        </div>
+      </section>
+
+      {/* Closed Deals Nearby */}
+      <section className="py-16 lg:py-20 bg-[#FAFAF8]">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
+          {/* Header */}
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-2">RECENT SALES</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816]">Closed deals nearby</h2>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-              {/* Highlight */}
-              <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Visibility</p>
-                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Highlight Listing</p>
-                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
-                  Gold-bordered card in search results so your deal stands out from the crowd.
-                </p>
-                <div className="mt-auto">
-                  <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$9.99</p>
-                  <p className="text-[11px] text-[#A8A8A4]">One-time · per listing</p>
-                </div>
-              </div>
-
-              {/* Homepage */}
-              <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Placement</p>
-                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Feature on Homepage</p>
-                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
-                  Your listing rotates in the featured deals section seen by all visitors for 7 days.
-                </p>
-                <div className="mt-auto">
-                  <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$29</p>
-                  <p className="text-[11px] text-[#A8A8A4]">One-time · 7-day window</p>
-                </div>
-              </div>
-
-              {/* Boost */}
-              <div className="bg-white border border-[#E8E8E4] rounded p-5 flex flex-col">
-                <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4] mb-1.5">Ranking</p>
-                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Boost Listing</p>
-                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
-                  Pushed to the top of search results for 7 days, then decays organically.
-                </p>
-                <div className="mt-auto">
-                  <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none mb-0.5">$14.99</p>
-                  <p className="text-[11px] text-[#A8A8A4]">One-time · 7-day boost</p>
-                </div>
-              </div>
-
-              {/* Bundle */}
-              <div className="bg-white border-2 border-[#D03839] rounded p-5 flex flex-col">
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[#A8A8A4]">Bundle</p>
-                  <span className="text-[10px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded">Best value</span>
-                </div>
-                <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">Highlight + Boost</p>
-                <p className="text-[13px] text-[#737370] leading-relaxed flex-1 mb-4">
-                  Full 30-day highlight plus a 7-day boost to top of search. Best value.
-                </p>
-                <div className="mt-auto">
-                  <div className="flex items-baseline gap-2 mb-0.5">
-                    <p className="text-[26px] font-bold text-[#1A1816] tracking-tight leading-none">$22</p>
-                    <p className="text-[12px] text-[#A8A8A4] line-through">$24.98</p>
-                  </div>
-                  <p className="text-[11px] text-[#A8A8A4]">One-time · saves $2.98</p>
-                </div>
-              </div>
-
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDealIndex(i => Math.max(0, i - 1))}
+                disabled={dealIndex === 0}
+                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+              >
+                <ChevronDown className="w-4 h-4 rotate-90" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setDealIndex(i => Math.min(CLOSED_DEALS.length - 4, i + 1))}
+                disabled={dealIndex >= CLOSED_DEALS.length - 4}
+                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+              >
+                <ChevronDown className="w-4 h-4 -rotate-90" />
+              </button>
             </div>
-
-            <p className="text-center text-[12px] text-[#A8A8A4] mt-6">
-              Add-ons are selected at checkout when posting your listing. No separate purchase needed.
-            </p>
           </div>
 
+          {/* Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {visibleDeals.map((deal, i) => (
+              <div key={dealIndex + i} className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+                {/* Image */}
+                <div className="relative h-[160px]">
+                  <img src={deal.img} alt={deal.location} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  {deal.badge && (
+                    <span className="absolute top-2 left-2 bg-white text-[#1A1816] text-[10px] font-semibold px-2 py-1 rounded">
+                      {deal.badge}
+                    </span>
+                  )}
+                  <span className="absolute top-2 right-2 bg-[#1A1816] text-white text-[10px] font-bold px-2 py-1 rounded">
+                    {deal.roi}
+                  </span>
+                </div>
+                {/* Content */}
+                <div className="p-4">
+                  <p className="text-[11px] text-[#737370] mb-1.5 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] inline-block flex-shrink-0" />
+                    Sold – {deal.soldDate}
+                  </p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[18px] font-bold text-[#1A1816]">${Number(deal.price).toLocaleString()}</span>
+                    <span className="text-[10px] font-semibold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded">ARV ${deal.arv}</span>
+                  </div>
+                  <p className="text-[11px] text-[#737370] mb-1">{deal.sqft} sq ft &nbsp;·&nbsp; {deal.beds} bed &nbsp;·&nbsp; {deal.baths} bath</p>
+                  <p className="text-[11px] text-[#737370] mb-3 flex items-center gap-1">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {deal.location}
+                  </p>
+                  <div className="border-t border-[#E8E8E4] pt-3 grid grid-cols-3 gap-1">
+                    <div>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Spread</p>
+                      <p className="text-[11px] font-semibold text-[#D03839]">${(deal.spread / 1000).toFixed(0)}k</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Days on market</p>
+                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.days} days</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Type</p>
+                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.type}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 lg:py-28 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-4 text-center">FREQUENTLY ASKED QUESTIONS</p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-14 text-center">Everything you need to know</h2>
+          <div className="divide-y divide-[#E8E8E4]">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between py-6 text-left gap-6"
+                >
+                  <span className="text-[16px] font-semibold text-[#1A1816]">{item.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-[#1A1816] flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === i && (
+                  <p className="pb-6 text-[14px] leading-relaxed text-[#1A1816]">{item.a}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Seller Testimonials */}
+      <section className="py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">SELLER STORIES</p>
+          <h2 className="text-3xl font-bold text-[#1A1816] mb-10">What our sellers say about us</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="bg-white border border-[#E8E8E4] rounded-lg p-6 flex flex-col">
+                <div className="flex mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  ))}
+                </div>
+                <p className="text-[13px] text-[#444441] leading-relaxed mb-5 flex-1">"{t.text}"</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full ${t.color} flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0`}>
+                      {t.initials}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-[#1A1816] whitespace-nowrap">{t.name}</p>
+                      <p className="text-[11px] text-[#737370] whitespace-nowrap">{t.role}</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[13px] font-bold text-[#1A1816]">{t.days}</p>
+                    <p className="text-[10px] text-[#A8A8A4]">Deals closed</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

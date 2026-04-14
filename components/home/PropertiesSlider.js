@@ -2,15 +2,15 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useProperties } from '@/hooks/useProperties'
 import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
 import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const TABS = [
-  { label: 'All deals', value: 'all' },
-  { label: 'Fix & flip', value: 'fix' },
-  { label: 'Buy & hold', value: 'hold' },
-  { label: 'Wholesale', value: 'wholesale' },
+  { label: 'All deals', value: 'all', redirect: false },
+  { label: 'Fix & flip', value: 'fix', redirect: true },
+  { label: 'Buy & hold', value: 'hold', redirect: true },
 ]
 
 const AVATAR_COLORS = ['bg-orange-400', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-rose-500', 'bg-amber-500']
@@ -18,6 +18,7 @@ const AVATAR_COLORS = ['bg-orange-400', 'bg-blue-500', 'bg-emerald-500', 'bg-pur
 const VISIBLE = 4
 
 export function PropertiesSlider() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('all')
   const [featuredBuyerDeals, setFeaturedBuyerDeals] = useState([])
   const [startIndex, setStartIndex] = useState(0)
@@ -40,16 +41,7 @@ export function PropertiesSlider() {
   // Reset index on tab change
   useEffect(() => { setStartIndex(0) }, [activeTab])
 
-  const filterByTab = (props) => {
-    if (activeTab === 'all') return props
-    return props.filter(p => {
-      const dt = (p.deal_type || '').toLowerCase()
-      if (activeTab === 'fix') return dt.includes('fix') || dt.includes('flip') || dt.includes('rehab')
-      if (activeTab === 'hold') return dt.includes('hold') || dt.includes('rental') || dt.includes('buy')
-      if (activeTab === 'wholesale') return dt.includes('wholesale')
-      return true
-    })
-  }
+  const filterByTab = (props) => props
 
   const allCards = (() => {
     const featuredFiltered = filterByTab(featuredBuyerDeals)
@@ -168,9 +160,9 @@ export function PropertiesSlider() {
                 {TABS.map((tab) => (
                   <button
                     key={tab.value}
-                    onClick={() => setActiveTab(tab.value)}
+                    onClick={() => tab.redirect ? router.push('/marketplace') : setActiveTab(tab.value)}
                     className={`h-9 px-4 rounded border text-[13px] font-medium transition-all whitespace-nowrap ${
-                      activeTab === tab.value
+                      activeTab === tab.value && !tab.redirect
                         ? 'bg-[#D03839] border-[#D03839] text-white'
                         : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
                     }`}

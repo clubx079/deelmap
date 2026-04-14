@@ -34,6 +34,24 @@ export async function POST(request) {
       await supabase.from('users').update({ stripe_customer_id: customerId }).eq('id', userId)
     }
 
+    const amount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
+
+    // Enhancement-only payment (for existing active listings)
+    if (body.listing_id) {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency: 'usd',
+        customer: customerId,
+        automatic_payment_methods: { enabled: true },
+        metadata: {
+          userId,
+          listing_id: body.listing_id,
+          ...(body.add_ons?.length ? { add_ons: body.add_ons.join(',') } : {}),
+        },
+      })
+      return NextResponse.json({ clientSecret: paymentIntent.client_secret })
+    }
+
     const f = body.formData || {}
     const essentialData = JSON.stringify({
       title: f.title || '',
@@ -48,8 +66,6 @@ export async function POST(request) {
       floor_area: f.floor_area || '',
       inspection_report_url: f.inspection_report_url || null,
     })
-
-    const amount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,

@@ -120,24 +120,13 @@ function StepBasicInfo({ data, onChange }) {
           if (comp.types.includes('administrative_area_level_1')) state = comp.short_name
           if (comp.types.includes('postal_code')) zipcode = comp.long_name
         }
-        onChange({ location: address, address, city, state, zipcode, latitude: lat, longitude: lng })
+        onChange({ location: address, address, city, state, zipcode, latitude: lat, longitude: lng, title: address })
       })
     })
   }, [])
 
   return (
     <div className="space-y-5">
-      <div>
-        <label className={labelCls}>Property Title <span className="text-[#D03839]">*</span></label>
-        <input
-          type="text"
-          value={data.title || ''}
-          onChange={e => onChange({ title: e.target.value })}
-          placeholder="e.g. 3 Bed Single Family in Indianapolis"
-          className={inputCls}
-        />
-      </div>
-
       <div>
         <label className={labelCls}>Property Address <span className="text-[#D03839]">*</span></label>
         <div className="relative">
@@ -536,6 +525,7 @@ function CheckoutForm({ formData, photos, user, draftId, selectedAddOns, totalCe
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState(null)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   const handlePay = async (e) => {
     e.preventDefault()
@@ -597,12 +587,24 @@ function CheckoutForm({ formData, photos, user, draftId, selectedAddOns, totalCe
         <p className="text-[13px] text-[#737370] mb-5">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span> upon submission.</p>
         <PaymentElement />
       </div>
+      <label className="flex items-start gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={agreedToTerms}
+          onChange={e => setAgreedToTerms(e.target.checked)}
+          className="mt-0.5 w-4 h-4 accent-[#D03839] flex-shrink-0 cursor-pointer"
+        />
+        <span className="text-[12px] text-[#444441] leading-snug">
+          By checking this box, you agree to our{' '}
+          <a href="/terms" target="_blank" className="text-[#D03839] underline hover:text-[#E0493B]">User Policy Agreement</a>.
+        </span>
+      </label>
       {error && (
         <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{error}</div>
       )}
       <button
         type="submit"
-        disabled={!stripe || processing}
+        disabled={!stripe || processing || !agreedToTerms}
         className="w-full h-[48px] bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] active:scale-[0.98] text-white text-[15px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {processing ? (
@@ -639,9 +641,13 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
   const totalCents = BASE_PRICE + addOnTotal
 
   const toggleAddOn = (id) => {
-    setSelectedAddOns(prev =>
-      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-    )
+    setSelectedAddOns(prev => {
+      if (prev.includes(id)) return prev.filter(a => a !== id)
+      let next = [...prev, id]
+      if (id === 'bundle') next = next.filter(a => a !== 'highlight' && a !== 'boost')
+      if (id === 'highlight' || id === 'boost') next = next.filter(a => a !== 'bundle')
+      return next
+    })
     if (showPaymentForm) {
       setShowPaymentForm(false)
       setClientSecret(null)
@@ -752,7 +758,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[#1A1816] truncate leading-tight">{formData.title || 'Untitled'}</p>
+              <p className="text-[13px] font-semibold text-[#1A1816] truncate leading-tight">{formData.address || 'Untitled'}</p>
               <p className="text-[11px] text-[#737370] truncate mt-0.5">{formData.address}</p>
             </div>
           </div>
@@ -924,7 +930,6 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
 
   const canNext = () => {
     if (step === 0) return !!(
-      formData.title?.trim() &&
       formData.address?.trim() &&
       formData.price &&
       formData.property_type &&

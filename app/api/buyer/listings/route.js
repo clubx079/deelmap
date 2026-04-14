@@ -224,7 +224,23 @@ export async function PATCH(request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
-    const { id, ...fields } = body
+    const { id, action, ...fields } = body
+
+    // Enhancement flag update (after successful add-on payment)
+    if (action === 'enhance') {
+      const addOns = fields.add_ons || []
+      const flags = {}
+      if (addOns.includes('highlight') || addOns.includes('bundle')) flags.is_highlighted = true
+      if (addOns.includes('boost') || addOns.includes('bundle')) flags.is_boosted = true
+      if (addOns.includes('homepage')) flags.is_homepage_featured = true
+      const { error: enhError } = await supabaseMarketplace
+        .from('properties')
+        .update(flags)
+        .eq('id', id)
+        .eq('posted_by', userId)
+      if (enhError) return NextResponse.json({ error: enhError.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
 
     // Check current status before updating
     const { data: current } = await supabaseMarketplace

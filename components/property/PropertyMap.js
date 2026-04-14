@@ -21,7 +21,7 @@ const STATE_CENTROIDS = {
   WI: [43.7844, -88.7879], WY: [43.0760, -107.2903], DC: [38.9072, -77.0369]
 }
 
-export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, filters, isLoggedIn = false, searchLocation = null }) {
+export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, filters, isLoggedIn = false, searchLocation = null, onRemoveBoundary }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
@@ -603,5 +603,18 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     }
   }
 
-  return <div ref={mapRef} className="w-full h-full min-h-[600px] map-container" />
+  return (
+    <div className="relative w-full h-full min-h-[600px]">
+      <div ref={mapRef} className="w-full h-full map-container" />
+      {searchLocation?.city && onRemoveBoundary && (
+        <button
+          onClick={onRemoveBoundary}
+          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 h-8 px-3 bg-white border border-[#E8E8E4] rounded-full shadow-sm text-[12px] font-medium text-[#444441] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors"
+        >
+          <span>×</span>
+          <span>Remove Boundary</span>
+        </button>
+      )}
+    </div>
+  )
 }

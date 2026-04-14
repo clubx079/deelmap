@@ -2,12 +2,180 @@
 import { useState, useEffect, useContext } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
-import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText, Sparkles, TrendingUp, Zap, Package, Check } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import PostDealForm from '@/components/buyer/PostDealForm'
 import PropertyAnalyticsSidebar from '@/components/buyer/PropertyAnalyticsSidebar'
+
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
+
+const ENHANCE_ADD_ONS = [
+  { id: 'highlight', label: 'Highlight Listing',   desc: 'Red-bordered card in search results',          price: 999,  icon: Sparkles },
+  { id: 'homepage',  label: 'Feature on Homepage', desc: 'Rotates in featured section for 7 days',       price: 2900, icon: TrendingUp },
+  { id: 'boost',     label: 'Boost Listing',        desc: 'Top of search results for 7 days',             price: 1499, icon: Zap },
+  { id: 'bundle',    label: 'Highlight + Boost Bundle', desc: 'Both above at a discount (saves $2.98)',   price: 2200, icon: Package },
+]
+
+function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, userId, onSuccess, onBack }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handlePay = async (e) => {
+    e.preventDefault()
+    if (!stripe || !elements) return
+    setProcessing(true)
+    setError(null)
+    try {
+      const { error: submitError } = await elements.submit()
+      if (submitError) { setError(submitError.message); setProcessing(false); return }
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({ elements, redirect: 'if_required' })
+      if (confirmError) { setError(confirmError.message); setProcessing(false); return }
+      if (paymentIntent?.status === 'succeeded') {
+        const res = await fetch('/api/buyer/listings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+          body: JSON.stringify({ id: listingId, action: 'enhance', add_ons: selectedAddOns }),
+        })
+        const d = await res.json()
+        if (!d.success) { setError('Payment succeeded but update failed. Contact support.'); setProcessing(false); return }
+        onSuccess()
+      }
+    } catch { setError('Something went wrong. Please try again.') }
+    setProcessing(false)
+  }
+
+  return (
+    <form onSubmit={handlePay} className="space-y-4">
+      <PaymentElement />
+      {error && <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{error}</div>}
+      <button
+        type="submit"
+        disabled={!stripe || processing}
+        className="w-full h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+      >
+        {processing ? <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Processing...</> : <>Pay ${(totalCents / 100).toFixed(2)}</>}
+      </button>
+      <button type="button" onClick={onBack} className="w-full text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors text-center">← Back</button>
+    </form>
+  )
+}
+
+function EnhanceModal({ listing, userId, onClose, onSuccess }) {
+  const [selectedAddOns, setSelectedAddOns] = useState([])
+  const [clientSecret, setClientSecret] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState(null)
+
+  const totalCents = selectedAddOns.reduce((sum, id) => {
+    const a = ENHANCE_ADD_ONS.find(x => x.id === id)
+    return sum + (a?.price || 0)
+  }, 0)
+
+  const toggle = (id) => {
+    setSelectedAddOns(prev => {
+      if (prev.includes(id)) return prev.filter(a => a !== id)
+      let next = [...prev, id]
+      if (id === 'bundle') next = next.filter(a => a !== 'highlight' && a !== 'boost')
+      if (id === 'highlight' || id === 'boost') next = next.filter(a => a !== 'bundle')
+      return next
+    })
+    setClientSecret(null)
+  }
+
+  const proceedToPayment = async () => {
+    setLoading(true)
+    setErr(null)
+    try {
+      const res = await fetch('/api/buyer/listings/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+        body: JSON.stringify({ listing_id: listing.id, add_ons: selectedAddOns, amount: totalCents }),
+      })
+      const d = await res.json()
+      if (d.clientSecret) setClientSecret(d.clientSecret)
+      else setErr(d.error || 'Failed to initialize payment')
+    } catch { setErr('Failed to initialize payment') }
+    setLoading(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-[#E8E8E4]">
+          <div>
+            <p className="text-[15px] font-bold text-[#1A1816]">Enhance Listing</p>
+            <p className="text-[12px] text-[#737370] truncate max-w-[280px]">{listing.address || listing.seo_title}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-[#A8A8A4] hover:bg-[#F3F3F0] transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5">
+          {clientSecret && stripePromise ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <EnhanceCheckoutForm
+                listingId={listing.id}
+                selectedAddOns={selectedAddOns}
+                totalCents={totalCents}
+                userId={userId}
+                onSuccess={() => { onSuccess(); onClose() }}
+                onBack={() => setClientSecret(null)}
+              />
+            </Elements>
+          ) : (
+            <>
+              <div className="space-y-2 mb-5">
+                {ENHANCE_ADD_ONS.map(({ id, label, desc, price, icon: Icon }) => {
+                  const selected = selectedAddOns.includes(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggle(id)}
+                      className={`w-full flex items-center gap-3 p-3.5 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+                    >
+                      <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
+                        <Icon className={`w-4 h-4 ${selected ? 'text-white' : 'text-[#737370]'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
+                        <p className="text-[11px] text-[#737370]">{desc}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-[12px] font-bold text-[#1A1816]">${(price / 100).toFixed(2)}</span>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
+                          {selected && <Check className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              {err && <div className="mb-3 p-2.5 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[12px] text-[#D03839]">{err}</div>}
+              <button
+                type="button"
+                onClick={proceedToPayment}
+                disabled={selectedAddOns.length === 0 || loading}
+                className="w-full h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? <><span className="animate-spin w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" />Preparing...</> : <>Pay Now — ${(totalCents / 100).toFixed(2)}</>}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function MyListingsPage() {
   const { user } = useAuth()
@@ -29,6 +197,7 @@ export default function MyListingsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [analyticTarget, setAnalyticTarget] = useState(null)
+  const [enhanceListing, setEnhanceListing] = useState(null)
 
   useEffect(() => {
     setPageTitle(showForm ? 'Post a Deal' : editListing ? 'Edit Listing' : 'My Listings')
@@ -113,6 +282,7 @@ export default function MyListingsPage() {
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Price</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Type</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider"></th>
                 <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -162,8 +332,8 @@ export default function MyListingsPage() {
                     active:       { label: 'Active',       cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' },
                     under_review: { label: 'Under Review', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' },
                     draft:        { label: 'Draft',        cls: 'bg-[#FEF9E7] text-[#B7860B] border-[#F5D87A]' },
-                    rejected:     { label: 'Rejected',     cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
-                    suspended:    { label: 'Suspended',    cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
+                    rejected:     { label: 'Update Required', cls: 'bg-[#FEF3E2] text-[#B5620A] border-[#F3C97D]' },
+                    suspended:    { label: 'Suspended',       cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
                   }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
                   return (
                     <tr key={listing.id} className="hover:bg-[#FAFAF8] transition-colors">
@@ -221,6 +391,18 @@ export default function MyListingsPage() {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${statusBadge.cls}`}>
                           {statusBadge.label}
                         </span>
+                      </td>
+
+                      {/* Enhance */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {listing.status === 'active' && (
+                          <button
+                            onClick={() => setEnhanceListing(listing)}
+                            className="h-7 px-3 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors"
+                          >
+                            Enhance
+                          </button>
+                        )}
                       </td>
 
                       {/* Actions */}
@@ -323,8 +505,8 @@ export default function MyListingsPage() {
                 active:       { label: 'Active',       cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' },
                 under_review: { label: 'Under Review', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' },
                 draft:        { label: 'Draft',        cls: 'bg-[#FEF9E7] text-[#B7860B] border-[#F5D87A]' },
-                rejected:     { label: 'Rejected',     cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
-                suspended:    { label: 'Suspended',    cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
+                rejected:     { label: 'Update Required', cls: 'bg-[#FEF3E2] text-[#B5620A] border-[#F3C97D]' },
+                suspended:    { label: 'Suspended',       cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
               }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
               return (
                 <div key={listing.id} className="p-4 flex gap-3">
@@ -414,6 +596,16 @@ export default function MyListingsPage() {
           propertyAddress={analyticTarget.seo_title || analyticTarget.address}
           userId={user?.id}
           onClose={() => setAnalyticTarget(null)}
+        />
+      )}
+
+      {/* Enhance modal */}
+      {enhanceListing && (
+        <EnhanceModal
+          listing={enhanceListing}
+          userId={user?.id}
+          onClose={() => setEnhanceListing(null)}
+          onSuccess={() => { fetchListings(); setEnhanceListing(null) }}
         />
       )}
 
