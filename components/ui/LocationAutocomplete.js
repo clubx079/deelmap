@@ -101,10 +101,30 @@ export default function LocationAutocomplete({
     setSuggestions([])
   }
 
+  const parseLocation = (text) => {
+    const trimmed = text.trim()
+    if (!trimmed) return null
+    if (trimmed.includes(',')) {
+      const parts = trimmed.split(',').map(s => s.trim())
+      return { city: parts[0] || '', state: parts[1] || '', label: trimmed }
+    }
+    return { city: '', state: trimmed, label: trimmed }
+  }
+
+  const submitLocation = (text) => {
+    if (suggestions.length > 0) {
+      handleSelect(suggestions[0])
+    } else {
+      const loc = parseLocation(text)
+      if (loc) onSelect?.(loc)
+      onSubmit?.(text)
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       setOpen(false)
-      onSubmit?.(value)
+      submitLocation(value)
     }
     if (e.key === 'Escape') {
       setOpen(false)
@@ -143,7 +163,7 @@ export default function LocationAutocomplete({
       )}
       <button
         type="button"
-        onClick={() => { setOpen(false); onSubmit?.(value) }}
+        onClick={() => { setOpen(false); submitLocation(value) }}
         className={`h-full w-[42px] bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0 rounded-r ${buttonClassName}`}
       >
         <Search className="w-4 h-4 text-white" />
