@@ -464,7 +464,7 @@ export default function BuyerDashboard() {
                 href="/buyer/offers"
                 icon={<FileText className="w-4 h-4 text-[#737370]" />}
                 title="Submit an offer"
-                subtitle={`${stats.offersMade} offers pending now`}
+                subtitle={`${stats.pendingResponses} offers pending now`}
               />
             </div>
           </div>
