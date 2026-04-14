@@ -936,9 +936,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               Make Offer
             </button>
           )}
-          <button className="flex items-center justify-center w-full py-3 border border-[#E8E8E4] text-[#1A1816] text-[14px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors duration-200">
-            Schedule Visit
-          </button>
         </div>
         )}
       </div>
