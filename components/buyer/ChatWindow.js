@@ -631,6 +631,25 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           </div>
         )}
 
+        {/* Quick-reply suggestions — only when no messages yet */}
+        {messages.length === 0 && !loading && (
+          <div className="flex-shrink-0 px-6 pt-4 pb-2 flex flex-wrap gap-2">
+            {[
+              `Hi, is this property still available?`,
+              `What's the best price you can do?`,
+            ].map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => { setNewMessage(suggestion); setTimeout(() => textareaRef.current?.focus(), 0); }}
+                className="text-[13px] text-[#444441] border border-[#E8E8E4] rounded-full px-4 py-1.5 bg-white hover:border-[#D03839] hover:text-[#D03839] transition-colors duration-200"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Input Area */}
         <div className="flex-shrink-0 px-6 py-4 border-t border-[#E8E8E4] bg-white">
           <form onSubmit={handleSendMessage} className="flex items-end gap-2">
