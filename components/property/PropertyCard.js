@@ -207,7 +207,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
         <div
           style={is_highlighted ? { padding: '2px', background: 'linear-gradient(135deg, #D03839 0%, #E8633E 50%, #D03839 100%)', borderRadius: '7px', animation: 'pulse-glow 3s ease-in-out infinite' } : {}}
         >
-          <div className={`bg-white ${is_highlighted ? '' : 'border border-[#E8E8E4]'} rounded overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col sm:flex-row sm:min-h-[230px]`} style={is_highlighted ? { borderRadius: '5px' } : {}}>
+          <div className={`bg-white ${is_highlighted ? '' : 'border border-[#E8E8E4]'} rounded overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col sm:flex-row sm:min-h-[230px]`} style={is_highlighted ? { borderRadius: '5px' } : {}}>
             {/* Photo */}
             <Link href={`/${slug}`} className="relative flex-shrink-0 w-full h-[200px] sm:w-[280px] sm:h-auto sm:self-stretch block group">
               {is_highlighted && (
