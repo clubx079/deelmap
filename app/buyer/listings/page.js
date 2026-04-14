@@ -16,10 +16,10 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   : null
 
 const ENHANCE_ADD_ONS = [
-  { id: 'highlight', label: 'Highlight Listing',       desc: 'Red-bordered card in search results',        price: 999,  icon: Sparkles },
-  { id: 'homepage',  label: 'Feature on Homepage',     desc: 'Rotates in featured section for 7 days',     price: 2900, icon: TrendingUp },
-  { id: 'boost',     label: 'Boost Listing',           desc: 'Top of search results for 7 days',           price: 1499, icon: Zap },
-  { id: 'bundle',    label: 'Highlight + Boost Bundle', desc: 'Both above at a discount (saves $2.98)',    price: 2200, icon: Package },
+  { id: 'highlight', label: 'Highlight Listing',       desc: 'Red-bordered card in search results for 30 days',          price: 999,  icon: Sparkles },
+  { id: 'homepage',  label: 'Feature on Homepage',     desc: 'Shown to all visitors in the featured section for 7 days', price: 2900, icon: TrendingUp },
+  { id: 'boost',     label: 'Boost Listing',           desc: 'Top of search results for 7 days',                         price: 1499, icon: Zap },
+  { id: 'bundle',    label: 'Highlight + Boost Bundle', desc: 'Highlight (30 days) + Boost (7 days) at a discount',      price: 2200, icon: Package },
 ]
 
 // ─── Enhance checkout form (Stripe) ──────────────────────────────────────────
