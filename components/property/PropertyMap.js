@@ -50,7 +50,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     boundaryPolygonsRef.current.forEach(p => p.setMap(null))
     boundaryPolygonsRef.current = []
 
-    if (!searchLocation?.city) return
+    if (!searchLocation?.city && !searchLocation?.state) return
 
     const abbrToFull = {
       'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
@@ -66,14 +66,24 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     }
     const stateFullName = abbrToFull[searchLocation.state?.toUpperCase()] || searchLocation.state || ''
 
-    const params = new URLSearchParams({
-      city: searchLocation.city,
-      state: stateFullName,
-      country: 'US',
-      polygon_geojson: '1',
-      format: 'json',
-      limit: '1',
-    })
+    // Build Nominatim params: city+state or state-only
+    const params = searchLocation.city
+      ? new URLSearchParams({
+          city: searchLocation.city,
+          state: stateFullName,
+          country: 'US',
+          polygon_geojson: '1',
+          format: 'json',
+          limit: '1',
+        })
+      : new URLSearchParams({
+          state: stateFullName,
+          country: 'US',
+          polygon_geojson: '1',
+          format: 'json',
+          limit: '5',
+          addressdetails: '1',
+        })
 
     fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
       headers: { 'Accept-Language': 'en' }
@@ -83,7 +93,14 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
         const map = mapInstanceRef.current
         if (!map || !window.google || !results?.length) return
 
-        const geojson = results[0].geojson
+        // For state-only searches, prefer the result with addresstype === 'state'
+        let best = results[0]
+        if (!searchLocation.city && results.length > 1) {
+          const stateResult = results.find(r => r.addresstype === 'state' || (r.class === 'boundary' && r.type === 'administrative'))
+          if (stateResult) best = stateResult
+        }
+
+        const geojson = best.geojson
         if (!geojson) return
 
         const drawRing = (coordinates) => {
@@ -108,7 +125,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
         }
 
         // Zoom to the boundary
-        const bbox = results[0].boundingbox // [minLat, maxLat, minLng, maxLng]
+        const bbox = best.boundingbox // [minLat, maxLat, minLng, maxLng]
         if (bbox) {
           map.fitBounds(new window.google.maps.LatLngBounds(
             { lat: parseFloat(bbox[0]), lng: parseFloat(bbox[2]) },
