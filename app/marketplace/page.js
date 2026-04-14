@@ -50,11 +50,13 @@ function DealsPageInner() {
   const [searchQuery, setSearchQuery] = useState(() => searchParams?.get('search') || '')
   const [searchLocation, setSearchLocation] = useState(() => {
     const s = searchParams?.get('search') || ''
+    if (!s) return null
     const commaIdx = s.indexOf(',')
     if (commaIdx > 0) {
       return { city: s.substring(0, commaIdx).trim(), state: s.substring(commaIdx + 1).trim() }
     }
-    return null
+    // State-only search (e.g. "Texas" from homepage) — treat as state boundary
+    return { city: '', state: s.trim() }
   })
   const {
     properties,

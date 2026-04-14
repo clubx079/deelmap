@@ -621,88 +621,99 @@ export default function MyListingsPage() {
                 suspended:    { label: 'Suspended',       cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' },
               }[listing.status] || { label: listing.status, cls: 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]' }
               return (
-                <div key={listing.id} className="p-4 flex gap-3">
-                  <div className="w-14 h-14 rounded-lg bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
-                    {img ? (
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Home className="w-5 h-5 text-[#A8A8A4]" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <p className="text-[13px] font-semibold text-[#1A1816] truncate">
-                        {listing.seo_title || listing.address || 'No address'}
-                      </p>
-                      <span className={`flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusBadgeMobile.cls}`}>
-                        {statusBadgeMobile.label}
-                      </span>
-                    </div>
-                    {(listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured) && (
-                      <div className="mb-1"><EnhanceTags listing={listing} /></div>
-                    )}
-                    <p className="text-[12px] text-[#737370] mt-1 mb-2">
-                      {listing.price ? `$${Number(listing.price).toLocaleString()}` : 'Price not set'}
-                      {listing.property_type ? ` · ${listing.property_type}` : ''}
-                    </p>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {!isDraftMobile && listing.status === 'active' && (
-                        <button
-                          onClick={() => setEnhanceListing(listing)}
-                          className="h-6 px-2.5 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors"
-                        >
-                          Enhance
-                        </button>
+                <div key={listing.id} className="p-4">
+                  {/* Deal info */}
+                  <div className="flex gap-3 mb-3">
+                    <div className="w-14 h-14 rounded-lg bg-[#F3F3F0] border border-[#E8E8E4] overflow-hidden flex-shrink-0">
+                      {img ? (
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Home className="w-5 h-5 text-[#A8A8A4]" />
+                        </div>
                       )}
-                      {isDraftMobile ? (
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-[13px] font-semibold text-[#1A1816] truncate">
+                          {listing.seo_title || listing.address || 'No address'}
+                        </p>
+                        <span className={`flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${statusBadgeMobile.cls}`}>
+                          {statusBadgeMobile.label}
+                        </span>
+                      </div>
+                      {(listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured) && (
+                        <div className="mb-1"><EnhanceTags listing={listing} /></div>
+                      )}
+                      <p className="text-[12px] text-[#737370]">
+                        {listing.price ? `$${Number(listing.price).toLocaleString()}` : 'Price not set'}
+                        {listing.property_type ? ` · ${listing.property_type}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Full-width action row */}
+                  <div className="border-t border-[#E8E8E4] pt-3 flex items-center justify-around">
+                    {isDraftMobile ? (
+                      <button
+                        onClick={() => setEditListing(listing)}
+                        className="flex-1 flex flex-col items-center gap-1 py-1 text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        <span className="text-[10px] font-medium">Complete</span>
+                      </button>
+                    ) : (
+                      <>
+                        {listing.status === 'active' && (
+                          <button
+                            onClick={() => setEnhanceListing(listing)}
+                            className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="text-[10px] font-medium">Enhance</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setAnalyticTarget(listing)}
+                          className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                        >
+                          <BarChart2 className="w-4 h-4" />
+                          <span className="text-[10px] font-medium">Analytics</span>
+                        </button>
+                        <Link
+                          href={`/${listing.slug || listing.id}`}
+                          target="_blank"
+                          className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0] rounded transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="text-[10px] font-medium">View</span>
+                        </Link>
+                        {(listing.inspection_report_url || listing.contract_url) && (
+                          <a
+                            href={listing.inspection_report_url || listing.contract_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#4F46E5] hover:bg-[#EEF2FF] rounded transition-colors"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="text-[10px] font-medium">Docs</span>
+                          </a>
+                        )}
                         <button
                           onClick={() => setEditListing(listing)}
-                          className="h-6 px-2.5 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors"
+                          className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0] rounded transition-colors"
                         >
-                          Complete
+                          <Pencil className="w-4 h-4" />
+                          <span className="text-[10px] font-medium">Edit</span>
                         </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => setAnalyticTarget(listing)}
-                            className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
-                          >
-                            <BarChart2 className="w-3.5 h-3.5" />
-                          </button>
-                          <Link
-                            href={`/${listing.slug || listing.id}`}
-                            target="_blank"
-                            className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </Link>
-                          {(listing.inspection_report_url || listing.contract_url) && (
-                            <a
-                              href={listing.inspection_report_url || listing.contract_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#4F46E5] hover:bg-[#EEF2FF] transition-colors"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          <button
-                            onClick={() => setEditListing(listing)}
-                            className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => setDeleteTarget(listing)}
-                        className="flex items-center justify-center w-7 h-7 rounded text-[#A8A8A4] hover:text-[#D03839] hover:bg-[#FEF0EF] transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                      </>
+                    )}
+                    <button
+                      onClick={() => setDeleteTarget(listing)}
+                      className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="text-[10px] font-medium">Delete</span>
+                    </button>
                   </div>
                 </div>
               )
