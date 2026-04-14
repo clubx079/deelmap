@@ -22,8 +22,10 @@ export function PropertiesSlider() {
   const [activeTab, setActiveTab] = useState('all')
   const [featuredBuyerDeals, setFeaturedBuyerDeals] = useState([])
   const [startIndex, setStartIndex] = useState(0)
-  const [fading, setFading] = useState(false)
+  const [noAnim, setNoAnim] = useState(false)
   const pausedRef = useRef(false)
+  const containerRef = useRef(null)
+  const [step, setStep] = useState(0)
 
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'] },
@@ -36,6 +38,17 @@ export function PropertiesSlider() {
       .then(r => r.json())
       .then(d => setFeaturedBuyerDeals(d.properties || []))
       .catch(() => {})
+  }, [])
+
+  // Measure container width → compute per-card step
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => setStep((el.offsetWidth + 16) / VISIBLE)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [])
 
   // Reset index on tab change
@@ -53,13 +66,28 @@ export function PropertiesSlider() {
   const canScroll = allCards.length > VISIBLE
   const displayProperties = allCards.slice(startIndex, startIndex + VISIBLE)
 
-  const moveTo = (newIdx) => {
-    setFading(true)
-    setTimeout(() => { setStartIndex(newIdx); setFading(false) }, 180)
+  const moveTo = (newIdx, animate = true) => {
+    if (!animate) {
+      setNoAnim(true)
+      setStartIndex(newIdx)
+      requestAnimationFrame(() => requestAnimationFrame(() => setNoAnim(false)))
+    } else {
+      setNoAnim(false)
+      setStartIndex(newIdx)
+    }
   }
 
-  const prev = () => moveTo(startIndex === 0 ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1)
-  const next = () => moveTo(startIndex + VISIBLE >= allCards.length ? 0 : startIndex + 1)
+  const prev = () => {
+    const wrapping = startIndex === 0
+    const newIdx = wrapping ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1
+    moveTo(newIdx, !wrapping)
+  }
+
+  const next = () => {
+    const wrapping = startIndex + VISIBLE >= allCards.length
+    const newIdx = wrapping ? 0 : startIndex + 1
+    moveTo(newIdx, !wrapping)
+  }
 
   // Auto-rotate
   useEffect(() => {
@@ -138,6 +166,123 @@ export function PropertiesSlider() {
     </div>
   )
 
+  const PropertyCardInner = ({ p }) => {
+    const img = getPrimaryPhotoUrl(p.property_photos)
+    const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')
+      ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
+      : img
+    const cityState = [p.city, p.state].filter(Boolean).join(', ')
+    const dealBadge = getDealBadge(p)
+    const roi = getROI(p)
+    const spread = getSpread(p)
+    const arv = Number(p.arv) || 0
+    const clean = (v) => (v && String(v).toLowerCase() !== 'unknown' ? v : null)
+    const title = clean(p.title) || clean(p.name) || clean(p.property_type) || 'Investment Property'
+    const beds = p.bedrooms
+    const baths = p.bathrooms
+    const sqft = p.sqft
+
+    return (
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col h-full">
+        {/* Photo */}
+        <div className="bg-[#FAFAF8] flex-shrink-0 relative h-[220px] overflow-hidden">
+          {thumbImg ? (
+            <Image
+              src={thumbImg}
+              alt={cityState || 'Property'}
+              fill
+              loading="lazy"
+              className="object-cover"
+              sizes="400px"
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="relative w-24 h-8">
+                <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+              </div>
+            </div>
+          )}
+          {/* Badges */}
+          <div className="absolute top-2.5 left-2.5">
+            <span className={`text-[11px] font-semibold px-2 py-1 rounded ${dealBadge.cls}`}>
+              {dealBadge.label}
+            </span>
+          </div>
+          {roi && (
+            <div className="absolute top-2.5 right-2.5">
+              <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1816] text-white">
+                {roi}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-4 flex flex-col flex-1">
+          {/* Location */}
+          <div className="flex items-center gap-1 mb-1.5">
+            <MapPin className="w-3 h-3 text-[#A8A8A4] flex-shrink-0" />
+            <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-[15px] font-bold text-[#1A1816] mb-1.5 leading-snug line-clamp-1">{title}</h3>
+
+          {/* Stats */}
+          <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
+            {sqft && <span>{Number(sqft).toLocaleString()} sq ft</span>}
+            {sqft && beds && <span className="text-[#E8E8E4]">·</span>}
+            {beds && <span>{beds} bed</span>}
+            {beds && baths && <span className="text-[#E8E8E4]">·</span>}
+            {baths && <span>{baths} bath</span>}
+          </div>
+
+          {/* Price + ARV */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[20px] font-bold text-[#1A1816]">{formatPrice(p.price)}</span>
+            {arv > 0 && (
+              <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
+                ARV {formatShort(arv)}
+              </span>
+            )}
+          </div>
+
+          {/* Spread */}
+          {spread > 0 && (
+            <p className="text-[12px] text-[#0F6E56] font-medium mb-3">
+              ↑ ${spread.toLocaleString()} spread potential
+            </p>
+          )}
+
+          {/* Divider + seller row */}
+          <div className="mt-auto pt-3 border-t border-[#F0F0EC] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 rounded-full ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                {getInitials(p)}
+              </div>
+              <div>
+                <p className="text-[12px] font-semibold text-[#1A1816] leading-none">{getSellerName(p)}</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+                  <span className="text-[10px] text-[#16A34A] font-medium">Verified</span>
+                </div>
+              </div>
+            </div>
+            <Link
+              href={`/${p.slug || p.id}`}
+              className="text-[12px] font-semibold text-[#D03839] hover:underline"
+            >
+              View deal
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const cardWidth = step > 0 ? step - 16 : 0
+
   return (
     <section className="py-16 lg:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -192,7 +337,7 @@ export function PropertiesSlider() {
           </div>
         </div>
 
-        {/* Cards grid */}
+        {/* Cards */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
@@ -202,126 +347,44 @@ export function PropertiesSlider() {
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : (
-          <div
-            className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity duration-200 ${fading ? 'opacity-0' : 'opacity-100'}`}
-            onMouseEnter={() => { pausedRef.current = true }}
-            onMouseLeave={() => { pausedRef.current = false }}
-          >
-            {displayProperties.map((p) => {
-              const img = getPrimaryPhotoUrl(p.property_photos)
-              const thumbImg = img && img.includes('supabase.co/storage/v1/object/public/')
-                ? img.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=400&resize=contain'
-                : img
-              const cityState = [p.city, p.state].filter(Boolean).join(', ')
-              const dealBadge = getDealBadge(p)
-              const roi = getROI(p)
-              const spread = getSpread(p)
-              const arv = Number(p.arv) || 0
-              const clean = (v) => (v && String(v).toLowerCase() !== 'unknown' ? v : null)
-              const title = clean(p.title) || clean(p.name) || clean(p.property_type) || 'Investment Property'
-              const beds = p.bedrooms
-              const baths = p.bathrooms
-              const sqft = p.sqft
+          <>
+            {/* Mobile / tablet: simple grid slice */}
+            <div className="block lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {displayProperties.map((p) => (
+                <PropertyCardInner key={p.id} p={p} />
+              ))}
+            </div>
 
-              return (
-                <div key={p.id} className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col">
-                  {/* Photo */}
-                  <div className="bg-[#FAFAF8] flex-shrink-0 relative h-[220px] overflow-hidden">
-                    {thumbImg ? (
-                      <Image
-                        src={thumbImg}
-                        alt={cityState || 'Property'}
-                        fill
-                        loading="lazy"
-                        className="object-cover"
-                        sizes="400px"
-                        onError={(e) => { e.target.style.display = 'none' }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="relative w-24 h-8">
-                          <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
-                        </div>
-                      </div>
-                    )}
-                    {/* Badges */}
-                    <div className="absolute top-2.5 left-2.5">
-                      <span className={`text-[11px] font-semibold px-2 py-1 rounded ${dealBadge.cls}`}>
-                        {dealBadge.label}
-                      </span>
-                    </div>
-                    {roi && (
-                      <div className="absolute top-2.5 right-2.5">
-                        <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1816] text-white">
-                          {roi}
-                        </span>
-                      </div>
-                    )}
+            {/* Desktop: sliding carousel */}
+            <div
+              ref={containerRef}
+              className="hidden lg:block overflow-hidden"
+              onMouseEnter={() => { pausedRef.current = true }}
+              onMouseLeave={() => { pausedRef.current = false }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '16px',
+                  transform: cardWidth > 0 ? `translateX(-${startIndex * step}px)` : undefined,
+                  transition: noAnim ? 'none' : 'transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  willChange: 'transform',
+                }}
+              >
+                {allCards.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      flexShrink: 0,
+                      width: cardWidth > 0 ? `${cardWidth}px` : 'calc(25% - 12px)',
+                    }}
+                  >
+                    <PropertyCardInner p={p} />
                   </div>
-
-                  {/* Content */}
-                  <div className="p-4 flex flex-col flex-1">
-                    {/* Location */}
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <MapPin className="w-3 h-3 text-[#A8A8A4] flex-shrink-0" />
-                      <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-[15px] font-bold text-[#1A1816] mb-1.5 leading-snug line-clamp-1">{title}</h3>
-
-                    {/* Stats */}
-                    <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
-                      {sqft && <span>{Number(sqft).toLocaleString()} sq ft</span>}
-                      {sqft && beds && <span className="text-[#E8E8E4]">·</span>}
-                      {beds && <span>{beds} bed</span>}
-                      {beds && baths && <span className="text-[#E8E8E4]">·</span>}
-                      {baths && <span>{baths} bath</span>}
-                    </div>
-
-                    {/* Price + ARV */}
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[20px] font-bold text-[#1A1816]">{formatPrice(p.price)}</span>
-                      {arv > 0 && (
-                        <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
-                          ARV {formatShort(arv)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Spread */}
-                    {spread > 0 && (
-                      <p className="text-[12px] text-[#0F6E56] font-medium mb-3">
-                        ↑ ${spread.toLocaleString()} spread potential
-                      </p>
-                    )}
-
-                    {/* Divider + seller row */}
-                    <div className="mt-auto pt-3 border-t border-[#F0F0EC] flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-full ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
-                          {getInitials(p)}
-                        </div>
-                        <div>
-                          <p className="text-[12px] font-semibold text-[#1A1816] leading-none">{getSellerName(p)}</p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                            <span className="text-[10px] text-[#16A34A] font-medium">Verified</span>
-                          </div>
-                        </div>
-                      </div>
-                      <Link
-                        href={`/${p.slug || p.id}`}
-                        className="text-[12px] font-semibold text-[#D03839] hover:underline"
-                      >
-                        View deal
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Browse all */}
