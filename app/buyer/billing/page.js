@@ -132,49 +132,44 @@ export default function BuyerBillingPage() {
             </a>
           </div>
         ) : (
-          <div className="divide-y divide-[#E8E8E4]">
-            {purchases.map((item) => {
+          <div className="-mx-5 -mb-5">
+            {purchases.map((item, i) => {
               const prop = item.properties
-
-              // Parse structured breakdown if available, fall back to plain string
               let breakdown = null
               try { breakdown = JSON.parse(item.description) } catch {}
 
               const title = prop?.seo_title || breakdown?.title || prop?.address || 'Listing'
-              const address = prop?.address || breakdown?.address || ''
-              const location = address ? '' : [prop?.city || breakdown?.city, prop?.state || breakdown?.state].filter(Boolean).join(', ')
-
-              const lineItems = breakdown
-                ? [breakdown.base, ...(breakdown.addons || [])].filter(Boolean)
-                : null
+              const cityState = [prop?.city || breakdown?.city, prop?.state || breakdown?.state].filter(Boolean).join(', ')
+              const addons = breakdown?.addons?.filter(a => a.amount > 0) || []
 
               return (
-                <div key={item.id} className="py-4 first:pt-0 last:pb-0">
-                  <div className="flex items-start justify-between gap-4 mb-2">
+                <div
+                  key={item.id}
+                  className={`flex items-center justify-between px-5 py-4 ${i !== purchases.length - 1 ? 'border-b border-[#F3F3F0]' : ''} hover:bg-[#FAFAF8] transition-colors`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded bg-[#F3F3F0] flex items-center justify-center flex-shrink-0">
+                      <Receipt className="w-4 h-4 text-[#737370]" />
+                    </div>
                     <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-[#1A1816]">{title}</p>
-                      {address && <p className="text-[12px] text-[#737370] mt-0.5">{address}{location ? `, ${location}` : ''}</p>}
-                      {!address && location && <p className="text-[12px] text-[#737370] mt-0.5">{location}</p>}
-                      <p className="text-[11px] text-[#A8A8A4] mt-0.5">{formatDate(item.created_at)}</p>
+                      <p className="text-[13px] font-semibold text-[#1A1816] truncate">{title}</p>
+                      <p className="text-[11px] text-[#A8A8A4] mt-0.5">
+                        {formatDate(item.created_at)}
+                        {cityState && <span className="ml-2 text-[#C4C4C0]">·</span>}
+                        {cityState && <span className="ml-2">{cityState}</span>}
+                        {addons.length > 0 && <span className="ml-2 text-[#C4C4C0]">·</span>}
+                        {addons.length > 0 && <span className="ml-2">{addons.map(a => a.label).join(', ')}</span>}
+                      </p>
                     </div>
-                    <p className="text-[14px] font-bold text-[#1A1816] flex-shrink-0">{formatCents(item.amount)}</p>
                   </div>
-                  {lineItems && (
-                    <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded px-3 py-2">
-                      <div className="space-y-1.5">
-                        {lineItems.map((line, i) => (
-                          <div key={i} className="flex items-center justify-between">
-                            <span className="text-[12px] font-medium text-[#1A1816]">{line.label}</span>
-                            <span className="text-[12px] font-semibold text-[#1A1816]">{formatCents(line.amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="border-t border-[#E8E8E4] mt-2 pt-2 flex items-center justify-between">
-                        <span className="text-[12px] font-bold text-[#1A1816]">Total</span>
-                        <span className="text-[12px] font-bold text-[#1A1816]">{formatCents(lineItems.reduce((s, l) => s + (l.amount || 0), 0))}</span>
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                    <p className="text-[13px] font-bold text-[#1A1816]">{formatCents(item.amount)}</p>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                      item.status === 'succeeded' ? 'bg-[#E4F5EC] text-[#0F6E56] border-[#9FDBB8]' : 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]'
+                    }`}>
+                      {item.status === 'succeeded' ? 'Paid' : item.status}
+                    </span>
+                  </div>
                 </div>
               )
             })}
