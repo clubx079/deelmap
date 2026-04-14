@@ -39,6 +39,7 @@ export function PropertyDetail({ property }) {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showPhonePopup, setShowPhonePopup] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [modalInitialIndex, setModalInitialIndex] = useState(0)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showOfferModal] = useState(false)
   const [isFav, setIsFav] = useState(false)
@@ -412,9 +413,9 @@ export function PropertyDetail({ property }) {
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
         photos={photos}
-        initialIndex={currentPhotoIndex}
+        initialIndex={modalInitialIndex}
         onPhotoView={handlePhotoViewFromModal}
-        preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[currentPhotoIndex]) || null : null}
+        preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[modalInitialIndex]) || null : null}
       />
 
       {/* Page content — blurred when not logged in */}
@@ -492,7 +493,7 @@ export function PropertyDetail({ property }) {
             {/* Main photo — left half, full height */}
             <div
               className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
-              onClick={() => photos.length > 0 && setShowImageModal(true)}
+              onClick={() => { if (photos.length > 0) { setModalInitialIndex(currentPhotoIndex); setShowImageModal(true) } }}
             >
               {photos.length > 0 ? (
                 <img
@@ -522,7 +523,7 @@ export function PropertyDetail({ property }) {
                       key={offset}
                       className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
                       onClick={() => {
-                        setCurrentPhotoIndex(offset < photos.length ? offset : 0)
+                        setModalInitialIndex(offset < photos.length ? offset : 0)
                         setShowImageModal(true)
                       }}
                     >

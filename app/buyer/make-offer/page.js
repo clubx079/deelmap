@@ -73,7 +73,7 @@ function MakeOfferContent() {
     Promise.all([
       supabase
         .from('wholesale_deals')
-        .select('id, slug, price, full_address, address, city, state, temp_seller_id, seller_id')
+        .select('id, slug, price, full_address, address, city, state, temp_seller_id')
         .eq('id', propertyId)
         .maybeSingle(),
       supabase
