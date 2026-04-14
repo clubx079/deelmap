@@ -539,6 +539,7 @@ export async function GET(request) {
             .eq('seller_id', sellerIdParam)
             .eq('buyer_uuid', authCheck.userUuid)
             .eq('property_id', String(dealIdParam))
+            .eq('is_active', true)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
