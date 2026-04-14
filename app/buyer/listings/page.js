@@ -344,12 +344,12 @@ export default function MyListingsPage() {
   // Enhancement tags helper
   const EnhanceTags = ({ listing }) => {
     const tags = []
-    if (listing.is_highlighted)       tags.push({ label: '⭐ Highlighted', cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' })
-    if (listing.is_boosted)           tags.push({ label: '⚡ Boosted',     cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' })
-    if (listing.is_homepage_featured) tags.push({ label: '🏠 Featured',    cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' })
-    if (!tags.length) return null
+    if (listing.is_highlighted)       tags.push({ label: 'Highlighted', cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' })
+    if (listing.is_boosted)           tags.push({ label: 'Boosted',     cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' })
+    if (listing.is_homepage_featured) tags.push({ label: 'Featured',    cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' })
+    if (!tags.length) return <span className="text-[11px] text-[#A8A8A4]">—</span>
     return (
-      <div className="flex flex-wrap gap-1 mt-1">
+      <div className="flex flex-wrap gap-1">
         {tags.map(t => (
           <span key={t.label} className={`inline-flex items-center px-1.5 py-px rounded text-[10px] font-medium border ${t.cls}`}>
             {t.label}
@@ -392,7 +392,8 @@ export default function MyListingsPage() {
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Location</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Price</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Status & Enhancements</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Enhancements</th>
                 <th className="px-4 py-3 text-right text-[11px] font-semibold text-[#444441] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -496,11 +497,15 @@ export default function MyListingsPage() {
                         <span className="text-[12px] text-[#444441]">{listing.property_type || '—'}</span>
                       </td>
 
-                      {/* Status + Enhancements */}
-                      <td className="px-4 py-3">
+                      {/* Status */}
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${statusBadge.cls}`}>
                           {statusBadge.label}
                         </span>
+                      </td>
+
+                      {/* Enhancements */}
+                      <td className="px-4 py-3">
                         <EnhanceTags listing={listing} />
                       </td>
 
@@ -627,7 +632,7 @@ export default function MyListingsPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-0.5">
+                    <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="text-[13px] font-semibold text-[#1A1816] truncate">
                         {listing.seo_title || listing.address || 'No address'}
                       </p>
@@ -635,7 +640,9 @@ export default function MyListingsPage() {
                         {statusBadgeMobile.label}
                       </span>
                     </div>
-                    <EnhanceTags listing={listing} />
+                    {(listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured) && (
+                      <div className="mb-1"><EnhanceTags listing={listing} /></div>
+                    )}
                     <p className="text-[12px] text-[#737370] mt-1 mb-2">
                       {listing.price ? `$${Number(listing.price).toLocaleString()}` : 'Price not set'}
                       {listing.property_type ? ` · ${listing.property_type}` : ''}
