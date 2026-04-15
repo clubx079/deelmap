@@ -2,18 +2,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { useAuth } from '@/hooks/useAuth'
-import { RegistrationModal } from '@/components/RegistrationModal'
 import { Info, Download, RotateCcw } from 'lucide-react'
 
 export default function DSCRLoanPage() {
-  const { user, loading } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
-
-  useEffect(() => {
-    if (loading) return
-    setShowLoginModal(!user)
-  }, [user, loading])
 
   // Input states
   const [loanType, setLoanType] = useState('amortizing')
@@ -367,20 +358,13 @@ export default function DSCRLoanPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] relative">
-      <RegistrationModal
-        isOpen={showLoginModal}
-        onClose={() => {}}
-        initialStep="login"
-        preventClose={true}
-        backUrl="/resources"
-      />
       <Navbar />
-      <div className={`pt-[80px] ${showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}`}>
+      <div className="pt-[80px]">
 
-        <div className="w-full px-4 md:px-6 py-6 md:py-8">
+        <div className="w-full px-4 md:px-6 py-4 md:py-5">
 
           {/* Header */}
-          <div className="flex items-start sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[#E8E8E4]">
+          <div className="flex items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#E8E8E4]">
             <div>
               <h1 className="text-[18px] font-bold text-[#1A1816]">DSCR Calculator</h1>
               <div className="text-[10.5px] text-[#737370] uppercase tracking-[0.1em] mt-0.5">DeelMap | Investment Analysis</div>

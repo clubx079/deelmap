@@ -613,25 +613,32 @@ export function PropertyDetail({ property }) {
               {/* Description */}
               {property.description && (
                 <div className="mb-4">
-                  <div
-                    className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap break-words"
-                    dangerouslySetInnerHTML={{
-                      __html: showFullDescription || property.description.length <= 300
-                        ? property.description
-                        : `${property.description.substring(0, 300)}...`
-                    }}
-                  />
-                  {property.description.length > 300 && (
-                    <button
-                      onClick={() => setShowFullDescription(!showFullDescription)}
-                      className="text-[#D03839] hover:text-[#E0493B] text-[13px] font-medium mt-2 flex items-center gap-1 transition-colors"
-                    >
-                      {showFullDescription ? 'Show less' : 'Show more'}
-                      <svg className={`w-4 h-4 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  )}
+                  {(() => {
+                    const plainText = property.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+                    return (
+                      <>
+                        <div
+                          className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: showFullDescription || plainText.length <= 300
+                              ? property.description
+                              : `${plainText.substring(0, 300)}...`
+                          }}
+                        />
+                        {plainText.length > 300 && (
+                          <button
+                            onClick={() => setShowFullDescription(!showFullDescription)}
+                            className="text-[#D03839] hover:text-[#E0493B] text-[13px] font-medium mt-2 flex items-center gap-1 transition-colors"
+                          >
+                            {showFullDescription ? 'Show less' : 'Show more'}
+                            <svg className={`w-4 h-4 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               )}
 

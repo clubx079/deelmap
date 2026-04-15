@@ -36,7 +36,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
     : featureImage
 
   const slug = property.slug || id
-  const shareUrl = `https://deelmap.com/${slug}`
+  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap-production-e7c2.up.railway.app'}/${slug}`
 
   const cityState = [city, state].filter(Boolean).join(', ')
   const displayAddress = isLoggedIn

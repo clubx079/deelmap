@@ -5,22 +5,17 @@ const PLATFORM = [
   { label: 'Sell', href: '/join-seller' },
   { label: 'Finance', href: '/financing' },
   { label: 'Messaging', href: '/buyer/inbox' },
-  { label: 'Analytics', href: '/marketplace' },
 ]
 
 const COMPANY = [
   { label: 'About us', href: '/our-story' },
   { label: 'How it works', href: '/our-story' },
-  { label: 'Careers', href: '/our-story' },
   { label: 'Contact', href: '/contact' },
   { label: 'Blog', href: '/resources' },
 ]
 
 const RESOURCES = [
   { label: 'Help center', href: '/contact' },
-  { label: 'Investor guide', href: '/resources' },
-  { label: 'FAQ', href: '/join-seller' },
-  { label: 'Market data', href: '/marketplace' },
 ]
 
 const LEGAL = [
@@ -47,7 +42,7 @@ export function Footer() {
                 Find and close better<br />real estate deals
               </h2>
               <p className="text-[#737370] text-[15px] leading-relaxed">
-                Join thousands of investors already using Deelmap to source, analyze, and close off-market deals across the United States.
+                Join thousands of investors already using DeelMap to source, analyze, and close off-market deals across the United States.
               </p>
             </div>
 
@@ -178,7 +173,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-[#222222]">
           <div className="w-full px-6 lg:px-10 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-[13px] text-[#555555]">© 2025 Deelmap. All rights reserved.</p>
+            <p className="text-[13px] text-[#555555]">© 2026 DeelMap. All rights reserved.</p>
             <div className="flex items-center gap-5">
               <Link href="/privacy-policy" className="text-[13px] text-[#555555] hover:text-white transition-colors">Privacy</Link>
               <Link href="/terms-of-use" className="text-[13px] text-[#555555] hover:text-white transition-colors">Terms</Link>
