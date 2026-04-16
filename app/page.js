@@ -23,7 +23,7 @@ function InvestorTestimonials() {
   const visible = TESTIMONIALS.slice(index, index + 3)
   return (
     <section className="py-16 lg:py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
         <div className="flex items-start justify-between mb-10">
           <div>
             <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1.1px] mb-3">INVESTOR STORIES</p>
@@ -195,7 +195,7 @@ export default function HomePage() {
 
       {/* Why DeelMap Section */}
       <section className="py-16 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <div className="grid lg:grid-cols-[1fr_1.6fr] gap-32 items-center">
             {/* Left */}
             <div>
@@ -241,7 +241,7 @@ export default function HomePage() {
 
       {/* How It Works Section */}
       <section className="py-24 lg:py-32 bg-[#FAFAF8]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 text-center">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px] text-center">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1.1px] mb-3">HOW IT WORKS</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-3">
             Find and close deals faster
@@ -298,7 +298,7 @@ export default function HomePage() {
 
       {/* Who It's For Section */}
       <section className="py-16 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1.1px] mb-3">WHO IT'S FOR</p>
           <h2 className="text-[36px] sm:text-[40px] font-bold text-[#1A1816] mb-8">Built for buyers &amp; sellers</h2>
 

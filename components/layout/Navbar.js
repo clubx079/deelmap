@@ -148,7 +148,7 @@ export function Navbar() {
           <div className="flex items-center justify-between h-[80px]">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity ml-[72px]">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity lg:ml-[72px]">
               <Image src="/assets/logo.svg" alt="DeelMap" width={190} height={68} className="h-[68px] w-[190px]" priority />
             </Link>
 
@@ -216,7 +216,7 @@ export function Navbar() {
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-3 mr-[72px]">
+            <div className="flex items-center gap-3 lg:mr-[72px]">
               {user ? (
                 <div className="flex items-center gap-3">
                   {/* Post a Deal */}

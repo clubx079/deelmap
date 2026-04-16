@@ -1017,8 +1017,11 @@ export function PropertyDetail({ property }) {
                             onError={(e) => { e.target.style.display = 'none' }}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Home className="w-8 h-8 text-[#E8E8E4]" />
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAFAF8]">
+                            <div className="relative w-24 h-8 mb-1.5">
+                              <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+                            </div>
+                            <span className="text-[10px] text-[#A8A8A4]">Photos coming soon</span>
                           </div>
                         )}
                         <div className="absolute top-2.5 left-2.5">
