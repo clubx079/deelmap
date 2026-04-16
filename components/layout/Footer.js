@@ -4,7 +4,6 @@ const PLATFORM = [
   { label: 'Buy', href: '/marketplace' },
   { label: 'Sell', href: '/join-seller' },
   { label: 'Finance', href: '/financing' },
-  { label: 'Messaging', href: '/buyer/inbox' },
 ]
 
 const COMPANY = [
