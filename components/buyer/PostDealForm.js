@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { ChevronLeft, X, Upload, Star, MapPin, Check, FileText, DollarSign, Home, Sparkles, TrendingUp, Zap, Package } from 'lucide-react'
+import { ChevronLeft, X, Upload, Star, MapPin, Check, FileText, DollarSign, Home, Sparkles, TrendingUp, Zap, Package, AlertTriangle } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { supabaseMarketplace } from '@/lib/supabase'
@@ -49,6 +49,31 @@ const STEPS = [
   { label: 'Payment',      desc: 'Publish listing' },
 ]
 const EDIT_STEPS = [STEPS[0], STEPS[1], STEPS[3]]
+
+// ─── Parse rejection reason into per-field map ─────────────────────────
+function parseRejectionReasons(raw) {
+  if (!raw) return {}
+  const map = {}
+  const prefixes = [
+    ['photo',       'Photo'],
+    ['description', 'Description'],
+    ['repairs',     'Repairs'],
+    ['inspection',  'Inspection report'],
+    ['contract',    'Contract'],
+  ]
+  for (const [key, prefix] of prefixes) {
+    const regex = new RegExp(`${prefix}:\\s*(.+?)(?=\\s*(?:Photo|Description|Repairs|Inspection report|Contract):|$)`, 'i')
+    const m = raw.match(regex)
+    if (m) map[key] = m[1].replace(/\.\s*$/, '').trim()
+  }
+  return map
+}
+
+function getRejectionInitialStep(rejectionMap) {
+  if (rejectionMap.photo) return 1
+  if (rejectionMap.description || rejectionMap.repairs || rejectionMap.inspection) return 2
+  return 0
+}
 
 const ADD_ONS = [
   { id: 'highlight',  label: 'Highlight Listing',      desc: 'Red-bordered card in search results for 30 days',          price: 999,  icon: Sparkles },
@@ -187,7 +212,7 @@ function StepBasicInfo({ data, onChange }) {
 }
 
 // ─── Step 2: Photos ────────────────────────────────────────────────────
-function StepPhotos({ photos, onPhotosChange, userId }) {
+function StepPhotos({ photos, onPhotosChange, userId, rejectionError }) {
   // photos entries: { image_url, preview_url?, is_featured, sort_order, uploading? }
 
   const handleFiles = async (files) => {
@@ -263,6 +288,18 @@ function StepPhotos({ photos, onPhotosChange, userId }) {
 
   return (
     <div className="space-y-4">
+
+      {/* Rejection error for photos */}
+      {rejectionError && (
+        <div className="flex items-start gap-3 bg-[#FEF3F2] border border-[#FECDCA] rounded px-4 py-3">
+          <AlertTriangle className="w-4 h-4 text-[#B42318] flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-semibold text-[#B42318] mb-0.5">Photo issue from last review</p>
+            <p className="text-[12px] text-[#B42318]">{rejectionError}</p>
+            <p className="text-[11px] text-[#B42318]/70 mt-1">Remove the flagged photo(s) and re-upload genuine property photos to resubmit.</p>
+          </div>
+        </div>
+      )}
 
       {/* Yellow note */}
       <div className="flex items-start gap-2.5 bg-[#FFFBEB] border border-[#FDE68A] rounded px-4 py-3">
@@ -451,7 +488,7 @@ function StepSellerType({ data, onChange }) {
 }
 
 // ─── Step 4: Details ───────────────────────────────────────────────────
-function StepDetails({ data, onChange }) {
+function StepDetails({ data, onChange, rejectionErrors }) {
   const [inspectionUploading, setInspectionUploading] = useState(false)
 
   const handleInspectionUpload = async (file) => {
@@ -467,32 +504,52 @@ function StepDetails({ data, onChange }) {
     setInspectionUploading(false)
   }
 
+  const err = rejectionErrors || {}
   return (
     <div className="space-y-5">
       <div>
         <label className={labelCls}>Property Description</label>
+        {err.description && (
+          <div className="flex items-start gap-2.5 bg-[#FEF3F2] border border-[#FECDCA] rounded px-3 py-2.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#B42318] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[#B42318]"><span className="font-semibold">Issue:</span> {err.description}</p>
+          </div>
+        )}
         <textarea
           value={data.description || ''}
           onChange={e => onChange({ description: e.target.value })}
           placeholder="Describe the property, its features, condition, and unique selling points..."
           rows={5}
-          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none"
+          className={`w-full px-3 py-2.5 border rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none ${err.description ? 'border-[#F97066]' : 'border-[#E8E8E4]'}`}
         />
       </div>
       <div>
         <label className={labelCls}>Repairs & Renovation Notes</label>
+        {err.repairs && (
+          <div className="flex items-start gap-2.5 bg-[#FEF3F2] border border-[#FECDCA] rounded px-3 py-2.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#B42318] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[#B42318]"><span className="font-semibold">Issue:</span> {err.repairs}</p>
+          </div>
+        )}
         <textarea
           value={data.repairs || ''}
           onChange={e => onChange({ repairs: e.target.value })}
           placeholder="Detail repairs needed, recent renovations, or planned improvements..."
           rows={4}
-          className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none"
+          className={`w-full px-3 py-2.5 border rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none ${err.repairs ? 'border-[#F97066]' : 'border-[#E8E8E4]'}`}
         />
       </div>
       <div>
         <label className={labelCls}>
           Inspection Report <span className="text-[#A8A8A4] font-normal ml-1">(optional)</span>
         </label>
+        {err.inspection && (
+          <div className="flex items-start gap-2.5 bg-[#FEF3F2] border border-[#FECDCA] rounded px-3 py-2.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#B42318] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[#B42318]"><span className="font-semibold">Issue:</span> {err.inspection}</p>
+          </div>
+        )}
+
         {data.inspection_report_url ? (
           <div className="flex items-center gap-3 p-3 bg-[#E4F5EC] border border-[#B6E4CE] rounded text-[13px]">
             <div className="w-7 h-7 bg-[#0F6E56] rounded-full flex items-center justify-center flex-shrink-0">
@@ -860,7 +917,9 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
 export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const isDraft = existing?.status === 'draft'
   const isEdit = !!existing && !isDraft
-  const [step, setStep] = useState(0)
+  const isRejected = isEdit && existing?.status === 'rejected'
+  const rejectionMap = isRejected ? parseRejectionReasons(existing.rejection_reason) : {}
+  const [step, setStep] = useState(() => isRejected ? getRejectionInitialStep(rejectionMap) : 0)
   const [draftId, setDraftId] = useState(isDraft ? existing?.id : null)
   const [formData, setFormData] = useState({
     title:                existing?.seo_title || existing?.title || '',
@@ -1027,6 +1086,31 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
           </p>
         </div>
 
+        {/* Rejection summary banner */}
+        {isRejected && existing.rejection_reason && (
+          <div className="mb-6 bg-[#FEF3F2] border border-[#FECDCA] rounded p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded bg-[#FEE4E2] flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-4 h-4 text-[#B42318]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-semibold text-[#B42318] mb-1">Your listing wasn&apos;t approved</p>
+                <p className="text-[13px] text-[#B42318]/80 mb-3">Fix the issues below and save — your listing will go back under review automatically.</p>
+                <div className="space-y-1.5">
+                  {Object.entries(rejectionMap).map(([key, reason]) => (
+                    <div key={key} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#B42318] flex-shrink-0 mt-1.5" />
+                      <p className="text-[12px] text-[#B42318]">
+                        <span className="font-semibold capitalize">{key === 'inspection' ? 'Inspection Report' : key}:</span> {reason}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Card */}
         <div className="bg-white border border-[#E8E8E4] rounded p-6 lg:p-8">
 
@@ -1036,9 +1120,9 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
           {/* Step content */}
           <div className="mb-8">
             {step === 0 && <StepBasicInfo data={formData} onChange={update} />}
-            {step === 1 && <StepPhotos photos={photos} onPhotosChange={setPhotos} userId={user?.id} />}
+            {step === 1 && <StepPhotos photos={photos} onPhotosChange={setPhotos} userId={user?.id} rejectionError={rejectionMap.photo} />}
             {step === 2 && !isEdit && <StepSellerType data={formData} onChange={update} />}
-            {((step === 3 && !isEdit) || (step === 2 && isEdit)) && <StepDetails data={formData} onChange={update} />}
+            {((step === 3 && !isEdit) || (step === 2 && isEdit)) && <StepDetails data={formData} onChange={update} rejectionErrors={rejectionMap} />}
             {step === 4 && !isEdit && (
               <StepPayment formData={formData} photos={photos} user={user} draftId={draftId} onSuccess={() => setDone(true)} />
             )}

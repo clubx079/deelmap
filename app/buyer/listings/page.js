@@ -611,10 +611,15 @@ export default function MyListingsPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${statusBadge.cls}`}>
                           {statusBadge.label}
                         </span>
+                        {listing.status === 'rejected' && listing.rejection_reason && (
+                          <p className="text-[10px] text-[#B5620A] mt-1 max-w-[160px] leading-tight line-clamp-2">
+                            {listing.rejection_reason.length > 80 ? listing.rejection_reason.slice(0, 80) + '…' : listing.rejection_reason}
+                          </p>
+                        )}
                       </td>
 
                       {/* Enhancements */}
@@ -668,13 +673,22 @@ export default function MyListingsPage() {
                                   <FileText className="w-4 h-4" />
                                 </a>
                               )}
-                              <button
-                                onClick={() => setEditListing(listing)}
-                                className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
-                                title="Edit"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </button>
+                              {listing.status === 'rejected' ? (
+                                <button
+                                  onClick={() => setEditListing(listing)}
+                                  className="h-7 px-3 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors ml-1"
+                                >
+                                  Fix Issues
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setEditListing(listing)}
+                                  className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                              )}
                             </>
                           )}
                           <button
@@ -773,6 +787,17 @@ export default function MyListingsPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Rejection reason banner */}
+                  {listing.status === 'rejected' && listing.rejection_reason && (
+                    <div className="mb-3 px-3 py-2.5 bg-[#FEF3E2] border border-[#F3C97D] rounded">
+                      <p className="text-[10px] font-semibold text-[#B5620A] uppercase tracking-wide mb-1">Issues to fix</p>
+                      <p className="text-[11px] text-[#B5620A] leading-relaxed">
+                        {listing.rejection_reason.length > 140 ? listing.rejection_reason.slice(0, 140) + '…' : listing.rejection_reason}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Full-width action row */}
                   <div className="border-t border-[#E8E8E4] pt-3 flex items-center justify-around">
                     {isDraftMobile ? (
@@ -822,10 +847,14 @@ export default function MyListingsPage() {
                         )}
                         <button
                           onClick={() => setEditListing(listing)}
-                          className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0] rounded transition-colors"
+                          className={`flex-1 flex flex-col items-center gap-1 py-1 rounded transition-colors ${
+                            listing.status === 'rejected'
+                              ? 'text-[#D03839] bg-[#FEF0EF] hover:bg-[#FCDEDE]'
+                              : 'text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0]'
+                          }`}
                         >
                           <Pencil className="w-4 h-4" />
-                          <span className="text-[10px] font-medium">Edit</span>
+                          <span className="text-[10px] font-medium">{listing.status === 'rejected' ? 'Fix Issues' : 'Edit'}</span>
                         </button>
                       </>
                     )}
