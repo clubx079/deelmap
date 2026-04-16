@@ -6,7 +6,7 @@ import { PropertiesSlider } from '@/components/home/PropertiesSlider'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Search, Star, CheckCircle2, Lock, Check, BadgeCheck, SlidersHorizontal, Rocket } from 'lucide-react'
+import { Search, Star, CheckCircle2, Lock, Check, BadgeCheck, SlidersHorizontal, Rocket, MessageSquare } from 'lucide-react'
 import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const TESTIMONIALS = [
