@@ -89,6 +89,13 @@ export async function POST(request) {
 
     const draftId = paymentIntent.metadata.draft_id || null
 
+    const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
+    const addonFlags = {}
+    if (addOns.includes('highlight') || addOns.includes('bundle')) { addonFlags.is_highlighted = true; addonFlags.highlight_ends_at = in30Days }
+    if (addOns.includes('boost') || addOns.includes('bundle')) { addonFlags.is_boosted = true; addonFlags.boost_ends_at = in7Days }
+    if (addOns.includes('homepage')) { addonFlags.is_homepage_featured = true; addonFlags.homepage_feature_ends_at = in7Days }
+
     let property, propError
 
     if (draftId) {
@@ -108,6 +115,7 @@ export async function POST(request) {
           floor_area: formData.floor_area,
           inspection_report_url: formData.inspection_report_url || null,
           status: 'under_review',
+          ...addonFlags,
         })
         .eq('id', draftId)
         .eq('posted_by', userId)
@@ -132,6 +140,7 @@ export async function POST(request) {
           inspection_report_url: formData.inspection_report_url || null,
           status: 'under_review',
           posted_by: userId,
+          ...addonFlags,
         })
         .select('id, slug')
         .single())

@@ -78,6 +78,18 @@ export async function POST(request) {
         console.log(`[listings] Cleaned up orphaned draft ${body.draft_id} — replaced by ${pmt.property_id}`)
       }
 
+      // Webhook doesn't apply add-on flags — ensure they are set now if any were purchased
+      const addOns = body.add_ons || []
+      if (addOns.length > 0 && pmt?.property_id) {
+        const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
+        const addonFlags = {}
+        if (addOns.includes('highlight') || addOns.includes('bundle')) { addonFlags.is_highlighted = true; addonFlags.highlight_ends_at = in30Days }
+        if (addOns.includes('boost') || addOns.includes('bundle')) { addonFlags.is_boosted = true; addonFlags.boost_ends_at = in7Days }
+        if (addOns.includes('homepage') || addOns.includes('bundle')) { addonFlags.is_homepage_featured = true; addonFlags.homepage_feature_ends_at = in7Days }
+        await supabaseMarketplace.from('properties').update(addonFlags).eq('id', pmt.property_id)
+      }
+
       return NextResponse.json({ success: true, id: pmt?.property_id })
     }
 
