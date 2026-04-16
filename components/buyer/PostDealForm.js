@@ -1023,19 +1023,21 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
   const handleEditSave = async () => {
     setSaving(true)
     try {
+      // Save images first so moderation reads the updated photos
+      await supabaseMarketplace.from('property_images').delete().eq('property_id', existing.id)
+      if (photos.length > 0) {
+        const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
+        await supabaseMarketplace.from('property_images').insert(
+          sorted.map((p, i) => ({ property_id: existing.id, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
+        )
+      }
+      // PATCH after images are saved — moderation will see the new photos
       const res = await fetch('/api/buyer/listings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
         body: JSON.stringify({ id: existing.id, ...formData }),
       })
       if (res.ok) {
-        await supabaseMarketplace.from('property_images').delete().eq('property_id', existing.id)
-        if (photos.length > 0) {
-          const sorted = [...photos].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
-          await supabaseMarketplace.from('property_images').insert(
-            sorted.map((p, i) => ({ property_id: existing.id, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
-          )
-        }
         onSuccess()
       }
     } catch {}
