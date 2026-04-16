@@ -162,78 +162,71 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
-
-        {/* Left column */}
-        <div className="flex flex-col gap-4">
-
-          {/* Active enhancements card — separate container */}
-          {activeEnhancements.length > 0 && (
-            <div className="bg-white border border-[#E8E8E4] rounded p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[15px] font-semibold text-[#1A1816]">Active Enhancements</p>
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0F6E56] bg-[#E4F5EC] border border-[#B6E4CE] px-2.5 py-1 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] animate-pulse inline-block" />
-                  {activeEnhancements.length} Live
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {activeEnhancements.map(({ id, endsAt }) => {
-                  const meta = ACTIVE_ENHANCEMENT_META[id]
-                  if (!meta) return null
-                  const Icon = meta.icon
-                  const days = daysRemaining(endsAt)
-                  const elapsed = meta.totalDays - days
-                  const pct = Math.min(97, Math.max(3, (elapsed / meta.totalDays) * 100))
-                  const urgency = days <= 2
-
-                  return (
-                    <div key={id} className="border border-[#E8E8E4] rounded overflow-hidden bg-white">
-                      {/* Top row */}
-                      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                        <div className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0" style={{ background: meta.bg }}>
-                          <Icon className="w-[18px] h-[18px]" style={{ color: meta.color }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-0.5">
-                            <p className="text-[13px] font-semibold text-[#1A1816] truncate">{meta.label}</p>
-                            <span
-                              className="text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0"
-                              style={{ color: urgency ? '#B5620A' : meta.color, background: urgency ? '#FEF3E2' : meta.bg, borderColor: urgency ? '#F3C97D' : meta.border }}
-                            >
-                              {days}d left
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[11px] text-[#A8A8A4]">
-                            <CalendarDays className="w-3 h-3 flex-shrink-0" />
-                            <span>Expires {formatExpiry(endsAt)}</span>
-                          </div>
-                        </div>
+      {/* Active enhancements — full width */}
+      {activeEnhancements.length > 0 && (
+        <div className="bg-white border border-[#E8E8E4] rounded p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[15px] font-semibold text-[#1A1816]">Active Enhancements</p>
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0F6E56] bg-[#E4F5EC] border border-[#B6E4CE] px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] animate-pulse inline-block" />
+              {activeEnhancements.length} Live
+            </span>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+            {activeEnhancements.map(({ id, endsAt }) => {
+              const meta = ACTIVE_ENHANCEMENT_META[id]
+              if (!meta) return null
+              const Icon = meta.icon
+              const days = daysRemaining(endsAt)
+              const elapsed = meta.totalDays - days
+              const pct = Math.min(97, Math.max(3, (elapsed / meta.totalDays) * 100))
+              const urgency = days <= 2
+              return (
+                <div key={id} className="border border-[#E8E8E4] rounded overflow-hidden bg-white">
+                  <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                    <div className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0" style={{ background: meta.bg }}>
+                      <Icon className="w-[18px] h-[18px]" style={{ color: meta.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <p className="text-[13px] font-semibold text-[#1A1816] truncate">{meta.label}</p>
+                        <span
+                          className="text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0"
+                          style={{ color: urgency ? '#B5620A' : meta.color, background: urgency ? '#FEF3E2' : meta.bg, borderColor: urgency ? '#F3C97D' : meta.border }}
+                        >
+                          {days}d left
+                        </span>
                       </div>
-                      {/* Progress bar */}
-                      <div className="px-4 pb-4">
-                        <div className="w-full h-[5px] bg-[#F3F3F0] rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${meta.color}60, ${meta.color})`, transition: 'width 0.6s ease' }}
-                          />
-                        </div>
-                        <div className="flex justify-between mt-1.5">
-                          <span className="text-[10px] text-[#A8A8A4]">Day 1</span>
-                          <span className="text-[10px] text-[#A8A8A4]">{Math.round(pct)}% elapsed · {meta.totalDays}d total</span>
-                        </div>
+                      <div className="flex items-center gap-1 text-[11px] text-[#A8A8A4]">
+                        <CalendarDays className="w-3 h-3 flex-shrink-0" />
+                        <span>Expires {formatExpiry(endsAt)}</span>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+                  </div>
+                  <div className="px-4 pb-4">
+                    <div className="w-full h-[5px] bg-[#F3F3F0] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${meta.color}60, ${meta.color})`, transition: 'width 0.6s ease' }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1.5">
+                      <span className="text-[10px] text-[#A8A8A4]">Day 1</span>
+                      <span className="text-[10px] text-[#A8A8A4]">{Math.round(pct)}% elapsed · {meta.totalDays}d total</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
-          {/* Add-ons or payment form card */}
-          <div className="bg-white border border-[#E8E8E4] rounded p-6">
+      {/* Two-column layout: add-ons (left, narrower) + your listing (right, wider) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_520px] gap-6 items-start">
+
+        {/* Left — add-ons or payment form */}
+        <div className="bg-white border border-[#E8E8E4] rounded p-6">
           {showPayment && clientSecret ? (
             stripePromise ? (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
@@ -284,54 +277,52 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
               </div>
             </>
           )}
-          </div>
-
         </div>
 
-        {/* Right — order summary */}
+        {/* Right — your listing + order summary */}
         <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
-          <div className="p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
+          <div className="p-5 bg-[#FAFAF8] border-b border-[#E8E8E4]">
             <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-2">Your Listing</p>
-            <p className="text-[13px] font-semibold text-[#1A1816] truncate">{listing.address || listing.seo_title || 'Listing'}</p>
+            <p className="text-[15px] font-semibold text-[#1A1816]">{listing.address || listing.seo_title || 'Listing'}</p>
             {listing.price && (
-              <p className="text-[12px] text-[#737370] mt-0.5">${Number(listing.price).toLocaleString()}</p>
+              <p className="text-[13px] text-[#737370] mt-0.5">${Number(listing.price).toLocaleString()}</p>
             )}
           </div>
-          <div className="p-4">
+          <div className="p-5">
             <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Order Summary</p>
             {selectedAddOns.length === 0 ? (
               <p className="text-[13px] text-[#A8A8A4]">No add-ons selected</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {selectedAddOns.map(id => {
                   const addon = ENHANCE_ADD_ONS.find(a => a.id === id)
                   if (!addon) return null
                   return (
                     <div key={id} className="flex justify-between items-center">
-                      <span className="text-[12px] text-[#444441]">{addon.label}</span>
-                      <span className="text-[12px] font-medium text-[#1A1816]">${(addon.price / 100).toFixed(2)}</span>
+                      <span className="text-[13px] text-[#444441]">{addon.label}</span>
+                      <span className="text-[13px] font-medium text-[#1A1816]">${(addon.price / 100).toFixed(2)}</span>
                     </div>
                   )
                 })}
               </div>
             )}
           </div>
-          <div className="px-4 py-3 border-t border-[#E8E8E4]">
-            <div className="flex justify-between items-baseline mb-4">
-              <span className="text-[13px] font-semibold text-[#1A1816]">Total</span>
-              <span className="text-[20px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
+          <div className="px-5 py-4 border-t border-[#E8E8E4]">
+            <div className="flex justify-between items-baseline mb-5">
+              <span className="text-[14px] font-semibold text-[#1A1816]">Total</span>
+              <span className="text-[24px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
             </div>
             {!showPayment && (
               <>
-                {err && <div className="mb-3 p-2.5 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[12px] text-[#D03839]">{err}</div>}
+                {err && <div className="mb-3 p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{err}</div>}
                 <button
                   type="button"
                   onClick={proceedToPayment}
                   disabled={selectedAddOns.length === 0 || loading}
-                  className="w-full h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-[48px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading
-                    ? <><span className="animate-spin w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" />Preparing...</>
+                    ? <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Preparing...</>
                     : <>Proceed to Payment</>}
                 </button>
                 <div className="flex items-center justify-center gap-1.5 mt-3">
