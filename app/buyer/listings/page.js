@@ -639,6 +639,15 @@ export default function MyListingsPage() {
                             </button>
                           ) : (
                             <>
+                              {/* Fix Issues first when rejected */}
+                              {listing.status === 'rejected' && (
+                                <button
+                                  onClick={() => setEditListing(listing)}
+                                  className="h-7 px-3 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors mr-1"
+                                >
+                                  Fix Issues
+                                </button>
+                              )}
                               {listing.status === 'active' && (
                                 <button
                                   onClick={() => setEnhanceListing(listing)}
@@ -673,14 +682,7 @@ export default function MyListingsPage() {
                                   <FileText className="w-4 h-4" />
                                 </a>
                               )}
-                              {listing.status === 'rejected' ? (
-                                <button
-                                  onClick={() => setEditListing(listing)}
-                                  className="h-7 px-3 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors ml-1"
-                                >
-                                  Fix Issues
-                                </button>
-                              ) : (
+                              {listing.status !== 'rejected' && (
                                 <button
                                   onClick={() => setEditListing(listing)}
                                   className="flex items-center justify-center w-8 h-8 rounded text-[#A8A8A4] hover:text-[#1A1816] hover:bg-[#F3F3F0] transition-colors"
