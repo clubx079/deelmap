@@ -129,18 +129,18 @@ export default function HomePage() {
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: '88vh' }}>
-          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0 lg:pt-0 lg:mt-[-60px]">
+          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0 lg:pt-16">
             <div className="w-full max-w-[620px]">
 
               {/* Heading */}
-              <h1 className="text-[44px] sm:text-[48px] lg:text-[46px] xl:text-[52px] font-black text-[#1A1816] leading-[1.1] mb-5">
+              <h1 className="text-[48px] sm:text-[52px] lg:text-[56px] xl:text-[60px] font-black text-[#1A1816] leading-[1.1] mb-5">
                 Discover verified<br />
                 off-market{' '}
                 <span className="text-[#D03839]">real<br />estate deals</span>
               </h1>
 
               {/* Subtext */}
-              <p className="text-[16px] text-[#444441] leading-relaxed mb-8 max-w-[420px]">
+              <p className="text-[20px] text-[#444441] leading-relaxed mb-8 max-w-[520px]">
                 Browse investment opportunities from wholesalers and sellers across the United States— all in one trusted marketplace.{' '}
                 <span className="text-[#D03839] font-semibold">Free for all buyers — We never share your information</span>
               </p>
@@ -173,15 +173,15 @@ export default function HomePage() {
               {/* Trust badges */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 <div className="flex items-center gap-1.5">
-                  <Star className="w-3.5 h-3.5 text-[#16A34A] fill-[#16A34A]" />
+                  <Star className="w-3.5 h-3.5 text-[#1A6B4A] fill-[#1A6B4A]" />
                   <span className="text-[13px] text-[#444441]">Verified sellers</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#1A6B4A]" />
                   <span className="text-[13px] text-[#444441]">No spam, no duplicates</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-[#16A34A]" />
+                  <Lock className="w-3.5 h-3.5 text-[#1A6B4A]" />
                   <span className="text-[13px] text-[#444441]">Secure messaging</span>
                 </div>
               </div>
@@ -216,7 +216,7 @@ export default function HomePage() {
                 ].map(item => (
                   <li key={item} className="flex items-center gap-3 text-[#444441] text-[15px]">
                     <span className="w-5 h-5 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-[#16A34A] stroke-[2.5]" />
+                      <Check className="w-3 h-3 text-[#1A6B4A] stroke-[2.5]" />
                     </span>
                     {item}
                   </li>
@@ -356,7 +356,7 @@ export default function HomePage() {
                   ].map(item => (
                     <li key={item} className="flex items-start gap-3 text-[14px] text-[#444441]">
                       <span className="w-5 h-5 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-[#16A34A] stroke-[2.5]" />
+                        <Check className="w-3 h-3 text-[#1A6B4A] stroke-[2.5]" />
                       </span>
                       {item}
                     </li>
