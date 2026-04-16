@@ -143,10 +143,10 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center">
-                  <div className="relative w-20 h-6">
+                  <div className="relative w-28 h-9">
                     <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
                   </div>
-                  <span className="text-[10px] text-[#A8A8A4] mt-1">No photo</span>
+                  <span className="text-[10px] text-[#A8A8A4] mt-1.5">Photos coming soon</span>
                 </div>
               )}
               {roiLabel && (
@@ -225,10 +225,10 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAFAF8]">
-                  <div className="relative w-28 h-8">
+                  <div className="relative w-36 h-10">
                     <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
                   </div>
-                  <span className="text-[11px] text-[#A8A8A4] mt-1">No photo</span>
+                  <span className="text-[11px] text-[#A8A8A4] mt-1.5">Photos coming soon</span>
                 </div>
               )}
               {roiLabel && (

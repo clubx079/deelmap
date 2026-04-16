@@ -381,8 +381,8 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
           <div style="width:260px;height:144px;flex-shrink:0;background-image:url('${img}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#FAFAF8;"></div>
         ` : `
           <div style="width:260px;height:144px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#FAFAF8;">
-            <img src="/assets/logo.svg" alt="DeelMap" style="width:60px;opacity:0.3;" />
-            <span style="font-size:10px;color:#A8A8A4;">No photo</span>
+            <img src="/assets/logo.svg" alt="DeelMap" style="width:90px;" />
+            <span style="font-size:10px;color:#A8A8A4;">Photos coming soon</span>
           </div>
         `}
 

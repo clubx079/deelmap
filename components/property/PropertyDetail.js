@@ -513,8 +513,8 @@ export function PropertyDetail({ property }) {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                  <div className="relative w-40 h-12">
-                    <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+                  <div className="relative w-48 h-16">
+                    <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
                   </div>
                   <span className="text-sm text-[#A8A8A4]">Photos coming soon</span>
                 </div>
