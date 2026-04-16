@@ -2,7 +2,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
-import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText, Sparkles, TrendingUp, Zap, Package, Check, ArrowLeft } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText, Sparkles, TrendingUp, Zap, Package, Check, ArrowLeft, CalendarDays } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -77,6 +77,33 @@ function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, userId, on
   )
 }
 
+// ─── Active enhancement helpers ───────────────────────────────────────────────
+const ACTIVE_ENHANCEMENT_META = {
+  highlight: { label: 'Highlight Listing',     icon: Sparkles,   totalDays: 30, color: '#D03839', bg: '#FEF0EF', border: '#F5C0BF' },
+  boost:     { label: 'Boost Listing',         icon: Zap,        totalDays: 7,  color: '#4F46E5', bg: '#EEF2FF', border: '#C7D2FE' },
+  homepage:  { label: 'Featured on Homepage',  icon: TrendingUp, totalDays: 7,  color: '#0F6E56', bg: '#E4F5EC', border: '#B6E4CE' },
+}
+
+function getActiveEnhancements(listing) {
+  const now = new Date()
+  const entries = []
+  if (listing.is_highlighted && listing.highlight_ends_at && new Date(listing.highlight_ends_at) > now)
+    entries.push({ id: 'highlight', endsAt: listing.highlight_ends_at })
+  if (listing.is_boosted && listing.boost_ends_at && new Date(listing.boost_ends_at) > now)
+    entries.push({ id: 'boost', endsAt: listing.boost_ends_at })
+  if (listing.is_homepage_featured && listing.homepage_feature_ends_at && new Date(listing.homepage_feature_ends_at) > now)
+    entries.push({ id: 'homepage', endsAt: listing.homepage_feature_ends_at })
+  return entries
+}
+
+function daysRemaining(endsAt) {
+  return Math.max(0, Math.ceil((new Date(endsAt) - new Date()) / (1000 * 60 * 60 * 24)))
+}
+
+function formatExpiry(dateStr) {
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 // ─── Enhance full-page view ───────────────────────────────────────────────────
 function EnhancePage({ listing, user, onBack, onSuccess }) {
   const [selectedAddOns, setSelectedAddOns] = useState([])
@@ -84,6 +111,8 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState(null)
   const [showPayment, setShowPayment] = useState(false)
+
+  const activeEnhancements = getActiveEnhancements(listing)
 
   const totalCents = selectedAddOns.reduce((sum, id) => {
     const a = ENHANCE_ADD_ONS.find(x => x.id === id)
@@ -157,6 +186,82 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
             )
           ) : (
             <>
+              {/* ── Active enhancements ── */}
+              {activeEnhancements.length > 0 && (
+                <div className="mb-7">
+                  {/* Section header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-4 bg-[#0F6E56] rounded-full" />
+                      <p className="text-[13px] font-semibold text-[#1A1816] tracking-[-0.1px]">Active Enhancements</p>
+                    </div>
+                    <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0F6E56] bg-[#E4F5EC] border border-[#B6E4CE] px-2.5 py-1 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] animate-pulse inline-block" />
+                      {activeEnhancements.length} Live
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {activeEnhancements.map(({ id, endsAt }) => {
+                      const meta = ACTIVE_ENHANCEMENT_META[id]
+                      if (!meta) return null
+                      const Icon = meta.icon
+                      const days = daysRemaining(endsAt)
+                      const elapsed = meta.totalDays - days
+                      const pct = Math.min(97, Math.max(3, (elapsed / meta.totalDays) * 100))
+                      const urgency = days <= 2
+
+                      return (
+                        <div key={id} className="border border-[#E8E8E4] rounded-lg overflow-hidden bg-white">
+                          {/* Top row */}
+                          <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                            <div className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0" style={{ background: meta.bg }}>
+                              <Icon className="w-[18px] h-[18px]" style={{ color: meta.color }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <p className="text-[13px] font-semibold text-[#1A1816] truncate">{meta.label}</p>
+                                <span
+                                  className="text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0"
+                                  style={{ color: urgency ? '#B5620A' : meta.color, background: urgency ? '#FEF3E2' : meta.bg, borderColor: urgency ? '#F3C97D' : meta.border }}
+                                >
+                                  {days}d left
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[11px] text-[#A8A8A4]">
+                                <CalendarDays className="w-3 h-3 flex-shrink-0" />
+                                <span>Expires {formatExpiry(endsAt)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="px-4 pb-4">
+                            <div className="w-full h-[5px] bg-[#F3F3F0] rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${meta.color}60, ${meta.color})`, transition: 'width 0.6s ease' }}
+                              />
+                            </div>
+                            <div className="flex justify-between mt-1.5">
+                              <span className="text-[10px] text-[#A8A8A4]">Day 1</span>
+                              <span className="text-[10px] text-[#A8A8A4]">{Math.round(pct)}% elapsed · {meta.totalDays}d total</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Divider before add-ons */}
+                  <div className="flex items-center gap-3 mt-6 mb-0">
+                    <div className="flex-1 h-px bg-[#E8E8E4]" />
+                    <span className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest">Add more</span>
+                    <div className="flex-1 h-px bg-[#E8E8E4]" />
+                  </div>
+                </div>
+              )}
+
               <p className="text-[15px] font-semibold text-[#1A1816] mb-0.5">Choose add-ons</p>
               <p className="text-[13px] text-[#737370] mb-5">Select one or more upgrades to boost your listing's visibility.</p>
               <div className="space-y-3">
