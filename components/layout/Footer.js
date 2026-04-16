@@ -8,7 +8,6 @@ const PLATFORM = [
 
 const COMPANY = [
   { label: 'About us', href: '/our-story' },
-  { label: 'How it works', href: '/our-story' },
   { label: 'Contact', href: '/contact' },
   { label: 'Blog', href: '/resources' },
 ]
