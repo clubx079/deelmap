@@ -60,7 +60,7 @@ export default function AboutPage() {
 
       {/* Hero */}
       <section className="pt-16 pb-12 lg:pt-20 lg:pb-16 bg-white">
-        <div className="max-w-[720px] mx-auto px-6 sm:px-8 lg:px-10 text-center">
+        <div className="max-w-[720px] mx-auto px-6 sm:px-8 lg:px-[72px] text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#1A1816] leading-tight mb-6">
             Your trusted platform for finding{' '}
             <span className="text-[#D03839]">real estate deals</span>
@@ -81,7 +81,7 @@ export default function AboutPage() {
 
       {/* Why we built DeelMap */}
       <section className="py-14 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="rounded overflow-hidden">
               <Image
@@ -107,7 +107,7 @@ export default function AboutPage() {
 
       {/* What makes DeelMap different */}
       <section className="py-14 lg:py-20 bg-[#FAFAF8]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3 text-center">WHY DEELMAP</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-10 text-center">What makes DeelMap different</h2>
           <div className="grid md:grid-cols-2 gap-0 overflow-hidden rounded border border-[#E8E8E4]">
@@ -149,7 +149,7 @@ export default function AboutPage() {
 
       {/* Testimonials */}
       <section className="py-14 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">USER STORIES</p>
           <h2 className="text-3xl font-bold text-[#1A1816] mb-10">What our users say about us</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

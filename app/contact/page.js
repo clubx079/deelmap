@@ -35,7 +35,7 @@ export default function ContactPage() {
       <Navbar />
 
       <section className="pt-20 pb-20 lg:pt-28 lg:pb-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
             {/* Left */}
