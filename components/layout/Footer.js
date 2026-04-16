@@ -9,7 +9,7 @@ const PLATFORM = [
 const COMPANY = [
   { label: 'About us', href: '/our-story' },
   { label: 'Contact', href: '/contact' },
-  { label: 'Blog', href: '/resources' },
+  { label: 'Advertise with us', href: '/contact' },
 ]
 
 const RESOURCES = [
