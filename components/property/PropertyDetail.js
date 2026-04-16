@@ -446,20 +446,8 @@ export function PropertyDetail({ property }) {
             </Link>
           </div>
 
-          {/* Right: Share + Favorite + User */}
+          {/* Right: Share + Save + User */}
           <div className="flex items-center gap-2">
-            {user && (
-              <Link
-                href="/buyer/dashboard"
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#F3F3F0] border border-[#E8E8E4] text-[#444441] hover:bg-[#E8E8E4] transition-colors text-[12px] font-semibold flex-shrink-0"
-                title="My account"
-              >
-                {user.first_name
-                  ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
-                  : <User className="w-4 h-4" />
-                }
-              </Link>
-            )}
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
@@ -492,6 +480,16 @@ export function PropertyDetail({ property }) {
               <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
               <span className="hidden sm:inline">{isFav ? 'Saved' : 'Save'}</span>
             </button>
+            {user && (
+              <Link href="/buyer/dashboard" className="flex items-center gap-2 group">
+                <div className="w-9 h-9 rounded-full bg-[#FEF0EF] flex items-center justify-center text-[#D03839] text-[13px] font-semibold ring-2 ring-[#F5C4C0] group-hover:ring-[#D03839] group-hover:scale-110 transition-all duration-200">
+                  {user.first_name
+                    ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
+                    : user.email?.[0]?.toUpperCase() || <User className="w-4 h-4" />
+                  }
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       </nav>
