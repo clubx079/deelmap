@@ -653,13 +653,9 @@ export default function MyListingsPage() {
                               {listing.status === 'active' && (
                                 <button
                                   onClick={() => setEnhanceListing(listing)}
-                                  className={`h-7 px-3 text-[11px] font-semibold rounded transition-colors mr-1 ${
-                                    listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured
-                                      ? 'bg-[#F3F3F0] hover:bg-[#E8E8E4] text-[#444441] border border-[#E8E8E4]'
-                                      : 'bg-[#D03839] hover:bg-[#E0493B] text-white'
-                                  }`}
+                                  className="h-7 px-3 text-[11px] font-semibold rounded transition-colors mr-1 bg-[#D03839] hover:bg-[#E0493B] text-white"
                                 >
-                                  {listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured ? 'Enhanced' : 'Enhance'}
+                                  Enhance
                                 </button>
                               )}
                               <button
