@@ -26,7 +26,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
             <Link href="/" className="flex items-center">
               <Image
                 src="/assets/logo.svg"
-                alt="Deelmap"
+                alt="DeelMap"
                 width={190}
                 height={68}
                 className="h-16 w-auto"

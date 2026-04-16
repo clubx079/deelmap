@@ -272,7 +272,7 @@ export default function SignupPage() {
             </h1>
             <p className="text-[#737370]">
               {authStep === 'signup'
-                ? 'Join Deelmap and start finding great deals'
+                ? 'Join DeelMap and start finding great deals'
                 : authStep === 'otp-method'
                   ? 'Choose how we send your 6-digit verification code.'
                   : otpMethod === 'sms'
@@ -533,7 +533,7 @@ export default function SignupPage() {
                     className="mt-0.5 h-4 w-4 text-[#1A1816] focus:ring-slate-900 border-slate-300 rounded"
                   />
                   <label htmlFor="terms" className="text-xs text-[#737370] leading-tight">
-                    I agree to Deelmap's{' '}
+                    I agree to DeelMap's{' '}
                     <a href="/terms-of-use" target="_blank" className="text-[#1A1816] font-semibold text-[#D03839] hover:underline">
                       Terms of Use
                     </a>

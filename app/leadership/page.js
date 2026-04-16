@@ -8,12 +8,12 @@ export default function LeadershipPage() {
     {
       name: "John Anderson",
       role: "Chief Executive Officer",
-      description: "John brings over 15 years of experience in real estate technology and investment. He has been instrumental in building Deelmap into the leading wholesale marketplace, connecting thousands of investors with quality deals nationwide."
+      description: "John brings over 15 years of experience in real estate technology and investment. He has been instrumental in building DeelMap into the leading wholesale marketplace, connecting thousands of investors with quality deals nationwide."
     },
     {
       name: "Sarah Mitchell",
       role: "Chief Operating Officer",
-      description: "Sarah oversees all operational aspects of Deelmap, ensuring seamless transactions and exceptional user experience. With a background in real estate finance, she has helped scale the platform to serve investors across 45 states."
+      description: "Sarah oversees all operational aspects of DeelMap, ensuring seamless transactions and exceptional user experience. With a background in real estate finance, she has helped scale the platform to serve investors across 45 states."
     }
   ]
 
@@ -29,7 +29,7 @@ export default function LeadershipPage() {
               Leadership
             </h1>
             <p className="text-xl sm:text-2xl text-[#737370] leading-relaxed max-w-3xl mx-auto">
-              Meet the experienced team driving Deelmap's mission to revolutionize wholesale real estate investing.
+              Meet the experienced team driving DeelMap's mission to revolutionize wholesale real estate investing.
             </p>
           </div>
         </div>
@@ -76,10 +76,10 @@ export default function LeadershipPage() {
             </h2>
             <div className="space-y-6 text-lg text-[#444441] leading-relaxed">
               <p>
-                Deelmap is led by a team of seasoned real estate professionals and technology experts who are passionate about transforming the wholesale real estate industry. Our leadership team combines decades of experience in real estate investment, technology development, and marketplace operations.
+                DeelMap is led by a team of seasoned real estate professionals and technology experts who are passionate about transforming the wholesale real estate industry. Our leadership team combines decades of experience in real estate investment, technology development, and marketplace operations.
               </p>
               <p>
-                Under their guidance, Deelmap has grown from a vision to connect investors with quality deals into a thriving marketplace that facilitates millions of dollars in transactions annually. Our leaders are committed to maintaining the highest standards of trust, transparency, and service excellence.
+                Under their guidance, DeelMap has grown from a vision to connect investors with quality deals into a thriving marketplace that facilitates millions of dollars in transactions annually. Our leaders are committed to maintaining the highest standards of trust, transparency, and service excellence.
               </p>
               <p>
                 Together, we're building the future of wholesale real estate investing, making it easier for investors to find, evaluate, and close deals while providing wholesalers with access to a network of serious, qualified buyers.

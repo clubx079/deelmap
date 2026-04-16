@@ -11,13 +11,13 @@ function openAuth(step) {
 }
 
 const FAQ_ITEMS = [
-  { q: 'How do I list my property on Deelmap?', a: 'Create a seller account, complete your profile, then use the dashboard to add your property details, photos, and pricing.' },
+  { q: 'How do I list my property on DeelMap?', a: 'Create a seller account, complete your profile, then use the dashboard to add your property details, photos, and pricing.' },
   { q: 'Who will see my property listing?', a: 'Your listing is visible to our verified network of active real estate investors across the United States.' },
-  { q: 'How do I list my property on Deelmap?', a: 'Log in to your seller account, navigate to "Add Property", fill in the details and submit for review. Listings go live within 24 hours.' },
+  { q: 'How do I list my property on DeelMap?', a: 'Log in to your seller account, navigate to "Add Property", fill in the details and submit for review. Listings go live within 24 hours.' },
   { q: 'How quickly can I start receiving offers and inquiries?', a: 'Most sellers receive their first inquiry within 48 hours of their listing going live.' },
-  { q: 'How does Deelmap ensure I receive inquiries from verified investors only?', a: 'Every buyer on Deelmap goes through identity verification and must confirm active investment intent before accessing listings.' },
-  { q: 'Do I need a real estate agent to sell my property on Deelmap?', a: 'No. Deelmap connects you directly with investors, removing the need for a traditional agent.' },
-  { q: 'How is my contact information kept private and secure?', a: 'All communication happens through the Deelmap platform. Your personal contact details are never shared with buyers directly.' },
+  { q: 'How does DeelMap ensure I receive inquiries from verified investors only?', a: 'Every buyer on DeelMap goes through identity verification and must confirm active investment intent before accessing listings.' },
+  { q: 'Do I need a real estate agent to sell my property on DeelMap?', a: 'No. DeelMap connects you directly with investors, removing the need for a traditional agent.' },
+  { q: 'How is my contact information kept private and secure?', a: 'All communication happens through the DeelMap platform. Your personal contact details are never shared with buyers directly.' },
   { q: 'What happens after I submit my property listing?', a: 'Our team reviews it within 24 hours. Once approved, it goes live to our full investor network.' },
 ]
 
@@ -228,7 +228,7 @@ export default function SellPage() {
         </div>
       </section>
 
-      {/* Why Sell on Deelmap */}
+      {/* Why Sell on DeelMap */}
       <section className="py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="grid lg:grid-cols-[1fr_1.6fr] gap-32 items-center">

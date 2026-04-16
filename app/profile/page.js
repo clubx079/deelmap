@@ -361,7 +361,7 @@ export default function ProfilePage() {
             <div className="px-5 py-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-[14px] font-semibold text-[#1A1816]">Sign Out</p>
-                <p className="text-[12px] text-[#737370] mt-0.5">Sign out of your Deelmap account</p>
+                <p className="text-[12px] text-[#737370] mt-0.5">Sign out of your DeelMap account</p>
               </div>
               <button
                 onClick={async () => {

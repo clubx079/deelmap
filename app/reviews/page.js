@@ -15,7 +15,7 @@ export default function ReviewsPage() {
               Reviews
             </h1>
             <p className="text-xl sm:text-2xl text-[#737370] leading-relaxed max-w-3xl mx-auto">
-              See what our community has to say about Deelmap.
+              See what our community has to say about DeelMap.
             </p>
           </div>
         </div>

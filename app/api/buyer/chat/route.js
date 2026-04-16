@@ -5,7 +5,7 @@ import { generateReplyToAddress } from '@/lib/emailReplyUtils';
 import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
 import { withTimeout, fireAndForget } from '@/lib/timeout';
 
-// Marketplace (Deelmap) Supabase: conversations & messages – same DB as rest of site
+// Marketplace (DeelMap) Supabase: conversations & messages – same DB as rest of site
 function getSupabase() {
   const url =
     process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL ||
@@ -276,7 +276,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="Deelmap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -294,7 +294,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
       </tr>
       <tr>
         <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
         </td>
       </tr>
     </table>
@@ -302,9 +302,9 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
 </body></html>`;
     await withTimeout(
       resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
         to: sellerEmail,
-        subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - Deelmap`,
+        subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - DeelMap`,
         html
       }),
       15000,

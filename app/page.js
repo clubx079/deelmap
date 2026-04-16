@@ -10,10 +10,10 @@ import { Search, Star, ShieldCheck, MessageSquare, Check, BadgeCheck, SlidersHor
 import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const TESTIMONIALS = [
-  { initials: 'MC', color: 'bg-[#D03839]', name: 'Michael Carter', role: 'Property Investor', metric: '23', metricLabel: 'deals closed', text: 'Deelmap helped me discover off-market deals I wouldn\'t have found anywhere else. The ARV data alone saves me a full underwriting session per deal. I open the platform and have real deals in under 5 minutes.' },
-  { initials: 'MH', color: 'bg-[#0E7490]', name: 'Marcus Hill', role: 'Real Estate Investor', metric: '$4.2M', metricLabel: 'portfolio', text: 'The deduplication is the killer feature. I was seeing the same property from three different wholesalers. Deelmap cleaned all of that up. Now the marketplace brings together opportunities from different sellers without the chaos.' },
+  { initials: 'MC', color: 'bg-[#D03839]', name: 'Michael Carter', role: 'Property Investor', metric: '23', metricLabel: 'deals closed', text: 'DeelMap helped me discover off-market deals I wouldn\'t have found anywhere else. The ARV data alone saves me a full underwriting session per deal. I open the platform and have real deals in under 5 minutes.' },
+  { initials: 'MH', color: 'bg-[#0E7490]', name: 'Marcus Hill', role: 'Real Estate Investor', metric: '$4.2M', metricLabel: 'portfolio', text: 'The deduplication is the killer feature. I was seeing the same property from three different wholesalers. DeelMap cleaned all of that up. Now the marketplace brings together opportunities from different sellers without the chaos.' },
   { initials: 'SM', color: 'bg-[#0F6E56]', name: 'Sophia Martinez', role: 'Wholesale Investor', metric: '140+', metricLabel: 'deals assigned', text: 'Being able to connect with buyers and sellers directly inside the platform makes deals move much faster than traditional methods. As a wholesaler, deal velocity doubled. The verified buyer network is a game changer.' },
-  { initials: 'JR', color: 'bg-[#7C3AED]', name: 'James Rivera', role: 'Fix & Flip Investor', metric: '58', metricLabel: 'deals closed', text: 'I\'ve tried every wholesale marketplace out there. Deelmap is the first one where the data is actually reliable. The ARV estimates and spread calculations are accurate enough that I trust them in my first pass.' },
+  { initials: 'JR', color: 'bg-[#7C3AED]', name: 'James Rivera', role: 'Fix & Flip Investor', metric: '58', metricLabel: 'deals closed', text: 'I\'ve tried every wholesale marketplace out there. DeelMap is the first one where the data is actually reliable. The ARV estimates and spread calculations are accurate enough that I trust them in my first pass.' },
   { initials: 'AL', color: 'bg-[#B45309]', name: 'Ashley Lee', role: 'Buy & Hold Investor', metric: '$2.8M', metricLabel: 'portfolio', text: 'Finding cash-flowing rentals used to take weeks of sorting through duplicate listings. Now I filter by cap rate, pick a state, and have a short list in minutes. My acquisition pace has completely changed.' },
   { initials: 'DW', color: 'bg-[#0369A1]', name: 'Derek Wallace', role: 'Portfolio Builder', metric: '31', metricLabel: 'deals assigned', text: 'The messaging system keeps everything organized. I\'m not juggling emails and texts anymore — every conversation with a seller is in one place, tied to the exact deal. It\'s the workflow I always needed.' },
 ]
@@ -116,7 +116,7 @@ export default function HomePage() {
         {/* Background: Figma map image */}
         <Image
           src="/assets/hero-map-new.png"
-          alt="Deelmap map view"
+          alt="DeelMap map view"
           fill
           className="object-cover"
           style={{ objectPosition: '0% 60%' }}
@@ -193,7 +193,7 @@ export default function HomePage() {
       {/* Featured Properties Section */}
       <PropertiesSlider />
 
-      {/* Why Deelmap Section */}
+      {/* Why DeelMap Section */}
       <section className="py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="grid lg:grid-cols-[1fr_1.6fr] gap-32 items-center">

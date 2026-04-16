@@ -39,7 +39,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -176,7 +176,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -195,7 +195,7 @@ export default function TestEmailPage() {
 
               <!-- Instruction Text -->
               <p style="margin: 0 0 40px 0; font-size: 16px; line-height: 1.6; color: #4b5563; text-align: center;">
-                We received a request to reset your password for your Deelmap account. Use the following code to complete the password reset procedure. This code is valid for <strong style="color: #1f2937;">15 minutes</strong>.
+                We received a request to reset your password for your DeelMap account. Use the following code to complete the password reset procedure. This code is valid for <strong style="color: #1f2937;">15 minutes</strong>.
               </p>
 
               <!-- Code Display -->
@@ -240,7 +240,7 @@ export default function TestEmailPage() {
                       🔒 Security Tips
                     </p>
                     <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #78350F;">
-                      This code will only work once. Never share it with anyone. Deelmap will never ask for your code.
+                      This code will only work once. Never share it with anyone. DeelMap will never ask for your code.
                     </p>
                   </td>
                 </tr>
@@ -327,7 +327,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -341,7 +341,7 @@ export default function TestEmailPage() {
               
               <!-- Title -->
               <h1 style="margin: 0 0 20px 0; font-size: 32px; font-weight: 700; color: #1f2937; text-align: center;">
-                Welcome to Deelmap
+                Welcome to DeelMap
               </h1>
 
               <!-- Greeting -->
@@ -355,7 +355,7 @@ export default function TestEmailPage() {
               </p>
               
               <p style="margin: 0 0 32px 0; font-size: 15px; line-height: 1.7; color: #4b5563; text-align: left;">
-                You can now access your seller dashboard and start listing your properties on Deelmap.
+                You can now access your seller dashboard and start listing your properties on DeelMap.
               </p>
 
               <!-- Credentials Card -->
@@ -429,7 +429,7 @@ export default function TestEmailPage() {
               
               <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #1f2937; text-align: left;">
                 Best regards,<br>
-                <strong>The Deelmap Team</strong>
+                <strong>The DeelMap Team</strong>
               </p>
 
             </td>
@@ -502,7 +502,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>

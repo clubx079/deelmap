@@ -91,7 +91,7 @@ function buildEmailHtml(logoUrl, title, titleColor, propertyBlock, bodyHtml, cta
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="${logoUrl}" alt="Deelmap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="${logoUrl}" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -108,7 +108,7 @@ function buildEmailHtml(logoUrl, title, titleColor, propertyBlock, bodyHtml, cta
       </tr>
       <tr>
         <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
         </td>
       </tr>
     </table>
@@ -122,7 +122,7 @@ async function sendEmailToSeller(sellerEmail, subject, html) {
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
       to: sellerEmail,
       subject,
       html,
@@ -253,7 +253,7 @@ export async function POST(request) {
         'Review Offer'
       );
 
-      await sendEmailToSeller(sellerEmail, `New offer of ${amountStr} from ${buyerName} - Deelmap`, html);
+      await sendEmailToSeller(sellerEmail, `New offer of ${amountStr} from ${buyerName} - DeelMap`, html);
     }).catch(err => console.error('[buyer/offers] Post-insert async error:', err?.message));
 
     return NextResponse.json({ offer });
@@ -424,7 +424,7 @@ export async function PATCH(request) {
           messagesUrl,
           'View Conversation'
         );
-        await sendEmailToSeller(sellerEmail, `${buyerName} withdrew their offer of ${amountStr} - Deelmap`, html);
+        await sendEmailToSeller(sellerEmail, `${buyerName} withdrew their offer of ${amountStr} - DeelMap`, html);
       }).catch(err => console.error('[buyer/offers] withdraw async error:', err?.message));
 
       return NextResponse.json({ success: true });
@@ -469,7 +469,7 @@ export async function PATCH(request) {
           messagesUrl,
           'View Conversation'
         );
-        await sendEmailToSeller(sellerEmail, `${buyerName} declined your counter offer of ${amountStr} - Deelmap`, html);
+        await sendEmailToSeller(sellerEmail, `${buyerName} declined your counter offer of ${amountStr} - DeelMap`, html);
       }).catch(err => console.error('[buyer/offers] reject_counter async error:', err?.message));
 
       return NextResponse.json({ success: true });
@@ -515,7 +515,7 @@ export async function PATCH(request) {
         messagesUrl,
         'View Conversation'
       );
-      await sendEmailToSeller(sellerEmail, `${buyerName} accepted your counter offer of ${amountStr} - Deelmap`, html);
+      await sendEmailToSeller(sellerEmail, `${buyerName} accepted your counter offer of ${amountStr} - DeelMap`, html);
     }).catch(err => console.error('[buyer/offers] accept_counter async error:', err?.message));
 
     return NextResponse.json({ success: true });
