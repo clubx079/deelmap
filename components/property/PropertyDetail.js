@@ -8,7 +8,7 @@ import {
   ArrowLeft, Heart, Share2,
   MapPin, Building2, Calendar, Square, Map, Bed, Droplets, Car,
   ChevronLeft, ChevronRight,
-  TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X
+  TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X, User
 } from 'lucide-react'
 import { useProperties } from '@/hooks/useProperties'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
@@ -446,8 +446,20 @@ export function PropertyDetail({ property }) {
             </Link>
           </div>
 
-          {/* Right: Share + Favorite */}
+          {/* Right: Share + Favorite + User */}
           <div className="flex items-center gap-2">
+            {user && (
+              <Link
+                href="/buyer/dashboard"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#F3F3F0] border border-[#E8E8E4] text-[#444441] hover:bg-[#E8E8E4] transition-colors text-[12px] font-semibold flex-shrink-0"
+                title="My account"
+              >
+                {user.first_name
+                  ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
+                  : <User className="w-4 h-4" />
+                }
+              </Link>
+            )}
             <button
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"

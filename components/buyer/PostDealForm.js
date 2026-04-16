@@ -923,11 +923,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
         const d = await res.json()
         if (d.id) {
           setDraftId(d.id)
-          if (currentStep === 1 && currentPhotos.length > 0) {
-            await supabaseMarketplace.from('property_images').insert(
-              currentPhotos.map((p, i) => ({ property_id: d.id, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
-            )
-          }
+          // Photos are saved by the useEffect watcher when draftId changes
         }
       } else {
         await fetch('/api/buyer/listings/draft', {
@@ -935,14 +931,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
           body: JSON.stringify({ id: draftId, ...currentFormData }),
         })
-        if (currentStep === 1) {
-          await supabaseMarketplace.from('property_images').delete().eq('property_id', draftId)
-          if (currentPhotos.length > 0) {
-            await supabaseMarketplace.from('property_images').insert(
-              currentPhotos.map((p, i) => ({ property_id: draftId, image_url: p.image_url || p.preview_url, image_key: p.image_key || null, sort_order: i }))
-            )
-          }
-        }
+        // Photos on step 1 are saved by the useEffect watcher when photos state changes
       }
     } catch {}
   }

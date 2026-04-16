@@ -343,10 +343,25 @@ export default function MyListingsPage() {
 
   // Enhancement tags helper
   const EnhanceTags = ({ listing }) => {
+    const daysLeft = (endsAt) => {
+      if (!endsAt) return null
+      const diff = new Date(endsAt) - new Date()
+      if (diff <= 0) return null
+      return Math.ceil(diff / (1000 * 60 * 60 * 24))
+    }
     const tags = []
-    if (listing.is_highlighted)       tags.push({ label: 'Highlighted', cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' })
-    if (listing.is_boosted)           tags.push({ label: 'Boosted',     cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' })
-    if (listing.is_homepage_featured) tags.push({ label: 'Featured',    cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' })
+    if (listing.is_highlighted) {
+      const d = daysLeft(listing.highlight_ends_at)
+      tags.push({ label: d ? `Highlighted · ${d}d` : 'Highlighted', cls: 'bg-[#FEF0EF] text-[#D03839] border-[#F5C0BF]' })
+    }
+    if (listing.is_boosted) {
+      const d = daysLeft(listing.boost_ends_at)
+      tags.push({ label: d ? `Boosted · ${d}d` : 'Boosted', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#C7D2FE]' })
+    }
+    if (listing.is_homepage_featured) {
+      const d = daysLeft(listing.homepage_feature_ends_at)
+      tags.push({ label: d ? `Featured · ${d}d` : 'Featured', cls: 'bg-[#E4F5EC] text-[#0F6E56] border-[#B6E4CE]' })
+    }
     if (!tags.length) return <span className="text-[11px] text-[#A8A8A4]">—</span>
     return (
       <div className="flex flex-wrap gap-1">
@@ -533,9 +548,13 @@ export default function MyListingsPage() {
                               {listing.status === 'active' && (
                                 <button
                                   onClick={() => setEnhanceListing(listing)}
-                                  className="h-7 px-3 text-[11px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors mr-1"
+                                  className={`h-7 px-3 text-[11px] font-semibold rounded transition-colors mr-1 ${
+                                    listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured
+                                      ? 'bg-[#F3F3F0] hover:bg-[#E8E8E4] text-[#444441] border border-[#E8E8E4]'
+                                      : 'bg-[#D03839] hover:bg-[#E0493B] text-white'
+                                  }`}
                                 >
-                                  Enhance
+                                  {listing.is_highlighted || listing.is_boosted || listing.is_homepage_featured ? 'Enhanced' : 'Enhance'}
                                 </button>
                               )}
                               <button
