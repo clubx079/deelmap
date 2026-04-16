@@ -31,11 +31,19 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
   const propertiesRef = useRef(properties)
   const filtersRef = useRef(filters)
   const onBoundsChangeRef = useRef(onBoundsChange)
+  const userInteractedRef = useRef(false)
+  const searchLocationRef = useRef(searchLocation)
   useEffect(() => { onBoundsChangeRef.current = onBoundsChange }, [onBoundsChange])
 
   // Keep refs in sync so callbacks always see latest values
   useEffect(() => { propertiesRef.current = properties }, [properties])
   useEffect(() => { filtersRef.current = filters }, [filters])
+  useEffect(() => {
+    searchLocationRef.current = searchLocation
+    // Any search change (apply or remove) resets user-interaction flag so the
+    // new context can auto-fit once before the user starts panning/zooming.
+    userInteractedRef.current = false
+  }, [searchLocation])
 
   useEffect(() => { initMap() }, [])
   useEffect(() => {
@@ -177,10 +185,18 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
         }
       })
 
-      // Close popup when dragging the map
+      // Close popup when dragging the map; also mark that user has moved the map manually
       map.addListener('dragstart', () => {
+        userInteractedRef.current = true
         hideInfoCard()
       })
+
+      // Mark user interaction on scroll-zoom so fitBounds doesn't snap back
+      if (mapRef.current) {
+        mapRef.current.addEventListener('wheel', () => {
+          userInteractedRef.current = true
+        }, { passive: true })
+      }
 
       // Update markers when map is ready (read from ref to get latest properties)
       window.google.maps.event.addListenerOnce(map, 'idle', () => {
@@ -302,7 +318,11 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     })
 
 
-    if (!bounds.isEmpty()) {
+    // Only auto-fit on initial load or after a new search/filter is applied.
+    // Once the user has manually panned or zoomed, stop snapping back.
+    // When a searchLocation is active its own useEffect already handles the zoom.
+    const searchActive = !!(searchLocationRef.current?.city || searchLocationRef.current?.state)
+    if (!bounds.isEmpty() && !userInteractedRef.current && !searchActive) {
       map.fitBounds(bounds)
       window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
         if (map.getZoom() > 15) map.setZoom(15)
