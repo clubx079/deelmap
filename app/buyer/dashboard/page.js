@@ -5,9 +5,9 @@ import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  Star, MessageSquare, FileText, AlertCircle, Bell, Search,
+  Star, MessageSquare, FileText, Bell, Search,
   ChevronLeft, ChevronRight, MapPin, Share2, Heart,
-  TrendingUp, Lock, ArrowUpRight, Bookmark
+  TrendingUp, Lock, ArrowUpRight, Bookmark, Home
 } from 'lucide-react';
 
 export default function BuyerDashboard() {
@@ -17,7 +17,7 @@ export default function BuyerDashboard() {
     savedDeals: 0,
     activeConversations: 0,
     offersMade: 0,
-    dealsUnderReview: 0,
+    myActiveListings: 0,
     savedThisWeek: 0,
     unreadMessages: 0,
     pendingResponses: 0,
@@ -72,11 +72,12 @@ export default function BuyerDashboard() {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${user.id}` };
 
-      const [conversationsRes, favoritesRes, dealsRes, offersRes] = await Promise.allSettled([
+      const [conversationsRes, favoritesRes, dealsRes, offersRes, listingsRes] = await Promise.allSettled([
         fetch('/api/buyer/chat?action=get_conversations', { headers }),
         fetch('/api/favorites/list', { headers }),
         fetch('/api/deals?limit=10&sortBy=newest'),
-        fetch('/api/buyer/offers', { headers })
+        fetch('/api/buyer/offers', { headers }),
+        fetch('/api/buyer/listings', { headers: { 'x-user-id': user.id } }),
       ]);
 
       // Conversations
@@ -114,13 +115,14 @@ export default function BuyerDashboard() {
         const data = await offersRes.value.json();
         const offers = data.offers || [];
         const pending = offers.filter(o => o.status === 'pending').length;
-        const underReview = offers.filter(o => o.status === 'accepted' || o.status === 'countered').length;
-        setStats(prev => ({
-          ...prev,
-          offersMade: offers.length,
-          dealsUnderReview: underReview,
-          pendingResponses: pending,
-        }));
+        setStats(prev => ({ ...prev, offersMade: offers.length, pendingResponses: pending }));
+      }
+
+      // My active listings (deals posted by this buyer)
+      if (listingsRes.status === 'fulfilled' && listingsRes.value.ok) {
+        const data = await listingsRes.value.json();
+        const active = (data.listings || []).filter(l => l.status === 'active').length;
+        setStats(prev => ({ ...prev, myActiveListings: active }));
       }
 
       // Recent deals for carousel
@@ -356,12 +358,12 @@ export default function BuyerDashboard() {
             iconBg="#FEF3E2"
           />
           <StatCard
-            title="Deals under review"
-            value={stats.dealsUnderReview}
-            subtitle={stats.newUpdates > 0 ? `${stats.newUpdates} new update` : null}
-            subtitleColor="#D03839"
-            icon={<AlertCircle className="w-4 h-4 text-[#D03839]" />}
-            iconBg="#FEF0EF"
+            title="My active listings"
+            value={stats.myActiveListings}
+            subtitle={stats.myActiveListings > 0 ? 'Live on marketplace' : 'No active listings'}
+            subtitleColor={stats.myActiveListings > 0 ? '#0F6E56' : '#A8A8A4'}
+            icon={<Home className="w-4 h-4 text-[#0F6E56]" />}
+            iconBg="#E4F5EC"
           />
         </div>
 
