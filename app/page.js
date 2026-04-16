@@ -119,12 +119,12 @@ export default function HomePage() {
           alt="DeelMap map view"
           fill
           className="object-cover"
-          style={{ objectPosition: '0% 60%' }}
+          style={{ objectPosition: '50% 60%' }}
           priority
           sizes="100vw"
         />
         {/* Left gradient overlay so text stays readable */}
-        <div className="absolute inset-0 hidden lg:block" style={{ background: 'linear-gradient(to right, white 0%, white 42%, rgba(255,255,255,0.6) 58%, transparent 72%)' }} />
+        <div className="absolute inset-0 hidden lg:block" style={{ background: 'none' }} />
         <div className="absolute inset-0 lg:hidden" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.88) 42%, white 65%)' }} />
 
         {/* Left: Text (overlaid) */}
@@ -133,7 +133,7 @@ export default function HomePage() {
             <div className="w-full max-w-[620px]">
 
               {/* Heading */}
-              <h1 className="text-[44px] sm:text-[48px] lg:text-[46px] xl:text-[52px] font-extrabold text-[#1A1816] leading-[1.1] mb-5">
+              <h1 className="text-[44px] sm:text-[48px] lg:text-[46px] xl:text-[52px] font-black text-[#1A1816] leading-[1.1] mb-5">
                 Discover verified<br />
                 off-market{' '}
                 <span className="text-[#D03839]">real<br />estate deals</span>
