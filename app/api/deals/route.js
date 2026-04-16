@@ -131,12 +131,54 @@ export async function GET(request) {
 
     query = query.range(offset, offset + limit - 1);
 
-    const { data: deals, count: totalCount, error: dealError } = await query;
+    // Build manual properties query
+    let manualQuery = supabaseMarketplace
+      .from('properties')
+      .select(`
+        id, slug, address, city, state, zipcode, latitude, longitude,
+        price, bedrooms, bathrooms, floor_area, property_type, status,
+        is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
+        property_images!left (image_url, image_key, sort_order)
+      `, { count: 'exact' })
+      .in('status', ['active', 'published'])
+      .eq('property_images.sort_order', 0);
 
-    if (dealError) {
-      console.error('[DEALS-API] Error:', dealError);
-      throw dealError;
+    if (sortBy === 'price-low') {
+      manualQuery = manualQuery.order('price', { ascending: true, nullsFirst: false });
+    } else if (sortBy === 'price-high') {
+      manualQuery = manualQuery.order('price', { ascending: false, nullsFirst: false });
+    } else {
+      manualQuery = manualQuery.order('created_at', { ascending: false });
     }
+    if (minPrice !== null) manualQuery = manualQuery.gte('price', minPrice);
+    if (maxPrice !== null) manualQuery = manualQuery.lte('price', maxPrice);
+    if (minBedrooms !== null) manualQuery = manualQuery.gte('bedrooms', minBedrooms);
+    if (maxBedrooms !== null) manualQuery = manualQuery.lte('bedrooms', maxBedrooms);
+    if (minBathrooms !== null) manualQuery = manualQuery.gte('bathrooms', minBathrooms);
+    if (maxBathrooms !== null) manualQuery = manualQuery.lte('bathrooms', maxBathrooms);
+    if (minSqft !== null) manualQuery = manualQuery.gte('floor_area', minSqft);
+    if (maxSqft !== null) manualQuery = manualQuery.lte('floor_area', maxSqft);
+    if (propertyTypes.length > 0) manualQuery = manualQuery.in('property_type', propertyTypes);
+    if (states.length > 0) manualQuery = manualQuery.in('state', states);
+    if (searchQuery) {
+      const q = `%${searchQuery.trim()}%`;
+      manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
+    }
+    if (isHighlighted) manualQuery = manualQuery.eq('is_highlighted', true);
+    if (isBoosted) manualQuery = manualQuery.eq('is_boosted', true);
+    if (isHomepageFeatured) manualQuery = manualQuery.eq('is_homepage_featured', true);
+    manualQuery = manualQuery.range(offset, offset + limit - 1);
+
+    // Run both queries in parallel — each fails independently
+    const [dealsResult, manualResult] = await Promise.allSettled([query, manualQuery]);
+
+    if (dealsResult.status === 'rejected' || dealsResult.value?.error) {
+      const err = dealsResult.value?.error || dealsResult.reason;
+      console.error('[DEALS-API] Error:', err);
+      throw err;
+    }
+
+    const { data: deals, count: totalCount } = dealsResult.value;
 
     // Fallback: for deals with no featured photo, fetch their first photo by display_order
     const dealsNeedingFallback = (deals || []).filter(d => !d.property_photos?.length).map(d => d.id);
@@ -169,56 +211,16 @@ export async function GET(request) {
       return normalizeWholesaleDeal(deal);
     }).filter(Boolean);
 
-    // Also fetch manual seller properties with same filters applied
+    // Process manual properties result — if it failed, silently skip (same as before)
     let manualProperties = [];
     let manualCount = 0;
     try {
-      let manualQuery = supabaseMarketplace
-        .from('properties')
-        .select(`
-          id, slug, address, city, state, zipcode, latitude, longitude,
-          price, bedrooms, bathrooms, floor_area, property_type, status,
-          is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
-          property_images!left (image_url, image_key, sort_order)
-        `, { count: 'exact' })
-        .in('status', ['active', 'published'])
-        .eq('property_images.sort_order', 0);
-
-      // Sorting
-      if (sortBy === 'price-low') {
-        manualQuery = manualQuery.order('price', { ascending: true, nullsFirst: false });
-      } else if (sortBy === 'price-high') {
-        manualQuery = manualQuery.order('price', { ascending: false, nullsFirst: false });
-      } else {
-        manualQuery = manualQuery.order('created_at', { ascending: false });
-      }
-
-      // Filters
-      if (minPrice !== null) manualQuery = manualQuery.gte('price', minPrice);
-      if (maxPrice !== null) manualQuery = manualQuery.lte('price', maxPrice);
-      if (minBedrooms !== null) manualQuery = manualQuery.gte('bedrooms', minBedrooms);
-      if (maxBedrooms !== null) manualQuery = manualQuery.lte('bedrooms', maxBedrooms);
-      if (minBathrooms !== null) manualQuery = manualQuery.gte('bathrooms', minBathrooms);
-      if (maxBathrooms !== null) manualQuery = manualQuery.lte('bathrooms', maxBathrooms);
-      if (minSqft !== null) manualQuery = manualQuery.gte('floor_area', minSqft);
-      if (maxSqft !== null) manualQuery = manualQuery.lte('floor_area', maxSqft);
-      if (propertyTypes.length > 0) manualQuery = manualQuery.in('property_type', propertyTypes);
-      if (states.length > 0) manualQuery = manualQuery.in('state', states);
-      if (searchQuery) {
-        const q = `%${searchQuery.trim()}%`;
-        manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
-      }
-      if (isHighlighted) manualQuery = manualQuery.eq('is_highlighted', true);
-      if (isBoosted) manualQuery = manualQuery.eq('is_boosted', true);
-      if (isHomepageFeatured) manualQuery = manualQuery.eq('is_homepage_featured', true);
-
-      manualQuery = manualQuery.range(offset, offset + limit - 1);
-
-      const { data: manualData, count: mCount } = await manualQuery;
-
-      manualCount = mCount || 0;
-      if (manualData && manualData.length > 0) {
-        manualProperties = manualData.map(p => normalizeManualProperty(p, p.property_images || [])).filter(Boolean);
+      if (manualResult.status === 'fulfilled' && !manualResult.value?.error) {
+        const { data: manualData, count: mCount } = manualResult.value;
+        manualCount = mCount || 0;
+        if (manualData && manualData.length > 0) {
+          manualProperties = manualData.map(p => normalizeManualProperty(p, p.property_images || [])).filter(Boolean);
+        }
       }
     } catch {
       // Silently skip — manual properties are optional
