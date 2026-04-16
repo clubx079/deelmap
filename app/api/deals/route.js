@@ -49,9 +49,10 @@ export async function GET(request) {
 
     let query = supabaseMarketplace
       .from('wholesale_deals')
-      .select(`${dealCols}, property_photos(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
+      .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
       .eq('status', 'active')
-      .eq('is_incomplete', false);
+      .eq('is_incomplete', false)
+      .eq('property_photos.is_featured', true);
 
     // Sorting
     if (sortBy === 'price-low') {
@@ -137,19 +138,34 @@ export async function GET(request) {
       throw dealError;
     }
 
-    // Process: pick featured photo, count photos
-    const properties = (deals || []).map(deal => {
-      const allPhotos = deal.property_photos || [];
-      const featured = allPhotos.find(p => p.is_featured) || allPhotos[0];
+    // Fallback: for deals with no featured photo, fetch their first photo by display_order
+    const dealsNeedingFallback = (deals || []).filter(d => !d.property_photos?.length).map(d => d.id);
+    if (dealsNeedingFallback.length > 0) {
+      const { data: fallbackPhotos } = await supabaseMarketplace
+        .from('property_photos')
+        .select('deal_id, photo_url, optimized_url')
+        .in('deal_id', dealsNeedingFallback)
+        .order('display_order', { ascending: true });
 
-      // Replace full photo array with just the featured one for the card
-      deal.photo_count = allPhotos.length;
-      deal.property_photos = featured ? [{
-        photo_url: featured.optimized_url || featured.photo_url,
-        optimized_url: featured.optimized_url || null,
+      const fallbackMap = {};
+      for (const p of (fallbackPhotos || [])) {
+        if (!fallbackMap[p.deal_id]) fallbackMap[p.deal_id] = p;
+      }
+      (deals || []).forEach(deal => {
+        if (!deal.property_photos?.length && fallbackMap[deal.id]) {
+          deal.property_photos = [{ ...fallbackMap[deal.id], is_featured: false }];
+        }
+      });
+    }
+
+    // Process: format featured photo for card
+    const properties = (deals || []).map(deal => {
+      const photo = deal.property_photos?.[0];
+      deal.property_photos = photo ? [{
+        photo_url: photo.optimized_url || photo.photo_url,
+        optimized_url: photo.optimized_url || null,
         is_featured: true
       }] : [];
-
       return normalizeWholesaleDeal(deal);
     }).filter(Boolean);
 
@@ -163,9 +179,10 @@ export async function GET(request) {
           id, slug, address, city, state, zipcode, latitude, longitude,
           price, bedrooms, bathrooms, floor_area, property_type, status,
           is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
-          property_images (image_url, image_key, sort_order)
+          property_images!left (image_url, image_key, sort_order)
         `, { count: 'exact' })
-        .in('status', ['active', 'published']);
+        .in('status', ['active', 'published'])
+        .eq('property_images.sort_order', 0);
 
       // Sorting
       if (sortBy === 'price-low') {
