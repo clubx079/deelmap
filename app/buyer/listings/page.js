@@ -163,10 +163,77 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
 
-        {/* Left — add-ons or payment form */}
-        <div className="bg-white border border-[#E8E8E4] rounded p-6">
+        {/* Left column */}
+        <div className="flex flex-col gap-4">
+
+          {/* Active enhancements card — separate container */}
+          {activeEnhancements.length > 0 && (
+            <div className="bg-white border border-[#E8E8E4] rounded p-6">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[15px] font-semibold text-[#1A1816]">Active Enhancements</p>
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0F6E56] bg-[#E4F5EC] border border-[#B6E4CE] px-2.5 py-1 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] animate-pulse inline-block" />
+                  {activeEnhancements.length} Live
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {activeEnhancements.map(({ id, endsAt }) => {
+                  const meta = ACTIVE_ENHANCEMENT_META[id]
+                  if (!meta) return null
+                  const Icon = meta.icon
+                  const days = daysRemaining(endsAt)
+                  const elapsed = meta.totalDays - days
+                  const pct = Math.min(97, Math.max(3, (elapsed / meta.totalDays) * 100))
+                  const urgency = days <= 2
+
+                  return (
+                    <div key={id} className="border border-[#E8E8E4] rounded overflow-hidden bg-white">
+                      {/* Top row */}
+                      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+                        <div className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0" style={{ background: meta.bg }}>
+                          <Icon className="w-[18px] h-[18px]" style={{ color: meta.color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-0.5">
+                            <p className="text-[13px] font-semibold text-[#1A1816] truncate">{meta.label}</p>
+                            <span
+                              className="text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0"
+                              style={{ color: urgency ? '#B5620A' : meta.color, background: urgency ? '#FEF3E2' : meta.bg, borderColor: urgency ? '#F3C97D' : meta.border }}
+                            >
+                              {days}d left
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] text-[#A8A8A4]">
+                            <CalendarDays className="w-3 h-3 flex-shrink-0" />
+                            <span>Expires {formatExpiry(endsAt)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="px-4 pb-4">
+                        <div className="w-full h-[5px] bg-[#F3F3F0] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${meta.color}60, ${meta.color})`, transition: 'width 0.6s ease' }}
+                          />
+                        </div>
+                        <div className="flex justify-between mt-1.5">
+                          <span className="text-[10px] text-[#A8A8A4]">Day 1</span>
+                          <span className="text-[10px] text-[#A8A8A4]">{Math.round(pct)}% elapsed · {meta.totalDays}d total</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Add-ons or payment form card */}
+          <div className="bg-white border border-[#E8E8E4] rounded p-6">
           {showPayment && clientSecret ? (
             stripePromise ? (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
@@ -186,82 +253,6 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
             )
           ) : (
             <>
-              {/* ── Active enhancements ── */}
-              {activeEnhancements.length > 0 && (
-                <div className="mb-7">
-                  {/* Section header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-4 bg-[#0F6E56] rounded-full" />
-                      <p className="text-[13px] font-semibold text-[#1A1816] tracking-[-0.1px]">Active Enhancements</p>
-                    </div>
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0F6E56] bg-[#E4F5EC] border border-[#B6E4CE] px-2.5 py-1 rounded-full">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] animate-pulse inline-block" />
-                      {activeEnhancements.length} Live
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {activeEnhancements.map(({ id, endsAt }) => {
-                      const meta = ACTIVE_ENHANCEMENT_META[id]
-                      if (!meta) return null
-                      const Icon = meta.icon
-                      const days = daysRemaining(endsAt)
-                      const elapsed = meta.totalDays - days
-                      const pct = Math.min(97, Math.max(3, (elapsed / meta.totalDays) * 100))
-                      const urgency = days <= 2
-
-                      return (
-                        <div key={id} className="border border-[#E8E8E4] rounded-lg overflow-hidden bg-white">
-                          {/* Top row */}
-                          <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                            <div className="w-9 h-9 rounded flex items-center justify-center flex-shrink-0" style={{ background: meta.bg }}>
-                              <Icon className="w-[18px] h-[18px]" style={{ color: meta.color }} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-0.5">
-                                <p className="text-[13px] font-semibold text-[#1A1816] truncate">{meta.label}</p>
-                                <span
-                                  className="text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0"
-                                  style={{ color: urgency ? '#B5620A' : meta.color, background: urgency ? '#FEF3E2' : meta.bg, borderColor: urgency ? '#F3C97D' : meta.border }}
-                                >
-                                  {days}d left
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-[11px] text-[#A8A8A4]">
-                                <CalendarDays className="w-3 h-3 flex-shrink-0" />
-                                <span>Expires {formatExpiry(endsAt)}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Progress bar */}
-                          <div className="px-4 pb-4">
-                            <div className="w-full h-[5px] bg-[#F3F3F0] rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${meta.color}60, ${meta.color})`, transition: 'width 0.6s ease' }}
-                              />
-                            </div>
-                            <div className="flex justify-between mt-1.5">
-                              <span className="text-[10px] text-[#A8A8A4]">Day 1</span>
-                              <span className="text-[10px] text-[#A8A8A4]">{Math.round(pct)}% elapsed · {meta.totalDays}d total</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Divider before add-ons */}
-                  <div className="flex items-center gap-3 mt-6 mb-0">
-                    <div className="flex-1 h-px bg-[#E8E8E4]" />
-                    <span className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest">Add more</span>
-                    <div className="flex-1 h-px bg-[#E8E8E4]" />
-                  </div>
-                </div>
-              )}
-
               <p className="text-[15px] font-semibold text-[#1A1816] mb-0.5">Choose add-ons</p>
               <p className="text-[13px] text-[#737370] mb-5">Select one or more upgrades to boost your listing's visibility.</p>
               <div className="space-y-3">
@@ -293,6 +284,8 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
               </div>
             </>
           )}
+          </div>
+
         </div>
 
         {/* Right — order summary */}
