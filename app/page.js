@@ -141,7 +141,8 @@ export default function HomePage() {
 
               {/* Subtext */}
               <p className="text-[20px] text-[#444441] leading-relaxed mb-8 max-w-[520px]">
-                Browse investment opportunities from wholesalers and sellers across the United States— all in one trusted marketplace.{' '}
+                Browse investment opportunities from wholesalers and sellers across the United States— all in one trusted marketplace.
+                <br />
                 <span className="text-[#D03839] font-semibold">Free for all buyers — We never share your information</span>
               </p>
 
