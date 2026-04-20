@@ -183,7 +183,7 @@ export function PropertiesSlider() {
     const sqft = p.sqft
 
     return (
-      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col h-full">
+      <Link href={`/${p.slug || p.id}`} className="block bg-white border border-[#E8E8E4] rounded overflow-hidden hover:shadow-lg transition-shadow duration-200 flex flex-col h-full">
         {/* Photo */}
         <div className="bg-[#FAFAF8] flex-shrink-0 relative h-[220px] overflow-hidden">
           {thumbImg ? (
@@ -270,15 +270,12 @@ export function PropertiesSlider() {
                 </div>
               </div>
             </div>
-            <Link
-              href={`/${p.slug || p.id}`}
-              className="text-[12px] font-semibold text-[#D03839] hover:underline"
-            >
-              View deal
-            </Link>
+            <span className="text-[12px] font-semibold text-[#D03839]">
+              View deal →
+            </span>
           </div>
         </div>
-      </div>
+      </Link>
     )
   }
 

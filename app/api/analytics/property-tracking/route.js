@@ -207,14 +207,20 @@ export async function POST(request) {
       // AUTO-TRIGGER: Check analytics notification settings and send SMS if threshold reached
       try {
         // Get analytics settings from database
-        const { data: settingsData, error: settingsError } = await supabase.rpc('get_analytics_settings')
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('analytics_settings')
+          .select('*')
+          .limit(1)
+          .maybeSingle()
 
         if (settingsError) {
           console.error('Error fetching analytics settings:', settingsError)
         }
 
+        console.log('🔍 Analytics settings fetched:', { found: !!settingsData, enabled: settingsData?.enabled, error: settingsError?.message })
+
         // Default to disabled if settings not found
-        const settings = settingsData?.[0] || {
+        const settings = settingsData || {
           enabled: false,
           threshold: 2,
           message_template: 'Hey {seller_name}! Your property at {address} got {no_of_views} new views. Engage with them right now: {magic_link}',

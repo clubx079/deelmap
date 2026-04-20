@@ -8,7 +8,7 @@ import {
   ArrowLeft, Heart, Share2,
   MapPin, Building2, Calendar, Square, Map, Bed, Droplets, Car,
   ChevronLeft, ChevronRight,
-  TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X, User
+  TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X, User, Copy, Check
 } from 'lucide-react'
 import { useProperties } from '@/hooks/useProperties'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
@@ -38,6 +38,7 @@ export function PropertyDetail({ property }) {
   const [estimatedRent, setEstimatedRent] = useState(property.estimated_rent ?? null)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showPhonePopup, setShowPhonePopup] = useState(false)
+  const [phoneCopied, setPhoneCopied] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [modalInitialIndex, setModalInitialIndex] = useState(0)
   const [showShareModal, setShowShareModal] = useState(false)
@@ -887,15 +888,28 @@ export function PropertyDetail({ property }) {
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <a
-                        href={`tel:${property.agent.phone}`}
-                        className="flex items-center gap-2.5 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FEF0EF] transition-colors group"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center shrink-0 group-hover:bg-[#D03839] transition-colors">
-                          <Phone className="w-4 h-4 text-[#D03839] group-hover:text-white transition-colors" />
-                        </div>
-                        <span className="text-[15px] font-semibold text-[#1A1816]">{property.agent.phone}</span>
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`tel:${property.agent.phone}`}
+                          className="flex items-center gap-2.5 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FEF0EF] transition-colors group flex-1"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center shrink-0 group-hover:bg-[#D03839] transition-colors">
+                            <Phone className="w-4 h-4 text-[#D03839] group-hover:text-white transition-colors" />
+                          </div>
+                          <span className="text-[15px] font-semibold text-[#1A1816]">{property.agent.phone}</span>
+                        </a>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(property.agent.phone)
+                            setPhoneCopied(true)
+                            setTimeout(() => setPhoneCopied(false), 2000)
+                          }}
+                          className="p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#1A1816] transition-colors shrink-0"
+                          title="Copy number"
+                        >
+                          {phoneCopied ? <Check className="w-4 h-4 text-[#0F6E56]" /> : <Copy className="w-4 h-4 text-[#737370]" />}
+                        </button>
+                      </div>
                       <p className="text-[11px] text-[#A8A8A4] mt-2 text-center">Tap the number to call</p>
                     </div>
                     </>
