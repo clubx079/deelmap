@@ -118,7 +118,7 @@ async function getDealAddressAndSlug(supabase, dealId) {
   // 1) Try properties table first (seller-added manual listings – "address" column)
   const { data: prop, error: propErr } = await supabase
     .from('properties')
-    .select('address, city, state, zip_code, postal_code, slug')
+    .select('address, city, state, postal_code, slug')
     .eq('id', idStr)
     .maybeSingle();
   if (propErr) {
@@ -127,7 +127,7 @@ async function getDealAddressAndSlug(supabase, dealId) {
   if (!propErr && prop) {
     const address = (prop.address != null && String(prop.address).trim() !== '')
       ? String(prop.address).trim()
-      : [prop.address, prop.city, prop.state, prop.zip_code || prop.postal_code].filter(Boolean).join(', ') || null;
+      : [prop.address, prop.city, prop.state, prop.postal_code].filter(Boolean).join(', ') || null;
     return { address: address || null, slug: prop.slug || null, source: 'properties' };
   }
 
