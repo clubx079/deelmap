@@ -658,6 +658,7 @@ export async function POST(request) {
             }
           }
         }
+        }
       } catch (notificationError) {
         console.error('[NOTIF] Unhandled error in notification trigger:', notificationError.message, notificationError.stack)
       }
