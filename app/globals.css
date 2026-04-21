@@ -13,6 +13,36 @@ body {
   line-height: 1.6;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.01em;
+}
+
+/* Hero pin floating animations */
+@keyframes heroPinFloat1 {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+@keyframes heroPinFloat2 {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes heroPinFloat3 {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+}
+@keyframes heroPinFloat4 {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes heroShadowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(0.55); opacity: 0.2; }
+}
+@keyframes heroCardFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
 /* Smooth scrollbars */
 ::-webkit-scrollbar { 
   width: 6px; 

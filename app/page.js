@@ -113,19 +113,76 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh' }}>
-        {/* Background: Figma map image */}
+        {/* Background map */}
         <Image
-          src="/assets/hero-map-new.png"
+          src="/assets/hero-map-bg.png"
           alt="DeelMap map view"
           fill
           className="object-cover"
-          style={{ objectPosition: '50% 60%' }}
+          style={{ objectPosition: '60% 50%' }}
           priority
           sizes="100vw"
         />
+
+        {/* Blur overlay */}
+        <Image
+          src="/assets/hero-blur-overlay.png"
+          alt=""
+          fill
+          className="object-cover hidden lg:block"
+          style={{ objectPosition: '60% 50%', opacity: 0.6 }}
+          priority
+          sizes="100vw"
+        />
+
         {/* Left gradient overlay so text stays readable */}
-        <div className="absolute inset-0 hidden lg:block" style={{ background: 'none' }} />
+        <div className="absolute inset-0 hidden lg:block" style={{ background: 'linear-gradient(to right, rgba(247,246,243,1) 0%, rgba(247,246,243,0.97) 30%, rgba(247,246,243,0.5) 55%, transparent 75%)' }} />
         <div className="absolute inset-0 lg:hidden" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.88) 42%, white 65%)' }} />
+
+        {/* Animated pin elements — desktop only */}
+        <div className="absolute inset-0 hidden lg:block pointer-events-none" style={{ zIndex: 5 }}>
+
+          {/* Large pin + shadow */}
+          <div className="absolute" style={{ right: '30%', top: '14%' }}>
+            <div style={{ animation: 'heroPinFloat1 3.2s ease-in-out infinite' }}>
+              <img src="/assets/hero-pin-lg.svg" alt="" style={{ width: '64px', height: '64px', display: 'block' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px', animation: 'heroShadowPulse 3.2s ease-in-out infinite' }}>
+              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '29px', height: '8px' }} />
+            </div>
+          </div>
+
+          {/* Group pin (has shadow inside SVG) */}
+          <div className="absolute" style={{ right: '12%', top: '20%', animation: 'heroPinFloat2 2.8s ease-in-out infinite', animationDelay: '0.6s' }}>
+            <img src="/assets/hero-group.svg" alt="" style={{ width: '70px', height: '74px', display: 'block' }} />
+          </div>
+
+          {/* Medium pin + shadow */}
+          <div className="absolute" style={{ right: '22%', top: '52%' }}>
+            <div style={{ animation: 'heroPinFloat3 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
+              <img src="/assets/hero-pin-md.svg" alt="" style={{ width: '52px', height: '52px', display: 'block' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
+              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '24px', height: '7px' }} />
+            </div>
+          </div>
+
+          {/* Small pin + shadow */}
+          <div className="absolute" style={{ right: '5%', top: '55%' }}>
+            <div style={{ animation: 'heroPinFloat4 2.5s ease-in-out infinite', animationDelay: '1.8s' }}>
+              <img src="/assets/hero-pin-sm.svg" alt="" style={{ width: '42px', height: '42px', display: 'block' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 2.5s ease-in-out infinite', animationDelay: '1.8s' }}>
+              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '20px', height: '6px' }} />
+            </div>
+          </div>
+
+          {/* Property card */}
+          <div className="absolute" style={{ right: '3%', top: '22%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
+            <img src="/assets/hero-card.png" alt="" style={{ width: '210px', height: 'auto', borderRadius: '12px', boxShadow: '0 20px 48px rgba(0,0,0,0.18)' }} />
+          </div>
+
+        </div>
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: '88vh' }}>
