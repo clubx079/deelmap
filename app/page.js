@@ -111,8 +111,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh' }}>
+      {/* Hero Section — pulls up behind transparent navbar */}
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh', marginTop: '-80px', paddingTop: '80px' }}>
         {/* Background map */}
         <Image
           src="/assets/hero-map-bg.png"
@@ -124,22 +124,11 @@ export default function HomePage() {
           sizes="100vw"
         />
 
-        {/* Blur overlay */}
-        <Image
-          src="/assets/hero-blur-overlay.png"
-          alt=""
-          fill
-          className="object-cover hidden lg:block"
-          style={{ objectPosition: '60% 50%', opacity: 0.6 }}
-          priority
-          sizes="100vw"
-        />
-
-        {/* Top fade — map fades under navbar */}
-        <div className="absolute inset-x-0 top-0 z-[4] pointer-events-none" style={{ height: '160px', background: 'linear-gradient(to bottom, rgba(247,246,243,0.85) 0%, transparent 100%)' }} />
+        {/* Top fade — covers navbar area fully */}
+        <div className="absolute inset-x-0 top-0 z-[4] pointer-events-none" style={{ height: '200px', background: 'linear-gradient(to bottom, rgba(247,246,243,1) 0%, rgba(247,246,243,0.6) 50%, transparent 100%)' }} />
 
         {/* Bottom fade — hero blends into next section */}
-        <div className="absolute inset-x-0 bottom-0 z-[4] pointer-events-none" style={{ height: '140px', background: 'linear-gradient(to top, rgba(247,246,243,1) 0%, transparent 100%)' }} />
+        <div className="absolute inset-x-0 bottom-0 z-[4] pointer-events-none" style={{ height: '160px', background: 'linear-gradient(to top, rgba(247,246,243,1) 0%, transparent 100%)' }} />
 
         {/* Left gradient overlay so text stays readable */}
         <div className="absolute inset-0 hidden lg:block" style={{ background: 'linear-gradient(to right, rgba(247,246,243,1) 0%, rgba(247,246,243,0.96) 32%, rgba(247,246,243,0.4) 58%, transparent 76%)' }} />
@@ -184,8 +173,8 @@ export default function HomePage() {
           </div>
 
           {/* Property card — no extra border-radius/shadow, PNG already has its own styling */}
-          <div className="absolute" style={{ right: '2%', top: '18%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
-            <img src="/assets/hero-card.png" alt="" style={{ width: '280px', height: 'auto' }} />
+          <div className="absolute" style={{ right: '2%', top: '28%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
+            <img src="/assets/hero-card.png" alt="" style={{ width: '260px', height: 'auto' }} />
           </div>
 
         </div>
