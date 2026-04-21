@@ -135,51 +135,57 @@ export default function HomePage() {
           sizes="100vw"
         />
 
+        {/* Top fade — map fades under navbar */}
+        <div className="absolute inset-x-0 top-0 z-[4] pointer-events-none" style={{ height: '160px', background: 'linear-gradient(to bottom, rgba(247,246,243,0.85) 0%, transparent 100%)' }} />
+
+        {/* Bottom fade — hero blends into next section */}
+        <div className="absolute inset-x-0 bottom-0 z-[4] pointer-events-none" style={{ height: '140px', background: 'linear-gradient(to top, rgba(247,246,243,1) 0%, transparent 100%)' }} />
+
         {/* Left gradient overlay so text stays readable */}
-        <div className="absolute inset-0 hidden lg:block" style={{ background: 'linear-gradient(to right, rgba(247,246,243,1) 0%, rgba(247,246,243,0.97) 30%, rgba(247,246,243,0.5) 55%, transparent 75%)' }} />
+        <div className="absolute inset-0 hidden lg:block" style={{ background: 'linear-gradient(to right, rgba(247,246,243,1) 0%, rgba(247,246,243,0.96) 32%, rgba(247,246,243,0.4) 58%, transparent 76%)' }} />
         <div className="absolute inset-0 lg:hidden" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.88) 42%, white 65%)' }} />
 
         {/* Animated pin elements — desktop only */}
         <div className="absolute inset-0 hidden lg:block pointer-events-none" style={{ zIndex: 5 }}>
 
           {/* Large pin + shadow */}
-          <div className="absolute" style={{ right: '30%', top: '14%' }}>
+          <div className="absolute" style={{ right: '30%', top: '16%' }}>
             <div style={{ animation: 'heroPinFloat1 3.2s ease-in-out infinite' }}>
-              <img src="/assets/hero-pin-lg.svg" alt="" style={{ width: '64px', height: '64px', display: 'block' }} />
+              <img src="/assets/hero-pin-lg.svg" alt="" style={{ width: '90px', height: '90px', display: 'block' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px', animation: 'heroShadowPulse 3.2s ease-in-out infinite' }}>
-              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '29px', height: '8px' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px', animation: 'heroShadowPulse 3.2s ease-in-out infinite' }}>
+              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '40px', height: '10px' }} />
             </div>
           </div>
 
           {/* Group pin (has shadow inside SVG) */}
-          <div className="absolute" style={{ right: '12%', top: '20%', animation: 'heroPinFloat2 2.8s ease-in-out infinite', animationDelay: '0.6s' }}>
-            <img src="/assets/hero-group.svg" alt="" style={{ width: '70px', height: '74px', display: 'block' }} />
+          <div className="absolute" style={{ right: '13%', top: '18%', animation: 'heroPinFloat2 2.8s ease-in-out infinite', animationDelay: '0.6s' }}>
+            <img src="/assets/hero-group.svg" alt="" style={{ width: '96px', height: '102px', display: 'block' }} />
           </div>
 
           {/* Medium pin + shadow */}
-          <div className="absolute" style={{ right: '22%', top: '52%' }}>
+          <div className="absolute" style={{ right: '24%', top: '54%' }}>
             <div style={{ animation: 'heroPinFloat3 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
-              <img src="/assets/hero-pin-md.svg" alt="" style={{ width: '52px', height: '52px', display: 'block' }} />
+              <img src="/assets/hero-pin-md.svg" alt="" style={{ width: '72px', height: '72px', display: 'block' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
-              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '24px', height: '7px' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px', animation: 'heroShadowPulse 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
+              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '32px', height: '9px' }} />
             </div>
           </div>
 
           {/* Small pin + shadow */}
-          <div className="absolute" style={{ right: '5%', top: '55%' }}>
+          <div className="absolute" style={{ right: '6%', top: '56%' }}>
             <div style={{ animation: 'heroPinFloat4 2.5s ease-in-out infinite', animationDelay: '1.8s' }}>
-              <img src="/assets/hero-pin-sm.svg" alt="" style={{ width: '42px', height: '42px', display: 'block' }} />
+              <img src="/assets/hero-pin-sm.svg" alt="" style={{ width: '58px', height: '58px', display: 'block' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 2.5s ease-in-out infinite', animationDelay: '1.8s' }}>
-              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '20px', height: '6px' }} />
+              <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '26px', height: '7px' }} />
             </div>
           </div>
 
-          {/* Property card */}
-          <div className="absolute" style={{ right: '3%', top: '22%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
-            <img src="/assets/hero-card.png" alt="" style={{ width: '210px', height: 'auto', borderRadius: '12px', boxShadow: '0 20px 48px rgba(0,0,0,0.18)' }} />
+          {/* Property card — no extra border-radius/shadow, PNG already has its own styling */}
+          <div className="absolute" style={{ right: '2%', top: '18%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
+            <img src="/assets/hero-card.png" alt="" style={{ width: '280px', height: 'auto' }} />
           </div>
 
         </div>

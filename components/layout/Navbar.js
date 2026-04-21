@@ -143,7 +143,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-white/60 backdrop-blur-md border-b border-white/20' : 'bg-white border-b border-[#E8E8E4]'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-transparent border-b border-transparent' : 'bg-white border-b border-[#E8E8E4]'}`}>
         <div className="w-full px-6 lg:px-10">
           <div className="flex items-center justify-between h-[80px]">
 
