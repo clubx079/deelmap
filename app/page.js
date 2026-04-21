@@ -173,8 +173,8 @@ export default function HomePage() {
           </div>
 
           {/* Property card — no extra border-radius/shadow, PNG already has its own styling */}
-          <div className="absolute" style={{ right: '2%', top: '28%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
-            <img src="/assets/hero-card.png" alt="" style={{ width: '260px', height: 'auto' }} />
+          <div className="absolute" style={{ right: '10%', top: '28%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
+            <img src="/assets/hero-card.png" alt="" style={{ width: '320px', height: 'auto' }} />
           </div>
 
         </div>
