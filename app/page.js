@@ -153,7 +153,7 @@ export default function HomePage() {
           </div>
 
           {/* Medium pin + shadow */}
-          <div className="absolute" style={{ right: '24%', top: '54%' }}>
+          <div className="absolute" style={{ right: '36%', top: '54%' }}>
             <div style={{ animation: 'heroPinFloat3 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
               <img src="/assets/hero-pin-md.svg" alt="" style={{ width: '72px', height: '72px', display: 'block' }} />
             </div>
@@ -174,7 +174,7 @@ export default function HomePage() {
 
           {/* Property card — no extra border-radius/shadow, PNG already has its own styling */}
           <div className="absolute" style={{ right: '10%', top: '28%', animation: 'heroCardFloat 4s ease-in-out infinite', animationDelay: '0.4s' }}>
-            <img src="/assets/hero-card.png" alt="" style={{ width: '320px', height: 'auto' }} />
+            <img src="/assets/hero-card.png" alt="" style={{ width: '360px', height: 'auto' }} />
           </div>
 
         </div>
