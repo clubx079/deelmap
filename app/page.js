@@ -181,26 +181,24 @@ export default function HomePage() {
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: '88vh' }}>
-          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-40 xl:px-40 py-16 lg:py-0 lg:pt-16">
-            <div className="w-full max-w-[620px]">
+          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-24 xl:px-24 py-16 lg:py-0">
+            <div className="w-full max-w-[700px]">
 
               {/* Heading */}
-              <h1 className="text-[48px] sm:text-[52px] lg:text-[56px] xl:text-[60px] font-black text-[#1A1816] leading-[1.1] mb-5 tracking-[-0.01em]">
-                Discover verified<br />
-                off-market{' '}
-                <span className="text-[#D03839]">real<br />estate deals</span>
+              <h1 className="text-[48px] sm:text-[52px] lg:text-[56px] xl:text-[60px] font-black text-[#1A1816] leading-[1.1] mb-5" style={{ letterSpacing: '-0.03em' }}>
+                Discover off-market real<br />
+                estate deals —{' '}
+                <span className="text-[#D03839]">with<br />confidence and privacy.</span>
               </h1>
 
               {/* Subtext */}
-              <p className="text-[20px] text-[#444441] leading-relaxed mb-8 max-w-[520px]">
-                Browse investment opportunities from wholesalers and sellers across the United States— all in one trusted marketplace.
-                <br />
-                <span className="text-[#D03839] font-semibold">Free for all buyers — We never share your information</span>
+              <p className="text-[18px] text-[#444441] leading-relaxed mb-8 w-full">
+                One trusted marketplace for wholesaler and seller inventory nationwide, where your contact info is never sold, shared, or added to anyone&apos;s list. Ever.
               </p>
 
               {/* Search bar */}
               <div
-                className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[580px] transition-all duration-200"
+                className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[700px] transition-all duration-200"
                 style={{
                   border: heroFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
                   boxShadow: heroFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
@@ -224,9 +222,9 @@ export default function HomePage() {
               </div>
 
               {/* Trust badges */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <div className="flex items-center gap-x-8">
                 <div className="flex items-center gap-1.5">
-                  <Star className="w-3.5 h-3.5 text-[#1A6B4A] fill-[#1A6B4A]" />
+                  <Star className="w-3.5 h-3.5 text-[#1A6B4A] fill-none" />
                   <span className="text-[13px] text-[#444441]">Verified sellers</span>
                 </div>
                 <div className="flex items-center gap-1.5">

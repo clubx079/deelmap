@@ -144,11 +144,11 @@ export function Navbar() {
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white border-b border-[#E8E8E4]'}`}>
-        <div className="w-full px-6 lg:px-10">
+        <div className="w-full" style={{ paddingLeft: '45px', paddingRight: '85px' }}>
           <div className="flex items-center justify-between h-[80px]">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity lg:ml-[72px]">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
               <Image src="/assets/logo.svg" alt="DeelMap" width={190} height={68} className="h-[68px] w-[190px]" priority />
             </Link>
 
@@ -216,7 +216,7 @@ export function Navbar() {
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-3 lg:mr-[72px]">
+            <div className="flex items-center gap-3">
               {user ? (
                 <div className="flex items-center gap-3">
                   {/* Post a Deal */}

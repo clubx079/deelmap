@@ -34,7 +34,20 @@ export async function POST(request) {
       await supabase.from('users').update({ stripe_customer_id: customerId }).eq('id', userId)
     }
 
-    const amount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
+    let amount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
+
+    // Apply promo code discount if provided
+    if (body.promo_code_id) {
+      try {
+        const promoCode = await stripe.promotionCodes.retrieve(body.promo_code_id)
+        const coupon = promoCode.coupon
+        if (coupon.percent_off) {
+          amount = Math.round(amount * (1 - coupon.percent_off / 100))
+        } else if (coupon.amount_off) {
+          amount = Math.max(50, amount - coupon.amount_off) // min $0.50
+        }
+      } catch {}
+    }
 
     // Enhancement-only payment (for existing active listings)
     if (body.listing_id) {
