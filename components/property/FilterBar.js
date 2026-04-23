@@ -6,7 +6,7 @@ import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const PROPERTY_TYPES = [
   'Single Family',
-  'Multi Family',
+  'Multi-Family',
   'Duplex',
   'Condo',
   'Townhouse',

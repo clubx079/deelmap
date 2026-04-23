@@ -110,9 +110,9 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3 text-center">WHY DEELMAP</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-10 text-center">What makes DeelMap different</h2>
-          <div className="grid md:grid-cols-2 gap-0 overflow-hidden rounded border border-[#E8E8E4]">
+          <div className="grid md:grid-cols-2 gap-6">
             {/* Others */}
-            <div className="bg-[#F3F3F1] p-8">
+            <div className="bg-[#F3F3F1] p-8 rounded border border-[#E8E8E4]">
               <h3 className="text-[18px] font-bold text-[#1A1816] mb-5">Others</h3>
               <ul className="space-y-5">
                 {OTHERS_LIST.map((item) => (
@@ -128,7 +128,7 @@ export default function AboutPage() {
               </ul>
             </div>
             {/* DeelMap */}
-            <div className="bg-[#1A1816] p-8">
+            <div className="bg-[#1A1816] p-8 rounded">
               <h3 className="text-[18px] font-bold text-white mb-5">DeelMap</h3>
               <ul className="space-y-5">
                 {DEELMAP_LIST.map((item) => (

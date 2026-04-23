@@ -17,7 +17,17 @@ export async function GET(request) {
     const sortBy = searchParams.get('sortBy') || 'newest';
     const searchQuery = searchParams.get('searchQuery') || '';
 
-    const propertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
+    const rawPropertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
+    // Expand each type to cover both hyphenated and spaced variants (e.g. "Multi-Family" ↔ "Multi Family")
+    const propertyTypes = rawPropertyTypes.length > 0
+      ? [...new Set(rawPropertyTypes.flatMap(t => {
+          const variants = [t]
+          if (/multi.?family/i.test(t)) variants.push('Multi Family', 'Multi-Family', 'Multifamily')
+          if (/single.?family/i.test(t)) variants.push('Single Family', 'Single-Family')
+          if (/mobile.?home/i.test(t)) variants.push('Mobile Home', 'Mobile-Home', 'Manufactured Home')
+          return variants
+        }))]
+      : [];
     const minPrice = parseFloat(searchParams.get('minPrice')) || null;
     const maxPrice = parseFloat(searchParams.get('maxPrice')) || null;
     const minBedrooms = parseInt(searchParams.get('minBedrooms')) || null;

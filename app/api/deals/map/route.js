@@ -26,7 +26,16 @@ export async function GET(request) {
     const minCashOnCash = parseFloat(searchParams.get('minCashOnCash')) || null;
     const maxCashOnCash = parseFloat(searchParams.get('maxCashOnCash')) || null;
     const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
-    const propertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
+    const rawPropertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
+    const propertyTypes = rawPropertyTypes.length > 0
+      ? [...new Set(rawPropertyTypes.flatMap(t => {
+          const variants = [t]
+          if (/multi.?family/i.test(t)) variants.push('Multi Family', 'Multi-Family', 'Multifamily')
+          if (/single.?family/i.test(t)) variants.push('Single Family', 'Single-Family')
+          if (/mobile.?home/i.test(t)) variants.push('Mobile Home', 'Mobile-Home', 'Manufactured Home')
+          return variants
+        }))]
+      : [];
     const searchQuery = searchParams.get('searchQuery') || '';
 
     let query = supabase

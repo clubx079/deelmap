@@ -31,7 +31,7 @@ export function Footer() {
         {/* Decorative circle */}
         <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white/[0.04] pointer-events-none" />
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-10 py-16 lg:py-20">
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-[100px] py-16 lg:py-20">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
             {/* Left */}
             <div className="max-w-lg">
@@ -66,7 +66,7 @@ export function Footer() {
 
       {/* Links Section */}
       <div className="bg-[#111111]">
-        <div className="w-full px-6 lg:px-10 py-12 lg:py-14">
+        <div className="w-full px-6 lg:px-[100px] py-12 lg:py-14">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
 
             {/* Brand */}
@@ -170,7 +170,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-[#222222]">
-          <div className="w-full px-6 lg:px-10 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="w-full px-6 lg:px-[100px] py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-[13px] text-[#555555]">© 2026 DeelMap. All rights reserved.</p>
             <div className="flex items-center gap-5">
               <Link href="/privacy-policy" className="text-[13px] text-[#555555] hover:text-white transition-colors">Privacy</Link>

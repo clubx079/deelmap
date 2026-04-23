@@ -485,8 +485,8 @@ export default function SellPage() {
                       <p className="text-[11px] font-semibold text-[#D03839]">${(deal.spread / 1000).toFixed(0)}k</p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Days on market</p>
-                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.days} days</p>
+                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5 whitespace-nowrap">Days on market</p>
+                      <p className="text-[11px] font-semibold text-[#1A1816] whitespace-nowrap">{deal.days} days</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Type</p>
