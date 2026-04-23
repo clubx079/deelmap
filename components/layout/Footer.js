@@ -14,6 +14,13 @@ const COMPANY = [
 
 const RESOURCES = [
   { label: 'Help center', href: '/contact' },
+  { label: 'Wholesale Real Estate', href: '/wholesale-real-estate' },
+  { label: 'FAQ', href: '/faq' },
+]
+
+const COMPARE = [
+  { label: 'vs InvestorLift', href: '/vs/investorlift' },
+  { label: 'vs Auction.com', href: '/vs/auction-com' },
 ]
 
 const LEGAL = [
@@ -67,7 +74,7 @@ export function Footer() {
       {/* Links Section */}
       <div className="bg-[#111111]">
         <div className="w-full px-6 lg:px-[100px] py-12 lg:py-14">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10">
 
             {/* Brand */}
             <div className="lg:col-span-1">
@@ -158,6 +165,18 @@ export function Footer() {
               <h4 className="text-[11px] font-semibold text-white uppercase tracking-[1.5px] mb-5">LEGAL</h4>
               <ul className="space-y-3">
                 {LEGAL.map(l => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="text-[14px] text-[#737370] hover:text-white transition-colors">{l.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Compare */}
+            <div>
+              <h4 className="text-[11px] font-semibold text-white uppercase tracking-[1.5px] mb-5">COMPARE</h4>
+              <ul className="space-y-3">
+                {COMPARE.map(l => (
                   <li key={l.label}>
                     <Link href={l.href} className="text-[14px] text-[#737370] hover:text-white transition-colors">{l.label}</Link>
                   </li>
