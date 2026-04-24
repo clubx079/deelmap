@@ -403,6 +403,15 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                 >
                   {loading ? 'Signing in...' : 'Log in'}
                 </button>
+
+                <div className="text-center">
+                  <a
+                    href="/forgot-password"
+                    className="text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
               </form>
 
             </div>
