@@ -359,10 +359,10 @@ export default function SellPage() {
                 For active investors and wholesalers moving deals consistently.
               </p>
               <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1 flex items-baseline gap-1.5">
-                <span><sup className="text-lg font-normal align-super">$</sup>{annual ? '79' : '99'}</span>
-                <span className="text-sm font-normal text-[#737370]">/ per month</span>
+                <span><sup className="text-lg font-normal align-super">$</sup>{annual ? '948' : '99'}</span>
+                <span className="text-sm font-normal text-[#737370]">{annual ? '/ year' : '/ per month'}</span>
               </div>
-              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $240 vs monthly' : '$19 per additional listing'}</p>
+              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? '$79/mo · Save $240 vs monthly' : '$19 per additional listing'}</p>
               <button
                 onClick={() => savePlanAndGo('pro', `${SELLER_PORTAL_URL}/onboarding?plan=pro&billing=${annual ? 'annual' : 'monthly'}`)}
                 className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase bg-[#D03839] text-white rounded hover:bg-[#E0493B] active:bg-[#C73022] transition-colors mb-5"
@@ -398,10 +398,10 @@ export default function SellPage() {
                 For acquisition teams running high-volume pipelines.
               </p>
               <div className="text-[38px] font-bold text-[#1A1816] leading-none tracking-tight mb-1 flex items-baseline gap-1.5">
-                <span><sup className="text-lg font-normal align-super">$</sup>{annual ? '239' : '299'}</span>
-                <span className="text-sm font-normal text-[#737370]">/ per month</span>
+                <span><sup className="text-lg font-normal align-super">$</sup>{annual ? '2,868' : '299'}</span>
+                <span className="text-sm font-normal text-[#737370]">{annual ? '/ year' : '/ per month'}</span>
               </div>
-              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $720 vs monthly' : '\u00a0'}</p>
+              <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? '$239/mo · Save $720 vs monthly' : '\u00a0'}</p>
               <button
                 onClick={() => savePlanAndGo('enterprise', `${SELLER_PORTAL_URL}/onboarding?plan=enterprise&billing=${annual ? 'annual' : 'monthly'}`)}
                 className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase border border-[#D4D4CF] text-[#1A1816] rounded hover:bg-[#F3F3F0] transition-colors mb-5"

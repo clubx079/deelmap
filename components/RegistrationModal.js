@@ -105,7 +105,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
           return
         }
 
-        localStorage.setItem('seller_user', JSON.stringify({
+        const sellerData = btoa(JSON.stringify({
           id: application.id,
           email: application.email,
           businessName: application.business_name,
@@ -113,7 +113,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
           phone: application.phone,
           businessType: application.business_type,
         }))
-        window.location.href = `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL}/dashboard`
+        window.location.href = `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL}/auth/sso?d=${sellerData}`
         return
       }
 
