@@ -16,11 +16,19 @@ const RESOURCES = [
   { label: 'Help center', href: '/contact' },
   { label: 'Wholesale Real Estate', href: '/wholesale-real-estate' },
   { label: 'FAQ', href: '/faq' },
+  { label: 'How to wholesale', href: '/how-to-wholesale-real-estate' },
+  { label: 'What is ARV', href: '/what-is-arv' },
+  { label: 'Find off-market deals', href: '/how-to-find-off-market-properties' },
 ]
 
 const COMPARE = [
   { label: 'vs InvestorLift', href: '/vs/investorlift' },
   { label: 'vs Auction.com', href: '/vs/auction-com' },
+  { label: 'vs PropStream', href: '/vs/propstream' },
+  { label: 'vs DealMachine', href: '/vs/deal-machine' },
+  { label: 'vs Connected Investors', href: '/vs/connected-investors' },
+  { label: 'vs Zillow', href: '/vs/zillow' },
+  { label: 'vs ListSource', href: '/vs/listsource' },
 ]
 
 const LEGAL = [
