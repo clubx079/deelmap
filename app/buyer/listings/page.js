@@ -16,10 +16,10 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   : null
 
 const ENHANCE_ADD_ONS = [
-  { id: 'highlight', label: 'Highlight Listing',       desc: 'Red-bordered card in search results for 30 days',          price: 999,  icon: Sparkles },
-  { id: 'homepage',  label: 'Feature on Homepage',     desc: 'Shown to all visitors in the featured section for 7 days', price: 2900, icon: TrendingUp },
-  { id: 'boost',     label: 'Boost Listing',           desc: 'Top of search results for 7 days',                         price: 1499, icon: Zap },
-  { id: 'bundle',    label: 'Highlight + Boost Bundle', desc: 'Highlight (30 days) + Boost (7 days) at a discount',      price: 2200, icon: Package },
+  { id: 'highlight', label: 'Highlight Listing',        duration: '30 Days',                desc: 'Red-bordered card in search results.',                              price: 999,  icon: Sparkles },
+  { id: 'homepage',  label: 'Feature on Homepage',      duration: '7 Days',                 desc: 'Shown to all visitors in the featured section.',                    price: 2900, icon: TrendingUp },
+  { id: 'boost',     label: 'Boost Listing',            duration: '7 Days',                 desc: 'Top of search results.',                                            price: 1499, icon: Zap },
+  { id: 'bundle',    label: 'Search Visibility Bundle', duration: 'Highlight 30d + Boost 7d', desc: 'Highlight Listing and Boost Listing together at a discount.',    price: 2200, originalPrice: 2498, savings: 298, icon: Package },
 ]
 
 // ─── Enhance checkout form (Stripe) ──────────────────────────────────────────
@@ -296,30 +296,70 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
             )
           ) : (
             <>
-              <p className="text-[15px] font-semibold text-[#1A1816] mb-0.5">Choose add-ons</p>
-              <p className="text-[13px] text-[#737370] mb-5">Select one or more upgrades to boost your listing's visibility.</p>
-              <div className="space-y-3">
-                {ENHANCE_ADD_ONS.map(({ id, label, desc, price, icon: Icon }) => {
+              {/* What you're enhancing */}
+              <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">What you're enhancing</p>
+              <div className="relative border border-[#E8E8E4] rounded p-5 bg-[#FAFAF8] overflow-hidden mb-6">
+                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#D03839] rounded-l" />
+                <div className="flex justify-between items-start mb-3">
+                  <p className="text-[15px] font-bold text-[#1A1816] leading-snug">{listing.address || listing.seo_title || 'Your Listing'}</p>
+                  {listing.price && <span className="text-[14px] font-bold text-[#1A1816] ml-4 flex-shrink-0">${Number(listing.price).toLocaleString()}</span>}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                  {['Public marketplace listing', 'Full photo gallery', 'Buyer inquiry inbox', 'Listing analytics'].map(item => (
+                    <div key={item} className="flex items-center gap-1.5">
+                      <Check className="w-3 h-3 text-[#0F6E56] flex-shrink-0" />
+                      <span className="text-[12px] text-[#737370]">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add-ons */}
+              <p className="text-[14px] font-semibold text-[#1A1816] mb-0.5">
+                Add extras to get more visibility <span className="font-normal italic text-[#737370]">— optional</span>
+              </p>
+              <p className="text-[12px] text-[#737370] mb-4">Select one or more upgrades. One-time charge, no subscription.</p>
+              <div className="space-y-2.5">
+                {ENHANCE_ADD_ONS.map(({ id, label, duration, desc, price, originalPrice, savings, icon: Icon }) => {
                   const selected = selectedAddOns.includes(id)
+                  const isDisabled = (id === 'bundle' && (selectedAddOns.includes('highlight') || selectedAddOns.includes('boost'))) ||
+                                     ((id === 'highlight' || id === 'boost') && selectedAddOns.includes('bundle'))
                   return (
                     <button
                       key={id}
                       type="button"
-                      onClick={() => toggle(id)}
-                      className={`w-full flex items-center gap-4 p-4 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
+                      onClick={() => !isDisabled && toggle(id)}
+                      disabled={isDisabled}
+                      className={`w-full p-4 border rounded text-left transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                        selected
+                          ? 'border-[#D03839] bg-gradient-to-b from-[#FEF8F9] to-white shadow-[0_0_0_1px_#D03839]'
+                          : 'border-[#E8E8E4] hover:border-[#D4D4CF] hover:-translate-y-px hover:shadow-sm bg-white'
+                      }`}
+                      style={{ display: 'grid', gridTemplateColumns: '44px 1fr auto 22px', gap: '14px', alignItems: 'center' }}
                     >
-                      <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
-                        <Icon className={`w-5 h-5 ${selected ? 'text-white' : 'text-[#737370]'}`} />
+                      <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#FEF0EF]' : 'bg-[#F3F3F0]'}`}>
+                        <Icon className={`w-5 h-5 ${selected ? 'text-[#D03839]' : 'text-[#444441]'}`} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-semibold text-[#1A1816]">{label}</p>
-                        <p className="text-[12px] text-[#737370]">{desc}</p>
-                      </div>
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className="text-[14px] font-bold text-[#1A1816]">${(price / 100).toFixed(2)}</span>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
-                          {selected && <Check className="w-3 h-3 text-white" />}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                          <span className="text-[14px] font-semibold text-[#1A1816]">{label}</span>
+                          <span className="font-mono text-[10px] font-medium tracking-wider uppercase text-[#737370] bg-[#F3F3F0] border border-[#E8E8E4] px-1.5 py-0.5 rounded">{duration}</span>
+                          {savings && (
+                            <span className="font-mono text-[10px] font-semibold tracking-wide uppercase text-[#0F6E56] bg-[#E4F5EC] px-1.5 py-0.5 rounded">Save ${(savings / 100).toFixed(2)}</span>
+                          )}
                         </div>
+                        <p className="text-[12px] text-[#737370] leading-relaxed">{desc}</p>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-0.5 flex-shrink-0">
+                        {originalPrice && (
+                          <span className="text-[11px] text-[#A8A8A4] line-through">${(originalPrice / 100).toFixed(2)}</span>
+                        )}
+                        <span className={`text-[15px] font-bold ${selected ? 'text-[#D03839]' : 'text-[#1A1816]'}`}>
+                          {selected ? '✓ Added' : `+$${(price / 100).toFixed(2)}`}
+                        </span>
+                      </div>
+                      <div className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
+                        {selected && <Check className="w-3 h-3 text-white" />}
                       </div>
                     </button>
                   )
