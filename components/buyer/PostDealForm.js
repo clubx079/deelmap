@@ -76,10 +76,10 @@ function getRejectionInitialStep(rejectionMap) {
 }
 
 const ADD_ONS = [
-  { id: 'highlight',  label: 'Highlight Listing',      desc: 'Red-bordered card in search results for 30 days',          price: 999,  icon: Sparkles },
-  { id: 'homepage',  label: 'Feature on Homepage',    desc: 'Shown to all visitors in the featured section for 7 days', price: 2900, icon: TrendingUp },
-  { id: 'boost',     label: 'Boost Listing',          desc: 'Top of search results for 7 days',                         price: 1499, icon: Zap },
-  { id: 'bundle',    label: 'Full Visibility Bundle',  desc: 'Highlight (30 days) + Boost (7 days) at a discount',       price: 2200, icon: Package },
+  { id: 'highlight', label: 'Highlight Listing',        desc: 'Red-bordered card in search results.',              price: 999,  duration: '30 Days',                    icon: Sparkles },
+  { id: 'homepage',  label: 'Feature on Homepage',      desc: 'Shown to all visitors in the featured section.',   price: 2900, duration: '7 Days',                     icon: TrendingUp },
+  { id: 'boost',     label: 'Boost Listing',            desc: 'Top of search results.',                            price: 1499, duration: '7 Days',                     icon: Zap },
+  { id: 'bundle',    label: 'Search Visibility Bundle', desc: 'Highlight Listing and Boost Listing at a discount.', price: 2200, duration: 'Highlight 30d + Boost 7d', originalPrice: 2498, savings: 298, icon: Package },
 ]
 
 // ─── Shared input/label classes ────────────────────────────────────────
@@ -716,6 +716,11 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
   const [loadingSecret, setLoadingSecret] = useState(false)
   const [secretError, setSecretError] = useState(null)
   const [showPaymentForm, setShowPaymentForm] = useState(false)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoValidating, setPromoValidating] = useState(false)
+  const [promoError, setPromoError] = useState(null)
+  const [appliedPromo, setAppliedPromo] = useState(null)
+  const [finalAmount, setFinalAmount] = useState(null)
 
   const BASE_PRICE = 2900
   const addOnTotal = selectedAddOns.reduce((sum, id) => {
@@ -723,6 +728,9 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
     return sum + (addon?.price || 0)
   }, 0)
   const totalCents = BASE_PRICE + addOnTotal
+  const discountCents = appliedPromo && finalAmount != null ? totalCents - finalAmount : 0
+  const displayTotal = finalAmount != null ? finalAmount : totalCents
+  const itemCount = 1 + selectedAddOns.length
 
   const toggleAddOn = (id) => {
     setSelectedAddOns(prev => {
@@ -737,6 +745,36 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
       setClientSecret(null)
       sessionStorage.removeItem(SESSION_KEY)
     }
+    setFinalAmount(null)
+    setAppliedPromo(null)
+    setPromoCode('')
+    setPromoError(null)
+  }
+
+  const applyPromo = async () => {
+    if (!promoCode.trim()) return
+    setPromoValidating(true)
+    setPromoError(null)
+    try {
+      const res = await fetch(`/api/coupons/validate?code=${encodeURIComponent(promoCode.trim())}`)
+      const d = await res.json()
+      if (!d.valid) {
+        setPromoError(d.error || 'Invalid promo code')
+        setAppliedPromo(null)
+        setFinalAmount(null)
+      } else {
+        const disc = d.discount
+        let discounted = totalCents
+        if (disc.type === 'percent') discounted = Math.round(totalCents * (1 - disc.value / 100))
+        else discounted = Math.max(50, totalCents - Math.round(disc.value * 100))
+        setAppliedPromo(d)
+        setFinalAmount(discounted)
+        setPromoError(null)
+      }
+    } catch {
+      setPromoError('Failed to validate code')
+    }
+    setPromoValidating(false)
   }
 
   const proceedToPayment = async () => {
@@ -746,7 +784,14 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
       const res = await fetch('/api/buyer/listings/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-        body: JSON.stringify({ title: formData.title, formData, amount: totalCents, draft_id: draftId || undefined, add_ons: selectedAddOns }),
+        body: JSON.stringify({
+          title: formData.title,
+          formData,
+          amount: displayTotal,
+          draft_id: draftId || undefined,
+          add_ons: selectedAddOns,
+          ...(appliedPromo ? { promo_code_id: appliedPromo.promo_code_id } : {}),
+        }),
       })
       const d = await res.json()
       if (d.clientSecret) {
@@ -765,12 +810,208 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
   const featuredPhoto = photos.find(p => p.is_featured) || photos[0]
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
 
-      {/* Left column — add-ons or payment form */}
-      <div>
-        {showPaymentForm && clientSecret ? (
-          stripePromise ? (
+        {/* Left column — base card + add-ons */}
+        <div>
+          <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">What you&apos;re paying for</p>
+          <div className="relative bg-gradient-to-b from-[#FAFAF6] to-[#F5F3EE] border border-[#E8E8E4] rounded-lg p-5 mb-6 overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#D03839]" />
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[15px] font-semibold text-[#1A1816]">Basic Listing</span>
+                <span className="text-[10px] font-medium text-[#737370] bg-white border border-[#E8E8E4] px-2 py-0.5 rounded uppercase tracking-wider">30 Days</span>
+              </div>
+              <span className="text-[17px] font-bold text-[#1A1816]">$29.00</span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {['Public marketplace listing', 'Full photo gallery', 'Buyer inquiry inbox', 'Listing analytics'].map(f => (
+                <div key={f} className="flex items-center gap-1.5 text-[12px] text-[#737370]">
+                  <Check className="w-3 h-3 text-[#14532D] flex-shrink-0" />
+                  {f}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[13px] font-medium text-[#1A1816] mb-4">Add extras to get more visibility and close faster. <span className="text-[12px] font-normal italic text-[#737370]">(optional)</span></p>
+          <div className="space-y-2.5">
+            {ADD_ONS.map(({ id, label, desc, price, duration, originalPrice, savings, icon: Icon }) => {
+              const selected = selectedAddOns.includes(id)
+              const bundleConflict = id === 'bundle' && (selectedAddOns.includes('highlight') || selectedAddOns.includes('boost'))
+              const indivConflict = (id === 'highlight' || id === 'boost') && selectedAddOns.includes('bundle')
+              const disabled = showPaymentForm || bundleConflict || indivConflict
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => !disabled && toggleAddOn(id)}
+                  disabled={disabled}
+                  className={`w-full grid grid-cols-[44px_1fr_auto_22px] gap-4 items-center p-4 border rounded-lg text-left transition-all ${
+                    disabled ? 'opacity-45 cursor-not-allowed' :
+                    selected ? 'border-[#D03839] bg-gradient-to-b from-[#FEF8F9] to-white shadow-[0_0_0_1px_#D03839]' :
+                    'border-[#E8E8E4] hover:border-[#C8C8C2] hover:shadow-sm bg-white'
+                  }`}
+                >
+                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#FEF0EF] text-[#D03839]' : 'bg-[#F5F3EE] text-[#444441]'}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold text-[#1A1816]">{label}</span>
+                      <span className="text-[10px] font-medium text-[#737370] bg-[#F5F3EE] border border-[#E8E8E4] px-1.5 py-0.5 rounded uppercase tracking-wide">{duration}</span>
+                      {savings && <span className="text-[10px] font-semibold text-[#14532D] bg-[#E8F1EC] px-1.5 py-0.5 rounded uppercase tracking-wide">Save ${(savings / 100).toFixed(2)}</span>}
+                    </div>
+                    <p className="text-[12px] text-[#737370] mt-0.5">{desc}</p>
+                  </div>
+                  <div className="text-right flex flex-col items-end gap-0.5">
+                    {originalPrice && <span className="text-[11px] text-[#A8A8A4] line-through">${(originalPrice / 100).toFixed(2)}</span>}
+                    <span className={`text-[14px] font-bold ${selected ? 'text-[#D03839]' : 'text-[#1A1816]'}`}>+${(price / 100).toFixed(2)}</span>
+                  </div>
+                  <div className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#C8C8C2]'}`}>
+                    {selected && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Right column — order summary */}
+        <div className="border border-[#E8E8E4] rounded-lg overflow-hidden bg-white">
+
+          {/* Listing preview */}
+          <div className="p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
+            <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Your Listing</p>
+            <div className="flex items-center gap-3">
+              {featuredPhoto ? (
+                <img src={featuredPhoto.image_url || featuredPhoto.preview_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-[#E8E8E4]" />
+              ) : (
+                <div className="w-16 h-16 rounded-lg bg-[#F3F3F0] flex-shrink-0 flex items-center justify-center border border-[#E8E8E4]">
+                  <Home className="w-6 h-6 text-[#A8A8A4]" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-[#1A1816] truncate leading-tight">{formData.title || formData.address || 'Untitled'}</p>
+                <p className="text-[11px] text-[#737370] truncate mt-0.5">{formData.address}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Order lines */}
+          <div className="p-4 border-b border-[#E8E8E4]">
+            <div className="flex justify-between items-baseline mb-3">
+              <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest">Order Summary</p>
+              <span className="text-[11px] text-[#737370]">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[13px] text-[#1A1816] font-medium">Basic Listing <span className="text-[#737370] font-normal">· 30 days</span></span>
+                <span className="text-[13px] font-semibold text-[#1A1816]">$29.00</span>
+              </div>
+              {selectedAddOns.map(id => {
+                const addon = ADD_ONS.find(a => a.id === id)
+                if (!addon) return null
+                return (
+                  <div key={id} className="flex justify-between items-baseline">
+                    <span className="text-[12px] text-[#444441]"><span className="text-[#A8A8A4] font-mono text-[11px]">+</span> {addon.label}</span>
+                    <span className="text-[13px] font-semibold text-[#1A1816]">+${(addon.price / 100).toFixed(2)}</span>
+                  </div>
+                )
+              })}
+              {discountCents > 0 && (
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[12px] text-[#14532D]">↓ Promo discount</span>
+                  <span className="text-[13px] font-semibold text-[#14532D]">−${(discountCents / 100).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Promo code */}
+          {!showPaymentForm && (
+            <div className="px-4 pt-3">
+              {appliedPromo ? (
+                <div className="flex items-center justify-between p-2.5 bg-[#E8F1EC] border border-[#A8CFBA] rounded text-[12px]">
+                  <span className="text-[#14532D] font-medium">&ldquo;{appliedPromo.name || promoCode.toUpperCase()}&rdquo; applied</span>
+                  <button type="button" onClick={() => { setAppliedPromo(null); setFinalAmount(null); setPromoCode(''); setPromoError(null) }} className="text-[#14532D] hover:text-[#0D3D1E] ml-2 font-bold">×</button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Promo code"
+                      value={promoCode}
+                      onChange={e => { setPromoCode(e.target.value); setPromoError(null) }}
+                      onKeyDown={e => e.key === 'Enter' && applyPromo()}
+                      className="flex-1 h-[36px] px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 transition-colors bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyPromo}
+                      disabled={promoValidating || !promoCode.trim()}
+                      className="h-[36px] px-3 text-[12px] font-semibold text-white bg-[#1A1816] hover:bg-[#333] rounded transition-colors disabled:opacity-50"
+                    >
+                      {promoValidating ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-[11px] text-[#D03839] mt-1.5">{promoError}</p>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Total */}
+          <div className="px-4 py-3">
+            <div className="flex justify-between items-baseline">
+              <div>
+                <span className="text-[13px] font-semibold text-[#1A1816]">Total</span>
+                <p className="text-[11px] text-[#A8A8A4] mt-0.5">{itemCount === 1 ? 'One-time charge · 30-day listing' : `${itemCount} items · One-time charge`}</p>
+              </div>
+              <span className="text-[24px] font-bold text-[#1A1816]">${(displayTotal / 100).toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* CTA */}
+          {!showPaymentForm && (
+            <div className="px-4 pb-0">
+              {secretError && (
+                <div className="mb-3 p-2.5 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[12px] text-[#D03839]">{secretError}</div>
+              )}
+              <button
+                type="button"
+                onClick={proceedToPayment}
+                disabled={loadingSecret}
+                className="w-full h-[44px] bg-[#D03839] hover:bg-[#E0493B] active:scale-[0.98] text-white text-[13px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loadingSecret ? (
+                  <><span className="animate-spin w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" />Preparing...</>
+                ) : (
+                  <>Proceed to Payment</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="px-4 py-3 text-center border-t border-[#E8E8E4] bg-[#FAFAF8] mt-3">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <svg className="w-3 h-3 text-[#A8A8A4]" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              <span className="text-[11px] text-[#A8A8A4]">Secured by Stripe</span>
+            </div>
+            <p className="text-[10px] text-[#C0C0BB]">No subscription · No auto-renewal</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Full-width payment form — shown below grid after "Proceed to Payment" */}
+      {showPaymentForm && clientSecret && (
+        <div className="border border-[#E8E8E4] rounded-lg overflow-hidden bg-white p-6">
+          {stripePromise ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <CheckoutForm
                 formData={formData}
@@ -778,7 +1019,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
                 user={user}
                 draftId={draftId}
                 selectedAddOns={selectedAddOns}
-                totalCents={totalCents}
+                totalCents={displayTotal}
                 onSuccess={onSuccess}
                 onBack={() => { setShowPaymentForm(false); setClientSecret(null); sessionStorage.removeItem(SESSION_KEY) }}
               />
@@ -787,128 +1028,9 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
             <div className="p-4 bg-[#FEF3E2] border border-[#F5D9A0] rounded text-[13px] text-[#B5620A] text-center">
               Stripe is not configured. Add <code className="font-mono bg-[#FEF0D4] px-1 rounded">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> to .env.local
             </div>
-          )
-        ) : (
-          <div>
-            <p className="text-[14px] font-semibold text-[#1A1816] mb-0.5">Boost your listing <span className="text-[12px] font-normal text-[#737370]">(optional)</span></p>
-            <p className="text-[12px] text-[#737370] mb-4">Add extras to get more visibility and close faster.</p>
-            <div className="space-y-2">
-              {ADD_ONS.map(({ id, label, desc, price, icon: Icon }) => {
-                const selected = selectedAddOns.includes(id)
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => toggleAddOn(id)}
-                    className={`w-full flex items-center gap-3 p-4 border rounded text-left transition-all ${selected ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
-                  >
-                    <div className={`w-9 h-9 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
-                      <Icon className={`w-4 h-4 ${selected ? 'text-white' : 'text-[#737370]'}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#1A1816] leading-tight">{label}</p>
-                      <p className="text-[12px] text-[#737370]">{desc}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[13px] font-bold text-[#1A1816]">+${(price / 100).toFixed(2)}</span>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'border-[#D03839] bg-[#D03839]' : 'border-[#D4D4CF]'}`}>
-                        {selected && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Right column — order summary */}
-      <div className="border border-[#E8E8E4] rounded overflow-hidden bg-white flex flex-col">
-
-        {/* Property preview — hidden on mobile (shown inline in CheckoutForm) */}
-        <div className="hidden lg:block p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
-          <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Your Listing</p>
-          <div className="flex items-center gap-3">
-            {featuredPhoto ? (
-              <img
-                src={featuredPhoto.image_url || featuredPhoto.preview_url}
-                alt=""
-                className="w-14 h-14 rounded object-cover flex-shrink-0 border border-[#E8E8E4]"
-              />
-            ) : (
-              <div className="w-14 h-14 rounded bg-[#F3F3F0] flex-shrink-0 flex items-center justify-center border border-[#E8E8E4]">
-                <Home className="w-6 h-6 text-[#A8A8A4]" />
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[#1A1816] truncate leading-tight">{formData.address || 'Untitled'}</p>
-              <p className="text-[11px] text-[#737370] truncate mt-0.5">{formData.address}</p>
-            </div>
-          </div>
+          )}
         </div>
-
-        {/* Order lines */}
-        <div className="p-4">
-          <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Order Summary</p>
-          <div className="space-y-2.5">
-            <div className="flex justify-between items-center">
-              <span className="text-[12px] text-[#444441]">Pay Per Listing (30 days)</span>
-              <span className="text-[12px] font-medium text-[#1A1816]">$29.00</span>
-            </div>
-            {selectedAddOns.map(id => {
-              const addon = ADD_ONS.find(a => a.id === id)
-              if (!addon) return null
-              return (
-                <div key={id} className="flex justify-between items-center">
-                  <span className="text-[12px] text-[#444441]">{addon.label}</span>
-                  <span className="text-[12px] font-medium text-[#1A1816]">+${(addon.price / 100).toFixed(2)}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Total */}
-        <div className="px-4 py-3 border-t border-[#E8E8E4]">
-          <div className="flex justify-between items-baseline">
-            <span className="text-[13px] font-semibold text-[#1A1816]">Total</span>
-            <span className="text-[20px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
-          </div>
-          <p className="text-[11px] text-[#A8A8A4] mt-0.5">30-day listing</p>
-        </div>
-
-        {/* CTA — only shown on add-ons step */}
-        {!showPaymentForm && (
-          <div className="px-4 pb-4">
-            {secretError && (
-              <div className="mb-3 p-2.5 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[12px] text-[#D03839]">{secretError}</div>
-            )}
-            <button
-              type="button"
-              onClick={proceedToPayment}
-              disabled={loadingSecret}
-              className="w-full h-[44px] bg-[#D03839] hover:bg-[#E0493B] active:scale-[0.98] text-white text-[13px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loadingSecret ? (
-                <><span className="animate-spin w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" />Preparing...</>
-              ) : (
-                <>Proceed to Payment</>
-              )}
-            </button>
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-              <svg className="w-3 h-3 text-[#A8A8A4]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-              <span className="text-[11px] text-[#A8A8A4]">Secured by Stripe</span>
-            </div>
-          </div>
-        )}
-      </div>
-
+      )}
     </div>
   )
 }
