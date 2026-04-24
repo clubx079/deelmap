@@ -41,13 +41,19 @@ function getClientIP(request) {
 
 async function isSystemUser(email) {
   if (!email) return false
-  
-  const { data } = await supabase
+
+  const { createClient } = await import('@supabase/supabase-js')
+  const adminClient = createClient(
+    process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+    process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
+  )
+
+  const { data } = await adminClient
     .from('system_users')
     .select('email')
     .eq('email', email.toLowerCase())
     .single()
-  
+
   return !!data
 }
 
