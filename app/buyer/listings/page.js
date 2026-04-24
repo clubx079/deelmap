@@ -159,10 +159,8 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
     setPromoValidating(true)
     setPromoError(null)
     try {
-      const res = await fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: promoCode.trim() }),
+      const res = await fetch(`/api/coupons/validate?code=${encodeURIComponent(promoCode.trim())}`, {
+        method: 'GET',
       })
       const d = await res.json()
       if (d.valid) {
