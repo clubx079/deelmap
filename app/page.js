@@ -139,35 +139,35 @@ export default function HomePage() {
 
           {/* Large pin + shadow */}
           <div className="absolute" style={{ right: '30%', top: '16%' }}>
-            <div style={{ animation: 'heroPinFloat1 3.2s ease-in-out infinite' }}>
+            <div style={{ animation: 'heroPinFloat1 8s ease-in-out infinite' }}>
               <img src="/assets/hero-pin-lg.svg" alt="" style={{ width: '90px', height: '90px', display: 'block' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px', animation: 'heroShadowPulse 3.2s ease-in-out infinite' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px', animation: 'heroShadowPulse 8s ease-in-out infinite' }}>
               <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '40px', height: '10px' }} />
             </div>
           </div>
 
           {/* Group pin (has shadow inside SVG) */}
-          <div className="absolute" style={{ right: '13%', top: '18%', animation: 'heroPinFloat2 2.8s ease-in-out infinite', animationDelay: '0.6s' }}>
+          <div className="absolute" style={{ right: '13%', top: '18%', animation: 'heroPinFloat2 9s ease-in-out infinite', animationDelay: '0.6s' }}>
             <img src="/assets/hero-group.svg" alt="" style={{ width: '96px', height: '102px', display: 'block' }} />
           </div>
 
           {/* Medium pin + shadow */}
           <div className="absolute" style={{ right: '36%', top: '54%' }}>
-            <div style={{ animation: 'heroPinFloat3 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
+            <div style={{ animation: 'heroPinFloat3 10s ease-in-out infinite', animationDelay: '1.2s' }}>
               <img src="/assets/hero-pin-md.svg" alt="" style={{ width: '72px', height: '72px', display: 'block' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px', animation: 'heroShadowPulse 3.6s ease-in-out infinite', animationDelay: '1.2s' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px', animation: 'heroShadowPulse 10s ease-in-out infinite', animationDelay: '1.2s' }}>
               <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '32px', height: '9px' }} />
             </div>
           </div>
 
           {/* Small pin + shadow */}
           <div className="absolute" style={{ right: '6%', top: '56%' }}>
-            <div style={{ animation: 'heroPinFloat4 2.5s ease-in-out infinite', animationDelay: '1.8s' }}>
+            <div style={{ animation: 'heroPinFloat4 8s ease-in-out infinite', animationDelay: '1.8s' }}>
               <img src="/assets/hero-pin-sm.svg" alt="" style={{ width: '58px', height: '58px', display: 'block' }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 2.5s ease-in-out infinite', animationDelay: '1.8s' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 8s ease-in-out infinite', animationDelay: '1.8s' }}>
               <img src="/assets/hero-pin-shadow.svg" alt="" style={{ width: '26px', height: '7px' }} />
             </div>
           </div>
