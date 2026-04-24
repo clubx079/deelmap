@@ -94,7 +94,16 @@ export default function SellPage() {
   const [activeStep, setActiveStep] = useState(1)
   const [dealIndex, setDealIndex] = useState(0)
   const [annual, setAnnual] = useState(false)
+  const [pendingPayPerListing, setPendingPayPerListing] = useState(false)
   const visibleDeals = CLOSED_DEALS.slice(dealIndex, dealIndex + 4)
+
+  // After login completes while pay-per-listing was pending, redirect to post a deal
+  useEffect(() => {
+    if (user && pendingPayPerListing) {
+      setPendingPayPerListing(false)
+      savePlanAndGo('pay-per-listing', '/buyer/listings?new=1')
+    }
+  }, [user, pendingPayPerListing])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -306,7 +315,14 @@ export default function SellPage() {
               <p className="text-xs text-[#737370] mb-1">per listing · 30-day expiry</p>
               <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">Listing goes live after review</p>
               <button
-                onClick={() => savePlanAndGo('pay-per-listing', '/buyer/listings?new=1')}
+                onClick={() => {
+                  if (user) {
+                    savePlanAndGo('pay-per-listing', '/buyer/listings?new=1')
+                  } else {
+                    setPendingPayPerListing(true)
+                    window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login', role: 'buyer' } }))
+                  }
+                }}
                 className="block w-full py-2.5 text-center text-xs font-semibold tracking-[0.05em] uppercase border border-[#D4D4CF] text-[#1A1816] rounded hover:bg-[#F3F3F0] transition-colors mb-5"
               >
                 Post a listing
