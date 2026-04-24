@@ -2,7 +2,7 @@
 import { useState, useEffect, useContext } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
-import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText, Sparkles, TrendingUp, Zap, Package, Check, ArrowLeft, CalendarDays } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Home, MapPin, Eye, BarChart2, FileText, Sparkles, TrendingUp, Zap, Package, Check, ArrowLeft, CalendarDays, Loader2, Tag } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -23,11 +23,17 @@ const ENHANCE_ADD_ONS = [
 ]
 
 // ─── Enhance checkout form (Stripe) ──────────────────────────────────────────
-function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, userId, onSuccess, onBack }) {
+function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, discount, userId, onSuccess, onBack }) {
   const stripe = useStripe()
   const elements = useElements()
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState(null)
+
+  const discountedCents = discount
+    ? discount.type === 'percent'
+      ? Math.round(totalCents * (1 - discount.value / 100))
+      : Math.max(0, totalCents - discount.value)
+    : totalCents
 
   const handlePay = async (e) => {
     e.preventDefault()
@@ -57,7 +63,15 @@ function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, userId, on
     <form onSubmit={handlePay} className="space-y-5">
       <div>
         <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Payment Details</p>
-        <p className="text-[13px] text-[#737370] mb-4">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>.</p>
+        {discount ? (
+          <p className="text-[13px] text-[#737370] mb-4">
+            Your card will be charged{' '}
+            <span className="line-through text-[#A8A8A4]">${(totalCents / 100).toFixed(2)}</span>{' '}
+            <span className="font-semibold text-[#0F6E56]">${(discountedCents / 100).toFixed(2)}</span>.
+          </p>
+        ) : (
+          <p className="text-[13px] text-[#737370] mb-4">Your card will be charged <span className="font-semibold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>.</p>
+        )}
         <PaymentElement />
       </div>
       {error && <div className="p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{error}</div>}
@@ -68,7 +82,7 @@ function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, userId, on
       >
         {processing
           ? <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Processing...</>
-          : <>Confirm & Pay — ${(totalCents / 100).toFixed(2)}</>}
+          : <>Confirm & Pay — ${(discountedCents / 100).toFixed(2)}</>}
       </button>
       <button type="button" onClick={onBack} className="w-full text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors text-center">
         ← Back to add-ons
@@ -111,6 +125,10 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState(null)
   const [showPayment, setShowPayment] = useState(false)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoValidating, setPromoValidating] = useState(false)
+  const [promoError, setPromoError] = useState(null)
+  const [appliedPromo, setAppliedPromo] = useState(null)
 
   const activeEnhancements = getActiveEnhancements(listing)
 
@@ -118,6 +136,12 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
     const a = ENHANCE_ADD_ONS.find(x => x.id === id)
     return sum + (a?.price || 0)
   }, 0)
+
+  const discountedCents = appliedPromo
+    ? appliedPromo.discount.type === 'percent'
+      ? Math.round(totalCents * (1 - appliedPromo.discount.value / 100))
+      : Math.max(0, totalCents - appliedPromo.discount.value)
+    : totalCents
 
   const toggle = (id) => {
     setSelectedAddOns(prev => {
@@ -130,6 +154,28 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
     if (showPayment) { setShowPayment(false); setClientSecret(null) }
   }
 
+  const validatePromo = async () => {
+    if (!promoCode.trim()) return
+    setPromoValidating(true)
+    setPromoError(null)
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      })
+      const d = await res.json()
+      if (d.valid) {
+        setAppliedPromo(d)
+        setPromoCode('')
+        setPromoError(null)
+      } else {
+        setPromoError(d.error || 'Invalid promo code')
+      }
+    } catch { setPromoError('Failed to validate promo code') }
+    setPromoValidating(false)
+  }
+
   const proceedToPayment = async () => {
     setLoading(true)
     setErr(null)
@@ -137,7 +183,12 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
       const res = await fetch('/api/buyer/listings/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-        body: JSON.stringify({ listing_id: listing.id, add_ons: selectedAddOns, amount: totalCents }),
+        body: JSON.stringify({
+          listing_id: listing.id,
+          add_ons: selectedAddOns,
+          amount: discountedCents,
+          promo_code_id: appliedPromo?.promo_code_id || null,
+        }),
       })
       const d = await res.json()
       if (d.clientSecret) { setClientSecret(d.clientSecret); setShowPayment(true) }
@@ -234,6 +285,7 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
                   listingId={listing.id}
                   selectedAddOns={selectedAddOns}
                   totalCents={totalCents}
+                  discount={appliedPromo?.discount || null}
                   userId={user.id}
                   onSuccess={onSuccess}
                   onBack={() => { setShowPayment(false); setClientSecret(null) }}
@@ -304,16 +356,70 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
                     </div>
                   )
                 })}
+                {appliedPromo && (
+                  <div className="flex justify-between items-center text-[#0F6E56]">
+                    <span className="text-[13px] flex items-center gap-1">
+                      <Tag className="w-3 h-3" />
+                      {appliedPromo.name || 'Promo discount'}
+                    </span>
+                    <span className="text-[13px] font-medium">
+                      −${((totalCents - discountedCents) / 100).toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
           <div className="px-5 py-4 border-t border-[#E8E8E4]">
-            <div className="flex justify-between items-baseline mb-5">
+            <div className="flex justify-between items-baseline mb-4">
               <span className="text-[14px] font-semibold text-[#1A1816]">Total</span>
-              <span className="text-[24px] font-bold text-[#1A1816]">${(totalCents / 100).toFixed(2)}</span>
+              <div className="text-right">
+                {appliedPromo && (
+                  <span className="text-[14px] text-[#A8A8A4] line-through mr-2">${(totalCents / 100).toFixed(2)}</span>
+                )}
+                <span className="text-[24px] font-bold text-[#1A1816]">${(discountedCents / 100).toFixed(2)}</span>
+              </div>
             </div>
             {!showPayment && (
               <>
+                {/* Promo code input */}
+                <div className="mb-4">
+                  {appliedPromo ? (
+                    <div className="flex items-center justify-between px-3 py-2 bg-[#E4F5EC] border border-[#B6E4CE] rounded">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-3.5 h-3.5 text-[#0F6E56]" />
+                        <span className="text-[13px] font-medium text-[#0F6E56]">{appliedPromo.name || promoCode}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAppliedPromo(null)}
+                        className="text-[12px] text-[#0F6E56] hover:text-[#0A5040] font-medium transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoCode}
+                        onChange={e => { setPromoCode(e.target.value); setPromoError(null) }}
+                        onKeyDown={e => e.key === 'Enter' && validatePromo()}
+                        placeholder="Promo code"
+                        className="flex-1 h-[38px] px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#1A1816] transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={validatePromo}
+                        disabled={!promoCode.trim() || promoValidating}
+                        className="h-[38px] px-4 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#444441] hover:border-[#1A1816] hover:text-[#1A1816] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {promoValidating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
+                      </button>
+                    </div>
+                  )}
+                  {promoError && <p className="text-[12px] text-[#D03839] mt-1.5">{promoError}</p>}
+                </div>
                 {err && <div className="mb-3 p-3 bg-[#FEF0EF] border border-[#F5C0BF] rounded text-[13px] text-[#D03839]">{err}</div>}
                 <button
                   type="button"
