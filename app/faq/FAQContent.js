@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 
 const BUYER_FAQS = [
@@ -119,6 +120,13 @@ function AccordionItem({ question, answer }) {
   )
 }
 
+const TOPIC_CARDS = [
+  { label: 'For Buyers', desc: 'Browsing deals, contacting sellers, saving favorites, and understanding listings.', href: '/faq/buyers', count: 9 },
+  { label: 'For Sellers', desc: 'Listing properties, pricing, the approval process, and managing active deals.', href: '/faq/sellers', count: 8 },
+  { label: 'Investing', desc: 'ARV, the 70% rule, cap rates, deal types, and how to evaluate a wholesale deal.', href: '/faq/investing', count: 9 },
+  { label: 'Getting Started', desc: 'Who DeelMap is for, how it differs from the MLS, account setup, and platform basics.', href: '/faq/getting-started', count: 8 },
+]
+
 export default function FAQContent() {
   return (
     <>
@@ -132,6 +140,28 @@ export default function FAQContent() {
           <p className="text-[16px] text-[#444441] leading-relaxed">
             Everything buyers and sellers need to know about finding and listing wholesale real estate deals on DeelMap.
           </p>
+        </div>
+      </section>
+
+      {/* Topic cards */}
+      <section className="py-10 bg-white border-b border-[#E8E8E4]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {TOPIC_CARDS.map((t) => (
+              <Link
+                key={t.href}
+                href={t.href}
+                className="group block bg-[#FAFAF8] border border-[#E8E8E4] rounded p-5 hover:border-[#D03839] transition-colors"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[14px] font-bold text-[#1A1816]">{t.label}</span>
+                  <span className="text-[11px] font-semibold text-[#737370] bg-white border border-[#E8E8E4] rounded px-2 py-0.5">{t.count} Q&A</span>
+                </div>
+                <p className="text-[13px] text-[#737370] leading-relaxed mb-3">{t.desc}</p>
+                <span className="text-[13px] font-semibold text-[#D03839] group-hover:underline">View all →</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

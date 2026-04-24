@@ -4,6 +4,7 @@ const PLATFORM = [
   { label: 'Buy', href: '/marketplace' },
   { label: 'Sell', href: '/join-seller' },
   { label: 'Finance', href: '/financing' },
+  { label: 'Contracts', href: '/contracts' },
 ]
 
 const COMPANY = [
@@ -15,10 +16,17 @@ const COMPANY = [
 const RESOURCES = [
   { label: 'Help center', href: '/contact' },
   { label: 'Wholesale Real Estate', href: '/wholesale-real-estate' },
-  { label: 'FAQ', href: '/faq' },
   { label: 'How to wholesale', href: '/how-to-wholesale-real-estate' },
   { label: 'What is ARV', href: '/what-is-arv' },
   { label: 'Find off-market deals', href: '/how-to-find-off-market-properties' },
+]
+
+const FAQ = [
+  { label: 'All FAQs', href: '/faq' },
+  { label: 'Buyer FAQ', href: '/faq/buyers' },
+  { label: 'Seller FAQ', href: '/faq/sellers' },
+  { label: 'Investing FAQ', href: '/faq/investing' },
+  { label: 'Getting Started', href: '/faq/getting-started' },
 ]
 
 const COMPARE = [
@@ -82,7 +90,7 @@ export function Footer() {
       {/* Links Section */}
       <div className="bg-[#111111]">
         <div className="w-full px-6 lg:px-[100px] py-12 lg:py-14">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-10">
 
             {/* Brand */}
             <div className="lg:col-span-1">
@@ -161,6 +169,18 @@ export function Footer() {
               <h4 className="text-[11px] font-semibold text-white uppercase tracking-[1.5px] mb-5">RESOURCES</h4>
               <ul className="space-y-3">
                 {RESOURCES.map(l => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="text-[14px] text-[#737370] hover:text-white transition-colors">{l.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* FAQ */}
+            <div>
+              <h4 className="text-[11px] font-semibold text-white uppercase tracking-[1.5px] mb-5">FAQ</h4>
+              <ul className="space-y-3">
+                {FAQ.map(l => (
                   <li key={l.label}>
                     <Link href={l.href} className="text-[14px] text-[#737370] hover:text-white transition-colors">{l.label}</Link>
                   </li>
