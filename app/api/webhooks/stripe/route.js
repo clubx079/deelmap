@@ -30,6 +30,20 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
+  // Track promo code usage on any successful PaymentIntent that had a promo applied
+  if (event.type === 'payment_intent.succeeded') {
+    const pi = event.data.object
+    const promo_code_id = pi.metadata?.promo_code_id
+    if (promo_code_id) {
+      try {
+        await supabaseMarketplace.from('promo_code_usages').upsert(
+          { promo_code_id, stripe_payment_intent_id: pi.id, portal: 'buyer' },
+          { onConflict: 'stripe_payment_intent_id' }
+        )
+      } catch {}
+    }
+  }
+
   if (event.type === 'payment_intent.payment_failed') {
     const paymentIntent = event.data.object
     await supabaseMarketplace
