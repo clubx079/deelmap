@@ -113,7 +113,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
           phone: application.phone,
           businessType: application.business_type,
         }))
-        window.location.href = `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL}/auth/sso?d=${sellerData}`
+        window.location.href = `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL}/auth/sso?d=${encodeURIComponent(sellerData)}`
         return
       }
 
