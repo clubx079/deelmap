@@ -39,12 +39,14 @@ export async function POST(request) {
     // Apply promo code discount if provided
     if (body.promo_code_id) {
       try {
-        const promoCode = await stripe.promotionCodes.retrieve(body.promo_code_id)
-        const coupon = promoCode.coupon
-        if (coupon.percent_off) {
-          amount = Math.round(amount * (1 - coupon.percent_off / 100))
-        } else if (coupon.amount_off) {
-          amount = Math.max(50, amount - coupon.amount_off) // min $0.50
+        const promoCode = await stripe.promotionCodes.retrieve(body.promo_code_id, { expand: ['promotion.coupon'] })
+        const coupon = promoCode.promotion?.coupon
+        if (coupon && typeof coupon !== 'string') {
+          if (coupon.percent_off) {
+            amount = Math.round(amount * (1 - coupon.percent_off / 100))
+          } else if (coupon.amount_off) {
+            amount = Math.max(50, amount - coupon.amount_off)
+          }
         }
       } catch {}
     }
