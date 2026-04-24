@@ -43,8 +43,8 @@ h1, h2, h3, h4, h5, h6 {
   50% { opacity: 0.05; transform: scale(0.5); }
 }
 @keyframes heroCardFloat {
-  0%, 100% { opacity: 1; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-  50% { opacity: 0.92; box-shadow: 0 4px 24px rgba(208,56,57,0.15); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
 }
 
 /* Smooth scrollbars */
