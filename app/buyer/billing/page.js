@@ -142,10 +142,15 @@ export default function BuyerBillingPage() {
               const cityState = [prop?.city || breakdown?.city, prop?.state || breakdown?.state].filter(Boolean).join(', ')
               const addons = breakdown?.addons?.filter(a => a.amount > 0) || []
 
+              const originalTotal = breakdown
+                ? (breakdown.base?.amount || 0) + addons.reduce((s, a) => s + (a.amount || 0), 0)
+                : 0
+              const hasDiscount = originalTotal > 0 && originalTotal !== item.amount
+
               return (
                 <div
                   key={item.id}
-                  className={`flex items-center justify-between px-5 py-4 ${i !== purchases.length - 1 ? 'border-b border-[#F3F3F0]' : ''} hover:bg-[#FAFAF8] transition-colors`}
+                  className={`flex items-start justify-between px-5 py-4 ${i !== purchases.length - 1 ? 'border-b border-[#F3F3F0]' : ''} hover:bg-[#FAFAF8] transition-colors`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded bg-[#F3F3F0] flex items-center justify-center flex-shrink-0">
@@ -163,7 +168,15 @@ export default function BuyerBillingPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                    <p className="text-[13px] font-bold text-[#1A1816]">{formatCents(item.amount)}</p>
+                    <div className="text-right">
+                      {hasDiscount && (
+                        <p className="text-[11px] text-[#A8A8A4] line-through">{formatCents(originalTotal)}</p>
+                      )}
+                      <p className="text-[13px] font-bold text-[#1A1816]">{formatCents(item.amount)}</p>
+                      {hasDiscount && (
+                        <p className="text-[11px] text-[#0F6E56] font-medium">−{formatCents(originalTotal - item.amount)} discount</p>
+                      )}
+                    </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
                       item.status === 'succeeded' ? 'bg-[#E4F5EC] text-[#0F6E56] border-[#9FDBB8]' : 'bg-[#F3F3F0] text-[#737370] border-[#E8E8E4]'
                     }`}>
