@@ -65,6 +65,16 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Yes — full marketplace access at zero cost' },
     competitor: { positive: false, text: 'Limited free access; advanced features and deal flow require paid plans' },
   },
+  {
+    feature: 'Buyer Data Privacy',
+    deelmap: { positive: true, text: 'Your contact info stays private — sellers message you in-platform, your details are never sold or shared' },
+    competitor: { positive: false, text: 'Buyer data shared across a broad seller network — expect unsolicited outreach beyond the platform' },
+  },
+  {
+    feature: 'Buyer Traffic Quality',
+    deelmap: { positive: true, text: 'SEO-driven organic traffic of active investors browsing live deals — every buyer is here to transact' },
+    competitor: { positive: false, text: 'Social network with mixed-intent users — many are not active deal buyers looking to close' },
+  },
 ]
 
 const BENEFITS = [
@@ -102,7 +112,7 @@ export default function VsConnectedInvestorsPage() {
             DeelMap vs Connected Investors — Which Platform Is Better?
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            Both platforms connect wholesale real estate buyers and sellers, but they take very different approaches to deal quality and seller verification. Here's what separates them.
+            Both platforms connect wholesale real estate buyers and sellers — but DeelMap is built with buyers first. Your contact info stays private, every seller is verified before going live, and there are no spam calls or unsolicited outreach. Here's what separates them.
           </p>
           <Link href="/marketplace" className="inline-flex items-center gap-2 h-12 px-8 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors">
             Try DeelMap Free
@@ -125,13 +135,13 @@ export default function VsConnectedInvestorsPage() {
                 <div className="p-4 lg:p-5"><p className="text-[14px] font-semibold text-[#1A1816]">{row.feature}</p></div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>

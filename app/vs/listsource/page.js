@@ -65,18 +65,28 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Yes — completely free to browse and connect with sellers' },
     competitor: { positive: false, text: 'No — you pay per record plus ongoing mailing and outreach costs' },
   },
+  {
+    feature: 'Your Privacy as a Buyer',
+    deelmap: { positive: true, text: 'Your contact info is never sold — sellers message you in-platform, your number and email stay completely private' },
+    competitor: { positive: false, text: "ListSource's core business is selling contact data — your information likely exists on similar lists being sold to investors right now" },
+  },
+  {
+    feature: 'Active vs Cold Buyers',
+    deelmap: { positive: true, text: 'Every buyer on DeelMap is actively browsing live deals — organic, intent-driven traffic from investors ready to close' },
+    competitor: { positive: false, text: 'Lists include anyone who owns property — the majority have no interest in selling, wasting seller time and budget' },
+  },
 ]
 
 const BENEFITS = [
   {
     icon: DollarSign,
     title: 'No list costs',
-    description: 'ListSource charges per record, and a meaningful mailing campaign requires thousands of contacts. DeelMap is completely free for buyers — zero upfront cost.',
+    description: 'ListSource charges per record, and a meaningful mailing campaign requires thousands of contacts. DeelMap is completely free for buyers — zero upfront cost, zero data harvesting.',
   },
   {
     icon: Shield,
-    title: 'Confirmed motivation',
-    description: 'ListSource property owners may have no interest in selling. DeelMap sellers have proactively listed their deals — you\'re only talking to people who want to transact.',
+    title: 'Your data stays yours',
+    description: "ListSource's entire business model is selling contact data. DeelMap never sells or shares buyer information — your email and phone stay private, and all communication happens in-platform on your terms.",
   },
   {
     icon: Zap,
@@ -102,7 +112,7 @@ export default function VsListSourcePage() {
             DeelMap vs ListSource — Marketplace vs Lead Lists
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            ListSource sells property owner lists for cold outreach campaigns. DeelMap is a marketplace where motivated sellers actively list their deals. Here's the difference in approach, cost, and time to your first deal.
+            ListSource sells bulk contact data for cold outreach — your information is likely on similar lists right now. DeelMap is a marketplace where motivated sellers list their own deals, buyers browse for free, and nobody's data gets sold to anyone.
           </p>
           <Link href="/marketplace" className="inline-flex items-center gap-2 h-12 px-8 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors">
             Try DeelMap Free
@@ -125,13 +135,13 @@ export default function VsListSourcePage() {
                 <div className="p-4 lg:p-5"><p className="text-[14px] font-semibold text-[#1A1816]">{row.feature}</p></div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>

@@ -65,6 +65,16 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Yes — browse and contact sellers at no cost' },
     competitor: { positive: false, text: 'Free to browse, but agent commissions add cost to every transaction' },
   },
+  {
+    feature: 'Buyer Data Privacy',
+    deelmap: { positive: true, text: 'Browse and contact sellers without your info being shared with agents, advertisers, or lenders' },
+    competitor: { positive: false, text: 'Browsing triggers agent and lender outreach — your contact info is monetized through lead sales to third parties' },
+  },
+  {
+    feature: 'No Spam Follow-up',
+    deelmap: { positive: true, text: 'Contact sellers directly on your timeline — no agent callbacks, lender solicitations, or marketing emails' },
+    competitor: { positive: false, text: 'Browsing any listing generates agent and mortgage lender leads — expect persistent follow-up calls and emails' },
+  },
 ]
 
 const BENEFITS = [
@@ -75,8 +85,8 @@ const BENEFITS = [
   },
   {
     icon: Shield,
-    title: 'Off-market only',
-    description: 'Zillow aggregates MLS listings visible to all buyers. DeelMap\'s wholesale deals are off-market — unavailable through any public listing service.',
+    title: 'Your data stays private',
+    description: "Zillow monetizes buyer data by selling leads to agents and lenders. On DeelMap, your contact info is never shared — browse freely without triggering spam calls or agent follow-ups.",
   },
   {
     icon: Zap,
@@ -102,7 +112,7 @@ export default function VsZillowPage() {
             DeelMap vs Zillow — Off-Market Deals vs Retail Listings
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            Zillow is designed for homebuyers shopping at retail market prices. DeelMap is built for real estate investors who need off-market wholesale deals with built-in margins. They serve fundamentally different purposes — here's how to think about each.
+            Zillow is designed for retail homebuyers — and it monetizes your browsing by selling your contact info to agents and lenders. DeelMap is built for real estate investors: off-market wholesale deals, no agent commissions, and your data stays completely private.
           </p>
           <Link href="/marketplace" className="inline-flex items-center gap-2 h-12 px-8 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors">
             Try DeelMap Free
@@ -125,13 +135,13 @@ export default function VsZillowPage() {
                 <div className="p-4 lg:p-5"><p className="text-[14px] font-semibold text-[#1A1816]">{row.feature}</p></div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>

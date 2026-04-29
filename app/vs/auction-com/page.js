@@ -77,6 +77,16 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Direct negotiation with the seller — your terms, your timeline' },
     competitor: { positive: false, text: 'Auction format eliminates negotiation — winner pays market or above' },
   },
+  {
+    feature: 'Buyer Data Privacy',
+    deelmap: { positive: true, text: 'Your contact info is never sold to third parties — all communication stays secure and in-platform' },
+    competitor: { positive: false, text: 'Registration data used for remarketing — buyer info shared with institutional partners, lenders, and advertisers' },
+  },
+  {
+    feature: 'Active Deal Inventory',
+    deelmap: { positive: true, text: 'Off-market deals from motivated sellers added organically every day — fresh, intent-driven supply' },
+    competitor: { positive: false, text: 'Inventory dependent on bank and institutional releases — supply is inconsistent and cyclical' },
+  },
 ]
 
 const BENEFITS = [
@@ -87,8 +97,8 @@ const BENEFITS = [
   },
   {
     icon: Shield,
-    title: 'Off-market only',
-    description: 'DeelMap deals never appear on the MLS or in auction inventories. These are direct-from-seller opportunities with real equity built in.',
+    title: 'No spam, no pressure',
+    description: 'Auction.com captures your registration data for remarketing. DeelMap never sells your info — browse freely, contact sellers on your terms, and close without countdown timers.',
   },
   {
     icon: MessageCircle,
@@ -115,7 +125,7 @@ export default function VsAuctionComPage() {
             DeelMap vs Auction.com — Which Is the Better Way to Buy?
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            Auction.com offers access to foreclosure and bank-owned inventory. DeelMap offers something different: off-market wholesale deals with verified sellers, transparent data, and no bidding pressure. Here's how they compare.
+            Auction.com charges buyer premiums, restricts pre-auction access, and runs on competitive bidding that drives prices up. DeelMap gives buyers free access to off-market wholesale deals with verified sellers, transparent numbers, and direct negotiation — no premiums, no pressure, and your data stays private.
           </p>
           <Link
             href="/marketplace"
@@ -157,13 +167,13 @@ export default function VsAuctionComPage() {
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>

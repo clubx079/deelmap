@@ -77,13 +77,23 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Secure in-platform messaging directly to the verified seller' },
     competitor: { positive: false, text: 'Communication routed through platform intermediary' },
   },
+  {
+    feature: 'Buyer Data Privacy',
+    deelmap: { positive: true, text: 'Your contact info is never sold or shared — all messaging stays inside the platform, on your terms' },
+    competitor: { positive: false, text: 'Buyer profiles and contact data accessible to sellers — may be used for off-platform outreach' },
+  },
+  {
+    feature: 'Organic Buyer Traffic',
+    deelmap: { positive: true, text: 'Active investors finding deals through organic search — every buyer is here to transact, not just browse' },
+    competitor: { positive: false, text: 'Buyer pool includes paid-acquisition contacts — mix of active and passive investors, not all ready to buy' },
+  },
 ]
 
 const BENEFITS = [
   {
     icon: DollarSign,
     title: 'Free for every buyer',
-    description: 'DeelMap charges sellers, not buyers. Browse, analyze, and contact sellers without a subscription or credit card.',
+    description: 'DeelMap charges sellers, not buyers. Browse, analyze, and contact sellers without a subscription, credit card, or sharing your personal data.',
   },
   {
     icon: Shield,
@@ -115,7 +125,7 @@ export default function VsInvestorLiftPage() {
             DeelMap vs InvestorLift — Which Platform Is Right for You?
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            Both platforms serve real estate investors looking for wholesale deals. But the differences in cost, verification, and deal quality matter — especially when you're making decisions that move real capital.
+            DeelMap is free for buyers, never sells your data, and brings you verified deals from sellers who are actively ready to close — not cold-prospected contacts. Here's how the two platforms compare on the things that actually matter.
           </p>
           <Link
             href="/marketplace"
@@ -157,13 +167,13 @@ export default function VsInvestorLiftPage() {
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>

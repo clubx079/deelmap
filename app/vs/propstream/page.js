@@ -65,18 +65,28 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Yes — no subscription, no credit card required' },
     competitor: { positive: false, text: 'No — monthly subscription regardless of deal activity' },
   },
+  {
+    feature: 'Buyer Data Privacy',
+    deelmap: { positive: true, text: 'Your contact info is never harvested or shared — in-platform messaging keeps your details completely private' },
+    competitor: { positive: false, text: 'Data platform that aggregates and resells property owner contact info — buyer data handling is not transparent' },
+  },
+  {
+    feature: 'Active Buyer Traffic',
+    deelmap: { positive: true, text: 'Organic, intent-driven buyers actively browsing and ready to transact — not cold-prospected from a list' },
+    competitor: { positive: false, text: 'Research-focused users building outreach lists — not necessarily active buyers ready to make offers' },
+  },
 ]
 
 const BENEFITS = [
   {
     icon: DollarSign,
     title: 'No subscription needed',
-    description: 'PropStream charges $99–$399/month before you talk to a single seller. DeelMap is free for buyers — browse and contact verified sellers at zero cost.',
+    description: 'PropStream charges $99–$399/month before you talk to a single seller. DeelMap is free for buyers — browse and contact verified sellers at zero cost, with no data harvesting.',
   },
   {
     icon: Shield,
     title: 'Deals come to you',
-    description: 'PropStream requires you to build lists, send mail, and wait weeks for responses. On DeelMap, motivated sellers have already listed — you just browse and connect.',
+    description: 'PropStream requires you to build lists, send mail, and wait weeks for responses. On DeelMap, motivated sellers have already listed — you just browse, connect, and close.',
   },
   {
     icon: Zap,
@@ -102,7 +112,7 @@ export default function VsPropStreamPage() {
             DeelMap vs PropStream — Marketplace vs Data Tool
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            PropStream helps investors research properties and build outreach lists. DeelMap is a marketplace where motivated sellers list live deals for buyers to browse directly. They serve different parts of the investment process — here's how to decide which one you need.
+            PropStream is a data tool for building cold outreach lists — you pay a subscription to research properties and contact owners who may not be motivated. DeelMap is a free marketplace where verified sellers list live deals, buyers browse privately, and your contact info is never shared or sold.
           </p>
           <Link href="/marketplace" className="inline-flex items-center gap-2 h-12 px-8 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors">
             Try DeelMap Free
@@ -125,13 +135,13 @@ export default function VsPropStreamPage() {
                 <div className="p-4 lg:p-5"><p className="text-[14px] font-semibold text-[#1A1816]">{row.feature}</p></div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>

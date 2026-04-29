@@ -65,18 +65,28 @@ const COMPARISON_ROWS = [
     deelmap: { positive: true, text: 'Yes — zero cost to find and connect with sellers' },
     competitor: { positive: false, text: 'No — monthly subscription required before finding any leads' },
   },
+  {
+    feature: 'No Unsolicited Contact',
+    deelmap: { positive: true, text: 'Buyers reach out on their own terms — no cold calls, ringless voicemails, or spam mailers ever' },
+    competitor: { positive: false, text: 'Built to blast cold mail, texts, and ringless voicemails to homeowners who never asked to be contacted' },
+  },
+  {
+    feature: 'Buyer Data Privacy',
+    deelmap: { positive: true, text: 'Your contact info stays in-platform — sellers never receive your phone number or email directly' },
+    competitor: { positive: false, text: 'Contact data is the core product — buyer and property owner info freely exported and used for outreach' },
+  },
 ]
 
 const BENEFITS = [
   {
     icon: DollarSign,
     title: 'No driving required',
-    description: 'DealMachine was built for investors who want to physically scout neighborhoods. DeelMap brings verified off-market deals to you — browse from anywhere.',
+    description: 'DealMachine was built for investors who want to physically scout neighborhoods. DeelMap brings verified off-market deals to you — browse from anywhere, for free.',
   },
   {
     icon: Shield,
     title: 'Sellers who are ready',
-    description: 'DealMachine connects you with property owners who may or may not want to sell. Every DeelMap seller has proactively listed their deal — they\'re already motivated.',
+    description: 'DealMachine blasts cold outreach to homeowners who may never want to sell. Every DeelMap seller has proactively listed their deal — motivated, verified, and waiting for your message.',
   },
   {
     icon: Zap,
@@ -102,7 +112,7 @@ export default function VsDealMachinePage() {
             DeelMap vs DealMachine — Which Is Better for Finding Wholesale Deals?
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            DealMachine is a driving-for-dollars app that helps investors identify distressed properties and launch mail campaigns. DeelMap is a marketplace where verified sellers actively list their deals. Here's how the two approaches compare.
+            DealMachine sends cold mail, ringless voicemails, and texts to homeowners who may not want to sell. DeelMap is a marketplace where motivated sellers actively list their own deals — buyers browse for free, no cold outreach required on either side, and your contact info stays completely private.
           </p>
           <Link href="/marketplace" className="inline-flex items-center gap-2 h-12 px-8 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors">
             Try DeelMap Free
@@ -125,13 +135,13 @@ export default function VsDealMachinePage() {
                 <div className="p-4 lg:p-5"><p className="text-[14px] font-semibold text-[#1A1816]">{row.feature}</p></div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-[#0F6E56] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#444441] leading-relaxed">{row.deelmap.text}</p>
                   </div>
                 </div>
                 <div className="p-4 lg:p-5 border-l border-[#E8E8E4]">
                   <div className="flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-[#737370] flex-shrink-0 mt-0.5" />
+                    <XCircle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] text-[#737370] leading-relaxed">{row.competitor.text}</p>
                   </div>
                 </div>
