@@ -141,11 +141,8 @@ export function PropertyDetail({ property }) {
       setShowLoginModal(false)
       return
     }
-    if (!user) {
-      setShowLoginModal(true)
-    } else {
-      setShowLoginModal(false)
-    }
+    // Don't auto-show login modal — let user browse with blurred sections
+    setShowLoginModal(false)
   }, [user, loading, isPreview])
 
   useEffect(() => {
@@ -403,9 +400,9 @@ export function PropertyDetail({ property }) {
       {/* Login Modal */}
       <RegistrationModal
         isOpen={showLoginModal}
-        onClose={() => {}}
+        onClose={() => setShowLoginModal(false)}
         initialStep="login"
-        preventClose={true}
+        preventClose={false}
         backUrl="/marketplace"
       />
 
@@ -419,8 +416,8 @@ export function PropertyDetail({ property }) {
         preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[modalInitialIndex]) || null : null}
       />
 
-      {/* Page content — blurred when not logged in */}
-      <div className={showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}>
+      {/* Page content */}
+      <div>
 
       {/* Sticky Navbar */}
       <nav className="sticky top-0 z-50 bg-white border-b border-[#E8E8E4] h-14 flex items-center px-4 sm:px-6">
@@ -499,6 +496,20 @@ export function PropertyDetail({ property }) {
       <div className="bg-white border-b border-[#E8E8E4]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className={`relative h-[260px] sm:h-[460px] rounded overflow-hidden grid gap-[6px] ${photos.length > 1 ? 'sm:grid-cols-2' : ''} grid-cols-1`}>
+            {!user && !isPreview && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/10 backdrop-blur-sm rounded">
+                <div className="bg-white rounded px-5 py-4 text-center shadow-lg max-w-xs">
+                  <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Sign in to view photos</p>
+                  <p className="text-[12px] text-[#737370] mb-3">Create a free account to see all property photos</p>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="w-full bg-[#D03839] text-white text-[13px] font-semibold py-2 rounded hover:bg-[#E0493B] transition-colors"
+                  >
+                    Sign in / Create account
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Main photo — full width on mobile, left half on sm+ */}
             <div
@@ -594,7 +605,9 @@ export function PropertyDetail({ property }) {
 
               {/* Title + Active Deal badge */}
               <div className="flex items-start justify-between gap-4 mb-2">
-                <h1 className="text-[22px] sm:text-[26px] font-bold text-[#1A1816] leading-snug break-words">{fullAddress}</h1>
+                <h1 className={`text-[22px] sm:text-[26px] font-bold text-[#1A1816] leading-snug break-words ${!user && !isPreview ? 'blur-sm select-none' : ''}`}>
+                  {!user && !isPreview ? (property.city && property.state ? `${property.city}, ${property.state}` : 'Address hidden') : fullAddress}
+                </h1>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
                   <span className="w-2 h-2 rounded-full bg-[#16A34A] inline-block"></span>
                   {property.status || 'Active Deal'}
@@ -838,7 +851,21 @@ export function PropertyDetail({ property }) {
 
           {/* Right sidebar */}
           <div className="lg:w-[380px] shrink-0">
-            <div className="sticky top-20">
+            <div className={`sticky top-20 ${!user && !isPreview ? 'relative' : ''}`}>
+              {!user && !isPreview && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded pointer-events-none">
+                  <div className="bg-white border border-[#E8E8E4] rounded px-5 py-4 text-center shadow-md pointer-events-auto">
+                    <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Sign in to contact seller</p>
+                    <p className="text-[12px] text-[#737370] mb-3">Free account required to view contact info and the map</p>
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="w-full bg-[#D03839] text-white text-[13px] font-semibold py-2 rounded hover:bg-[#E0493B] transition-colors"
+                    >
+                      Sign in / Create account
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-4">
                 {/* Price row */}
                 <div className="flex items-center justify-between mb-3">
