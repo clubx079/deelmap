@@ -418,7 +418,7 @@ function StepSellerType({ data, onChange }) {
         <div className="grid grid-cols-2 gap-4">
           <button
             type="button"
-            onClick={() => onChange({ seller_type: 'owner', contract_url: null })}
+            onClick={() => onChange({ seller_type: 'owner', contract_url: null, ownership_confirmed: false })}
             className={`flex flex-col items-center gap-3 p-5 border-2 rounded text-center transition-all ${data.seller_type === 'owner' ? 'border-[#D03839] bg-[#FEF0EF]' : 'border-[#E8E8E4] hover:border-[#D4D4CF] bg-white'}`}
           >
             <div className={`w-12 h-12 rounded flex items-center justify-center ${data.seller_type === 'owner' ? 'bg-[#D03839]' : 'bg-[#F3F3F0]'}`}>
@@ -455,6 +455,20 @@ function StepSellerType({ data, onChange }) {
           </button>
         </div>
       </div>
+
+      {data.seller_type === 'owner' && (
+        <label className="flex items-start gap-3 cursor-pointer p-4 border border-[#E8E8E4] rounded bg-[#FAFAF8]">
+          <input
+            type="checkbox"
+            checked={!!data.ownership_confirmed}
+            onChange={e => onChange({ ownership_confirmed: e.target.checked })}
+            className="mt-0.5 w-4 h-4 accent-[#D03839] flex-shrink-0"
+          />
+          <span className="text-[13px] text-[#444441] leading-snug">
+            I confirm that I am the legal owner of this property and have the right to list it for sale. I understand that providing false ownership information may result in removal of my listing.
+          </span>
+        </label>
+      )}
 
       {data.seller_type === 'wholesaler' && (
         <div>
@@ -1062,6 +1076,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
     inspection_report_url: existing?.inspection_report_url || null,
     seller_type:          existing?.seller_type || '',
     contract_url:         existing?.contract_url || null,
+    ownership_confirmed:  false,
   })
   const [photos, setPhotos] = useState(() => {
     const sorted = (existing?.property_images || []).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -1137,7 +1152,7 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
     if (step === 1) return photos.length > 0 && !photos.some(p => p.uploading)
     if (step === 2 && !isEdit) return !!(
       formData.seller_type &&
-      (formData.seller_type !== 'wholesaler' || formData.contract_url)
+      (formData.seller_type === 'wholesaler' ? formData.contract_url : formData.ownership_confirmed)
     )
     return true
   }
