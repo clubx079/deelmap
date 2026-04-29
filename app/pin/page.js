@@ -52,9 +52,9 @@ export default function PinPage() {
           <Image
             src="/assets/logo-footer.svg"
             alt="DeelMap"
-            width={160}
-            height={48}
-            className="h-12 w-auto"
+            width={200}
+            height={60}
+            className="h-16 w-auto"
             priority
           />
         </div>
