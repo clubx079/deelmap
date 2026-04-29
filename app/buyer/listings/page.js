@@ -1023,98 +1023,118 @@ export default function MyListingsPage() {
 
       {/* Seller CTA — below listings table */}
       {!loading && (
-        <div className="mt-8 bg-white border border-[#E8E8E4] rounded overflow-hidden">
-          <div className="px-6 py-5 border-b border-[#E8E8E4] bg-[#FAFAF8]">
-            <div className="flex items-center gap-2 mb-1">
+        <div className="mt-12 pt-10 border-t border-[#E8E8E4]">
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] text-[11px] font-semibold uppercase tracking-[0.09em]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] animate-pulse inline-block" />
-              <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-widest">Seller Access</p>
-            </div>
-            <h2 className="text-[18px] font-bold text-[#1A1816] tracking-tight">Have properties to sell?</h2>
-            <p className="text-[13px] text-[#737370] mt-1">List your deals and reach thousands of verified investors already browsing the marketplace.</p>
+              Sell on DeelMap
+            </span>
+            <h2 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.4px] mt-3 mb-2">Have properties to sell?</h2>
+            <p className="text-[14px] text-[#737370] leading-relaxed max-w-sm mx-auto">
+              Get a seller account and reach thousands of verified investors actively browsing the marketplace.
+            </p>
           </div>
-          <div className="p-6">
-            {/* Billing toggle */}
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <span className={`text-[13px] transition-colors ${!sellerAnnual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Monthly</span>
+
+          {/* Billing toggle */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <span className={`text-[13px] transition-colors ${!sellerAnnual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Monthly</span>
+            <button
+              type="button"
+              onClick={() => setSellerAnnual(v => !v)}
+              className={`relative w-10 h-[22px] rounded-full flex-shrink-0 transition-colors ${sellerAnnual ? 'bg-[#D03839]' : 'bg-[#1A1816]'}`}
+            >
+              <span className={`absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform ${sellerAnnual ? 'translate-x-[18px]' : ''}`} />
+            </button>
+            <span className={`text-[13px] transition-colors ${sellerAnnual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Annual</span>
+            <span className="text-[11px] font-semibold bg-[#E4F5EC] text-[#0F6E56] border border-[#B6E4CE] px-2.5 py-0.5 rounded-full">Save 20%</span>
+          </div>
+
+          {/* Plan cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+            {[
+              {
+                id: 'pro',
+                name: 'Pro Seller',
+                badge: 'Most popular',
+                desc: 'For active investors and wholesalers moving deals consistently.',
+                monthlyPrice: 99,
+                annualMonthly: 79,
+                annualTotal: 948,
+                features: ['Verified seller badge', 'Advanced seller dashboard', 'Advanced analytics', 'Priority search placement', '5 listings / month'],
+              },
+              {
+                id: 'enterprise',
+                name: 'Enterprise',
+                badge: 'High volume',
+                desc: 'For acquisition teams running high-volume pipelines.',
+                monthlyPrice: 299,
+                annualMonthly: 239,
+                annualTotal: 2868,
+                features: ['Everything in Pro', 'Unlimited listings', 'CRM features', 'Team accounts', 'Dedicated support'],
+              },
+            ].map(plan => (
               <button
+                key={plan.id}
                 type="button"
-                onClick={() => setSellerAnnual(v => !v)}
-                className={`relative w-9 h-[20px] rounded-full flex-shrink-0 transition-colors ${sellerAnnual ? 'bg-[#D03839]' : 'bg-[#1A1816]'}`}
+                onClick={() => {
+                  const SELLER_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'
+                  try { localStorage.setItem('deelmap_selected_plan', plan.id) } catch {}
+                  const billing = sellerAnnual ? 'annual' : 'monthly'
+                  window.location.href = `${SELLER_URL}/onboarding?plan=${plan.id}&billing=${billing}&no_trial=1`
+                }}
+                className="w-full text-left bg-white border border-[#E8E8E4] rounded p-6 hover:border-[#D03839] transition-all group flex flex-col"
               >
-                <span className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full bg-white transition-transform ${sellerAnnual ? 'translate-x-[16px]' : ''}`} />
-              </button>
-              <span className={`text-[13px] transition-colors ${sellerAnnual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Annual</span>
-              <span className="text-[11px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded-full">Save 20%</span>
-            </div>
-            {/* Plan cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-              {[
-                {
-                  id: 'pro',
-                  name: 'Pro Seller',
-                  badge: 'Most popular',
-                  desc: 'For active investors and wholesalers moving deals consistently.',
-                  monthlyPrice: 99,
-                  annualMonthly: 79,
-                  annualTotal: 948,
-                  features: ['Verified seller badge', 'Advanced seller dashboard', 'Advanced analytics', 'Priority search placement', '5 listings / month'],
-                },
-                {
-                  id: 'enterprise',
-                  name: 'Enterprise',
-                  badge: 'High volume',
-                  desc: 'For acquisition teams running high-volume pipelines.',
-                  monthlyPrice: 299,
-                  annualMonthly: 239,
-                  annualTotal: 2868,
-                  features: ['Everything in Pro', 'Unlimited listings', 'CRM features', 'Team accounts', 'Dedicated support'],
-                },
-              ].map(plan => (
-                <button
-                  key={plan.id}
-                  type="button"
-                  onClick={() => {
-                    const SELLER_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'
-                    try { localStorage.setItem('deelmap_selected_plan', plan.id) } catch {}
-                    const billing = sellerAnnual ? 'annual' : 'monthly'
-                    window.location.href = `${SELLER_URL}/onboarding?plan=${plan.id}&billing=${billing}&no_trial=1`
-                  }}
-                  className="w-full text-left border border-[#E8E8E4] rounded p-5 hover:border-[#D03839] hover:shadow-sm transition-all group bg-white"
-                >
-                  <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-widest mb-1">{plan.badge}</p>
-                  <h3 className="text-[17px] font-bold text-[#1A1816] mb-1">{plan.name}</h3>
-                  <p className="text-[12px] text-[#737370] mb-3">{plan.desc}</p>
-                  <div className="mb-4">
-                    {sellerAnnual ? (
-                      <>
-                        <div className="flex items-end gap-1 leading-none mb-0.5">
-                          <span className="text-[28px] font-bold text-[#1A1816]">${plan.annualMonthly}</span>
-                          <span className="text-[12px] text-[#737370] mb-0.5">/mo</span>
-                        </div>
-                        <p className="text-[11px] text-[#737370]">Billed as ${plan.annualTotal.toLocaleString()}/yr</p>
-                      </>
-                    ) : (
-                      <div className="flex items-end gap-1 leading-none">
-                        <span className="text-[28px] font-bold text-[#1A1816]">${plan.monthlyPrice}</span>
-                        <span className="text-[12px] text-[#737370] mb-0.5">/mo</span>
+                {/* Badge + name */}
+                <div className="mb-4">
+                  <span className="inline-block text-[11px] font-semibold bg-[#FEF0EF] text-[#D03839] px-2.5 py-0.5 rounded mb-2">
+                    {plan.badge}
+                  </span>
+                  <h3 className="text-[18px] font-bold text-[#1A1816] tracking-tight">{plan.name}</h3>
+                  <p className="text-[12px] text-[#737370] mt-1 leading-relaxed">{plan.desc}</p>
+                </div>
+
+                {/* Price */}
+                <div className="py-4 border-t border-b border-[#E8E8E4] mb-4">
+                  {sellerAnnual ? (
+                    <>
+                      <div className="flex items-end gap-1 leading-none mb-1">
+                        <span className="text-[32px] font-bold text-[#1A1816] tracking-tight">${plan.annualMonthly}</span>
+                        <span className="text-[13px] text-[#737370] mb-1">/mo</span>
                       </div>
-                    )}
-                  </div>
-                  <ul className="space-y-1.5 mb-5">
-                    {plan.features.map(f => (
-                      <li key={f} className="flex items-center gap-2 text-[12px] text-[#444441]">
-                        <Check className="w-3 h-3 text-[#0F6E56] flex-shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="w-full py-2.5 bg-[#D03839] group-hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded text-center transition-colors">
-                    Start as {plan.name} →
-                  </div>
-                </button>
-              ))}
-            </div>
+                      <p className="text-[11px] text-[#A8A8A4]">Billed as ${plan.annualTotal.toLocaleString()} / year</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-end gap-1 leading-none mb-1">
+                        <span className="text-[32px] font-bold text-[#1A1816] tracking-tight">${plan.monthlyPrice}</span>
+                        <span className="text-[13px] text-[#737370] mb-1">/mo</span>
+                      </div>
+                      <p className="text-[11px] text-[#A8A8A4]">Billed monthly · cancel anytime</p>
+                    </>
+                  )}
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-2 mb-6 flex-1">
+                  {plan.features.map(f => (
+                    <li key={f} className="flex items-center gap-2.5 text-[13px] text-[#444441]">
+                      <Check className="w-3.5 h-3.5 text-[#0F6E56] flex-shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                <div className="h-[46px] bg-[#D03839] group-hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-colors flex items-center justify-center gap-1.5">
+                  Get started
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </div>
+              </button>
+            ))}
           </div>
+
         </div>
       )}
 
