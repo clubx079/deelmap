@@ -1034,7 +1034,7 @@ export default function MyListingsPage() {
           </div>
           <div className="p-6">
             {/* Billing toggle */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center justify-center gap-3 mb-6">
               <span className={`text-[13px] transition-colors ${!sellerAnnual ? 'text-[#1A1816] font-medium' : 'text-[#737370]'}`}>Monthly</span>
               <button
                 type="button"
@@ -1047,7 +1047,7 @@ export default function MyListingsPage() {
               <span className="text-[11px] font-semibold bg-[#E4F5EC] text-[#0F6E56] px-2 py-0.5 rounded-full">Save 20%</span>
             </div>
             {/* Plan cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
               {[
                 {
                   id: 'pro',
