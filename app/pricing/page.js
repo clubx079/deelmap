@@ -127,7 +127,7 @@ export default function PricingPage() {
                 <sup className="text-lg font-normal align-super">$</sup>
                 {annual ? '948' : '99'}
               </div>
-              <p className="text-xs text-[#737370] mb-1">{annual ? 'per year · billed annually' : 'per month'} · 10 listings included</p>
+              <p className="text-xs text-[#737370] mb-1">{annual ? 'per year · billed annually' : 'per month'} · 5 listings included</p>
               <p className="text-[11px] text-[#A8A8A4] mb-5 min-h-[1rem]">{annual ? 'Save $240 vs monthly · $79/mo' : '$19 per additional listing'}</p>
               <a
                 href={`${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/onboarding?plan=pro&billing=monthly`}
@@ -144,7 +144,7 @@ export default function PricingPage() {
                   [true, 'Advanced analytics'],
                   [true, 'Priority search placement'],
                   [true, 'Priority support'],
-                  [true, '10 listings / month'],
+                  [true, '5 listings / month'],
                   [false, 'CRM features'],
                   [false, 'Team accounts'],
                 ].map(([on, label], i) => (

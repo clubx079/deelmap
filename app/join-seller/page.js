@@ -378,7 +378,7 @@ export default function SellPage() {
                   [true, 'Advanced analytics'],
                   [true, 'Priority search placement'],
                   [true, 'Priority support'],
-                  [true, '10 listings / month'],
+                  [true, '5 listings / month'],
                   [false, 'CRM features'],
                   [false, 'Team accounts'],
                 ].map(([on, label], i) => (
