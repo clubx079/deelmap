@@ -185,14 +185,13 @@ export default function HomePage() {
             <div className="w-full max-w-[700px]">
 
               {/* Heading */}
-              <h1 className="text-[48px] sm:text-[52px] lg:text-[56px] xl:text-[60px] font-black text-[#1A1816] leading-[1.1] mb-5" style={{ letterSpacing: '-0.03em' }}>
-                Discover off-market real<br />
-                estate deals —{' '}
-                <span className="text-[#D03839]">with<br />confidence and privacy.</span>
+              <h1 className="text-[38px] sm:text-[44px] lg:text-[48px] xl:text-[52px] font-black text-[#1A1816] leading-[1.1] mb-5" style={{ letterSpacing: '-0.03em' }}>
+                Discover off-market real estate deals —{' '}
+                <span className="text-[#D03839]">with confidence and privacy.</span>
               </h1>
 
               {/* Subtext */}
-              <p className="text-[18px] text-[#444441] leading-relaxed mb-8 w-full">
+              <p className="text-[16px] sm:text-[17px] text-[#444441] leading-relaxed mb-8 w-full">
                 One trusted marketplace for wholesaler and seller inventory nationwide, where your contact info is never sold, shared, or added to anyone&apos;s list. Ever.
               </p>
 

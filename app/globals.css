@@ -19,34 +19,26 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.01em;
 }
 
-/* Hero pin glow / heartbeat pulse animations — fade down, hold glow 2-3s, fade back */
+/* Hero pin glow / heartbeat pulse animations — very subtle, barely noticeable */
 @keyframes heroPinFloat1 {
-  0%        { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
-  18%       { opacity: 0.22; transform: scale(0.87); filter: drop-shadow(0 0 20px rgba(208,56,57,1)); }
-  18%, 52%  { opacity: 0.22; transform: scale(0.87); filter: drop-shadow(0 0 20px rgba(208,56,57,1)); }
-  100%      { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
+  0%, 100% { opacity: 1;    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
+  50%       { opacity: 0.82; filter: drop-shadow(0 0 6px rgba(208,56,57,0.3)); }
 }
 @keyframes heroPinFloat2 {
-  0%        { opacity: 0.22; transform: scale(0.87); filter: drop-shadow(0 0 18px rgba(208,56,57,0.95)); }
-  18%       { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
-  18%, 52%  { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
-  100%      { opacity: 0.22; transform: scale(0.87); filter: drop-shadow(0 0 18px rgba(208,56,57,0.95)); }
+  0%, 100% { opacity: 0.88; filter: drop-shadow(0 0 4px rgba(208,56,57,0.2)); }
+  50%       { opacity: 1;    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
 }
 @keyframes heroPinFloat3 {
-  0%        { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
-  15%       { opacity: 0.18; transform: scale(0.85); filter: drop-shadow(0 0 24px rgba(208,56,57,1)); }
-  15%, 50%  { opacity: 0.18; transform: scale(0.85); filter: drop-shadow(0 0 24px rgba(208,56,57,1)); }
-  100%      { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
+  0%, 100% { opacity: 1;    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
+  50%       { opacity: 0.8;  filter: drop-shadow(0 0 7px rgba(208,56,57,0.35)); }
 }
 @keyframes heroPinFloat4 {
-  0%        { opacity: 0.2;  transform: scale(0.88); filter: drop-shadow(0 0 16px rgba(208,56,57,0.9)); }
-  20%       { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
-  20%, 55%  { opacity: 1;    transform: scale(1);    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
-  100%      { opacity: 0.2;  transform: scale(0.88); filter: drop-shadow(0 0 16px rgba(208,56,57,0.9)); }
+  0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 5px rgba(208,56,57,0.25)); }
+  50%       { opacity: 1;    filter: drop-shadow(0 0 0px rgba(208,56,57,0)); }
 }
 @keyframes heroShadowPulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  20%, 55% { opacity: 0.05; transform: scale(0.5); }
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%       { opacity: 0.2;  transform: scale(0.85); }
 }
 @keyframes heroCardFloat {
   0%, 100% { transform: translateY(0px); }
