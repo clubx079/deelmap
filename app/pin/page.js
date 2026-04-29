@@ -92,7 +92,7 @@ export default function PinPage() {
                   autoFocus
                   autoComplete="off"
                   className="w-full h-[56px] px-4 rounded border border-[#E8E8E4] text-[14px] text-[#1A1816] text-center tracking-[0.15em] font-semibold bg-[#FAFAF8] outline-none focus:border-[#D03839] transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-[#737370]"
-                  style={{ boxShadow: 'none' }}
+                  style={{ boxShadow: 'none', fontFamily: 'var(--font-dm-sans), sans-serif' }}
                   onFocus={e => e.target.style.boxShadow = '0 0 0 3px rgba(208,56,57,0.12)'}
                   onBlur={e => e.target.style.boxShadow = 'none'}
                 />
