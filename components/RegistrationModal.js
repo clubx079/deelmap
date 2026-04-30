@@ -23,6 +23,8 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [verifyMethod, setVerifyMethod] = useState('email')
+  const [appealMessage, setAppealMessage] = useState('')
+  const [appealSubmitted, setAppealSubmitted] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -120,7 +122,31 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
       await signIn(authData.email, authData.password)
       handleClose()
     } catch (err) {
-      setError(err.message || 'Invalid email or password')
+      if (err.suspended === true || (err.message || '').toLowerCase().includes('suspended')) {
+        setAuthStep('suspended')
+      } else {
+        setError(err.message || 'Invalid email or password')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmitAppeal = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/request-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authData.email, message: appealMessage }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to submit appeal')
+      setAppealSubmitted(true)
+    } catch (err) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
@@ -635,6 +661,75 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                   Back
                 </button>
               </p>
+            </div>
+          )}
+
+          {/* ── Suspended: Appeal step ── */}
+          {authStep === 'suspended' && (
+            <div>
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-14 h-14 rounded-full bg-[#FEF0EF] flex items-center justify-center mb-4">
+                  <svg className="w-7 h-7 text-[#D03839]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                </div>
+                <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-1">Account Suspended</p>
+                <h2 className="text-[22px] font-bold text-[#1A1816] mb-2">Your account has been suspended</h2>
+                <p className="text-[13px] text-[#737370]">
+                  Submit an appeal and our team will review your case and respond via email.
+                </p>
+              </div>
+
+              {!appealSubmitted ? (
+                <form onSubmit={handleSubmitAppeal} className="space-y-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
+                      Reason for appeal <span className="text-[#737370] font-normal">(optional)</span>
+                    </label>
+                    <textarea
+                      value={appealMessage}
+                      onChange={(e) => setAppealMessage(e.target.value)}
+                      placeholder="Explain why you believe this suspension is incorrect..."
+                      rows={4}
+                      className="w-full px-3 py-2.5 text-[13px] border border-[#E8E8E4] rounded focus:outline-none focus:border-[#D03839] resize-none text-[#1A1816] placeholder-[#A8A8A4]"
+                    />
+                  </div>
+                  {error && <p className="text-[13px] text-[#D03839]">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold text-[15px] rounded transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Submitting...' : 'Submit Appeal'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthStep('login'); setError('') }}
+                    className="w-full text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors"
+                  >
+                    Back to Log In
+                  </button>
+                </form>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-[#E4F5EC] flex items-center justify-center mx-auto">
+                    <svg className="w-6 h-6 text-[#0F6E56]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[16px] font-semibold text-[#1A1816] mb-1">Appeal Submitted</p>
+                    <p className="text-[13px] text-[#737370]">Our team will review your request and get back to you via email.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="text-[13px] font-semibold text-[#D03839] hover:underline"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
