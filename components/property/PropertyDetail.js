@@ -543,8 +543,94 @@ export function PropertyDetail({ property }) {
               )}
             </div>
 
-            {/* Right side: 2×2 grid — hidden on mobile */}
-            {photos.length > 1 && (
+            {/* Right side — hidden on mobile, layout adapts to photo count */}
+            {photos.length === 2 && (
+              // 2 photos: right = single photo, full height
+              <div
+                className="hidden sm:block relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                onClick={() => { setModalInitialIndex(1); setShowImageModal(true) }}
+              >
+                <img
+                  src={getThumbnailUrl(photos[1], 400) || getPreferredPhotoUrl(photos[1]) || '/placeholder.jpg'}
+                  alt="Property photo 2"
+                  className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                  className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                  Show all photos
+                </button>
+              </div>
+            )}
+
+            {photos.length === 3 && (
+              // 3 photos: right = 2 photos stacked vertically
+              <div className="hidden sm:grid grid-cols-1 grid-rows-2 gap-[6px]">
+                {[1, 2].map((offset) => (
+                  <div
+                    key={offset}
+                    className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                    onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
+                  >
+                    <img
+                      src={getThumbnailUrl(photos[offset], 400) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
+                      alt={`Property photo ${offset + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                    />
+                    {offset === 2 && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                        Show all photos
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {photos.length === 4 && (
+              // 4 photos: right = top 2 side by side + bottom 1 full width
+              <div className="hidden sm:grid grid-cols-2 grid-rows-2 gap-[6px]">
+                {[1, 2].map((offset) => (
+                  <div
+                    key={offset}
+                    className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                    onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
+                  >
+                    <img
+                      src={getThumbnailUrl(photos[offset], 400) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
+                      alt={`Property photo ${offset + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                    />
+                  </div>
+                ))}
+                <div
+                  className="col-span-2 relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                  onClick={() => { setModalInitialIndex(3); setShowImageModal(true) }}
+                >
+                  <img
+                    src={getThumbnailUrl(photos[3], 400) || getPreferredPhotoUrl(photos[3]) || '/placeholder.jpg'}
+                    alt="Property photo 4"
+                    className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                  />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                    className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                    Show all photos
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {photos.length >= 5 && (
+              // 5+ photos: full 2×2 grid
               <div className="hidden sm:grid grid-cols-2 grid-rows-2 gap-[6px]">
                 {[1, 2, 3, 4].map((offset) => {
                   const photo = photos[offset]
@@ -553,22 +639,14 @@ export function PropertyDetail({ property }) {
                     <div
                       key={offset}
                       className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
-                      onClick={() => {
-                        setModalInitialIndex(offset < photos.length ? offset : 0)
-                        setShowImageModal(true)
-                      }}
+                      onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
                     >
-                      {photo ? (
-                        <img
-                          src={getThumbnailUrl(photo, 400) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
-                          alt={`Property photo ${offset + 1}`}
-                          className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-[#E8E8E4]" />
-                      )}
-                      {/* "Show all photos" button on last cell */}
-                      {isLast && photos.length > 0 && (
+                      <img
+                        src={getThumbnailUrl(photo, 400) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
+                        alt={`Property photo ${offset + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                      />
+                      {isLast && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
                           className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
