@@ -7,9 +7,22 @@ const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+function getClientIP(request) {
+  const cf = request.headers.get('cf-connecting-ip')
+  if (cf) return cf
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  const realIP = request.headers.get('x-real-ip')
+  if (realIP) return realIP
+  const vercelIP = request.headers.get('x-vercel-forwarded-for')
+  if (vercelIP) return vercelIP.split(',')[0].trim()
+  return null
+}
+
 export async function POST(request) {
   try {
     const { email, password } = await request.json()
+    const clientIP = getClientIP(request)
 
     if (!email || !password) {
       return NextResponse.json({ message: 'Email and password are required' }, { status: 400 })
@@ -55,10 +68,10 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 })
     }
 
-    // Update last_login_at
+    // Update last_login_at and capture login IP
     await supabase
       .from('users')
-      .update({ last_login_at: new Date().toISOString() })
+      .update({ last_login_at: new Date().toISOString(), ip_address: clientIP || null })
       .eq('id', user.id)
 
     console.log('User signed in successfully:', email)

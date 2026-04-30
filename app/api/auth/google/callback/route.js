@@ -9,9 +9,20 @@ function getBaseUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
 
+function getClientIP(request) {
+  const cf = request.headers.get('cf-connecting-ip')
+  if (cf) return cf
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  const realIP = request.headers.get('x-real-ip')
+  if (realIP) return realIP
+  return null
+}
+
 export async function GET(request) {
   try {
     const baseUrl = getBaseUrl()
+    const clientIP = getClientIP(request)
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const error = searchParams.get('error')
@@ -87,6 +98,7 @@ export async function GET(request) {
           verified: true,
           last_login_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          ip_address: clientIP || null,
         })
         .eq('id', existingUser.id)
         .select()
@@ -106,6 +118,7 @@ export async function GET(request) {
           verified: true,
           active: true,
           last_login_at: new Date().toISOString(),
+          ip_address: clientIP || null,
         })
         .select()
         .single()
