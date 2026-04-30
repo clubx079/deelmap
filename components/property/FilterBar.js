@@ -87,8 +87,8 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       const { data, error } = await supabaseMarketplace
         .from('wholesale_deals').select('state').not('state', 'is', null)
       if (error) return
-      const uniqueStates = [...new Set(data.map(i => i.state))].filter(Boolean).sort()
-        .map(code => ({ value: code, label: STATE_NAMES[code] || code }))
+      const uniqueStates = [...new Set(data.map(i => i.state))].filter(code => STATE_NAMES[code]).sort()
+        .map(code => ({ value: code, label: STATE_NAMES[code] }))
       setAvailableStates(uniqueStates)
     } catch {}
   }
