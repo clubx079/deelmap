@@ -144,9 +144,9 @@ export default function ForgotPasswordPage() {
         throw new Error(data.message || 'Failed to reset password')
       }
 
-      setMessage('Password reset successfully! Redirecting to login...')
+      setMessage('Password reset successfully! Redirecting...')
       setTimeout(() => {
-        router.push('/login')
+        router.push('/')
       }, 2000)
     } catch (err) {
       setError(err.message || 'Failed to reset password')
@@ -161,11 +161,11 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen bg-[#FAFAF8] pt-20">
         <div className="max-w-md mx-auto px-6 sm:px-8 py-12">
           <Link
-            href="/login"
+            href="/"
             className="inline-flex items-center gap-2 text-[#737370] hover:text-[#1A1816] mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Login</span>
+            <span>Back to Home</span>
           </Link>
 
           <div className="bg-white border border-[#E8E8E4] rounded p-8">
