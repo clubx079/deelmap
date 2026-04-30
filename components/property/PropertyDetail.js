@@ -551,7 +551,7 @@ export function PropertyDetail({ property }) {
                 onClick={() => { setModalInitialIndex(1); setShowImageModal(true) }}
               >
                 <img
-                  src={getThumbnailUrl(photos[1], 400) || getPreferredPhotoUrl(photos[1]) || '/placeholder.jpg'}
+                  src={getThumbnailUrl(photos[1], 800) || getPreferredPhotoUrl(photos[1]) || '/placeholder.jpg'}
                   alt="Property photo 2"
                   className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
                 />
@@ -575,7 +575,7 @@ export function PropertyDetail({ property }) {
                     onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
                   >
                     <img
-                      src={getThumbnailUrl(photos[offset], 400) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
+                      src={getThumbnailUrl(photos[offset], 800) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
                       alt={`Property photo ${offset + 1}`}
                       className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
                     />
@@ -603,7 +603,7 @@ export function PropertyDetail({ property }) {
                     onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
                   >
                     <img
-                      src={getThumbnailUrl(photos[offset], 400) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
+                      src={getThumbnailUrl(photos[offset], 800) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
                       alt={`Property photo ${offset + 1}`}
                       className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
                     />
@@ -614,7 +614,7 @@ export function PropertyDetail({ property }) {
                   onClick={() => { setModalInitialIndex(3); setShowImageModal(true) }}
                 >
                   <img
-                    src={getThumbnailUrl(photos[3], 400) || getPreferredPhotoUrl(photos[3]) || '/placeholder.jpg'}
+                    src={getThumbnailUrl(photos[3], 800) || getPreferredPhotoUrl(photos[3]) || '/placeholder.jpg'}
                     alt="Property photo 4"
                     className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
                   />
@@ -642,7 +642,7 @@ export function PropertyDetail({ property }) {
                       onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
                     >
                       <img
-                        src={getThumbnailUrl(photo, 400) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
+                        src={getThumbnailUrl(photo, 800) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
                         alt={`Property photo ${offset + 1}`}
                         className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
                       />
