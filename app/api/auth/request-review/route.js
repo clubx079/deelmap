@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
+import { Resend } from 'resend'
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
+const ADMIN_PORTAL_URL = process.env.ADMIN_PORTAL_URL || 'https://admindashboarddeelmap-production.up.railway.app'
 
 function getClientIP(request) {
   const cf = request.headers.get('cf-connecting-ip')
@@ -20,6 +25,83 @@ const supabaseAdmin = createClient(
   process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY,
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
+
+async function getNotificationEmails() {
+  try {
+    const { data } = await supabaseAdmin
+      .from('email_notifications')
+      .select('recipient_emails, is_active')
+      .eq('notification_type', 'ip_review')
+      .eq('is_active', true)
+      .single()
+
+    if (data?.recipient_emails?.length) return data.recipient_emails
+    return ['hamza@airosofts.com']
+  } catch {
+    return ['hamza@airosofts.com']
+  }
+}
+
+async function sendIPReviewNotification(user, message, clientIP) {
+  if (!resend) return
+
+  const recipients = await getNotificationEmails()
+  const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email
+  const ipReviewsUrl = `${ADMIN_PORTAL_URL}/settings/ip-reviews`
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;padding:30px;">
+    <div style="border-left:4px solid #D03839;padding-left:16px;margin-bottom:24px;">
+      <h1 style="margin:0 0 4px 0;font-size:20px;color:#1A1816;">New IP Review Request</h1>
+      <p style="margin:0;font-size:13px;color:#737370;">A suspended user is requesting account reinstatement</p>
+    </div>
+
+    <div style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:16px;margin-bottom:20px;">
+      <p style="margin:0 0 8px 0;font-size:12px;font-weight:600;color:#737370;text-transform:uppercase;letter-spacing:0.05em;">User Details</p>
+      <p style="margin:4px 0;font-size:14px;color:#1A1816;"><strong>Name:</strong> ${fullName}</p>
+      <p style="margin:4px 0;font-size:14px;color:#1A1816;"><strong>Email:</strong> ${user.email}</p>
+      <p style="margin:4px 0;font-size:14px;color:#1A1816;"><strong>IP Address:</strong> ${clientIP || 'Unknown'}</p>
+    </div>
+
+    ${message ? `
+    <div style="background:#FEF0EF;border:1px solid #F5C4C0;border-radius:4px;padding:16px;margin-bottom:20px;">
+      <p style="margin:0 0 8px 0;font-size:12px;font-weight:600;color:#D03839;text-transform:uppercase;letter-spacing:0.05em;">Appeal Message</p>
+      <p style="margin:0;font-size:14px;color:#1A1816;white-space:pre-wrap;">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+    </div>
+    ` : '<p style="font-size:13px;color:#737370;margin-bottom:20px;">No message provided.</p>'}
+
+    <div style="text-align:center;padding:16px 0;">
+      <a href="${ipReviewsUrl}"
+         style="display:inline-block;background:#D03839;color:#fff;text-decoration:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;">
+        Review Request in Admin Portal
+      </a>
+    </div>
+
+    <div style="border-top:1px solid #E8E8E4;padding-top:12px;margin-top:8px;">
+      <p style="margin:0;font-size:11px;color:#A8A8A4;">Submitted: ${new Date().toLocaleString()}</p>
+      <p style="margin:4px 0 0;font-size:11px;color:#A8A8A4;">DeelMap IP Review System</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  for (const to of recipients) {
+    try {
+      await resend.emails.send({
+        from: 'DeelMap Admin <noreply@deelmap.com>',
+        to,
+        subject: `IP Review Request — ${fullName} (${user.email})`,
+        html,
+      })
+    } catch (err) {
+      console.error(`Failed to send IP review notification to ${to}:`, err)
+    }
+  }
+}
 
 export async function POST(request) {
   try {
@@ -85,6 +167,11 @@ export async function POST(request) {
       console.error('Error inserting review request:', insertError)
       return NextResponse.json({ error: 'Failed to submit request' }, { status: 500 })
     }
+
+    // Fire email notification (non-blocking — don't fail the request if email fails)
+    sendIPReviewNotification(user, message, clientIP).catch(err =>
+      console.error('IP review email notification failed:', err)
+    )
 
     return NextResponse.json({ success: true, message: 'Review request submitted successfully' })
   } catch (err) {
