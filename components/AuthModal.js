@@ -346,9 +346,9 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
       await signIn(authData.email, authData.password)
       handleClose()
     } catch (error) {
-      if (error.suspended) {
+      if (error.suspended === true || (error.message || '').toLowerCase().includes('suspended')) {
         setIsSuspended(true)
-        setError('Your account has been suspended.')
+        setError('')
       } else {
         setIsSuspended(false)
         setError(error.message || 'Invalid email or password')
