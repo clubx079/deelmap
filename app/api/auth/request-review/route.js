@@ -50,44 +50,75 @@ async function sendIPReviewNotification(user, message, clientIP) {
   const ipReviewsUrl = `${ADMIN_PORTAL_URL}/settings/ip-reviews`
 
   const html = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;">
-  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;padding:30px;">
-    <div style="border-left:4px solid #D03839;padding-left:16px;margin-bottom:24px;">
-      <h1 style="margin:0 0 4px 0;font-size:20px;color:#1A1816;">New IP Review Request</h1>
-      <p style="margin:0;font-size:13px;color:#737370;">A suspended user is requesting account reinstatement</p>
-    </div>
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F5F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
 
-    <div style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:16px;margin-bottom:20px;">
-      <p style="margin:0 0 8px 0;font-size:12px;font-weight:600;color:#737370;text-transform:uppercase;letter-spacing:0.05em;">User Details</p>
-      <p style="margin:4px 0;font-size:14px;color:#1A1816;"><strong>Name:</strong> ${fullName}</p>
-      <p style="margin:4px 0;font-size:14px;color:#1A1816;"><strong>Email:</strong> ${user.email}</p>
-      <p style="margin:4px 0;font-size:14px;color:#1A1816;"><strong>IP Address:</strong> ${clientIP || 'Unknown'}</p>
-    </div>
+      <tr>
+        <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+        </td>
+      </tr>
 
-    ${message ? `
-    <div style="background:#FEF0EF;border:1px solid #F5C4C0;border-radius:4px;padding:16px;margin-bottom:20px;">
-      <p style="margin:0 0 8px 0;font-size:12px;font-weight:600;color:#D03839;text-transform:uppercase;letter-spacing:0.05em;">Appeal Message</p>
-      <p style="margin:0;font-size:14px;color:#1A1816;white-space:pre-wrap;">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-    </div>
-    ` : '<p style="font-size:13px;color:#737370;margin-bottom:20px;">No message provided.</p>'}
+      <tr>
+        <td style="padding:36px 40px 8px;background:#ffffff">
+          <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#D03839">Account Review</p>
+          <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#1A1816;letter-spacing:-0.4px;line-height:1.25">New Suspension Appeal</h1>
+          <p style="margin:0 0 28px;font-size:14px;line-height:1.65;color:#737370">A suspended buyer has submitted an appeal requesting account reinstatement. Please review and take action in the admin portal.</p>
+        </td>
+      </tr>
 
-    <div style="text-align:center;padding:16px 0;">
-      <a href="${ipReviewsUrl}"
-         style="display:inline-block;background:#D03839;color:#fff;text-decoration:none;padding:12px 28px;border-radius:4px;font-size:14px;font-weight:600;">
-        Review Request in Admin Portal
-      </a>
-    </div>
+      <tr>
+        <td style="padding:0 40px 24px;background:#ffffff">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:20px">
+                <p style="margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#A8A8A4">User Details</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr><td style="padding:4px 0;font-size:13px;color:#737370;width:90px">Name</td><td style="padding:4px 0;font-size:13px;font-weight:600;color:#1A1816">${fullName || '—'}</td></tr>
+                  <tr><td style="padding:4px 0;font-size:13px;color:#737370">Email</td><td style="padding:4px 0;font-size:13px;font-weight:600;color:#1A1816">${user.email}</td></tr>
+                  <tr><td style="padding:4px 0;font-size:13px;color:#737370">IP Address</td><td style="padding:4px 0;font-size:13px;font-weight:600;color:#1A1816;font-family:'Courier New',monospace">${clientIP || 'Unknown'}</td></tr>
+                  <tr><td style="padding:4px 0;font-size:13px;color:#737370">Submitted</td><td style="padding:4px 0;font-size:13px;color:#737370">${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</td></tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
 
-    <div style="border-top:1px solid #E8E8E4;padding-top:12px;margin-top:8px;">
-      <p style="margin:0;font-size:11px;color:#A8A8A4;">Submitted: ${new Date().toLocaleString()}</p>
-      <p style="margin:4px 0 0;font-size:11px;color:#A8A8A4;">DeelMap IP Review System</p>
-    </div>
-  </div>
-</body>
-</html>`
+      ${message ? `
+      <tr>
+        <td style="padding:0 40px 24px;background:#ffffff">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#FEF0EF;border:1px solid #F5C4C0;border-radius:4px;padding:20px">
+                <p style="margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#D03839">Appeal Message</p>
+                <p style="margin:0;font-size:14px;line-height:1.65;color:#1A1816;white-space:pre-wrap">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      ` : ''}
+
+      <tr>
+        <td style="padding:0 40px 36px;background:#ffffff;text-align:center">
+          <a href="${ipReviewsUrl}" style="display:inline-block;background:#D03839;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:4px;font-size:14px;font-weight:600;letter-spacing:0.2px">
+            Review Appeal in Admin Portal
+          </a>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr></table>
+</body></html>`
 
   for (const to of recipients) {
     try {
