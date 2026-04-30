@@ -24,6 +24,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isSuspended, setIsSuspended] = useState(false)
   const [appealMessage, setAppealMessage] = useState('')
   const [appealSubmitted, setAppealSubmitted] = useState(false)
   const [phoneError, setPhoneError] = useState('')
@@ -63,6 +64,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
     })
     setAuthStep(initialStep)
     setError('')
+    setIsSuspended(false)
     setAppealMessage('')
     setAppealSubmitted(false)
     setPhoneError('')
@@ -345,8 +347,10 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
       handleClose()
     } catch (error) {
       if (error.suspended) {
-        setAuthStep('suspended')
+        setIsSuspended(true)
+        setError('Your account has been suspended.')
       } else {
+        setIsSuspended(false)
         setError(error.message || 'Invalid email or password')
       }
     } finally {
@@ -407,10 +411,30 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = 
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {error && (
+              {error && !isSuspended && (
                 <p className={`text-sm ${error.includes('successfully') ? 'text-green-600' : 'text-red-500'}`}>
                   {error}
                 </p>
+              )}
+              {isSuspended && (
+                <div className="rounded border border-red-200 bg-red-50 p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-semibold text-red-700">Account Suspended</p>
+                      <p className="text-xs text-red-600 mt-0.5">Your account has been temporarily suspended by an administrator.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAuthStep('suspended')}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 rounded transition-colors"
+                  >
+                    Submit an Appeal for Review
+                  </button>
+                </div>
               )}
               <Button
                 type="submit"
