@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
         sessionStorage.clear()
         setUser(null)
         if (typeof window !== 'undefined') {
-          window.location.href = '/login'
+          window.location.href = '/'
         }
       }
     } catch {
