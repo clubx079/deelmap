@@ -97,7 +97,7 @@ export function Footer() {
             <div className="lg:col-span-1">
               {/* Logo */}
               <div className="mb-4">
-                <Image src="/assets/logo-footer.svg" alt="DeelMap" width={160} height={48} className="h-12 w-auto object-contain" />
+                <Image src="/assets/logo-footer.svg" alt="DeelMap" width={190} height={68} className="h-[68px] w-[190px] object-contain" />
               </div>
               <p className="text-[13px] text-[#737370] leading-relaxed mb-6">
                 The trusted marketplace for verified off-market real estate deals across the United States.
