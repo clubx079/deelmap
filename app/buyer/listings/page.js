@@ -1028,10 +1028,9 @@ export default function MyListingsPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FEF0EF] border border-[#F5C4C0] text-[#D03839] text-[11px] font-semibold uppercase tracking-[0.09em]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] animate-pulse inline-block" />
               Sell on DeelMap
             </span>
-            <h2 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.4px] mt-3 mb-2">Have properties to sell?</h2>
+            <h2 className="text-[22px] font-bold text-[#1A1816] tracking-[-0.4px] mt-3 mb-2">Have more properties to sell?</h2>
             <p className="text-[14px] text-[#737370] leading-relaxed max-w-sm mx-auto">
               Get a seller account and reach thousands of verified investors actively browsing the marketplace.
             </p>
