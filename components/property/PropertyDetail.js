@@ -42,6 +42,7 @@ export function PropertyDetail({ property }) {
   const [showImageModal, setShowImageModal] = useState(false)
   const [modalInitialIndex, setModalInitialIndex] = useState(0)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [shareUrl, setShareUrl] = useState('')
   const [showOfferModal] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
@@ -177,6 +178,12 @@ export function PropertyDetail({ property }) {
       setIsFav(isFavorited(property.id))
     }
   }, [property?.id, isFavorited])
+
+  useEffect(() => {
+    if (user && similarProperties?.length > 0) {
+      loadFavorites(similarProperties.map(p => p.id))
+    }
+  }, [user, similarProperties, loadFavorites])
 
   // Initialize Google Map
   useEffect(() => {
@@ -447,7 +454,7 @@ export function PropertyDetail({ property }) {
           {/* Right: Share + Save + User */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowShareModal(true)}
+              onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShowShareModal(true) }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
             >
               <Share2 className="h-4 w-4" />
@@ -1161,11 +1168,17 @@ export function PropertyDetail({ property }) {
                             <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                            <button className="text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShareUrl(typeof window !== 'undefined' ? `${window.location.origin}/${p.slug || p.id}` : ''); setShowShareModal(true) }}
+                              className="text-[#A8A8A4] hover:text-[#1A1816] transition-colors"
+                            >
                               <Share2 className="w-3.5 h-3.5" />
                             </button>
-                            <button className="text-[#A8A8A4] hover:text-[#D03839] transition-colors">
-                              <Heart className="w-3.5 h-3.5" />
+                            <button
+                              onClick={async (e) => { e.stopPropagation(); e.preventDefault(); if (isPreview) { setShowPreviewModal(true); return } if (!user) { setShowLoginModal(true); return } try { await toggleFavorite(p.id); window.dispatchEvent(new CustomEvent('favoriteChanged')) } catch (err) { alert(err.message || 'Failed to update favorite') } }}
+                              className={`transition-colors ${isFavorited(p.id) ? 'text-[#D03839]' : 'text-[#A8A8A4] hover:text-[#D03839]'}`}
+                            >
+                              <Heart className={`w-3.5 h-3.5 ${isFavorited(p.id) ? 'fill-current' : ''}`} />
                             </button>
                           </div>
                         </div>
@@ -1234,12 +1247,12 @@ export function PropertyDetail({ property }) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[#444441] mb-1">Property Link</p>
-                  <p className="text-sm text-[#737370] truncate">{typeof window !== 'undefined' ? window.location.href : ''}</p>
+                  <p className="text-sm text-[#737370] truncate">{shareUrl}</p>
                 </div>
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href)
-                    const btn = event.target.closest('button')
+                  onClick={(e) => {
+                    navigator.clipboard.writeText(shareUrl)
+                    const btn = e.target.closest('button')
                     const originalText = btn.textContent
                     btn.textContent = 'Copied!'
                     setTimeout(() => btn.textContent = originalText, 2000)
