@@ -63,19 +63,21 @@ export async function GET(request) {
     if (maxCashOnCash !== null) query = query.lte('cash_on_cash', maxCashOnCash);
     if (propertyTypes.length > 0) query = query.in('property_type', propertyTypes);
     if (states.length > 0) query = query.in('state', states);
+
+    const stateNameToAbbr = {
+      'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+      'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+      'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+      'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+      'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+      'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+      'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+      'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+      'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+      'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+    };
+
     if (searchQuery) {
-      const stateNameToAbbr = {
-        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-        'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
-        'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
-        'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
-        'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-        'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
-        'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
-        'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
-      };
       const rawTerm = searchQuery.trim();
       const commaIdx = rawTerm.indexOf(',');
       if (commaIdx > 0) {
@@ -144,8 +146,28 @@ export async function GET(request) {
       if (maxSqft !== null) manualQuery = manualQuery.lte('floor_area', maxSqft);
       if (propertyTypes.length > 0) manualQuery = manualQuery.in('property_type', propertyTypes);
       if (searchQuery) {
-        const q = `%${searchQuery.trim()}%`;
-        manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
+        const rawTerm = searchQuery.trim();
+        const commaIdx = rawTerm.indexOf(',');
+        if (commaIdx > 0) {
+          const cityPart = rawTerm.substring(0, commaIdx).trim();
+          const remainder = rawTerm.substring(commaIdx + 1);
+          let stateAbbrFinal = null;
+          for (const seg of remainder.split(',')) {
+            const s = seg.trim();
+            const fromName = stateNameToAbbr[s.toLowerCase()];
+            if (fromName) { stateAbbrFinal = fromName; break; }
+            if (s.length === 2 && /^[A-Za-z]{2}$/.test(s)) { stateAbbrFinal = s.toUpperCase(); break; }
+          }
+          const cq = `%${cityPart}%`;
+          if (stateAbbrFinal) {
+            manualQuery = manualQuery.ilike('city', cq).eq('state', stateAbbrFinal);
+          } else {
+            manualQuery = manualQuery.or(`city.ilike.${cq},address.ilike.${cq}`);
+          }
+        } else {
+          const q = `%${rawTerm}%`;
+          manualQuery = manualQuery.or(`city.ilike.${q},address.ilike.${q},state.ilike.${q}`);
+        }
       }
 
       const { data: manualData } = await manualQuery;
