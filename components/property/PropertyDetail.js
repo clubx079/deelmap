@@ -505,8 +505,8 @@ export function PropertyDetail({ property }) {
       <div className="bg-white border-b border-[#E8E8E4]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className={`relative h-[260px] sm:h-[460px] rounded overflow-hidden grid gap-[6px] ${photos.length > 1 ? 'sm:grid-cols-2' : ''} grid-cols-1`}>
-            {!user && !isPreview && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/10 backdrop-blur-sm rounded">
+            {!user && !isPreview && photos.length > 1 && (
+              <div className="absolute hidden sm:flex left-[50%] right-0 top-0 bottom-0 z-20 flex-col items-center justify-center gap-3 bg-black/10 backdrop-blur-sm">
                 <div className="bg-white rounded px-5 py-4 text-center shadow-lg max-w-xs">
                   <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Sign in to view photos</p>
                   <p className="text-[12px] text-[#737370] mb-3">Create a free account to see all property photos</p>
