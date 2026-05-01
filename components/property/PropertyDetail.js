@@ -19,6 +19,7 @@ import { usePropertyAnalytics } from '@/hooks/usePropertyAnalytics'
 import { loadGoogleMapsAPI } from '@/utils/googleMapsLoader'
 import { RegistrationModal } from '@/components/RegistrationModal'
 import { PropertyImageModal } from './PropertyImageModal'
+import { ShareModal } from './ShareModal'
 import { Footer } from '@/components/layout/Footer'
 
 export function PropertyDetail({ property }) {
@@ -43,6 +44,7 @@ export function PropertyDetail({ property }) {
   const [modalInitialIndex, setModalInitialIndex] = useState(0)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
+  const [shareTitle, setShareTitle] = useState('')
   const [showOfferModal] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
@@ -454,7 +456,7 @@ export function PropertyDetail({ property }) {
           {/* Right: Share + Save + User */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShowShareModal(true) }}
+              onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShareTitle(property.full_address || property.display_address || property.address || 'Property'); setShowShareModal(true) }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
             >
               <Share2 className="h-4 w-4" />
@@ -1169,7 +1171,7 @@ export function PropertyDetail({ property }) {
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                             <button
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShareUrl(typeof window !== 'undefined' ? `${window.location.origin}/${p.slug || p.id}` : ''); setShowShareModal(true) }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShareUrl(typeof window !== 'undefined' ? `${window.location.origin}/${p.slug || p.id}` : ''); setShareTitle(p.full_address || p.display_address || p.address || 'Property'); setShowShareModal(true) }}
                               className="text-[#A8A8A4] hover:text-[#1A1816] transition-colors"
                             >
                               <Share2 className="w-3.5 h-3.5" />
@@ -1238,40 +1240,13 @@ export function PropertyDetail({ property }) {
       <Footer />
 
       {/* Share Modal — outside blur wrapper */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-white rounded max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-[#1A1816] mb-1">Share Property</h3>
-            <p className="text-sm text-[#737370] mb-4">Share this property with others</p>
-            <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4 mb-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[#444441] mb-1">Property Link</p>
-                  <p className="text-sm text-[#737370] truncate">{shareUrl}</p>
-                </div>
-                <button
-                  onClick={(e) => {
-                    navigator.clipboard.writeText(shareUrl)
-                    const btn = e.target.closest('button')
-                    const originalText = btn.textContent
-                    btn.textContent = 'Copied!'
-                    setTimeout(() => btn.textContent = originalText, 2000)
-                  }}
-                  className="px-4 py-2 bg-[#1A1816] text-white rounded hover:bg-[#2A2825] transition-colors text-sm font-semibold whitespace-nowrap"
-                >
-                  Copy Link
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="w-full px-4 py-2.5 bg-[#FAFAF8] border border-[#E8E8E4] text-[#444441] rounded hover:bg-[#F0F0EC] transition-colors text-sm font-semibold"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        url={shareUrl}
+        title={shareTitle}
+        description={shareTitle}
+      />
     </div>
   )
 }
