@@ -45,22 +45,28 @@ export async function GET(request) {
     const isHighlighted = searchParams.get('isHighlighted') === 'true';
     const isBoosted = searchParams.get('isBoosted') === 'true';
     const isHomepageFeatured = searchParams.get('isHomepageFeatured') === 'true';
+    const listingType = searchParams.get('listingType') || null; // 'wholesale' | 'auction' | null=all
+    const listingStatus = searchParams.get('listingStatus') || 'active'; // 'active' | 'pending' | 'sold'
 
     // Query 1: Get deals with ONLY featured photo (using Supabase transform for speed)
     const dealCols = [
       'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
       'address_google_lat', 'address_google_lng',
       'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
+      'listing_type', 'auction_date', 'auction_time', 'auction_location',
       'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
       'year_built', 'lot_size',
       'created_at', 'updated_at', 'temp_seller_id',
       'estimated_rent', 'purchase_price'
     ].join(',');
 
+    const validStatuses = ['active', 'pending', 'sold'];
+    const statusToFilter = validStatuses.includes(listingStatus) ? listingStatus : 'active';
+
     let query = supabaseMarketplace
       .from('wholesale_deals')
       .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
-      .eq('status', 'active')
+      .eq('status', statusToFilter)
       .eq('is_incomplete', false)
       .eq('property_photos.is_featured', true);
 
@@ -95,6 +101,11 @@ export async function GET(request) {
     if (maxCashOnCash !== null) query = query.lte('cash_on_cash', maxCashOnCash);
     if (cities.length > 0) query = query.in('city', cities);
     if (states.length > 0) query = query.in('state', states);
+    if (listingType === 'auction') {
+      query = query.eq('listing_type', 'auction');
+    } else if (listingType === 'wholesale') {
+      query = query.or('listing_type.is.null,listing_type.neq.auction');
+    }
 
     const stateNameToAbbr = {
       'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',

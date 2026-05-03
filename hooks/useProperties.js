@@ -115,6 +115,9 @@ export const useProperties = ({
     if (filters.isBoosted) params.append('isBoosted', 'true')
     if (filters.isHomepageFeatured) params.append('isHomepageFeatured', 'true')
 
+    if (filters.listingType) params.append('listingType', filters.listingType)
+    if (filters.listingStatus) params.append('listingStatus', filters.listingStatus)
+
     return params
   }
 

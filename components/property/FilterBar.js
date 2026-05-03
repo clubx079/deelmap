@@ -23,6 +23,14 @@ const PRICE_PRESETS = [
   { label: 'Over $1M', min: 1000000, max: undefined },
 ]
 
+const LISTING_TYPES = [
+  { value: 'all', label: 'All Listings' },
+  { value: 'wholesale', label: 'Wholesale' },
+  { value: 'auction', label: 'Auction' },
+]
+
+const LISTING_STATUSES = ['active', 'pending', 'sold']
+
 export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange, onLocationSelect }) {
   const [localSearch, setLocalSearch] = useState(searchQuery || '')
   useEffect(() => { setLocalSearch(searchQuery || '') }, [searchQuery])
@@ -39,6 +47,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const [tempFilters, setTempFilters] = useState({
     states: filters.states || [],
     propertyTypes: filters.propertyTypes || [],
+    listingStatus: filters.listingStatus || 'active',
     minBeds: filters.minBeds || '',
     minBaths: filters.minBaths || '',
     minFloorArea: filters.minFloorArea || '',
@@ -136,6 +145,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       ...filters,
       states: tempFilters.states,
       propertyTypes: tempFilters.propertyTypes,
+      listingStatus: tempFilters.listingStatus || 'active',
       minBeds: tempFilters.minBeds ? parseInt(tempFilters.minBeds) : undefined,
       minBaths: tempFilters.minBaths ? parseFloat(tempFilters.minBaths) : undefined,
       minFloorArea: tempFilters.minFloorArea ? parseInt(tempFilters.minFloorArea) : undefined,
@@ -151,7 +161,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   }
 
   const resetAllFilters = () => {
-    setTempFilters({ states: [], propertyTypes: [], minBeds: '', minBaths: '', minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '' })
+    setTempFilters({ states: [], propertyTypes: [], listingStatus: 'active', minBeds: '', minBaths: '', minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '' })
   }
 
   const formatPrice = (val) => {
@@ -189,10 +199,13 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const hasPriceFilter = filters.minPrice || filters.maxPrice
   const hasBedsBathsFilter = filters.minBeds || filters.minBaths
   const hasPropertyTypesFilter = filters.propertyTypes?.length > 0
+  const hasStatusFilter = filters.listingStatus && filters.listingStatus !== 'active'
   const hasActiveFilters = filters.states?.length > 0 || hasPriceFilter || hasBedsBathsFilter ||
-    hasPropertyTypesFilter || filters.minFloorArea || filters.maxFloorArea ||
+    hasPropertyTypesFilter || hasStatusFilter || filters.minFloorArea || filters.maxFloorArea ||
     filters.minGrossYield || filters.maxGrossYield || filters.minCapRate || filters.maxCapRate ||
     filters.minCashOnCash || filters.maxCashOnCash
+
+  const activeListingType = filters.listingType || 'all'
 
   const filterBtn = (active) =>
     `flex items-center gap-2 h-[42px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
@@ -223,6 +236,23 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
+          {/* Listing Type tabs */}
+          <div className="flex items-center gap-1 bg-[#F5F5F2] rounded p-1">
+            {LISTING_TYPES.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value })}
+                className={`flex-1 h-8 rounded text-[13px] font-medium transition-all ${
+                  activeListingType === value
+                    ? 'bg-white text-[#1A1816] shadow-sm'
+                    : 'text-[#737370] hover:text-[#1A1816]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Filters row */}
           <div className="flex items-center gap-2 pb-1">
             {/* Price button */}
@@ -350,6 +380,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                 setTempFilters({
                   states: filters.states || [],
                   propertyTypes: filters.propertyTypes || [],
+                  listingStatus: filters.listingStatus || 'active',
                   minBeds: filters.minBeds || '',
                   minBaths: filters.minBaths || '',
                   minFloorArea: filters.minFloorArea || '',
@@ -368,7 +399,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               All Filters
               {hasActiveFilters && (
                 <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
-                  {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
+                  {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, hasStatusFilter, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
                 </span>
               )}
             </button>
@@ -377,6 +408,23 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
         {/* Desktop layout: all in one row */}
         <div className="hidden lg:flex w-full px-[112px] py-3 items-center gap-3">
+
+          {/* Listing Type tabs */}
+          <div className="flex items-center gap-1 bg-[#F5F5F2] rounded p-1 flex-shrink-0">
+            {LISTING_TYPES.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value })}
+                className={`h-8 px-3 rounded text-[13px] font-medium transition-all whitespace-nowrap ${
+                  activeListingType === value
+                    ? 'bg-white text-[#1A1816] shadow-sm'
+                    : 'text-[#737370] hover:text-[#1A1816]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
           {/* Search */}
           <div
@@ -612,7 +660,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             All Filters
             {hasActiveFilters && (
               <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
-                {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
+                {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, hasStatusFilter, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
               </span>
             )}
           </button>
@@ -720,6 +768,29 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                         className="w-full h-11 px-4 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="border-t border-[#F0F0EC]" />
+
+              {/* Listing Status */}
+              <div>
+                <h3 className="text-[15px] font-bold text-[#1A1816] mb-4">Listing Status</h3>
+                <div className="flex gap-2">
+                  {LISTING_STATUSES.map((status) => {
+                    const active = (tempFilters.listingStatus || 'active') === status
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setTempFilters({ ...tempFilters, listingStatus: status })}
+                        className={`flex-1 h-10 rounded border text-[13px] font-medium capitalize transition-all ${
+                          active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

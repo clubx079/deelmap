@@ -41,7 +41,8 @@ function DealsPageInner() {
   const [filters, setFilters] = useState({
     states: [],
     propertyTypes: [],
-    statuses: ['all'], // Show all properties by default
+    listingType: undefined,
+    listingStatus: 'active',
     minPrice: undefined,
     maxPrice: undefined,
     minBeds: undefined,
