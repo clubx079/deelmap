@@ -53,7 +53,7 @@ export function PropertyDetail({ property }) {
   const mapRef = useRef(null)
 
   const { properties: similarProperties } = useProperties({
-    filters: { statuses: ['available'], city: property.city },
+    filters: { statuses: ['available'], city: property.city, listingType: 'wholesale' },
     sortBy: 'newest',
     pageSize: 14,
   })
