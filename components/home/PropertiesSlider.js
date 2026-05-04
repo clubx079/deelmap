@@ -41,6 +41,7 @@ export function PropertiesSlider() {
   }, [])
 
   // Measure container width → compute per-card step
+  // Depends on `loading` so it re-runs once the carousel div appears in the DOM
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -49,7 +50,7 @@ export function PropertiesSlider() {
     const ro = new ResizeObserver(measure)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [loading])
 
   useEffect(() => { setStartIndex(0) }, [activeTab])
 
