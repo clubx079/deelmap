@@ -836,12 +836,59 @@ export function PropertyDetail({ property }) {
                         if (v === '') setEstimatedRent(null)
                         else { const n = parseFloat(v); setEstimatedRent(!isNaN(n) ? n : null) }
                       }}
+                      placeholder="e.g. 1,500"
                       className="w-full h-10 pl-7 pr-3 border border-[#E8E8E4] rounded focus:border-[#D03839] focus:ring-2 focus:ring-[#D03839]/[.12] outline-none text-sm text-[#1A1816]"
                     />
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[#A8A8A4]">Enter values above to calculate your estimated returns and cash flow projections.</p>
+              {estimatedRentNum > 0 ? (
+                <>
+                  <div className="border-t border-[#E8E8E4] pt-4 mt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                        <p className="text-[11px] text-[#737370] mb-1">Monthly Cash Flow</p>
+                        <p className={`text-[17px] font-bold ${monthlyNetCashFlow >= 0 ? 'text-[#0F6E56]' : 'text-[#D03839]'}`}>
+                          {monthlyNetCashFlow >= 0 ? '+' : ''}{formatPrice(monthlyNetCashFlow)}
+                        </p>
+                      </div>
+                      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                        <p className="text-[11px] text-[#737370] mb-1">Annual Cash Flow</p>
+                        <p className={`text-[17px] font-bold ${netCashFlow >= 0 ? 'text-[#0F6E56]' : 'text-[#D03839]'}`}>
+                          {netCashFlow >= 0 ? '+' : ''}{formatPrice(netCashFlow)}
+                        </p>
+                      </div>
+                      {cashOnCash != null && (
+                        <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                          <p className="text-[11px] text-[#737370] mb-1">Cash-on-Cash</p>
+                          <p className={`text-[17px] font-bold ${cashOnCash >= 0 ? 'text-[#0F6E56]' : 'text-[#D03839]'}`}>
+                            {cashOnCash >= 0 ? '+' : ''}{Number(cashOnCash).toFixed(1)}%
+                          </p>
+                        </div>
+                      )}
+                      {capRate != null && (
+                        <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                          <p className="text-[11px] text-[#737370] mb-1">Cap Rate</p>
+                          <p className="text-[17px] font-bold text-[#1A1816]">{Number(capRate).toFixed(1)}%</p>
+                        </div>
+                      )}
+                      {grossYield != null && (
+                        <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                          <p className="text-[11px] text-[#737370] mb-1">Gross Yield</p>
+                          <p className="text-[17px] font-bold text-[#1A1816]">{Number(grossYield).toFixed(1)}%</p>
+                        </div>
+                      )}
+                      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                        <p className="text-[11px] text-[#737370] mb-1">Monthly Mortgage</p>
+                        <p className="text-[17px] font-bold text-[#1A1816]">{formatPrice(monthlyPayment)}</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[#A8A8A4] mt-3">Assumes 7% interest rate, 30-year fixed, 10% vacancy + management expenses.</p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-[#A8A8A4]">Enter an estimated monthly rent above to unlock your projected cash flow, ROI, and annual return.</p>
+              )}
             </div>
 
             {/* PROPERTY SNAPSHOT */}
