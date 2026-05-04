@@ -27,7 +27,7 @@ export function PropertiesSlider() {
   const pausedRef = useRef(false)
 
   const { properties, loading } = useProperties({
-    filters: { statuses: ['available'] },
+    filters: { statuses: ['available'], listingType: 'wholesale' },
     sortBy: 'newest',
     pageSize: 12,
   })
