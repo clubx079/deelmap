@@ -22,9 +22,10 @@ export function PropertiesSlider() {
   const [activeTab, setActiveTab] = useState('all')
   const [featuredBuyerDeals, setFeaturedBuyerDeals] = useState([])
   const [startIndex, setStartIndex] = useState(0)
-  const [opacity, setOpacity] = useState(1)
-  const [shownCards, setShownCards] = useState([])
+  const [noAnim, setNoAnim] = useState(false)
+  const [step, setStep] = useState(0)
   const pausedRef = useRef(false)
+  const containerRef = useRef(null)
 
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'], listingType: 'wholesale' },
@@ -39,6 +40,17 @@ export function PropertiesSlider() {
       .catch(() => {})
   }, [])
 
+  // Measure container width → compute per-card step
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => setStep((el.offsetWidth + 16) / VISIBLE)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   useEffect(() => { setStartIndex(0) }, [activeTab])
 
   const allCards = useMemo(() => {
@@ -49,33 +61,33 @@ export function PropertiesSlider() {
   }, [properties, featuredBuyerDeals])
 
   const canScroll = allCards.length > VISIBLE
+  const displayProperties = allCards.slice(startIndex, startIndex + VISIBLE)
+  const cardWidth = step > 0 ? step - 16 : 0
 
-  // Fade transition whenever the visible slice changes
-  useEffect(() => {
-    const slice = allCards.slice(startIndex, startIndex + VISIBLE)
-    if (slice.length === 0) return
-    setOpacity(0)
-    const t = setTimeout(() => {
-      setShownCards(slice)
-      setOpacity(1)
-    }, 180)
-    return () => clearTimeout(t)
-  }, [startIndex, allCards])
-
-  const displayProperties = shownCards.length > 0 ? shownCards : allCards.slice(startIndex, startIndex + VISIBLE)
-
-  const moveTo = (newIdx) => setStartIndex(newIdx)
+  const moveTo = (newIdx, animate = true) => {
+    if (!animate) {
+      setNoAnim(true)
+      setStartIndex(newIdx)
+      requestAnimationFrame(() => requestAnimationFrame(() => setNoAnim(false)))
+    } else {
+      setNoAnim(false)
+      setStartIndex(newIdx)
+    }
+  }
 
   const prev = () => {
-    const newIdx = startIndex === 0 ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1
-    moveTo(newIdx)
+    const wrapping = startIndex === 0
+    const newIdx = wrapping ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1
+    moveTo(newIdx, !wrapping)
   }
 
   const next = () => {
-    const newIdx = startIndex + VISIBLE >= allCards.length ? 0 : startIndex + 1
-    moveTo(newIdx)
+    const wrapping = startIndex + VISIBLE >= allCards.length
+    const newIdx = wrapping ? 0 : startIndex + 1
+    moveTo(newIdx, !wrapping)
   }
 
+  // Auto-rotate
   useEffect(() => {
     if (!canScroll) return
     const id = setInterval(() => {
@@ -190,7 +202,6 @@ export function PropertiesSlider() {
               <span className="text-[10px] text-[#A8A8A4]">Photos coming soon</span>
             </div>
           )}
-          {/* Badges */}
           <div className="absolute top-2.5 left-2.5">
             <span className={`text-[11px] font-semibold px-2 py-1 rounded ${dealBadge.cls}`}>
               {dealBadge.label}
@@ -207,16 +218,11 @@ export function PropertiesSlider() {
 
         {/* Content */}
         <div className="p-4 flex flex-col flex-1">
-          {/* Location */}
           <div className="flex items-center gap-1 mb-1.5">
             <MapPin className="w-3 h-3 text-[#A8A8A4] flex-shrink-0" />
             <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
           </div>
-
-          {/* Title */}
           <h3 className="text-[15px] font-bold text-[#1A1816] mb-1.5 leading-snug line-clamp-1">{title}</h3>
-
-          {/* Stats */}
           <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
             {sqft && <span>{Number(sqft).toLocaleString()} sq ft</span>}
             {sqft && beds && <span className="text-[#E8E8E4]">·</span>}
@@ -224,8 +230,6 @@ export function PropertiesSlider() {
             {beds && baths && <span className="text-[#E8E8E4]">·</span>}
             {baths && <span>{baths} bath</span>}
           </div>
-
-          {/* Price + ARV */}
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-[20px] font-bold text-[#1A1816]">{formatPrice(p.price)}</span>
             {arv > 0 && (
@@ -234,15 +238,11 @@ export function PropertiesSlider() {
               </span>
             )}
           </div>
-
-          {/* Spread */}
           {spread > 0 && (
             <p className="text-[12px] text-[#0F6E56] font-medium mb-3">
               ↑ ${spread.toLocaleString()} spread potential
             </p>
           )}
-
-          {/* Divider + seller row */}
           <div className="mt-auto pt-3 border-t border-[#F0F0EC] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`w-7 h-7 rounded-full ${getAvatarColor(p)} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
@@ -256,9 +256,7 @@ export function PropertiesSlider() {
                 </div>
               </div>
             </div>
-            <span className="text-[12px] font-semibold text-[#D03839]">
-              View deal →
-            </span>
+            <span className="text-[12px] font-semibold text-[#D03839]">View deal →</span>
           </div>
         </div>
       </Link>
@@ -282,7 +280,6 @@ export function PropertiesSlider() {
               </p>
             </div>
             <div className="flex items-center justify-between lg:justify-end gap-3 w-full lg:w-auto lg:flex-shrink-0">
-              {/* Tabs */}
               <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
                 {TABS.map((tab) => (
                   <button
@@ -298,7 +295,6 @@ export function PropertiesSlider() {
                   </button>
                 ))}
               </div>
-              {/* Arrows */}
               {canScroll && (
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
@@ -320,21 +316,53 @@ export function PropertiesSlider() {
         </div>
 
         {/* Cards */}
-        {loading || displayProperties.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
+          </div>
+        ) : displayProperties.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-            style={{ opacity, transition: 'opacity 180ms ease' }}
-            onMouseEnter={() => { pausedRef.current = true }}
-            onMouseLeave={() => { pausedRef.current = false }}
-          >
-            {displayProperties.map((p) => (
-              <PropertyCardInner key={p.id} p={p} />
-            ))}
-          </div>
+          <>
+            {/* Mobile: simple grid of current 4 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
+              {displayProperties.map((p) => (
+                <PropertyCardInner key={p.id} p={p} />
+              ))}
+            </div>
+
+            {/* Desktop: sliding carousel */}
+            <div
+              ref={containerRef}
+              className="hidden lg:block overflow-hidden"
+              onMouseEnter={() => { pausedRef.current = true }}
+              onMouseLeave={() => { pausedRef.current = false }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '16px',
+                  transform: cardWidth > 0 ? `translateX(-${startIndex * step}px)` : undefined,
+                  transition: noAnim ? 'none' : 'transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  willChange: 'transform',
+                }}
+              >
+                {allCards.map((p) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      flexShrink: 0,
+                      width: cardWidth > 0 ? `${cardWidth}px` : 'calc(25% - 12px)',
+                    }}
+                  >
+                    <PropertyCardInner p={p} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Browse all */}
