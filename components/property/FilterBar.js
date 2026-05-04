@@ -370,7 +370,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         </div>
 
         {/* Desktop layout: all in one row */}
-        <div className="hidden lg:flex w-full px-[112px] py-3 items-center gap-3">
+        <div className="hidden lg:flex w-full py-3 items-center gap-3" style={{ paddingLeft: '45px', paddingRight: '85px' }}>
 
           {/* Search */}
           <div
