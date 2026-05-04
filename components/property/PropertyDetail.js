@@ -523,7 +523,10 @@ export function PropertyDetail({ property }) {
             {/* Main photo — full width on mobile, left half on sm+ */}
             <div
               className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
-              onClick={() => { if (photos.length > 0) { setModalInitialIndex(currentPhotoIndex); setShowImageModal(true) } }}
+              onClick={() => {
+                if (!user && !isPreview) { setShowLoginModal(true); return; }
+                if (photos.length > 0) { setModalInitialIndex(currentPhotoIndex); setShowImageModal(true) }
+              }}
             >
               {photos.length > 0 ? (
                 <img
@@ -543,7 +546,7 @@ export function PropertyDetail({ property }) {
               {/* Mobile-only: Show all photos button on main photo */}
               {photos.length > 1 && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setModalInitialIndex(0); setShowImageModal(true) }}
+                  onClick={(e) => { e.stopPropagation(); if (!user && !isPreview) { setShowLoginModal(true); return; } setModalInitialIndex(0); setShowImageModal(true) }}
                   className="sm:hidden absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
@@ -954,16 +957,17 @@ export function PropertyDetail({ property }) {
                 </div>
               )}
               <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-4">
-                {/* Price row */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[13px] font-medium text-[#737370]">Price</span>
-                  <span className="text-[22px] font-bold text-[#1A1816]">{formatPrice(price)}</span>
-                </div>
+                {property.listing_type !== 'auction' && (
+                  /* Price row — wholesale only */
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[13px] font-medium text-[#737370]">Price</span>
+                    <span className="text-[22px] font-bold text-[#1A1816]">{formatPrice(price)}</span>
+                  </div>
+                )}
 
                 {property.listing_type === 'auction' ? (
                   /* ── Auction Details ── */
                   <>
-                    <hr className="border-[#E8E8E4] mb-3" />
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737370] mb-3">Auction Details</p>
                     <div className="space-y-2.5 mb-5">
                       {property.auction_date && (
@@ -980,12 +984,10 @@ export function PropertyDetail({ property }) {
                           <span className="text-[13px] font-semibold text-[#1A1816] text-right">{property.auction_time}</span>
                         </div>
                       )}
-                      {property.auction_location && (
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="text-[13px] text-[#737370] shrink-0">Location</span>
-                          <span className="text-[13px] font-semibold text-[#1A1816] text-right leading-snug">{property.auction_location}</span>
-                        </div>
-                      )}
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-[13px] text-[#737370] shrink-0">Location</span>
+                        <span className="text-[13px] font-semibold text-[#1A1816] text-right leading-snug">{property.auction_location || 'To Be Determined'}</span>
+                      </div>
                     </div>
                     {property.listing_url && (
                       <a

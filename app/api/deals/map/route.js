@@ -37,6 +37,7 @@ export async function GET(request) {
         }))]
       : [];
     const searchQuery = searchParams.get('searchQuery') || '';
+    const listingType = searchParams.get('listingType') || '';
 
     let query = supabase
       .from('wholesale_deals')
@@ -63,6 +64,11 @@ export async function GET(request) {
     if (maxCashOnCash !== null) query = query.lte('cash_on_cash', maxCashOnCash);
     if (propertyTypes.length > 0) query = query.in('property_type', propertyTypes);
     if (states.length > 0) query = query.in('state', states);
+    if (listingType === 'auction') {
+      query = query.eq('listing_type', 'auction');
+    } else if (listingType === 'wholesale') {
+      query = query.or('listing_type.is.null,listing_type.neq.auction');
+    }
 
     const stateNameToAbbr = {
       'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
@@ -126,8 +132,8 @@ export async function GET(request) {
       address_google_lng: d.address_google_lng,
     }));
 
-    // Also include manual seller properties on the map with same filters
-    try {
+    // Also include manual seller properties on the map with same filters (skip when listing type filter active)
+    if (!listingType) try {
       let manualQuery = supabase
         .from('properties')
         .select('id, slug, address, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type, property_images(image_url, sort_order)')
@@ -199,7 +205,7 @@ export async function GET(request) {
       }
     } catch {
       // Silently skip — manual properties are optional
-    }
+    } // end if (!listingType)
 
     return NextResponse.json({ success: true, pins, total: pins.length });
   } catch (error) {

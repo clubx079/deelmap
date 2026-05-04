@@ -160,6 +160,7 @@ function DealsPageInner() {
     if (filters.minCashOnCash > 0) params.append('minCashOnCash', filters.minCashOnCash)
     if (filters.maxCashOnCash > 0) params.append('maxCashOnCash', filters.maxCashOnCash)
     if (filters.propertyTypes?.length > 0) params.append('propertyTypes', filters.propertyTypes.join(','))
+    if (filters.listingType && filters.listingType !== 'all') params.append('listingType', filters.listingType)
     if (searchQuery?.trim()) params.append('searchQuery', searchQuery.trim())
 
     const qs = params.toString()

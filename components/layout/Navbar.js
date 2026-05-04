@@ -144,7 +144,7 @@ export function Navbar() {
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white border-b border-[#E8E8E4]'}`}>
-        <div className="w-full" style={{ paddingLeft: '45px', paddingRight: '85px' }}>
+        <div className="w-full px-4 md:pl-[45px] md:pr-[85px]">
           <div className="flex items-center justify-between h-[80px]">
 
             {/* Logo */}
@@ -333,10 +333,10 @@ export function Navbar() {
       </nav>
 
       {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-[9999] md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
-          <div className="absolute right-0 top-0 h-full w-72 bg-white shadow-xl border-l border-[#E8E8E4]">
+      <div className={`fixed inset-0 z-[9999] md:hidden pointer-events-none`}>
+        <div
+          className={`absolute right-0 top-0 h-full w-72 bg-white shadow-xl border-l border-[#E8E8E4] transition-transform duration-300 ease-in-out pointer-events-auto ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}
+        >
             <div className="flex items-center justify-between p-5 border-b border-[#E8E8E4]">
               <span className="text-[15px] font-semibold text-[#1A1816]">Menu</span>
               <button onClick={() => setShowMobileMenu(false)} className="p-1 text-[#737370] hover:text-[#1A1816]">
@@ -398,9 +398,8 @@ export function Navbar() {
                 </div>
               )}
             </div>
-          </div>
         </div>
-      )}
+      </div>
 
       <RegistrationModal
         isOpen={showAuth}
