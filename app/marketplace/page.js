@@ -180,6 +180,27 @@ function DealsPageInner() {
     }
   }, [user, properties, loadFavorites])
 
+  // Fetch nearby properties when search returns 0 results
+  const [nearbyProperties, setNearbyProperties] = useState([])
+  useEffect(() => {
+    if (loading || properties.length > 0 || !searchLocation) {
+      setNearbyProperties([])
+      return
+    }
+    const stateAbbr = normalizeStateToAbbr(searchLocation.state)
+    if (!stateAbbr) return
+    const params = new URLSearchParams()
+    params.append('page', '1')
+    params.append('limit', '8')
+    params.append('sortBy', 'newest')
+    params.append('states', stateAbbr)
+    params.append('listingType', 'wholesale')
+    fetch(`/api/deals?${params}`)
+      .then(r => r.json())
+      .then(data => setNearbyProperties(data.properties || []))
+      .catch(() => setNearbyProperties([]))
+  }, [loading, properties.length, searchLocation?.state])
+
   const isInBounds = (property, bounds) => {
     if (!bounds) return true
     let lat = parseFloat(property.address_google_lat)
@@ -274,15 +295,41 @@ const LoadingState = () => (
     </div>
   )
 
-  const EmptyState = () => (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center text-[#737370]">
-        <div className="text-6xl mb-4">🏠</div>
-        <h3 className="text-xl font-semibold text-[#1A1816] mb-2">No properties found</h3>
-        <p>Try adjusting your filters to see more results.</p>
+  const EmptyState = ({ layout = 'vertical' }) => {
+    const hasNearby = nearbyProperties.length > 0
+    const stateAbbr = searchLocation ? normalizeStateToAbbr(searchLocation.state) : null
+    const locationLabel = searchQuery || (stateAbbr ? stateAbbr : null)
+    if (hasNearby) {
+      return (
+        <div className="px-4 py-6">
+          <div className="mb-5">
+            <h3 className="text-[16px] font-bold text-[#1A1816] mb-1">
+              No properties found{locationLabel ? ` in "${locationLabel}"` : ''}
+            </h3>
+            <p className="text-[13px] text-[#737370]">
+              Showing available deals{stateAbbr ? ` elsewhere in ${stateAbbr}` : ' nearby'}
+            </p>
+          </div>
+          <div className="space-y-3">
+            {nearbyProperties.map(p => (
+              <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout={layout} />
+            ))}
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-[#737370]">
+          <div className="text-6xl mb-4">🏠</div>
+          <h3 className="text-xl font-semibold text-[#1A1816] mb-2">
+            No properties found{locationLabel ? ` in "${locationLabel}"` : ''}
+          </h3>
+          <p>Try adjusting your filters to see more results.</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   // Removed MapBlurOverlay - no login popup on map
 
@@ -360,6 +407,11 @@ const LoadingState = () => (
               </select>
             </div>
 
+            {loading && properties.length > 0 && (
+              <div className="h-0.5 bg-[#F0EFEC] overflow-hidden">
+                <div className="h-full bg-[#D03839] animate-[shimmer_1.2s_ease-in-out_infinite]" style={{ width: '40%', animation: 'progress-slide 1.2s ease-in-out infinite' }} />
+              </div>
+            )}
             {(loading && properties.length === 0) ? (
               <LoadingState />
             ) : error ? (
@@ -369,7 +421,7 @@ const LoadingState = () => (
                 {visibleProperties.map((p) => (
                   <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="vertical" />
                 ))}
-                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <div><EmptyState /></div>}
+                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <div><EmptyState layout="vertical" /></div>}
                 {hasMore && properties.length > 0 && (
                   <button
                     onClick={loadMore}
@@ -410,6 +462,11 @@ const LoadingState = () => (
           <div className="flex flex-col bg-white border-l border-[#E8E8E4] flex-shrink-0 w-[680px]">
             <RightHeader />
 
+            {loading && properties.length > 0 && (
+              <div className="h-0.5 bg-[#F0EFEC] overflow-hidden">
+                <div className="h-full bg-[#D03839]" style={{ width: '40%', animation: 'progress-slide 1.2s ease-in-out infinite' }} />
+              </div>
+            )}
             {(loading && properties.length === 0) ? (
               <LoadingState />
             ) : error ? (
@@ -420,7 +477,7 @@ const LoadingState = () => (
                 <div className="space-y-4">
                   {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
                 </div>
-                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState />}
+                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState layout="horizontal" />}
                 {hasMore && properties.length > 0 && (
                   <div className="py-4 flex justify-center">
                     <button
