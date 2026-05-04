@@ -212,8 +212,11 @@ export async function GET(request) {
     if (isHomepageFeatured) manualQuery = manualQuery.eq('is_homepage_featured', true);
     manualQuery = manualQuery.range(offset, offset + limit - 1);
 
+    // Skip manual properties when a listing type filter is active — that table has no listing_type
+    const runManualQuery = !listingType;
+
     // Run both queries in parallel — each fails independently
-    const [dealsResult, manualResult] = await Promise.allSettled([query, manualQuery]);
+    const [dealsResult, manualResult] = await Promise.allSettled([query, runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 })]);
 
     if (dealsResult.status === 'rejected' || dealsResult.value?.error) {
       const err = dealsResult.value?.error || dealsResult.reason;
