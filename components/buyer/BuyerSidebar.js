@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Search, MessageSquare, Star, FileText,
@@ -93,14 +92,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         <div className="px-5 pt-5 pb-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="block">
-              <Image
-                src="/assets/logo.svg"
-                alt="DeelMap"
-                width={240}
-                height={56}
-                className="h-14 w-auto object-contain"
-                priority
-              />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-14 w-auto object-contain" />
             </Link>
             <button
               onClick={onClose}

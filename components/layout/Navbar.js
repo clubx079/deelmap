@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,6 +13,7 @@ export function Navbar() {
   const [authInitialStep, setAuthInitialStep] = useState('login')
   const [authDefaultRole, setAuthDefaultRole] = useState('buyer')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showMobileMore, setShowMobileMore] = useState(false)
   const [showAboutDropdown, setShowAboutDropdown] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifUnread, setNotifUnread] = useState(0)
@@ -75,8 +75,8 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [notifOpen])
 
-  // Close about dropdown on route change
-  useEffect(() => { setShowAboutDropdown(false) }, [pathname])
+  // Close dropdowns on route change
+  useEffect(() => { setShowAboutDropdown(false); setShowMobileMore(false) }, [pathname])
 
   // Close about dropdown on outside click
   useEffect(() => {
@@ -144,12 +144,12 @@ export function Navbar() {
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white border-b border-[#E8E8E4]'}`}>
-        <div className="w-full px-4 md:pl-[45px] md:pr-[85px]">
+        <div className="w-full pl-2 pr-4 md:pl-[45px] md:pr-[85px]">
           <div className="flex items-center justify-between h-[80px]">
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
-              <Image src="/assets/logo.svg" alt="DeelMap" width={190} height={68} className="h-[68px] w-[190px]" priority />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-[68px] w-[190px]" />
             </Link>
 
             {/* Nav links – center */}
@@ -351,16 +351,24 @@ export function Navbar() {
                 if (item.hasDropdown) {
                   return (
                     <div key={item.label}>
-                      <div className={`py-3 px-3 text-[15px] font-medium rounded ${active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}`}>
+                      <button
+                        onClick={() => setShowMobileMore(p => !p)}
+                        className={`w-full flex items-center justify-between py-3 px-3 text-[15px] font-medium rounded transition-colors ${active ? 'text-[#1A1816] font-semibold' : 'text-[#444441] hover:text-[#1A1816] hover:bg-[#FAFAF8]'}`}
+                      >
                         {item.label}
-                      </div>
-                      <div className="pl-4 space-y-0.5">
-                        {aboutDropdownItems.map((d) => (
-                          <Link key={d.href} href={d.href} onClick={() => setShowMobileMenu(false)}
-                            className="block py-2.5 px-3 text-[14px] text-[#737370] hover:text-[#1A1816] rounded hover:bg-[#FAFAF8] transition-colors">
-                            {d.label}
-                          </Link>
-                        ))}
+                        <svg className={`w-4 h-4 transition-transform ${showMobileMore ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <div className={`overflow-hidden transition-all duration-250 ease-in-out ${showMobileMore ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className="pl-4 space-y-0.5 pb-1">
+                          {aboutDropdownItems.map((d) => (
+                            <Link key={d.href} href={d.href} onClick={() => setShowMobileMenu(false)}
+                              className="block py-2.5 px-3 text-[14px] text-[#737370] hover:text-[#1A1816] rounded hover:bg-[#FAFAF8] transition-colors">
+                              {d.label}
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )

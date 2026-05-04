@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Menu } from 'lucide-react'
 import { StaticPagesMobileNav } from './StaticPagesMobileNav'
@@ -24,14 +23,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
           {/* LEFT: Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <Image
-                src="/assets/logo.svg"
-                alt="DeelMap"
-                width={190}
-                height={68}
-                className="h-16 w-auto"
-                priority
-              />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-16 w-auto" />
             </Link>
           </div>
 
