@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -22,10 +22,9 @@ export function PropertiesSlider() {
   const [activeTab, setActiveTab] = useState('all')
   const [featuredBuyerDeals, setFeaturedBuyerDeals] = useState([])
   const [startIndex, setStartIndex] = useState(0)
-  const [noAnim, setNoAnim] = useState(false)
+  const [opacity, setOpacity] = useState(1)
+  const [shownCards, setShownCards] = useState([])
   const pausedRef = useRef(false)
-  const containerRef = useRef(null)
-  const [step, setStep] = useState(0)
 
   const { properties, loading } = useProperties({
     filters: { statuses: ['available'] },
@@ -40,56 +39,43 @@ export function PropertiesSlider() {
       .catch(() => {})
   }, [])
 
-  // Measure container width → compute per-card step
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const measure = () => setStep((el.offsetWidth + 16) / VISIBLE)
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  // Reset index on tab change
   useEffect(() => { setStartIndex(0) }, [activeTab])
 
-  const filterByTab = (props) => props
-
-  const allCards = (() => {
-    const featuredFiltered = filterByTab(featuredBuyerDeals)
+  const allCards = useMemo(() => {
+    const featuredFiltered = featuredBuyerDeals.filter(p => p.listing_type !== 'auction')
     const featuredIds = new Set(featuredFiltered.map(p => p.id))
-    const regular = filterByTab(properties).filter(p => !featuredIds.has(p.id))
+    const regular = properties.filter(p => !featuredIds.has(p.id) && p.listing_type !== 'auction')
     return [...featuredFiltered, ...regular]
-  })()
+  }, [properties, featuredBuyerDeals])
 
   const canScroll = allCards.length > VISIBLE
-  const displayProperties = allCards.slice(startIndex, startIndex + VISIBLE)
 
-  const moveTo = (newIdx, animate = true) => {
-    if (!animate) {
-      setNoAnim(true)
-      setStartIndex(newIdx)
-      requestAnimationFrame(() => requestAnimationFrame(() => setNoAnim(false)))
-    } else {
-      setNoAnim(false)
-      setStartIndex(newIdx)
-    }
-  }
+  // Fade transition whenever the visible slice changes
+  useEffect(() => {
+    const slice = allCards.slice(startIndex, startIndex + VISIBLE)
+    if (slice.length === 0) return
+    setOpacity(0)
+    const t = setTimeout(() => {
+      setShownCards(slice)
+      setOpacity(1)
+    }, 180)
+    return () => clearTimeout(t)
+  }, [startIndex, allCards])
+
+  const displayProperties = shownCards.length > 0 ? shownCards : allCards.slice(startIndex, startIndex + VISIBLE)
+
+  const moveTo = (newIdx) => setStartIndex(newIdx)
 
   const prev = () => {
-    const wrapping = startIndex === 0
-    const newIdx = wrapping ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1
-    moveTo(newIdx, !wrapping)
+    const newIdx = startIndex === 0 ? Math.max(0, allCards.length - VISIBLE) : startIndex - 1
+    moveTo(newIdx)
   }
 
   const next = () => {
-    const wrapping = startIndex + VISIBLE >= allCards.length
-    const newIdx = wrapping ? 0 : startIndex + 1
-    moveTo(newIdx, !wrapping)
+    const newIdx = startIndex + VISIBLE >= allCards.length ? 0 : startIndex + 1
+    moveTo(newIdx)
   }
 
-  // Auto-rotate
   useEffect(() => {
     if (!canScroll) return
     const id = setInterval(() => {
@@ -279,8 +265,6 @@ export function PropertiesSlider() {
     )
   }
 
-  const cardWidth = step > 0 ? step - 16 : 0
-
   return (
     <section className="py-16 lg:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -336,53 +320,21 @@ export function PropertiesSlider() {
         </div>
 
         {/* Cards */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
-          </div>
-        ) : displayProperties.length === 0 ? (
+        {loading || displayProperties.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => <Skeleton key={i} />)}
           </div>
         ) : (
-          <>
-            {/* Mobile / tablet: simple grid slice */}
-            <div className="block lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {displayProperties.map((p) => (
-                <PropertyCardInner key={p.id} p={p} />
-              ))}
-            </div>
-
-            {/* Desktop: sliding carousel */}
-            <div
-              ref={containerRef}
-              className="hidden lg:block overflow-hidden"
-              onMouseEnter={() => { pausedRef.current = true }}
-              onMouseLeave={() => { pausedRef.current = false }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '16px',
-                  transform: cardWidth > 0 ? `translateX(-${startIndex * step}px)` : undefined,
-                  transition: noAnim ? 'none' : 'transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                  willChange: 'transform',
-                }}
-              >
-                {allCards.map((p) => (
-                  <div
-                    key={p.id}
-                    style={{
-                      flexShrink: 0,
-                      width: cardWidth > 0 ? `${cardWidth}px` : 'calc(25% - 12px)',
-                    }}
-                  >
-                    <PropertyCardInner p={p} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            style={{ opacity, transition: 'opacity 180ms ease' }}
+            onMouseEnter={() => { pausedRef.current = true }}
+            onMouseLeave={() => { pausedRef.current = false }}
+          >
+            {displayProperties.map((p) => (
+              <PropertyCardInner key={p.id} p={p} />
+            ))}
+          </div>
         )}
 
         {/* Browse all */}
