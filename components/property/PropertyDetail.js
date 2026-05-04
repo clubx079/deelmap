@@ -960,106 +960,145 @@ export function PropertyDetail({ property }) {
                   <span className="text-[22px] font-bold text-[#1A1816]">{formatPrice(price)}</span>
                 </div>
 
-                {/* ARV row */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[13px] font-medium text-[#737370]">ARV</span>
-                  <span className="text-[16px] font-semibold text-[#0F6E56]">{arv ? formatPrice(arv) : '—'}</span>
-                </div>
-
-                <hr className="border-[#E8E8E4] mb-3" />
-
-                {/* Estimated Profit row */}
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-[13px] font-medium text-[#737370]">Estimated Profit</span>
-                  <span className="text-[16px] font-semibold text-[#0F6E56]">
-                    {estimatedProfit != null && estimatedProfit > 0 ? formatPrice(estimatedProfit) : '—'}
-                  </span>
-                </div>
-
-                {/* Call Seller */}
-                <div className="relative mb-3">
-                  <button
-                    onClick={() => { if (isPreview) { setShowPreviewModal(true); return } property.agent?.phone && setShowPhonePopup(true) }}
-                    disabled={!property.agent?.phone}
-                    className={`flex items-center justify-center gap-2 w-full font-semibold py-2.5 px-4 rounded text-sm transition-colors ${
-                      property.agent?.phone
-                        ? 'bg-[#1A1816] hover:bg-[#2C2A28] text-white'
-                        : 'bg-[#E8E8E4] text-[#A8A8A4] cursor-not-allowed'
-                    }`}
-                  >
-                    <Phone className="w-4 h-4" />
-                    Call Seller
-                  </button>
-
-                  {/* Phone number popup */}
-                  {showPhonePopup && property.agent?.phone && (
-                    <>
-                      <div className="fixed inset-0 z-[9]" onClick={() => setShowPhonePopup(false)} />
-                      <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#E8E8E4] rounded shadow-lg p-4 z-10">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737370]">Seller Phone</p>
-                        <button onClick={() => setShowPhonePopup(false)} className="p-0.5 text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={`tel:${property.agent.phone}`}
-                          className="flex items-center gap-2.5 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FEF0EF] transition-colors group flex-1"
-                        >
-                          <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center shrink-0 group-hover:bg-[#D03839] transition-colors">
-                            <Phone className="w-4 h-4 text-[#D03839] group-hover:text-white transition-colors" />
-                          </div>
-                          <span className="text-[15px] font-semibold text-[#1A1816]">{property.agent.phone}</span>
-                        </a>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(property.agent.phone)
-                            setPhoneCopied(true)
-                            setTimeout(() => setPhoneCopied(false), 2000)
-                          }}
-                          className="p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#1A1816] transition-colors shrink-0"
-                          title="Copy number"
-                        >
-                          {phoneCopied ? <Check className="w-4 h-4 text-[#0F6E56]" /> : <Copy className="w-4 h-4 text-[#737370]" />}
-                        </button>
-                      </div>
-                      <p className="text-[11px] text-[#A8A8A4] mt-2 text-center">Tap the number to call</p>
-                    </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Buyer-posted: only show Call Seller, hide Message Seller + Make Offer */}
-                {!property.posted_by && (
+                {property.listing_type === 'auction' ? (
+                  /* ── Auction Details ── */
                   <>
-                    {/* Message Seller */}
-                    <Link
-                      href={user && (property.temp_seller_id || property.seller_id)
-                        ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
-                        : user ? '/buyer/inbox' : '/login'
-                      }
-                      onClick={handlePreviewAction}
-                      className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
-                    >
-                      Message Seller
-                    </Link>
+                    <hr className="border-[#E8E8E4] mb-3" />
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737370] mb-3">Auction Details</p>
+                    <div className="space-y-2.5 mb-5">
+                      {property.auction_date && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[13px] text-[#737370] shrink-0">Date</span>
+                          <span className="text-[13px] font-semibold text-[#1A1816] text-right">
+                            {new Date(property.auction_date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
+                      {property.auction_time && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[13px] text-[#737370] shrink-0">Time</span>
+                          <span className="text-[13px] font-semibold text-[#1A1816] text-right">{property.auction_time}</span>
+                        </div>
+                      )}
+                      {property.auction_location && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[13px] text-[#737370] shrink-0">Location</span>
+                          <span className="text-[13px] font-semibold text-[#1A1816] text-right leading-snug">{property.auction_location}</span>
+                        </div>
+                      )}
+                    </div>
+                    {property.listing_url && (
+                      <a
+                        href={property.listing_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors"
+                      >
+                        View on Auction.com
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  /* ── Standard wholesale sidebar ── */
+                  <>
+                    {/* ARV row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[13px] font-medium text-[#737370]">ARV</span>
+                      <span className="text-[16px] font-semibold text-[#0F6E56]">{arv ? formatPrice(arv) : '—'}</span>
+                    </div>
 
-                    {/* Make Offer */}
-                    {user && !isPreview ? (
-                      <Link
-                        href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
-                        className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
-                      >
-                        Make Offer
-                      </Link>
-                    ) : (
+                    <hr className="border-[#E8E8E4] mb-3" />
+
+                    {/* Estimated Profit row */}
+                    <div className="flex items-center justify-between mb-5">
+                      <span className="text-[13px] font-medium text-[#737370]">Estimated Profit</span>
+                      <span className="text-[16px] font-semibold text-[#0F6E56]">
+                        {estimatedProfit != null && estimatedProfit > 0 ? formatPrice(estimatedProfit) : '—'}
+                      </span>
+                    </div>
+
+                    {/* Call Seller */}
+                    <div className="relative mb-3">
                       <button
-                        onClick={() => isPreview ? setShowPreviewModal(true) : setShowLoginModal(true)}
-                        className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                        onClick={() => { if (isPreview) { setShowPreviewModal(true); return } property.agent?.phone && setShowPhonePopup(true) }}
+                        disabled={!property.agent?.phone}
+                        className={`flex items-center justify-center gap-2 w-full font-semibold py-2.5 px-4 rounded text-sm transition-colors ${
+                          property.agent?.phone
+                            ? 'bg-[#1A1816] hover:bg-[#2C2A28] text-white'
+                            : 'bg-[#E8E8E4] text-[#A8A8A4] cursor-not-allowed'
+                        }`}
                       >
-                        Make Offer
+                        <Phone className="w-4 h-4" />
+                        Call Seller
                       </button>
+
+                      {showPhonePopup && property.agent?.phone && (
+                        <>
+                          <div className="fixed inset-0 z-[9]" onClick={() => setShowPhonePopup(false)} />
+                          <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#E8E8E4] rounded shadow-lg p-4 z-10">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737370]">Seller Phone</p>
+                              <button onClick={() => setShowPhonePopup(false)} className="p-0.5 text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`tel:${property.agent.phone}`}
+                                className="flex items-center gap-2.5 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FEF0EF] transition-colors group flex-1"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center shrink-0 group-hover:bg-[#D03839] transition-colors">
+                                  <Phone className="w-4 h-4 text-[#D03839] group-hover:text-white transition-colors" />
+                                </div>
+                                <span className="text-[15px] font-semibold text-[#1A1816]">{property.agent.phone}</span>
+                              </a>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(property.agent.phone)
+                                  setPhoneCopied(true)
+                                  setTimeout(() => setPhoneCopied(false), 2000)
+                                }}
+                                className="p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#1A1816] transition-colors shrink-0"
+                                title="Copy number"
+                              >
+                                {phoneCopied ? <Check className="w-4 h-4 text-[#0F6E56]" /> : <Copy className="w-4 h-4 text-[#737370]" />}
+                              </button>
+                            </div>
+                            <p className="text-[11px] text-[#A8A8A4] mt-2 text-center">Tap the number to call</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Buyer-posted: only show Call Seller, hide Message Seller + Make Offer */}
+                    {!property.posted_by && (
+                      <>
+                        <Link
+                          href={user && (property.temp_seller_id || property.seller_id)
+                            ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
+                            : user ? '/buyer/inbox' : '/login'
+                          }
+                          onClick={handlePreviewAction}
+                          className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
+                        >
+                          Message Seller
+                        </Link>
+                        {user && !isPreview ? (
+                          <Link
+                            href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
+                            className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                          >
+                            Make Offer
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => isPreview ? setShowPreviewModal(true) : setShowLoginModal(true)}
+                            className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                          >
+                            Make Offer
+                          </button>
+                        )}
+                      </>
                     )}
                   </>
                 )}
