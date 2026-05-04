@@ -196,11 +196,19 @@ function StepBasicInfo({ data, onChange }) {
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className={labelCls}>Beds <span className="text-[#D03839]">*</span></label>
-          <input type="number" value={data.bedrooms || ''} onChange={e => onChange({ bedrooms: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} min={0} placeholder="0" className={inputCls} />
+          <select value={data.bedrooms || ''} onChange={e => onChange({ bedrooms: e.target.value })} className={inputCls}>
+            <option value="">Select</option>
+            {[1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="5">5+</option>
+          </select>
         </div>
         <div>
           <label className={labelCls}>Baths <span className="text-[#D03839]">*</span></label>
-          <input type="number" value={data.bathrooms || ''} onChange={e => onChange({ bathrooms: e.target.value })} onKeyDown={e => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()} step={0.5} min={0} placeholder="0" className={inputCls} />
+          <select value={data.bathrooms || ''} onChange={e => onChange({ bathrooms: e.target.value })} className={inputCls}>
+            <option value="">Select</option>
+            {[1,1.5,2,2.5,3,3.5,4,4.5].map(n => <option key={n} value={n}>{n}</option>)}
+            <option value="5">5+</option>
+          </select>
         </div>
         <div>
           <label className={labelCls}>Sq Ft <span className="text-[#D03839]">*</span></label>

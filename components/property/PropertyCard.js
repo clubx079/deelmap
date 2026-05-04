@@ -154,11 +154,6 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                   {roiLabel}
                 </div>
               )}
-              {is_highlighted && (
-                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 text-white text-[10px] font-bold rounded-full px-2 py-0.5" style={{ background: 'linear-gradient(90deg, #D03839, #E0583A)', boxShadow: '0 2px 8px rgba(208,56,57,0.40)', letterSpacing: '0.3px' }}>
-                  ⭐ Highlighted
-                </div>
-              )}
               <div className="absolute top-2 right-2">{favBtn}</div>
             </Link>
 
@@ -234,11 +229,6 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
               {roiLabel && (
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 text-white text-[11px] font-semibold rounded">
                   {roiLabel}
-                </div>
-              )}
-              {is_highlighted && (
-                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 text-white text-[10px] font-bold rounded-full px-2 py-0.5" style={{ background: 'linear-gradient(90deg, #D03839, #E0583A)', boxShadow: '0 2px 8px rgba(208,56,57,0.40)', letterSpacing: '0.3px' }}>
-                  ⭐ Highlighted
                 </div>
               )}
             </Link>
