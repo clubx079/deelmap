@@ -244,40 +244,40 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
-          {/* Listing Type dropdown (mobile) */}
-          <div className="relative" ref={mobileListingTypeRef}>
-            <button
-              className={filterBtn(hasListingTypeFilter)}
-              onClick={() => { setShowListingType(!showListingType); setShowPrice(false) }}
-            >
-              {listingTypeLabel()}
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
-            </button>
-            {showListingType && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
-                <div className="py-2">
-                  {LISTING_TYPES.map(({ value, label }) => {
-                    const active = (filters.listingType || 'all') === value
-                    return (
-                      <button
-                        key={value}
-                        onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
-                      >
-                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
-                        {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Filters row */}
-          <div className="flex items-center gap-2 pb-1">
+          <div className="flex items-center gap-2 pb-1 overflow-x-auto">
+            {/* Listing Type dropdown (mobile) */}
+            <div className="relative flex-shrink-0" ref={mobileListingTypeRef}>
+              <button
+                className={filterBtn(hasListingTypeFilter)}
+                onClick={() => { setShowListingType(!showListingType); setShowPrice(false) }}
+              >
+                {listingTypeLabel()}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
+              </button>
+              {showListingType && (
+                <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
+                  <div className="py-2">
+                    {LISTING_TYPES.map(({ value, label }) => {
+                      const active = (filters.listingType || 'all') === value
+                      return (
+                        <button
+                          key={value}
+                          onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
+                        >
+                          <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
+                          {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Price button */}
-            <div className="relative" ref={mobilePriceRef}>
+            <div className="relative flex-shrink-0" ref={mobilePriceRef}>
               <button
                 className={filterBtn(hasPriceFilter)}
                 onClick={() => {
