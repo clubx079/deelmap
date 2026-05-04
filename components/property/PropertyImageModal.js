@@ -79,20 +79,11 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
   }, [currentIndex])
 
-  // Preload all photos at 800px when modal opens
-  useEffect(() => {
-    if (!isOpen || !photos || photos.length === 0) return
-    photos.forEach((photo) => {
-      const url = getUrlForTier(photo, 2) // tier 2 = 800px
-      if (url) { const img = new window.Image(); img.src = url }
-    })
-  }, [isOpen, photos, getUrlForTier])
-
-  // Preload adjacent images at full res after current loads
+  // Preload adjacent images
   useEffect(() => {
     if (!imageLoaded || !isOpen || photos.length <= 1) return
     ;[(currentIndex + 1) % photos.length, (currentIndex - 1 + photos.length) % photos.length].forEach((idx) => {
-      const url = getUrlForTier(photos[idx], 4) // tier 4 = 2400px
+      const url = getUrlForTier(photos[idx], 0)
       if (url) { const img = new window.Image(); img.src = url }
     })
   }, [imageLoaded, currentIndex, isOpen, photos, getUrlForTier])
@@ -224,6 +215,7 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
                   <img
                     src={url}
                     alt={`Thumbnail ${idx + 1}`}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 </button>
