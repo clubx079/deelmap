@@ -38,6 +38,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const [availableStates, setAvailableStates] = useState([])
 
   const [showPropertyTypes, setShowPropertyTypes] = useState(false)
+  const [showListingType, setShowListingType] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showBedsBaths, setShowBedsBaths] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -61,6 +62,8 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   })
 
   const propertyTypesRef = useRef(null)
+  const listingTypeRef = useRef(null)
+  const mobileListingTypeRef = useRef(null)
   const priceRef = useRef(null)
   const mobilePriceRef = useRef(null)
   const mobileBedsBathsRef = useRef(null)
@@ -84,6 +87,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (propertyTypesRef.current && !propertyTypesRef.current.contains(e.target)) setShowPropertyTypes(false)
+      if (listingTypeRef.current && !listingTypeRef.current.contains(e.target) && mobileListingTypeRef.current && !mobileListingTypeRef.current.contains(e.target)) setShowListingType(false)
       if (priceRef.current && !priceRef.current.contains(e.target) && mobilePriceRef.current && !mobilePriceRef.current.contains(e.target)) setShowPrice(false)
       if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target) && mobileBedsBathsRef.current && !mobileBedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
     }
@@ -102,7 +106,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     } catch {}
   }
 
-  const closeAll = () => { setShowPropertyTypes(false); setShowPrice(false); setShowBedsBaths(false) }
+  const closeAll = () => { setShowPropertyTypes(false); setShowListingType(false); setShowPrice(false); setShowBedsBaths(false) }
+
+  const listingTypeLabel = () => {
+    const t = LISTING_TYPES.find(t => t.value === (filters.listingType || 'all'))
+    return t?.label || 'Listing Type'
+  }
 
   const applyPrice = () => {
     onFiltersChange({
@@ -199,13 +208,12 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const hasPriceFilter = filters.minPrice || filters.maxPrice
   const hasBedsBathsFilter = filters.minBeds || filters.minBaths
   const hasPropertyTypesFilter = filters.propertyTypes?.length > 0
+  const hasListingTypeFilter = filters.listingType && filters.listingType !== 'all'
   const hasStatusFilter = filters.listingStatus && filters.listingStatus !== 'active'
   const hasActiveFilters = filters.states?.length > 0 || hasPriceFilter || hasBedsBathsFilter ||
-    hasPropertyTypesFilter || hasStatusFilter || filters.minFloorArea || filters.maxFloorArea ||
+    hasPropertyTypesFilter || hasListingTypeFilter || hasStatusFilter || filters.minFloorArea || filters.maxFloorArea ||
     filters.minGrossYield || filters.maxGrossYield || filters.minCapRate || filters.maxCapRate ||
     filters.minCashOnCash || filters.maxCashOnCash
-
-  const activeListingType = filters.listingType || 'all'
 
   const filterBtn = (active) =>
     `flex items-center gap-2 h-[42px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
@@ -236,21 +244,34 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
-          {/* Listing Type tabs */}
-          <div className="flex items-center gap-1 bg-[#F5F5F2] rounded p-1">
-            {LISTING_TYPES.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value })}
-                className={`flex-1 h-8 rounded text-[13px] font-medium transition-all ${
-                  activeListingType === value
-                    ? 'bg-white text-[#1A1816] shadow-sm'
-                    : 'text-[#737370] hover:text-[#1A1816]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          {/* Listing Type dropdown (mobile) */}
+          <div className="relative" ref={mobileListingTypeRef}>
+            <button
+              className={filterBtn(hasListingTypeFilter)}
+              onClick={() => { setShowListingType(!showListingType); setShowPrice(false) }}
+            >
+              {listingTypeLabel()}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
+            </button>
+            {showListingType && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
+                <div className="py-2">
+                  {LISTING_TYPES.map(({ value, label }) => {
+                    const active = (filters.listingType || 'all') === value
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
+                      >
+                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
+                        {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Filters row */}
@@ -369,21 +390,34 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             />
           </div>
 
-          {/* Listing Type tabs */}
-          <div className="flex items-center gap-1 bg-[#F5F5F2] rounded p-1 flex-shrink-0">
-            {LISTING_TYPES.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value })}
-                className={`h-8 px-3 rounded text-[13px] font-medium transition-all whitespace-nowrap ${
-                  activeListingType === value
-                    ? 'bg-white text-[#1A1816] shadow-sm'
-                    : 'text-[#737370] hover:text-[#1A1816]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          {/* Listing Type dropdown */}
+          <div className="relative" ref={listingTypeRef}>
+            <button
+              className={filterBtn(hasListingTypeFilter)}
+              onClick={() => { setShowListingType(!showListingType); setShowPropertyTypes(false); setShowPrice(false); setShowBedsBaths(false) }}
+            >
+              {listingTypeLabel()}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
+            </button>
+            {showListingType && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
+                <div className="py-2">
+                  {LISTING_TYPES.map(({ value, label }) => {
+                    const active = (filters.listingType || 'all') === value
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
+                      >
+                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
+                        {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Property Types */}
