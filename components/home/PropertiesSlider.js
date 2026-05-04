@@ -24,6 +24,8 @@ export function PropertiesSlider() {
   const [startIndex, setStartIndex] = useState(0)
   const [noAnim, setNoAnim] = useState(false)
   const [step, setStep] = useState(0)
+  const [mobileOpacity, setMobileOpacity] = useState(1)
+  const [mobileCards, setMobileCards] = useState([])
   const pausedRef = useRef(false)
   const containerRef = useRef(null)
 
@@ -64,6 +66,18 @@ export function PropertiesSlider() {
   const canScroll = allCards.length > VISIBLE
   const displayProperties = allCards.slice(startIndex, startIndex + VISIBLE)
   const cardWidth = step > 0 ? step - 16 : 0
+
+  // Mobile-only fade transition when visible cards change
+  useEffect(() => {
+    const slice = allCards.slice(startIndex, startIndex + VISIBLE)
+    if (slice.length === 0) return
+    setMobileOpacity(0)
+    const t = setTimeout(() => {
+      setMobileCards(slice)
+      setMobileOpacity(1)
+    }, 200)
+    return () => clearTimeout(t)
+  }, [startIndex, allCards])
 
   const moveTo = (newIdx, animate = true) => {
     if (!animate) {
@@ -327,9 +341,12 @@ export function PropertiesSlider() {
           </div>
         ) : (
           <>
-            {/* Mobile: simple grid of current 4 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
-              {displayProperties.map((p) => (
+            {/* Mobile: fade transition grid */}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden"
+              style={{ opacity: mobileOpacity, transition: 'opacity 200ms ease' }}
+            >
+              {(mobileCards.length > 0 ? mobileCards : displayProperties).map((p) => (
                 <PropertyCardInner key={p.id} p={p} />
               ))}
             </div>
