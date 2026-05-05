@@ -7,6 +7,8 @@ import { PropertyDetail } from '@/components/property/PropertyDetail'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers'
 
+export const revalidate = 3600
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 async function getProperty(slugParam) {
@@ -169,60 +171,95 @@ async function getProperty(slugParam) {
   return null
 }
 
+const SITE = 'https://deelmap.com'
+
+function buildJsonLd(property) {
+  const fullAddress = property.full_address || property.display_address ||
+    [property.address, property.city, property.state, property.zip_code].filter(Boolean).join(', ')
+  const url = `${SITE}/${property.slug || property.id}`
+  const photos = (property.property_photos || [])
+    .map(p => getPreferredPhotoUrl(p))
+    .filter(Boolean)
+
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: fullAddress,
+    description: property.description || `${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath investment property in ${property.city || ''}, ${property.state || ''}.`,
+    url,
+    image: photos.slice(0, 5),
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: property.address || '',
+      addressLocality: property.city || '',
+      addressRegion: property.state || '',
+      postalCode: property.zip_code || '',
+      addressCountry: 'US',
+    },
+  }
+
+  if (property.bedrooms) ld.numberOfRooms = property.bedrooms
+  if (property.sqft) ld.floorSize = { '@type': 'QuantitativeValue', value: property.sqft, unitCode: 'FTK' }
+
+  const price = Number(property.price)
+  if (isFinite(price) && price > 0) {
+    ld.offers = {
+      '@type': 'Offer',
+      price,
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      url,
+    }
+  }
+
+  return ld
+}
+
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
   const property = await getProperty(resolvedParams.slug)
-  
+
   if (!property) {
-    return { title: 'Property Not Found' }
+    return { title: 'Property Not Found | DeelMap' }
   }
 
   const price = Number(property.price)
-  const formattedPrice = isFinite(price) ? `$${price.toLocaleString('en-US')}` : 'Contact for Price'
+  const formattedPrice = isFinite(price) && price > 0
+    ? `$${price.toLocaleString('en-US')}`
+    : property.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price'
 
-  // Build full address from parts
   const fullAddress = property.full_address || property.display_address ||
-    `${property.address || ''}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim()
+    [property.address, property.city, property.state, property.zip_code].filter(Boolean).join(', ')
 
-  const title = `${fullAddress} - ${formattedPrice}`
-  const description = property.description || `${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath ${property.property_type || 'home'} for sale.`
+  const title = `${fullAddress} — ${formattedPrice} | DeelMap`
+  const description = property.description ||
+    `${property.bedrooms || 0} bed, ${property.bathrooms || 0} bath ${property.property_type || 'investment property'} in ${property.city || ''}, ${property.state || ''}. View details, photos, and contact the seller on DeelMap.`
+
   const pathSegment = property.slug || property.id
-  const url = `https://ableman.co/${pathSegment}`
-
-  // Use first photo from property_photos if available
+  const url = `${SITE}/${pathSegment}`
   const primaryImageUrl = getPreferredPhotoUrl(property.property_photos?.[0])
   const hasValidImage = Boolean(primaryImageUrl)
 
   return {
     title,
     description,
-    metadataBase: new URL('https://ableman.co'),
+    metadataBase: new URL(SITE),
     openGraph: {
-      title: title,
-      description: description,
-      url: url,
-      siteName: 'Ableman Group LLC',
-      images: hasValidImage ? [
-        {
-          url: primaryImageUrl,
-          width: 1200,
-          height: 800,
-          alt: fullAddress,
-          type: 'image/jpeg',
-        }
-      ] : [],
+      title,
+      description,
+      url,
+      siteName: 'DeelMap',
+      images: hasValidImage ? [{ url: primaryImageUrl, width: 1200, height: 800, alt: fullAddress }] : [],
       locale: 'en_US',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: title,
-      description: description,
+      title,
+      description,
       images: hasValidImage ? [primaryImageUrl] : [],
     },
-    alternates: {
-      canonical: url,
-    },
+    alternates: { canonical: url },
   }
 }
 
@@ -235,8 +272,14 @@ export default async function PropertyPage({ params }) {
   }
 
   return (
-    <Suspense>
-      <PropertyDetail property={property} />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(property)) }}
+      />
+      <Suspense>
+        <PropertyDetail property={property} />
+      </Suspense>
+    </>
   )
 }
