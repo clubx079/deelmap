@@ -516,7 +516,7 @@ export function PropertyDetail({ property }) {
       )}
 
       {/* Photo Grid */}
-      <div className="bg-white border-b border-[#E8E8E4]">
+      <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className={`relative h-[260px] sm:h-[460px] rounded overflow-hidden grid gap-[6px] ${photos.length > 1 ? 'sm:grid-cols-2' : ''} grid-cols-1`}>
             {!user && !isPreview && photos.length > 1 && (
