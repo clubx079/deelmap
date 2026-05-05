@@ -1036,16 +1036,45 @@ export function PropertyDetail({ property }) {
                         <span className="text-[13px] font-semibold text-[#1A1816] text-right leading-snug">{property.auction_location || 'To Be Determined'}</span>
                       </div>
                     </div>
-                    {property.listing_url && (
-                      <a
-                        href={property.listing_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors"
-                      >
-                        View on Auction.com
-                      </a>
-                    )}
+                    {property.auction_date && (() => {
+                      const datePart = property.auction_date.replace(/-/g, '')
+                      let startDate, endDate
+                      const match = property.auction_time?.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+                      if (match) {
+                        let h = parseInt(match[1])
+                        const m = match[2]
+                        const ap = match[3].toUpperCase()
+                        if (ap === 'PM' && h !== 12) h += 12
+                        if (ap === 'AM' && h === 12) h = 0
+                        const hh = String(h).padStart(2, '0')
+                        startDate = `${datePart}T${hh}${m}00`
+                        endDate = `${datePart}T${String(h + 1).padStart(2, '0')}${m}00`
+                      } else {
+                        const next = new Date(property.auction_date)
+                        next.setDate(next.getDate() + 1)
+                        startDate = datePart
+                        endDate = next.toISOString().slice(0, 10).replace(/-/g, '')
+                      }
+                      const title = encodeURIComponent(`Auction: ${property.full_address || property.address || 'Property'}`)
+                      const loc = encodeURIComponent(property.auction_location || '')
+                      const details = encodeURIComponent([
+                        property.auction_time && `Time: ${property.auction_time}`,
+                        property.auction_location && `Location: ${property.auction_location}`,
+                        property.full_address && `Property: ${property.full_address}`,
+                      ].filter(Boolean).join('\n'))
+                      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${loc}`
+                      return (
+                        <a
+                          href={calUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full bg-[#0F6E56] hover:bg-[#0A5A45] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          Add to Calendar
+                        </a>
+                      )
+                    })()}
                   </>
                 ) : (
                   /* ── Standard wholesale sidebar ── */
@@ -1284,7 +1313,7 @@ export function PropertyDetail({ property }) {
                         </div>
                         {/* Price + ARV */}
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[20px] font-bold text-[#1A1816]">{pPrice ? `$${pPrice.toLocaleString()}` : 'Contact for Price'}</span>
+                          <span className="text-[20px] font-bold text-[#1A1816]">{pPrice ? `$${pPrice.toLocaleString()}` : (p.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price')}</span>
                           {pArv > 0 && (
                             <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
                               ARV {pArv >= 1000000 ? `$${(pArv/1000000).toFixed(1)}M` : `$${Math.round(pArv/1000)}k`}

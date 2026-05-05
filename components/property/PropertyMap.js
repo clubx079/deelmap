@@ -221,9 +221,9 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     return `$${n}`
   }
 
-  const fullPrice = (price) => {
+  const fullPrice = (price, listingType) => {
     const n = Math.round(Number(price) || 0)
-    return n ? `$${n.toLocaleString()}` : 'Contact for price'
+    return n ? `$${n.toLocaleString()}` : (listingType === 'auction' ? 'Auction Listing' : 'Contact for price')
   }
 
   const chipColor = (status) => {
@@ -367,7 +367,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
 
     const cityState = [prop.city, prop.state].filter(Boolean).join(', ')
     const displayAddr = getDisplayAddress(prop)
-    const priceStr = fullPrice(prop.price)
+    const priceStr = fullPrice(prop.price, prop.listing_type)
     const arvNum = Number(prop.arv) || 0
     const arvStr = arvNum > 0 ? shortPrice(arvNum) : null
 

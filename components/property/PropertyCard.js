@@ -44,9 +44,9 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
     : cityState
 
   const formatPriceFull = (val) => {
-    if (!val) return 'Contact for Price'
+    if (!val) return property.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price'
     const n = Number(val)
-    if (!isFinite(n) || n === 0) return 'Contact for Price'
+    if (!isFinite(n) || n === 0) return property.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price'
     return `$${Math.round(n).toLocaleString()}`
   }
 

@@ -66,7 +66,7 @@ function DealsPageInner() {
   const [mapBounds, setMapBounds] = useState(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const sortDropdownRef = useRef(null)
-  const [sortBy, setSortBy] = useState('newest') // 'newest', 'price-low', 'price-high'
+  const [sortBy, setSortBy] = useState('recommended')
   const [mobileView, setMobileView] = useState('map') // 'map' | 'list'
   const [searchQuery, setSearchQuery] = useState(() => searchParams?.get('search') || '')
   const [searchLocation, setSearchLocation] = useState(() => {
@@ -108,12 +108,13 @@ function DealsPageInner() {
   }, [])
 
   const SORT_OPTIONS = [
+    { value: 'recommended', label: 'Recommended' },
     { value: 'newest', label: 'Newest' },
     { value: 'price-low', label: 'Price: Low to High' },
     { value: 'price-high', label: 'Price: High to Low' },
     { value: 'roi', label: 'Highest ROI' },
   ]
-  const sortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest'
+  const sortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Recommended'
   const handleFiltersChange = (newFilters) => setFilters(newFilters)
 
   const handleRemoveBoundary = () => {
@@ -220,6 +221,11 @@ function DealsPageInner() {
       ? properties.filter(p => isInBounds(p, mapBounds))
       : properties
     list = filterPinsByLocation(list)
+    if (sortBy === 'recommended') return [...list].sort((a, b) => {
+      const aAuction = a.listing_type === 'auction' ? 1 : 0
+      const bAuction = b.listing_type === 'auction' ? 1 : 0
+      return aAuction - bAuction
+    })
     if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
     if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
     if (sortBy === 'roi') return [...list].sort((a, b) => (b.gross_yield || b.cap_rate || 0) - (a.gross_yield || a.cap_rate || 0))
@@ -400,6 +406,7 @@ const LoadingState = () => (
                 onChange={(e) => setSortBy(e.target.value)}
                 className="text-[12px] font-semibold text-[#1A1816] border-none bg-transparent focus:outline-none cursor-pointer"
               >
+                <option value="recommended">Recommended</option>
                 <option value="newest">Newest</option>
                 <option value="price-low">Price: Low–High</option>
                 <option value="price-high">Price: High–Low</option>

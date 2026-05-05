@@ -109,8 +109,9 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const closeAll = () => { setShowPropertyTypes(false); setShowListingType(false); setShowPrice(false); setShowBedsBaths(false) }
 
   const listingTypeLabel = () => {
-    const t = LISTING_TYPES.find(t => t.value === (filters.listingType || 'all'))
-    return t?.label || 'Listing Type'
+    const val = filters.listingType || 'all'
+    if (val === 'all') return 'Listing Type'
+    return LISTING_TYPES.find(t => t.value === val)?.label || 'Listing Type'
   }
 
   const applyPrice = () => {

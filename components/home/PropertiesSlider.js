@@ -112,8 +112,8 @@ export function PropertiesSlider() {
     return () => clearInterval(id)
   }, [canScroll, allCards.length])
 
-  const formatPrice = (val) => {
-    if (!val) return 'Contact for Price'
+  const formatPrice = (val, listingType) => {
+    if (!val) return listingType === 'auction' ? 'Auction Listing' : 'Contact for Price'
     return `$${Math.round(Number(val)).toLocaleString()}`
   }
 
@@ -246,7 +246,7 @@ export function PropertiesSlider() {
             {baths && <span>{baths} bath</span>}
           </div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[20px] font-bold text-[#1A1816]">{formatPrice(p.price)}</span>
+            <span className="text-[20px] font-bold text-[#1A1816]">{formatPrice(p.price, p.listing_type)}</span>
             {arv > 0 && (
               <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
                 ARV {formatShort(arv)}
