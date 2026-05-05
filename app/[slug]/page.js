@@ -1,7 +1,6 @@
 //app/[slug]/page.js
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { supabaseMarketplace } from '@/lib/supabase'
 import { PropertyDetail } from '@/components/property/PropertyDetail'
@@ -291,19 +290,6 @@ export default async function PropertyPage({ params }) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(property)) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      {citySlug && (
-        <div className="fixed top-[80px] left-0 right-0 z-[50] bg-white border-b border-[#E8E8E4] px-5 md:px-[45px] py-2">
-          <nav className="text-[12px] text-[#737370] flex items-center gap-1.5">
-            <Link href="/marketplace" className="hover:text-[#1A1816] transition-colors">Marketplace</Link>
-            <span>/</span>
-            <Link href={`/deals/${citySlug}`} className="hover:text-[#1A1816] transition-colors">
-              {property.city}, {property.state}
-            </Link>
-            <span>/</span>
-            <span className="text-[#1A1816] truncate max-w-[200px]">{fullAddress || 'Property'}</span>
-          </nav>
-        </div>
-      )}
       <Suspense>
         <PropertyDetail property={property} />
       </Suspense>

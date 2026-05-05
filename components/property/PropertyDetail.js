@@ -11,6 +11,7 @@ import {
   TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X, User, Copy, Check
 } from 'lucide-react'
 import { useProperties } from '@/hooks/useProperties'
+import { toCitySlug } from '@/lib/cityUtils'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
 import { getStartingTier, recordImageLoad } from '@/utils/adaptiveImageLoader'
 import { useAuth } from '@/hooks/useAuth'
@@ -500,6 +501,19 @@ export function PropertyDetail({ property }) {
           </div>
         </div>
       </nav>
+
+      {/* Breadcrumb */}
+      {toCitySlug(property.city, property.state) && !isPreview && (
+        <div className="bg-white border-b border-[#E8E8E4] px-4 sm:px-6 py-2">
+          <nav className="text-[12px] text-[#737370] flex items-center gap-1.5 max-w-7xl mx-auto">
+            <Link href="/marketplace" className="hover:text-[#1A1816] transition-colors shrink-0">Marketplace</Link>
+            <span>/</span>
+            <Link href={`/deals/${toCitySlug(property.city, property.state)}`} className="hover:text-[#1A1816] transition-colors shrink-0">{property.city}, {property.state}</Link>
+            <span>/</span>
+            <span className="text-[#1A1816] truncate">{property.full_address || property.display_address || property.address || 'Property'}</span>
+          </nav>
+        </div>
+      )}
 
       {/* Photo Grid */}
       <div className="bg-white border-b border-[#E8E8E4]">
