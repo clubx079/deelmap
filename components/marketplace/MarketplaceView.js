@@ -382,29 +382,31 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
               <span className="font-semibold">{sortLabel}</span>
               <ChevronDown className={`w-3.5 h-3.5 text-[#737370] transition-transform duration-200 ${showMobileSortDropdown ? 'rotate-180' : ''}`} />
             </button>
-            {showMobileSortDropdown && (
-              <div className="absolute top-full left-0 right-0 bg-white border-t border-b border-[#E8E8E4] shadow-lg z-50">
-                <div className="px-4 pt-3 pb-1.5 border-b border-[#F0F0EC]">
-                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Sort by</p>
-                </div>
-                <div className="py-1">
-                  {SORT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => { setSortBy(opt.value); setShowMobileSortDropdown(false) }}
-                      className={`w-full flex items-center justify-between px-4 py-3.5 text-[14px] transition-colors active:bg-[#F3F3F0] ${
-                        sortBy === opt.value ? 'font-semibold text-[#1A1816] bg-[#FAFAF8]' : 'text-[#444441]'
-                      }`}
-                    >
-                      {opt.label}
-                      {sortBy === opt.value && (
-                        <span className="w-2 h-2 rounded-full bg-[#D03839] flex-shrink-0" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+            <div className={`absolute top-full left-0 right-0 bg-white border-t border-b border-[#E8E8E4] shadow-lg z-50 transition-all duration-200 origin-top ${
+              showMobileSortDropdown
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 -translate-y-1 pointer-events-none'
+            }`}>
+              <div className="px-4 pt-3 pb-1.5 border-b border-[#F0F0EC]">
+                <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Sort by</p>
               </div>
-            )}
+              <div className="py-1">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setSortBy(opt.value); setShowMobileSortDropdown(false) }}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 text-[14px] transition-colors active:bg-[#F3F3F0] ${
+                      sortBy === opt.value ? 'font-semibold text-[#1A1816] bg-[#FAFAF8]' : 'text-[#444441]'
+                    }`}
+                  >
+                    {opt.label}
+                    {sortBy === opt.value && (
+                      <span className="w-2 h-2 rounded-full bg-[#D03839] flex-shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
