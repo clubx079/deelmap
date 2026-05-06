@@ -83,6 +83,54 @@ const PricingCheckIcon = ({ filled }) => (
 
 const SELLER_PORTAL_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'
 
+function DealCard({ deal }) {
+  return (
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+      <div className="relative h-[160px]">
+        <img src={deal.img} alt={deal.location} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        {deal.badge && (
+          <span className="absolute top-2 left-2 bg-white text-[#1A1816] text-[10px] font-semibold px-2 py-1 rounded">
+            {deal.badge}
+          </span>
+        )}
+        <span className="absolute top-2 right-2 bg-[#1A1816] text-white text-[10px] font-bold px-2 py-1 rounded">
+          {deal.roi}
+        </span>
+      </div>
+      <div className="p-4">
+        <p className="text-[11px] text-[#737370] mb-1.5 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] inline-block flex-shrink-0" />
+          Sold – {deal.soldDate}
+        </p>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[18px] font-bold text-[#1A1816]">${Number(deal.price).toLocaleString()}</span>
+          <span className="text-[10px] font-semibold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded">ARV ${deal.arv}</span>
+        </div>
+        <p className="text-[11px] text-[#737370] mb-1">{deal.sqft} sq ft &nbsp;·&nbsp; {deal.beds} bed &nbsp;·&nbsp; {deal.baths} bath</p>
+        <p className="text-[11px] text-[#737370] mb-3 flex items-center gap-1">
+          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          {deal.location}
+        </p>
+        <div className="border-t border-[#E8E8E4] pt-3 grid grid-cols-3 gap-1">
+          <div>
+            <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Spread</p>
+            <p className="text-[11px] font-semibold text-[#D03839]">${(deal.spread / 1000).toFixed(0)}k</p>
+          </div>
+          <div>
+            <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5 whitespace-nowrap">Days on market</p>
+            <p className="text-[11px] font-semibold text-[#1A1816] whitespace-nowrap">{deal.days} days</p>
+          </div>
+          <div>
+            <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Type</p>
+            <p className="text-[11px] font-semibold text-[#1A1816]">{deal.type}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function savePlanAndGo(plan, href) {
   try { localStorage.setItem('deelmap_selected_plan', plan) } catch {}
   window.location.href = href
@@ -443,12 +491,12 @@ export default function SellPage() {
               <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-2">RECENT SALES</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816]">Closed deals nearby</h2>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setDealIndex(i => Math.max(0, i - 1))}
                 disabled={dealIndex === 0}
-                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+                className="w-11 h-11 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
               >
                 <ChevronDown className="w-4 h-4 rotate-90" />
               </button>
@@ -456,61 +504,29 @@ export default function SellPage() {
                 type="button"
                 onClick={() => setDealIndex(i => Math.min(CLOSED_DEALS.length - 4, i + 1))}
                 disabled={dealIndex >= CLOSED_DEALS.length - 4}
-                className="w-9 h-9 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+                className="w-11 h-11 rounded-full border border-[#E8E8E4] bg-white flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
               >
                 <ChevronDown className="w-4 h-4 -rotate-90" />
               </button>
             </div>
           </div>
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {visibleDeals.map((deal, i) => (
-              <div key={dealIndex + i} className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
-                {/* Image */}
-                <div className="relative h-[160px]">
-                  <img src={deal.img} alt={deal.location} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                  {deal.badge && (
-                    <span className="absolute top-2 left-2 bg-white text-[#1A1816] text-[10px] font-semibold px-2 py-1 rounded">
-                      {deal.badge}
-                    </span>
-                  )}
-                  <span className="absolute top-2 right-2 bg-[#1A1816] text-white text-[10px] font-bold px-2 py-1 rounded">
-                    {deal.roi}
-                  </span>
-                </div>
-                {/* Content */}
-                <div className="p-4">
-                  <p className="text-[11px] text-[#737370] mb-1.5 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] inline-block flex-shrink-0" />
-                    Sold – {deal.soldDate}
-                  </p>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[18px] font-bold text-[#1A1816]">${Number(deal.price).toLocaleString()}</span>
-                    <span className="text-[10px] font-semibold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded">ARV ${deal.arv}</span>
-                  </div>
-                  <p className="text-[11px] text-[#737370] mb-1">{deal.sqft} sq ft &nbsp;·&nbsp; {deal.beds} bed &nbsp;·&nbsp; {deal.baths} bath</p>
-                  <p className="text-[11px] text-[#737370] mb-3 flex items-center gap-1">
-                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {deal.location}
-                  </p>
-                  <div className="border-t border-[#E8E8E4] pt-3 grid grid-cols-3 gap-1">
-                    <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Spread</p>
-                      <p className="text-[11px] font-semibold text-[#D03839]">${(deal.spread / 1000).toFixed(0)}k</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5 whitespace-nowrap">Days on market</p>
-                      <p className="text-[11px] font-semibold text-[#1A1816] whitespace-nowrap">{deal.days} days</p>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-semibold text-[#A8A8A4] uppercase tracking-[1px] mb-0.5">Type</p>
-                      <p className="text-[11px] font-semibold text-[#1A1816]">{deal.type}</p>
-                    </div>
-                  </div>
-                </div>
+          {/* Mobile: snap scroll carousel */}
+          <div
+            className="sm:hidden -mx-6 px-6 flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {CLOSED_DEALS.map((deal, i) => (
+              <div key={i} className="flex-shrink-0 w-[82vw] snap-start">
+                <DealCard deal={deal} />
               </div>
+            ))}
+          </div>
+
+          {/* Tablet / Desktop: windowed grid */}
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {visibleDeals.map((deal, i) => (
+              <DealCard key={dealIndex + i} deal={deal} />
             ))}
           </div>
         </div>
