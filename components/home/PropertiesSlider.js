@@ -300,7 +300,7 @@ export function PropertiesSlider() {
                   <button
                     key={tab.value}
                     onClick={() => tab.redirect ? router.push('/marketplace') : setActiveTab(tab.value)}
-                    className={`h-9 px-4 rounded border text-[13px] font-medium transition-all whitespace-nowrap ${
+                    className={`min-h-[44px] px-4 rounded border text-[13px] font-medium transition-all whitespace-nowrap ${
                       activeTab === tab.value && !tab.redirect
                         ? 'bg-[#D03839] border-[#D03839] text-white'
                         : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
@@ -311,16 +311,16 @@ export function PropertiesSlider() {
                 ))}
               </div>
               {canScroll && (
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
                   <button
                     onClick={prev}
-                    className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] hover:border-[#1A1816] transition-colors"
+                    className="w-11 h-11 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] hover:border-[#1A1816] transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={next}
-                    className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] hover:border-[#1A1816] transition-colors"
+                    className="w-11 h-11 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] hover:border-[#1A1816] transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -341,9 +341,21 @@ export function PropertiesSlider() {
           </div>
         ) : (
           <>
-            {/* Mobile: fade transition grid */}
+            {/* Phone: horizontal swipe snap carousel */}
             <div
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden"
+              className="sm:hidden -mx-6 px-6 flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {allCards.map((p) => (
+                <div key={p.id} className="flex-shrink-0 w-[82vw] snap-start">
+                  <PropertyCardInner p={p} />
+                </div>
+              ))}
+            </div>
+
+            {/* Tablet: 2-col fade transition grid */}
+            <div
+              className="hidden sm:grid sm:grid-cols-2 gap-4 lg:hidden"
               style={{ opacity: mobileOpacity, transition: 'opacity 200ms ease' }}
             >
               {(mobileCards.length > 0 ? mobileCards : displayProperties).map((p) => (
