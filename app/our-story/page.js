@@ -10,7 +10,7 @@ const TESTIMONIALS = [
     name: 'Raj Mehta',
     role: 'Fix & Flip Investor',
     deals: 25,
-    initials: 'MC',
+    initials: 'RM',
     color: 'bg-orange-400',
   },
   {
@@ -18,7 +18,7 @@ const TESTIMONIALS = [
     name: 'Jonathan Reed',
     role: 'First-time Investor',
     deals: 15,
-    initials: 'MH',
+    initials: 'JR',
     color: 'bg-blue-500',
   },
   {
@@ -26,7 +26,7 @@ const TESTIMONIALS = [
     name: 'Emily Johnson',
     role: 'Real Estate Investor',
     deals: 10,
-    initials: 'SM',
+    initials: 'EJ',
     color: 'bg-emerald-500',
   },
 ]
