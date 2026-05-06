@@ -6,8 +6,17 @@ import { LiveTrackingProvider } from '@/components/LiveTrackingProvider'
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800', '900'], variable: '--font-dm-sans' })
 
 export const metadata = {
-  title: 'DeelMap - Property Deals Marketplace',
-  description: 'Find the best property deals with DeelMap',
+  title: 'DeelMap — Off-Market & Wholesale Investment Properties',
+  description: 'DeelMap is the largest marketplace for off-market wholesale and auction investment properties in the US. Find fix & flip, buy & hold, and BRRRR deals updated daily.',
+  metadataBase: new URL('https://deelmap.com'),
+  openGraph: {
+    title: 'DeelMap — Off-Market & Wholesale Investment Properties',
+    description: 'The largest marketplace for off-market wholesale and auction investment properties in the US. Updated daily.',
+    url: 'https://deelmap.com',
+    siteName: 'DeelMap',
+    locale: 'en_US',
+    type: 'website',
+  },
   icons: {
     icon: [
       { url: '/favicon.ico' },

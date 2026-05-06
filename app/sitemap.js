@@ -1,5 +1,5 @@
 import { supabaseMarketplace } from '@/lib/supabase'
-import { toCitySlug, TYPE_MAP } from '@/lib/cityUtils'
+import { toCitySlug } from '@/lib/cityUtils'
 
 export const revalidate = 3600
 
@@ -57,13 +57,9 @@ export default async function sitemap() {
     if (slug) cityCount[slug] = (cityCount[slug] || 0) + 1
   }
 
-  const typeKeys = Object.keys(TYPE_MAP)
   const cityPages = []
   for (const [citySlug] of Object.entries(cityCount).sort((a, b) => b[1] - a[1]).slice(0, 200)) {
     cityPages.push({ url: `${SITE}/deals/${citySlug}`, changeFrequency: 'daily', priority: 0.7 })
-    for (const type of typeKeys) {
-      cityPages.push({ url: `${SITE}/deals/${citySlug}/${type}`, changeFrequency: 'daily', priority: 0.6 })
-    }
   }
 
   return [...staticPages, ...listingPages, ...manualPages, ...cityPages]
