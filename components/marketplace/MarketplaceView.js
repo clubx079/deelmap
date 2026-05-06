@@ -77,6 +77,8 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   const [mapBounds, setMapBounds] = useState(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const sortDropdownRef = useRef(null)
+  const [showMobileSortDropdown, setShowMobileSortDropdown] = useState(false)
+  const mobileSortRef = useRef(null)
   const [sortBy, setSortBy] = useState('recommended')
   const [mobileView, setMobileView] = useState('map')
   const [searchQuery, setSearchQuery] = useState(() => initialSearch)
@@ -105,6 +107,9 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     const handleClickOutside = (e) => {
       if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target)) {
         setShowSortDropdown(false)
+      }
+      if (mobileSortRef.current && !mobileSortRef.current.contains(e.target)) {
+        setShowMobileSortDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -340,32 +345,71 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
 
       {/* Mobile Layout */}
       <div className="lg:hidden">
-        <div className="fixed top-[192px] left-0 right-0 z-30 bg-white border-b border-[#E8E8E4] px-4 py-2 flex items-center justify-between gap-3">
-          <div className="flex items-center bg-[#F3F3F0] rounded p-0.5 gap-0.5">
-            <button
-              onClick={() => setMobileView('map')}
-              className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded text-[13px] font-semibold transition-all ${
-                mobileView === 'map' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
-              }`}
-            >
-              <Map className="w-3.5 h-3.5" />
-              Map
-            </button>
-            <button
-              onClick={() => setMobileView('list')}
-              className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded text-[13px] font-semibold transition-all ${
-                mobileView === 'list' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
-              }`}
-            >
-              <List className="w-3.5 h-3.5" />
-              Listings
-            </button>
+        <div className="fixed top-[192px] left-0 right-0 z-30 bg-white border-b border-[#E8E8E4]">
+          {/* Row 1: Map/List toggle + deals count */}
+          <div className="px-4 py-2 flex items-center justify-between gap-3">
+            <div className="flex items-center bg-[#F3F3F0] rounded p-0.5 gap-0.5">
+              <button
+                onClick={() => setMobileView('map')}
+                className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded text-[13px] font-semibold transition-all ${
+                  mobileView === 'map' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
+                }`}
+              >
+                <Map className="w-3.5 h-3.5" />
+                Map
+              </button>
+              <button
+                onClick={() => setMobileView('list')}
+                className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded text-[13px] font-semibold transition-all ${
+                  mobileView === 'list' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                Listings
+              </button>
+            </div>
+            <p className="text-[12px] text-[#737370]">{resultCount.toLocaleString()} deals</p>
           </div>
-          <p className="text-[12px] text-[#737370]">{resultCount.toLocaleString()} deals</p>
+          {/* Row 2: Sort — under the deals count */}
+          <div className="relative border-t border-[#F0F0EC] px-4 py-2" ref={mobileSortRef}>
+            <button
+              onClick={() => setShowMobileSortDropdown(!showMobileSortDropdown)}
+              className={`flex items-center gap-2 h-9 px-3 border rounded text-[13px] font-medium transition-colors ${
+                showMobileSortDropdown ? 'border-[#1A1816] bg-[#FAFAF8]' : 'border-[#E8E8E4] bg-white'
+              } text-[#1A1816]`}
+            >
+              <span className="text-[#737370] font-normal">Sort:</span>
+              <span className="font-semibold">{sortLabel}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-[#737370] transition-transform duration-200 ${showMobileSortDropdown ? 'rotate-180' : ''}`} />
+            </button>
+            {showMobileSortDropdown && (
+              <div className="absolute top-full left-0 right-0 bg-white border-t border-b border-[#E8E8E4] shadow-lg z-50">
+                <div className="px-4 pt-3 pb-1.5 border-b border-[#F0F0EC]">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Sort by</p>
+                </div>
+                <div className="py-1">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setSortBy(opt.value); setShowMobileSortDropdown(false) }}
+                      className={`w-full flex items-center justify-between px-4 py-3.5 text-[14px] transition-colors active:bg-[#F3F3F0] ${
+                        sortBy === opt.value ? 'font-semibold text-[#1A1816] bg-[#FAFAF8]' : 'text-[#444441]'
+                      }`}
+                    >
+                      {opt.label}
+                      {sortBy === opt.value && (
+                        <span className="w-2 h-2 rounded-full bg-[#D03839] flex-shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {mobileView === 'map' && (
-          <div className="fixed inset-0 top-[256px]">
+          <div className="fixed inset-0 top-[300px]">
             <PropertyMap
               properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
@@ -380,21 +424,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
         )}
 
         {mobileView === 'list' && (
-          <div className="fixed inset-0 top-[256px] overflow-y-auto bg-[#FAFAF8]">
-            <div className="sticky top-0 z-10 px-4 py-2.5 bg-white border-b border-[#E8E8E4] flex items-center justify-end gap-1.5">
-              <span className="text-[12px] text-[#737370]">Sort:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="text-[12px] font-semibold text-[#1A1816] border-none bg-transparent focus:outline-none cursor-pointer"
-              >
-                <option value="recommended">Recommended</option>
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low–High</option>
-                <option value="price-high">Price: High–Low</option>
-                <option value="roi">Highest ROI</option>
-              </select>
-            </div>
+          <div className="fixed inset-0 top-[300px] overflow-y-auto bg-[#FAFAF8]">
             {loading && properties.length > 0 && (
               <div className="h-0.5 bg-[#F0EFEC] overflow-hidden">
                 <div className="h-full bg-[#D03839] animate-[shimmer_1.2s_ease-in-out_infinite]" style={{ width: '40%', animation: 'progress-slide 1.2s ease-in-out infinite' }} />
