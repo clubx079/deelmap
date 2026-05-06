@@ -68,7 +68,7 @@ export default function SavedPropertiesPage() {
           {favoriteProperties.length > 0 && (
             <Link
               href="/marketplace"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors flex-shrink-0"
+              className="inline-flex items-center gap-2 px-4 min-h-[44px] bg-[#D03839] text-white text-[14px] font-semibold rounded hover:bg-[#E0493B] transition-colors flex-shrink-0"
             >
               Browse More
               <ArrowRight className="w-4 h-4" />
@@ -104,7 +104,7 @@ export default function SavedPropertiesPage() {
               </div>
               <button
                 onClick={loadSavedProperties}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
+                className="inline-flex items-center gap-2 px-5 min-h-[44px] bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
               >
                 Try Again
               </button>
@@ -122,7 +122,7 @@ export default function SavedPropertiesPage() {
               </div>
               <Link
                 href="/marketplace"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
+                className="inline-flex items-center gap-2 px-5 min-h-[44px] bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
               >
                 Browse Deals
                 <ArrowRight className="w-4 h-4" />

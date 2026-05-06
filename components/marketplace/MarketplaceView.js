@@ -344,7 +344,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
           <div className="flex items-center bg-[#F3F3F0] rounded p-0.5 gap-0.5">
             <button
               onClick={() => setMobileView('map')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded text-[13px] font-semibold transition-all ${
                 mobileView === 'map' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
               }`}
             >
@@ -353,7 +353,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
             </button>
             <button
               onClick={() => setMobileView('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded text-[13px] font-semibold transition-all ${
                 mobileView === 'list' ? 'bg-white text-[#1A1816] shadow-sm' : 'text-[#737370]'
               }`}
             >
@@ -365,7 +365,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
         </div>
 
         {mobileView === 'map' && (
-          <div className="fixed inset-0 top-[240px]">
+          <div className="fixed inset-0 top-[256px]">
             <PropertyMap
               properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
@@ -380,7 +380,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
         )}
 
         {mobileView === 'list' && (
-          <div className="fixed inset-0 top-[240px] overflow-y-auto bg-[#FAFAF8]">
+          <div className="fixed inset-0 top-[256px] overflow-y-auto bg-[#FAFAF8]">
             <div className="sticky top-0 z-10 px-4 py-2.5 bg-white border-b border-[#E8E8E4] flex items-center justify-end gap-1.5">
               <span className="text-[12px] text-[#737370]">Sort:</span>
               <select

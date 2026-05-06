@@ -133,7 +133,7 @@ export default function ProfilePage() {
     )
   }
 
-  const inputBase = 'w-full pl-10 pr-4 py-2.5 border rounded text-[13px] transition-all outline-none'
+  const inputBase = 'w-full pl-10 pr-4 py-3 border rounded text-[13px] transition-all outline-none'
   const inputActive = 'border-[#E8E8E4] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20'
   const inputDisabled = 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'
 
@@ -178,7 +178,7 @@ export default function ProfilePage() {
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-medium transition-colors"
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-medium transition-colors"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   Edit
@@ -247,14 +247,14 @@ export default function ProfilePage() {
                 <div className="mt-5 flex gap-2 justify-end">
                   <button
                     type="button" onClick={handleCancel} disabled={isSubmitting}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-[#F3F3F1] hover:bg-[#E8E8E4] text-[#444441] rounded text-[13px] font-semibold transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 min-h-[44px] bg-[#F3F3F1] hover:bg-[#E8E8E4] text-[#444441] rounded text-[13px] font-semibold transition-colors disabled:opacity-50"
                   >
                     <X className="w-3.5 h-3.5" />
                     Cancel
                   </button>
                   <button
                     type="submit" disabled={isSubmitting}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50"
                   >
                     {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     {isSubmitting ? 'Saving…' : 'Save Changes'}
@@ -279,7 +279,7 @@ export default function ProfilePage() {
               </div>
               <Link
                 href="/forgot-password"
-                className="flex-shrink-0 px-3 py-2 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] text-[12px] font-semibold rounded transition-colors"
+                className="flex-shrink-0 px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] text-[12px] font-semibold rounded transition-colors flex items-center"
               >
                 Reset Password
               </Link>
@@ -317,7 +317,7 @@ export default function ProfilePage() {
                   <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[0.8px]">Blocked contacts</p>
                   <button
                     type="button" onClick={fetchBlockedUsers} disabled={blockedLoading}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#F0F0EE] rounded transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 min-h-[44px] text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#F0F0EE] rounded transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3 h-3 ${blockedLoading ? 'animate-spin' : ''}`} />
                     Refresh
@@ -344,7 +344,7 @@ export default function ProfilePage() {
                           type="button"
                           onClick={() => handleUnblock(row.conversation_id)}
                           disabled={unblockingId === row.conversation_id}
-                          className="flex-shrink-0 px-3 py-1.5 text-[12px] font-semibold rounded border border-[#E8E8E4] text-[#444441] hover:bg-[#FAFAF8] transition-colors disabled:opacity-50"
+                          className="flex-shrink-0 px-3 min-h-[44px] text-[12px] font-semibold rounded border border-[#E8E8E4] text-[#444441] hover:bg-[#FAFAF8] transition-colors disabled:opacity-50 flex items-center"
                         >
                           {unblockSuccessId === row.conversation_id ? 'Unblocked ✓' : unblockingId === row.conversation_id ? 'Unblocking…' : 'Unblock'}
                         </button>
@@ -368,7 +368,7 @@ export default function ProfilePage() {
                   try { await signOut() } catch {}
                   window.location.href = '/'
                 }}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#FEF0EF] hover:bg-[#FEE4E3] text-[#D03839] text-[13px] font-semibold rounded transition-colors"
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] bg-[#FEF0EF] hover:bg-[#FEE4E3] text-[#D03839] text-[13px] font-semibold rounded transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Sign Out

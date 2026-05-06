@@ -20,33 +20,65 @@ const TESTIMONIALS = [
 
 function InvestorTestimonials() {
   const [index, setIndex] = useState(0)
+  const visibleCount = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 3
   const visible = TESTIMONIALS.slice(index, index + 3)
+  const mobileVisible = TESTIMONIALS.slice(index, index + 1)
   return (
     <section className="py-16 lg:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
-        <div className="flex items-start justify-between mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-10">
           <div>
             <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1.1px] mb-3">INVESTOR STORIES</p>
-            <h2 className="text-[36px] sm:text-[40px] font-bold text-[#1A1816]">What our investors say about us</h2>
+            <h2 className="text-[28px] sm:text-[36px] lg:text-[40px] font-bold text-[#1A1816]">What our investors say about us</h2>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0 mt-2">
+          <div className="flex items-center gap-2 flex-shrink-0 sm:mt-2">
             <button
               onClick={() => setIndex(i => Math.max(0, i - 1))}
               disabled={index === 0}
-              className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+              className="w-10 h-10 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
             <button
-              onClick={() => setIndex(i => Math.min(TESTIMONIALS.length - 3, i + 1))}
-              disabled={index >= TESTIMONIALS.length - 3}
-              className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
+              onClick={() => setIndex(i => Math.min(TESTIMONIALS.length - 1, i + 1))}
+              disabled={index >= TESTIMONIALS.length - 1}
+              className="w-10 h-10 rounded-full border border-[#E8E8E4] flex items-center justify-center text-[#1A1816] hover:bg-[#FAFAF8] disabled:opacity-30 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Mobile: 1 card at a time */}
+        <div className="md:hidden">
+          {mobileVisible.map((t) => (
+            <div key={t.name} className="bg-white border border-[#E8E8E4] rounded p-6 flex flex-col">
+              <div className="flex mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                ))}
+              </div>
+              <p className="text-[14px] text-[#444441] leading-relaxed mb-6 flex-1 italic">
+                <span className="text-[#D03839] font-bold not-italic">"</span>{t.text}
+              </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-white text-[12px] font-bold flex-shrink-0`}>{t.initials}</div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-[#1A1816]">{t.name}</p>
+                    <p className="text-[12px] text-[#737370]">{t.role}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[15px] font-bold text-[#D03839]">{t.metric}</p>
+                  <p className="text-[11px] text-[#A8A8A4]">{t.metricLabel}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          <p className="text-center text-[12px] text-[#A8A8A4] mt-4">{index + 1} of {TESTIMONIALS.length}</p>
+        </div>
+        {/* Desktop: 3 cards at a time */}
+        <div className="hidden md:grid grid-cols-3 gap-5">
           {visible.map((t) => (
             <div key={t.name} className="bg-white border border-[#E8E8E4] rounded p-6 flex flex-col">
               <div className="flex mb-4">

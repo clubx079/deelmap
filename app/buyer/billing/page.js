@@ -127,7 +127,7 @@ export default function BuyerBillingPage() {
           <div className="text-center py-6">
             <Receipt className="w-8 h-8 text-[#A8A8A4] mx-auto mb-2" />
             <p className="text-[13px] text-[#737370]">No purchases yet.</p>
-            <a href="/buyer/listings?new=1" className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors">
+            <a href="/buyer/listings?new=1" className="mt-3 inline-flex items-center gap-1.5 px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors">
               Post your first deal
             </a>
           </div>
@@ -150,7 +150,7 @@ export default function BuyerBillingPage() {
               return (
                 <div
                   key={item.id}
-                  className={`flex items-start justify-between px-5 py-4 ${i !== purchases.length - 1 ? 'border-b border-[#F3F3F0]' : ''} hover:bg-[#FAFAF8] transition-colors`}
+                  className={`flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 px-5 py-4 ${i !== purchases.length - 1 ? 'border-b border-[#F3F3F0]' : ''} hover:bg-[#FAFAF8] transition-colors`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded bg-[#F3F3F0] flex items-center justify-center flex-shrink-0">
@@ -167,7 +167,7 @@ export default function BuyerBillingPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                  <div className="flex items-center gap-3 flex-shrink-0 sm:ml-4">
                     <div className="text-right">
                       {hasDiscount && (
                         <p className="text-[11px] text-[#A8A8A4] line-through">{formatCents(originalTotal)}</p>

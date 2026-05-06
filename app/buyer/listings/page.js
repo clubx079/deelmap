@@ -201,7 +201,7 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={onBack}
-          className="p-2 rounded text-[#737370] hover:bg-[#F3F3F0] hover:text-[#1A1816] transition-colors"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded text-[#737370] hover:bg-[#F3F3F0] hover:text-[#1A1816] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -621,7 +621,7 @@ export default function MyListingsPage() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 h-[40px] px-4 bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors"
+          className="flex items-center gap-2 h-[44px] px-4 bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors"
         >
           <Plus className="w-4 h-4" />
           Post a Deal
@@ -950,7 +950,7 @@ export default function MyListingsPage() {
                     {isDraftMobile ? (
                       <button
                         onClick={() => setEditListing(listing)}
-                        className="flex-1 flex flex-col items-center gap-1 py-1 text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                        className="flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
                       >
                         <Pencil className="w-4 h-4" />
                         <span className="text-[10px] font-medium">Complete</span>
@@ -960,7 +960,7 @@ export default function MyListingsPage() {
                         {listing.status === 'active' && (
                           <button
                             onClick={() => setEnhanceListing(listing)}
-                            className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                            className="flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
                           >
                             <Sparkles className="w-4 h-4" />
                             <span className="text-[10px] font-medium">Enhance</span>
@@ -968,7 +968,7 @@ export default function MyListingsPage() {
                         )}
                         <button
                           onClick={() => setAnalyticTarget(listing)}
-                          className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                          className="flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
                         >
                           <BarChart2 className="w-4 h-4" />
                           <span className="text-[10px] font-medium">Analytics</span>
@@ -976,7 +976,7 @@ export default function MyListingsPage() {
                         <Link
                           href={`/${listing.slug || listing.id}`}
                           target="_blank"
-                          className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0] rounded transition-colors"
+                          className="flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0] rounded transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                           <span className="text-[10px] font-medium">View</span>
@@ -986,7 +986,7 @@ export default function MyListingsPage() {
                             href={listing.inspection_report_url || listing.contract_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#4F46E5] hover:bg-[#EEF2FF] rounded transition-colors"
+                            className="flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center text-[#737370] hover:text-[#4F46E5] hover:bg-[#EEF2FF] rounded transition-colors"
                           >
                             <FileText className="w-4 h-4" />
                             <span className="text-[10px] font-medium">Docs</span>
@@ -994,7 +994,7 @@ export default function MyListingsPage() {
                         )}
                         <button
                           onClick={() => setEditListing(listing)}
-                          className={`flex-1 flex flex-col items-center gap-1 py-1 rounded transition-colors ${
+                          className={`flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center rounded transition-colors ${
                             listing.status === 'rejected'
                               ? 'text-[#D03839] bg-[#FEF0EF] hover:bg-[#FCDEDE]'
                               : 'text-[#737370] hover:text-[#1A1816] hover:bg-[#F3F3F0]'
@@ -1007,7 +1007,7 @@ export default function MyListingsPage() {
                     )}
                     <button
                       onClick={() => setDeleteTarget(listing)}
-                      className="flex-1 flex flex-col items-center gap-1 py-1 text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
+                      className="flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] justify-center text-[#737370] hover:text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span className="text-[10px] font-medium">Delete</span>

@@ -93,7 +93,7 @@ export default function FinanceRequestsPage() {
         </div>
         <Link
           href="/financing"
-          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors"
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Apply for Financing
@@ -107,7 +107,7 @@ export default function FinanceRequestsPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${
+              className={`flex-shrink-0 px-3 min-h-[44px] rounded text-[13px] font-medium transition-colors ${
                 filter === f
                   ? 'bg-[#1A1816] text-white'
                   : 'bg-white border border-[#E8E8E4] text-[#444441] hover:bg-[#F3F3F1]'
@@ -322,7 +322,7 @@ export default function FinanceRequestsPage() {
                         type="button"
                         onClick={() => setConfirmDeleteId(req.id)}
                         disabled={deletingId === req.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 min-h-[44px] text-[12px] font-medium text-[#D03839] hover:bg-[#FEF0EF] rounded transition-colors disabled:opacity-50"
                       >
                         {deletingId === req.id
                           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -332,7 +332,7 @@ export default function FinanceRequestsPage() {
                       <button
                         type="button"
                         onClick={() => setExpandedId(null)}
-                        className="inline-flex items-center gap-1 text-[12px] text-[#737370] hover:text-[#1A1816] transition-colors"
+                        className="inline-flex items-center gap-1 min-h-[44px] px-2 text-[12px] text-[#737370] hover:text-[#1A1816] transition-colors"
                       >
                         <ChevronUp className="w-3.5 h-3.5" />
                         Close
@@ -373,7 +373,7 @@ export default function FinanceRequestsPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmDeleteId(null)}
-                  className="flex-1 px-4 py-2.5 text-[13px] font-semibold text-[#444441] bg-[#F3F3F1] hover:bg-[#E8E8E4] rounded transition-colors"
+                  className="flex-1 px-4 min-h-[44px] text-[13px] font-semibold text-[#444441] bg-[#F3F3F1] hover:bg-[#E8E8E4] rounded transition-colors"
                 >
                   Cancel
                 </button>
@@ -381,7 +381,7 @@ export default function FinanceRequestsPage() {
                   type="button"
                   onClick={() => handleDelete(confirmDeleteId)}
                   disabled={!!deletingId}
-                  className="flex-1 px-4 py-2.5 text-[13px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                  className="flex-1 px-4 min-h-[44px] text-[13px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                 >
                   {deletingId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                   Remove

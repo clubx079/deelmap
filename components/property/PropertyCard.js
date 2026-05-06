@@ -93,7 +93,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
         catch (err) { alert(err.message || 'Error') }
         finally { setFavoriteLoading(false) }
       }}
-      className={`p-1.5 rounded hover:bg-[#FAFAF8] transition-colors ${favoriteLoading ? 'opacity-50' : ''}`}
+      className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] transition-colors ${favoriteLoading ? 'opacity-50' : ''}`}
       disabled={favoriteLoading}
       title={isFav ? 'Remove from saved' : 'Save'}
     >
@@ -244,7 +244,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowShare(true) }}
-                    className="p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors"
                     title="Share"
                   >
                     <Share2 className="w-3.5 h-3.5" />
@@ -297,7 +297,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
               )}
               <Link
                 href={`/${slug}`}
-                className={`mt-auto self-start text-[13px] font-semibold rounded px-3 py-2 transition-all duration-200 ${
+                className={`mt-auto w-full sm:w-auto text-center text-[13px] font-semibold rounded px-3 min-h-[44px] flex items-center justify-center transition-all duration-200 ${
                   is_highlighted
                     ? 'text-white hover:opacity-90'
                     : 'text-[#1A1816] border border-[#1A1816] hover:bg-[#1A1816] hover:text-white'

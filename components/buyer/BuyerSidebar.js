@@ -96,7 +96,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
             </Link>
             <button
               onClick={onClose}
-              className="lg:hidden p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors duration-200"
+              className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors duration-200"
               aria-label="Close menu"
             >
               <X className="w-4 h-4" />
@@ -122,7 +122,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
                       href={item.href}
                       onClick={onClose}
                       className={`
-                        flex items-center gap-2.5 px-3 py-2 rounded
+                        flex items-center gap-2.5 px-3 py-2 min-h-[44px] rounded
                         transition-all duration-200
                         text-[14px]
                         ${isActive

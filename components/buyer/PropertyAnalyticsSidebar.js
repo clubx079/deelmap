@@ -40,13 +40,21 @@ const PERIOD_OPTIONS = [
 ]
 
 export default function PropertyAnalyticsSidebar({ propertyId, propertyAddress, userId, onClose }) {
-  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [period, setPeriod] = useState('all')
 
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  const handleClose = () => {
+    setVisible(false)
+    setTimeout(onClose, 300)
+  }
 
   useEffect(() => {
     if (!propertyId || !userId) return
@@ -70,13 +78,13 @@ export default function PropertyAnalyticsSidebar({ propertyId, propertyAddress, 
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}
-        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
       />
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 right-0 bottom-0 w-[460px] min-w-[320px] max-w-full z-50 flex flex-col overflow-hidden bg-white transition-transform duration-300 ease-out ${mounted ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 bottom-0 w-[460px] min-w-[320px] max-w-full z-50 flex flex-col overflow-hidden bg-white transition-transform duration-300 ease-out ${visible ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ boxShadow: '-12px 0 40px rgba(0,0,0,0.10)' }}
       >
         {/* Header */}
@@ -91,7 +99,7 @@ export default function PropertyAnalyticsSidebar({ propertyId, propertyAddress, 
               )}
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded bg-white/20 hover:bg-white/30 text-white transition-colors mt-0.5"
             >
               <X className="w-4 h-4" />

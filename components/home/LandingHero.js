@@ -149,14 +149,14 @@ function PropertyCard({ price, location, beds, baths, sqft, image }) {
       <div className="p-2 sm:p-2.5">
         <p className="text-sm sm:text-base font-bold text-[#1A1816]">{price}</p>
         <p className="text-[10px] sm:text-xs text-[#444441] truncate">{location}</p>
-        <div className="flex flex-wrap gap-1 mt-1.5">
-          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[9px] sm:text-xs text-[#444441]">
+        <div className="hidden sm:flex flex-wrap gap-1 mt-1.5">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[10px] sm:text-xs text-[#444441]">
             {beds}
           </span>
-          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[9px] sm:text-xs text-[#444441]">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[10px] sm:text-xs text-[#444441]">
             {baths}
           </span>
-          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[9px] sm:text-xs text-[#444441]">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[#FAFAF8] text-[10px] sm:text-xs text-[#444441]">
             {sqft}
           </span>
         </div>

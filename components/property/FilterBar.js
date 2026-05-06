@@ -64,10 +64,14 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const propertyTypesRef = useRef(null)
   const listingTypeRef = useRef(null)
   const mobileListingTypeRef = useRef(null)
+  const mobileListingTypePanelRef = useRef(null)
   const priceRef = useRef(null)
   const mobilePriceRef = useRef(null)
+  const mobilePricePanelRef = useRef(null)
   const mobileBedsBathsRef = useRef(null)
   const bedsBathsRef = useRef(null)
+  const [allFiltersMounted, setAllFiltersMounted] = useState(false)
+  const [allFiltersVisible, setAllFiltersVisible] = useState(false)
 
   const STATE_NAMES = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
@@ -85,10 +89,22 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   useEffect(() => { fetchAvailableStates() }, [])
 
   useEffect(() => {
+    if (showAllFilters) {
+      setAllFiltersMounted(true)
+      const raf = requestAnimationFrame(() => requestAnimationFrame(() => setAllFiltersVisible(true)))
+      return () => cancelAnimationFrame(raf)
+    } else {
+      setAllFiltersVisible(false)
+      const t = setTimeout(() => setAllFiltersMounted(false), 320)
+      return () => clearTimeout(t)
+    }
+  }, [showAllFilters])
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (propertyTypesRef.current && !propertyTypesRef.current.contains(e.target)) setShowPropertyTypes(false)
-      if (listingTypeRef.current && !listingTypeRef.current.contains(e.target) && mobileListingTypeRef.current && !mobileListingTypeRef.current.contains(e.target)) setShowListingType(false)
-      if (priceRef.current && !priceRef.current.contains(e.target) && mobilePriceRef.current && !mobilePriceRef.current.contains(e.target)) setShowPrice(false)
+      if (listingTypeRef.current && !listingTypeRef.current.contains(e.target) && mobileListingTypeRef.current && !mobileListingTypeRef.current.contains(e.target) && (!mobileListingTypePanelRef.current || !mobileListingTypePanelRef.current.contains(e.target))) setShowListingType(false)
+      if (priceRef.current && !priceRef.current.contains(e.target) && mobilePriceRef.current && !mobilePriceRef.current.contains(e.target) && (!mobilePricePanelRef.current || !mobilePricePanelRef.current.contains(e.target))) setShowPrice(false)
       if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target) && mobileBedsBathsRef.current && !mobileBedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -217,7 +233,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     filters.minCashOnCash || filters.maxCashOnCash
 
   const filterBtn = (active) =>
-    `flex items-center gap-2 h-[42px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
+    `flex items-center gap-2 h-[44px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
       active
         ? 'bg-[#D03839] border-[#D03839] text-white'
         : 'bg-white border-[#E8E8E4] text-[#1A1816] hover:border-[#1A1816]'
@@ -230,7 +246,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
         <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
           {/* Search row */}
           <div
-            className="flex items-center h-[42px] rounded w-full transition-all duration-200"
+            className="flex items-center h-[44px] rounded w-full transition-all duration-200"
             style={{
               border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
               boxShadow: searchFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
@@ -245,98 +261,34 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
               onSubmit={(val) => onSearchChange?.(val)}
             />
           </div>
-          {/* Filters row */}
-          <div className="flex items-center gap-2 pb-1 overflow-x-auto">
-            {/* Listing Type dropdown (mobile) */}
-            <div className="relative flex-shrink-0" ref={mobileListingTypeRef}>
-              <button
-                className={filterBtn(hasListingTypeFilter)}
-                onClick={() => { setShowListingType(!showListingType); setShowPrice(false) }}
-              >
-                {listingTypeLabel()}
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
-              </button>
-              {showListingType && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
-                  <div className="py-2">
-                    {LISTING_TYPES.map(({ value, label }) => {
-                      const active = (filters.listingType || 'all') === value
-                      return (
-                        <button
-                          key={value}
-                          onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
-                          className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
-                        >
-                          <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
-                          {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Filters row — relative wrapper so dropdown panels escape overflow-x-auto */}
+          <div className="relative">
+            <div className="flex items-center gap-2 pb-1 overflow-x-auto">
+              {/* Listing Type button (mobile) */}
+              <div className="flex-shrink-0" ref={mobileListingTypeRef}>
+                <button
+                  className={filterBtn(hasListingTypeFilter)}
+                  onClick={() => { setShowListingType(!showListingType); setShowPrice(false) }}
+                >
+                  {listingTypeLabel()}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
 
-            {/* Price button */}
-            <div className="relative flex-shrink-0" ref={mobilePriceRef}>
-              <button
-                className={filterBtn(hasPriceFilter)}
-                onClick={() => {
-                  setShowPrice(!showPrice)
-                  setTempPrice({ min: filters.minPrice || '', max: filters.maxPrice || '' })
-                }}
-              >
-                {priceLabel()}
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showPrice ? 'rotate-180' : ''}`} />
-              </button>
-              {showPrice && (
-                <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-80 overflow-hidden">
-                  <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
-                    <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Price Range</p>
-                  </div>
-                  <div className="px-4 py-3 border-b border-[#F0F0EC] flex flex-wrap gap-2">
-                    {PRICE_PRESETS.map((p) => {
-                      const active = tempPrice.min === String(p.min || '') && tempPrice.max === String(p.max || '')
-                      return (
-                        <button key={p.label} onClick={() => setTempPrice({ min: p.min || '', max: p.max || '' })}
-                          className={`px-3 py-1 rounded-full border text-[12px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
-                          {p.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <div className="px-4 py-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Min</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
-                          <input type="number" placeholder="0" value={tempPrice.min}
-                            onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
-                            className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Max</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
-                          <input type="number" placeholder="Any" value={tempPrice.max}
-                            onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
-                            className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      {hasPriceFilter && (
-                        <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">Clear</button>
-                      )}
-                      <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors">Apply</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* All Filters button */}
+              {/* Price button (mobile) */}
+              <div className="flex-shrink-0" ref={mobilePriceRef}>
+                <button
+                  className={filterBtn(hasPriceFilter)}
+                  onClick={() => {
+                    setShowPrice(!showPrice)
+                    setTempPrice({ min: filters.minPrice || '', max: filters.maxPrice || '' })
+                  }}
+                >
+                  {priceLabel()}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showPrice ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {/* All Filters button */}
             <button
               className={filterBtn(hasActiveFilters)}
               onClick={() => {
@@ -367,7 +319,77 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                 </span>
               )}
             </button>
-          </div>
+            </div>{/* end overflow-x-auto */}
+
+            {/* Listing Type dropdown panel — outside scroll wrapper to prevent clipping */}
+            {showListingType && (
+              <div ref={mobileListingTypePanelRef} className="absolute top-full left-0 mt-1 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
+                <div className="py-2">
+                  {LISTING_TYPES.map(({ value, label }) => {
+                    const active = (filters.listingType || 'all') === value
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
+                      >
+                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
+                        {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Price dropdown panel — outside scroll wrapper to prevent clipping */}
+            {showPrice && (
+              <div ref={mobilePricePanelRef} className="absolute top-full left-0 mt-1 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-[min(320px,calc(100vw-2rem))] overflow-hidden">
+                <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Price Range</p>
+                </div>
+                <div className="px-4 py-3 border-b border-[#F0F0EC] flex flex-wrap gap-2">
+                  {PRICE_PRESETS.map((p) => {
+                    const active = tempPrice.min === String(p.min || '') && tempPrice.max === String(p.max || '')
+                    return (
+                      <button key={p.label} onClick={() => setTempPrice({ min: p.min || '', max: p.max || '' })}
+                        className={`px-3 py-1 rounded-full border text-[12px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
+                        {p.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="px-4 py-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Min</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
+                        <input type="number" placeholder="0" value={tempPrice.min}
+                          onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Max</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
+                        <input type="number" placeholder="Any" value={tempPrice.max}
+                          onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    {hasPriceFilter && (
+                      <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">Clear</button>
+                    )}
+                    <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors">Apply</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>{/* end relative wrapper */}
         </div>
 
         {/* Desktop layout: all in one row */}
@@ -375,7 +397,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
           {/* Search */}
           <div
-            className="flex items-center h-[42px] rounded w-[480px] flex-none transition-all duration-200"
+            className="flex items-center h-[44px] rounded w-[480px] flex-none transition-all duration-200"
             style={{
               border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
               boxShadow: searchFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
@@ -645,9 +667,10 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       </div>
 
       {/* All Filters Modal */}
-      {showAllFilters && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded max-w-3xl w-full max-h-[88vh] overflow-y-auto shadow-2xl">
+      {allFiltersMounted && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${allFiltersVisible ? 'opacity-100' : 'opacity-0'}`} onClick={() => setShowAllFilters(false)} />
+          <div className={`relative bg-white rounded-t sm:rounded max-w-3xl w-full max-h-[92dvh] sm:max-h-[88vh] overflow-y-auto shadow-2xl transition-all duration-300 ease-out ${allFiltersVisible ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'translate-y-full sm:opacity-0 sm:scale-95'}`}>
 
             {/* Header */}
             <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-t z-10">
@@ -698,7 +721,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {availableStates.map((state) => {
                     const active = tempFilters.states.includes(state.value)
                     return (
@@ -782,7 +805,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                     { label: 'Cap Rate', unit: '%', minKey: 'minCapRate', maxKey: 'maxCapRate' },
                     { label: 'Cash on Cash Return', unit: '%', minKey: 'minCashOnCash', maxKey: 'maxCashOnCash' },
                   ].map(({ label, unit, minKey, maxKey }) => (
-                    <div key={label} className="grid grid-cols-[1fr_2fr] gap-6 items-center">
+                    <div key={label} className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-2 sm:gap-6 sm:items-center">
                       <div>
                         <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
                         <p className="text-[11px] text-[#A8A8A4]">In {unit}</p>

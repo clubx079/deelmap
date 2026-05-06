@@ -25,12 +25,21 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
   const [verifyMethod, setVerifyMethod] = useState('email')
   const [appealMessage, setAppealMessage] = useState('')
   const [appealSubmitted, setAppealSubmitted] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setAuthStep(initialStep)
       setAuthData(prev => ({ ...prev, role: defaultRole }))
       setError('')
+      setMounted(true)
+      const raf = requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+      return () => cancelAnimationFrame(raf)
+    } else {
+      setVisible(false)
+      const t = setTimeout(() => setMounted(false), 320)
+      return () => clearTimeout(t)
     }
   }, [isOpen, initialStep, defaultRole])
 
@@ -241,25 +250,30 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
     }
   }
 
-  if (!isOpen) return null
+  if (!mounted) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={preventClose ? undefined : handleClose} />
+      <div
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={preventClose ? undefined : handleClose}
+      />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded shadow-2xl w-full max-w-[512px] border border-[#E8E8E4] overflow-hidden">
+      {/* Modal — bottom sheet on mobile, centered on desktop */}
+      <div
+        className={`relative bg-white rounded-t sm:rounded shadow-2xl w-full sm:max-w-[512px] border border-[#E8E8E4] overflow-y-auto max-h-[92dvh] sm:max-h-none transition-all duration-300 ease-out ${visible ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'translate-y-full sm:opacity-0 sm:scale-95'}`}
+      >
         {!preventClose && (
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 z-10 p-1 text-[#737370] hover:text-[#1A1816] transition-colors"
+            className="absolute top-4 right-4 z-10 p-2 text-[#737370] hover:text-[#1A1816] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         )}
 
-        <div className="px-6 py-9">
+        <div className="px-4 py-6 sm:px-6 sm:py-9">
 
           {/* ── Login: Welcome to DeelMap ── */}
           {authStep === 'login' && (

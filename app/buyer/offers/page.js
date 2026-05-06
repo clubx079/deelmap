@@ -185,7 +185,7 @@ export default function MyOffersPage() {
                     <div className="flex flex-col items-end gap-1.5">
                       {convNumeric && (
                         <Link href={`/buyer/inbox?conversation=${convNumeric}`}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-[#D03839] hover:bg-[#E0493B] text-white text-[12px] font-semibold rounded transition-colors whitespace-nowrap">
+                          className="flex items-center gap-1.5 px-3 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[12px] font-semibold rounded transition-colors whitespace-nowrap">
                           <MessageCircle className="w-3.5 h-3.5" />
                           View chat
                         </Link>

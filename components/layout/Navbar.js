@@ -75,6 +75,12 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [notifOpen])
 
+  // Body scroll lock when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = showMobileMenu ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [showMobileMenu])
+
   // Close dropdowns on route change
   useEffect(() => { setShowAboutDropdown(false); setShowMobileMore(false) }, [pathname])
 
@@ -149,7 +155,7 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
-              <img src="/assets/logo.svg" alt="DeelMap" className="h-[68px] w-[190px]" />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-[46px] w-auto md:h-[68px] md:w-[190px]" />
             </Link>
 
             {/* Nav links – center */}
@@ -333,9 +339,13 @@ export function Navbar() {
       </nav>
 
       {/* Mobile Menu */}
-      <div className={`fixed inset-0 z-[9999] md:hidden pointer-events-none`}>
+      <div className={`fixed inset-0 z-[9999] md:hidden ${showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        {/* Backdrop */}
+        {showMobileMenu && (
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
+        )}
         <div
-          className={`absolute right-0 top-0 h-full w-72 bg-white shadow-xl border-l border-[#E8E8E4] transition-transform duration-300 ease-in-out pointer-events-auto ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`absolute right-0 top-0 h-full w-[85vw] max-w-[300px] bg-white shadow-xl border-l border-[#E8E8E4] transition-transform duration-300 ease-in-out pointer-events-auto ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}
         >
             <div className="flex items-center justify-between p-5 border-b border-[#E8E8E4]">
               <span className="text-[15px] font-semibold text-[#1A1816]">Menu</span>

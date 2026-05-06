@@ -437,8 +437,8 @@ export function PropertyDetail({ property }) {
             href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/listings` : '/marketplace'}
             className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors relative z-[50]"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>{isPreview ? 'Back to listings' : 'Back to listings'}</span>
+            <ArrowLeft className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">{isPreview ? 'Back to listings' : 'Back to listings'}</span>
           </Link>
 
           {/* Center: Logo */}
@@ -449,19 +449,19 @@ export function PropertyDetail({ property }) {
                 alt="DeelMap"
                 width={143}
                 height={50}
-                className="h-[50px] w-[143px]"
+                className="h-[38px] w-auto sm:h-[50px] sm:w-[143px]"
               />
             </Link>
           </div>
 
-          {/* Right: Share + Save + User */}
+          {/* Right: Share + Save + User (desktop only — mobile versions live below photo) */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShareTitle(property.full_address || property.display_address || property.address || 'Property'); setShowShareModal(true) }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
             >
               <Share2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Share</span>
+              <span>Share</span>
             </button>
             <button
               onClick={async (e) => {
@@ -479,14 +479,14 @@ export function PropertyDetail({ property }) {
                 }
               }}
               disabled={favoriteLoading}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors text-sm font-medium ${
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors text-sm font-medium ${
                 isFav
                   ? 'bg-[#FEF0EF] border-[#F5C4C0] text-[#D03839]'
                   : 'bg-white border-[#E8E8E4] text-[#444441] hover:bg-[#FAFAF8]'
               } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">{isFav ? 'Saved' : 'Save'}</span>
+              <span>{isFav ? 'Saved' : 'Save'}</span>
             </button>
             {user && (
               <Link href="/buyer/dashboard" className="flex items-center gap-2 group">
@@ -699,20 +699,51 @@ export function PropertyDetail({ property }) {
 
             {/* Property overview card */}
             <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-6">
-              {/* Location */}
-              {(property.city || property.state) && (
-                <div className="flex items-center gap-1.5 text-[#737370] text-[13px] mb-2">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span>{[property.city, property.state].filter(Boolean).join(', ')}</span>
+              {/* Location + mobile Share/Save + Active badge */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                {(property.city || property.state) && (
+                  <div className="flex items-center gap-1.5 text-[#737370] text-[13px]">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{[property.city, property.state].filter(Boolean).join(', ')}</span>
+                  </div>
+                )}
+                {/* Mobile only: Share icon + Save icon + Active badge */}
+                <div className="flex items-center gap-2 sm:hidden flex-shrink-0">
+                  <button
+                    onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShareTitle(property.full_address || property.display_address || property.address || 'Property'); setShowShareModal(true) }}
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center text-[#737370] hover:text-[#1A1816] transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (isPreview) { setShowPreviewModal(true); return }
+                      if (!user) { setShowLoginModal(true); return }
+                      setFavoriteLoading(true)
+                      try {
+                        await toggleFavorite(property.id)
+                        window.dispatchEvent(new CustomEvent('favoriteChanged'))
+                      } catch (error) { alert(error.message || 'Failed to update favorite') }
+                      finally { setFavoriteLoading(false) }
+                    }}
+                    disabled={favoriteLoading}
+                    className={`min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors ${favoriteLoading ? 'opacity-50' : ''} ${isFav ? 'text-[#D03839]' : 'text-[#737370] hover:text-[#D03839]'}`}
+                  >
+                    <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+                  </button>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[12px] font-semibold rounded border border-[#9FDBB8]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] inline-block"></span>
+                    {property.status || 'Active'}
+                  </span>
                 </div>
-              )}
+              </div>
 
-              {/* Title + Active Deal badge */}
+              {/* Title + Active Deal badge (desktop) */}
               <div className="flex items-start justify-between gap-4 mb-2">
                 <h1 className={`text-[22px] sm:text-[26px] font-bold text-[#1A1816] leading-snug break-words ${!user && !isPreview ? 'blur-sm select-none' : ''}`}>
                   {!user && !isPreview ? (property.city && property.state ? `${property.city}, ${property.state}` : 'Address hidden') : fullAddress}
                 </h1>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
                   <span className="w-2 h-2 rounded-full bg-[#16A34A] inline-block"></span>
                   {property.status || 'Active Deal'}
                 </span>
@@ -910,7 +941,7 @@ export function PropertyDetail({ property }) {
               <div className="mb-6">
                 <h3 className="text-xs font-bold text-[#D03839] uppercase tracking-[1.1px] mb-3">Property Snapshot</h3>
                 <div className="bg-white border border-[#E8E8E4] rounded p-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
                     {snapshotItems.map((item, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-10 h-10 flex-shrink-0 bg-[#F5F5F3] rounded flex items-center justify-center text-[#444441]">
@@ -1082,7 +1113,7 @@ export function PropertyDetail({ property }) {
                           href={calUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full bg-[#0F6E56] hover:bg-[#0A5A45] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors"
+                          className="flex items-center justify-center gap-2 w-full bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors"
                         >
                           <Calendar className="w-4 h-4" />
                           Add to Calendar

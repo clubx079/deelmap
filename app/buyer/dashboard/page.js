@@ -480,13 +480,13 @@ export default function BuyerDashboard() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => scrollDeals('left')}
-                  className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center hover:bg-[#FAFAF8] transition-colors duration-200"
+                  className="w-11 h-11 rounded-full border border-[#E8E8E4] flex items-center justify-center hover:bg-[#FAFAF8] transition-colors duration-200"
                 >
                   <ChevronLeft className="w-4 h-4 text-[#444441]" />
                 </button>
                 <button
                   onClick={() => scrollDeals('right')}
-                  className="w-9 h-9 rounded-full border border-[#E8E8E4] flex items-center justify-center hover:bg-[#FAFAF8] transition-colors duration-200"
+                  className="w-11 h-11 rounded-full border border-[#E8E8E4] flex items-center justify-center hover:bg-[#FAFAF8] transition-colors duration-200"
                 >
                   <ChevronRight className="w-4 h-4 text-[#444441]" />
                 </button>
@@ -588,10 +588,10 @@ function DealCard({ deal, getFeatureImage, formatCurrency }) {
             <span className="truncate">{deal.city}{deal.state ? `, ${deal.state}` : ''}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <button className="p-1 hover:bg-[#FAFAF8] rounded transition-colors duration-200">
+            <button className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-[#FAFAF8] rounded transition-colors duration-200">
               <Share2 className="w-3.5 h-3.5 text-[#A8A8A4]" />
             </button>
-            <button className="p-1 hover:bg-[#FAFAF8] rounded transition-colors duration-200">
+            <button className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-[#FAFAF8] rounded transition-colors duration-200">
               <Heart className="w-3.5 h-3.5 text-[#A8A8A4]" />
             </button>
           </div>

@@ -16,7 +16,7 @@ function BarRow({ label, count, max, sub }) {
   const pct = max > 0 ? Math.round((count / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <div className="w-28 shrink-0 text-[12px] text-[#737370] truncate" title={label}>{label}</div>
+      <div className="w-20 sm:w-28 shrink-0 text-[12px] text-[#737370] truncate" title={label}>{label}</div>
       <div className="flex-1 h-2 bg-[#F0F0EE] rounded-full overflow-hidden">
         <div className="h-full bg-[#D03839] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
@@ -101,7 +101,7 @@ export default function MarketInsightsPage() {
         </div>
         <Link
           href="/marketplace"
-          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors"
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors"
         >
           Browse deals
           <ArrowRight className="w-3.5 h-3.5" />

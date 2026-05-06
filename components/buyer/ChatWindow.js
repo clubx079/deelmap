@@ -654,11 +654,11 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         <div className="flex-shrink-0 px-6 py-4 border-t border-[#E8E8E4] bg-white">
           <form onSubmit={handleSendMessage} className="flex items-end gap-2">
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || sending}
-              className="p-2.5 rounded hover:bg-[#FAFAF8] transition-colors duration-200 disabled:opacity-50 flex-shrink-0">
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] transition-colors duration-200 disabled:opacity-50 flex-shrink-0">
               <Paperclip className="w-5 h-5 text-[#737370]" />
             </button>
             <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-            <button type="button" className="p-2.5 rounded hover:bg-[#FAFAF8] transition-colors duration-200 flex-shrink-0">
+            <button type="button" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] transition-colors duration-200 flex-shrink-0">
               <Smile className="w-5 h-5 text-[#737370]" />
             </button>
 
@@ -674,7 +674,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             </div>
 
             <button type="submit" disabled={(!newMessage.trim() && previewFiles.length === 0) || uploading || sending}
-              className="p-2.5 bg-[#D03839] hover:bg-[#E0493B] disabled:bg-[#F5C4C0] rounded transition-colors duration-200 disabled:cursor-not-allowed flex-shrink-0">
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-[#D03839] hover:bg-[#E0493B] disabled:bg-[#F5C4C0] rounded transition-colors duration-200 disabled:cursor-not-allowed flex-shrink-0">
               {uploading || sending
                 ? <Loader2 className="w-5 h-5 text-white animate-spin" />
                 : <Send className="w-5 h-5 text-white" />
