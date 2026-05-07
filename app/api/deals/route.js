@@ -51,7 +51,7 @@ export async function GET(request) {
     // Query 1: Get deals with ONLY featured photo (using Supabase transform for speed)
     const dealCols = [
       'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
-      'address_google_lat', 'address_google_lng', 'latitude', 'longitude',
+      'address_google_lat', 'address_google_lng',
       'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
       'listing_type', 'auction_date', 'auction_time', 'auction_location',
       'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
