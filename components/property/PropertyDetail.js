@@ -515,6 +515,25 @@ export function PropertyDetail({ property }) {
         </div>
       )}
 
+      {/* Expired banner */}
+      {property.status === 'expired' && (
+        <div className="bg-[#FEF0EF] border-b border-[#F5C4C0] px-4 sm:px-6 py-4">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-[15px] font-semibold text-[#D03839]">This listing is no longer available</p>
+              <p className="text-[13px] text-[#737370] mt-0.5">The deal has expired or been removed by the seller.</p>
+            </div>
+            <Link
+              href="/marketplace"
+              className="flex-shrink-0 flex items-center gap-2 bg-[#D03839] text-white text-[13px] font-semibold px-4 py-2 rounded hover:bg-[#E0493B] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Marketplace
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Photo Grid */}
       <div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
@@ -764,6 +783,15 @@ export function PropertyDetail({ property }) {
                     <span><span className="font-semibold">{property.bathrooms}</span> bath</span>
                   </>
                 )}
+                {property.created_at && (() => {
+                  const days = Math.floor((Date.now() - new Date(property.created_at).getTime()) / 86400000)
+                  return (
+                    <>
+                      <span className="text-[#D4D4CF]">·</span>
+                      <span><span className="font-semibold">{days === 0 ? 'Today' : days}</span>{days > 0 ? ` day${days === 1 ? '' : 's'} on DeelMap` : ' on DeelMap'}</span>
+                    </>
+                  )
+                })()}
               </div>
 
               {/* Divider */}

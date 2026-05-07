@@ -353,7 +353,10 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     return cityState || 'Address not available'
   }
 
-  const buildInfoEl = (prop) => {
+  const buildInfoEl = (prop, mapWidth = 0) => {
+    const isMobile = mapWidth > 0 && mapWidth < 500
+    const cw = isMobile ? 220 : 260
+    const imgH = isMobile ? 120 : 144
     // Support both wholesale_deals (property_photos) and properties (property_images)
     let rawImg = getPrimaryPhotoUrl(prop.property_photos)
     if (!rawImg && Array.isArray(prop.property_images) && prop.property_images.length > 0) {
@@ -381,7 +384,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
 
     const el = document.createElement('div')
     el.className = 'map-info-card-fixed'
-    el.style.cssText = 'cursor: pointer; width: 260px;'
+    el.style.cssText = `cursor: pointer; width: ${cw}px;`
 
     el.innerHTML = `
       <div style="
@@ -393,14 +396,14 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        width: 260px;
+        width: ${cw}px;
         transition: box-shadow 0.2s ease;
       ">
         <!-- Image (top, same proportions as vertical listing card) -->
         ${hasPhoto ? `
-          <div style="width:260px;height:144px;flex-shrink:0;background-image:url('${img}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#FAFAF8;"></div>
+          <div style="width:${cw}px;height:${imgH}px;flex-shrink:0;background-image:url('${img}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#FAFAF8;"></div>
         ` : `
-          <div style="width:260px;height:144px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#FAFAF8;">
+          <div style="width:${cw}px;height:${imgH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#FAFAF8;">
             <img src="/assets/logo.svg" alt="DeelMap" style="width:90px;" />
             <span style="font-size:10px;color:#A8A8A4;">Photos coming soon</span>
           </div>
@@ -442,22 +445,23 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     if (!map) return
     hideInfoCard()
 
-    const el = buildInfoEl(prop)
+    const mapDiv = map.getDiv()
+    const el = buildInfoEl(prop, mapDiv.offsetWidth)
 
     const overlay = new window.google.maps.OverlayView()
     overlay.onAdd = function () { this.getPanes().floatPane.appendChild(el) }
     overlay.draw = function () {
       const proj = this.getProjection()
       const pt = proj.fromLatLngToDivPixel(anchorMarker.getPosition())
-      
-      const mapDiv = map.getDiv()
+
       const mapWidth = mapDiv.offsetWidth
       const mapHeight = mapDiv.offsetHeight
-      
-      const edgePadding = 15
+
+      const isMobile = mapWidth < 500
+      const edgePadding = isMobile ? 20 : 15
       const topPadding = 80
-      const cardWidth = 260
-      const cardHeight = 215
+      const cardWidth = isMobile ? 220 : 260
+      const cardHeight = isMobile ? 190 : 215
       const popupOffset = 15
 
       const screenX = pt.x + (mapWidth / 2)

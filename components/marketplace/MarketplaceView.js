@@ -370,8 +370,8 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
             </div>
             <p className="text-[12px] text-[#737370]">{resultCount.toLocaleString()} deals</p>
           </div>
-          {/* Row 2: Sort — under the deals count */}
-          <div className="relative border-t border-[#F0F0EC] px-4 py-2" ref={mobileSortRef}>
+          {/* Row 2: Sort — only in list view */}
+          {mobileView === 'list' && <div className="relative border-t border-[#F0F0EC] px-4 py-2" ref={mobileSortRef}>
             <button
               onClick={() => setShowMobileSortDropdown(!showMobileSortDropdown)}
               className={`flex items-center gap-2 h-9 px-3 border rounded text-[13px] font-medium transition-colors ${
@@ -407,11 +407,11 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                 ))}
               </div>
             </div>
-          </div>
+          </div>}
         </div>
 
         {mobileView === 'map' && (
-          <div className="fixed inset-0 top-[300px]">
+          <div className="fixed inset-0 top-[252px]">
             <PropertyMap
               properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
