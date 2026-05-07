@@ -150,24 +150,23 @@ export async function GET(request) {
       }
     }
 
-    // Supabase caps at 1000 rows per query — run batches in parallel
+    // Supabase caps at 1000 rows per query — loop in batches if limit > 1000
     const SUPABASE_MAX = 1000;
-    const numBatches = Math.ceil(limit / SUPABASE_MAX);
-    const batchResults = await Promise.all(
-      Array.from({ length: numBatches }, (_, i) => {
-        const from = offset + i * SUPABASE_MAX;
-        const to = Math.min(from + SUPABASE_MAX - 1, offset + limit - 1);
-        return query.range(from, to);
-      })
-    );
+    let allDeals = [];
     let totalCount = null;
-    const allDeals = [];
-    for (const { data: batchData, error: batchError, count } of batchResults) {
+    let batchFrom = offset;
+    const batchEnd = offset + limit - 1;
+    while (batchFrom <= batchEnd) {
+      const batchTo = Math.min(batchFrom + SUPABASE_MAX - 1, batchEnd);
+      const { data: batchData, error: batchError, count } = await query.range(batchFrom, batchTo);
       if (batchError) throw batchError;
       if (totalCount === null && count !== null) totalCount = count;
       allDeals.push(...(batchData || []));
+      if (!batchData || batchData.length < SUPABASE_MAX) break;
+      batchFrom += SUPABASE_MAX;
     }
     const deals = allDeals;
+    const count = totalCount;
     const error = null;
 
     // Build manual properties query
