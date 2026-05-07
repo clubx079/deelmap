@@ -150,7 +150,24 @@ export async function GET(request) {
       }
     }
 
-    query = query.range(offset, offset + limit - 1);
+    // Supabase caps at 1000 rows per query — loop in batches if limit > 1000
+    const SUPABASE_MAX = 1000;
+    let allDeals = [];
+    let totalCount = null;
+    let batchFrom = offset;
+    const batchEnd = offset + limit - 1;
+    while (batchFrom <= batchEnd) {
+      const batchTo = Math.min(batchFrom + SUPABASE_MAX - 1, batchEnd);
+      const { data: batchData, error: batchError, count } = await query.range(batchFrom, batchTo);
+      if (batchError) throw batchError;
+      if (totalCount === null && count !== null) totalCount = count;
+      allDeals.push(...(batchData || []));
+      if (!batchData || batchData.length < SUPABASE_MAX) break;
+      batchFrom += SUPABASE_MAX;
+    }
+    const deals = allDeals;
+    const count = totalCount;
+    const error = null;
 
     // Build manual properties query
     let manualQuery = supabaseMarketplace
@@ -215,16 +232,10 @@ export async function GET(request) {
     // Skip manual properties when a listing type filter is active — that table has no listing_type
     const runManualQuery = !listingType;
 
-    // Run both queries in parallel — each fails independently
-    const [dealsResult, manualResult] = await Promise.allSettled([query, runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 })]);
+    // deals already fetched above in paginated batches; just run manual query
+    const manualResult = await Promise.allSettled([runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 })]);
 
-    if (dealsResult.status === 'rejected' || dealsResult.value?.error) {
-      const err = dealsResult.value?.error || dealsResult.reason;
-      console.error('[DEALS-API] Error:', err);
-      throw err;
-    }
-
-    const { data: deals, count: totalCount } = dealsResult.value;
+    if (error) throw error;
 
     // Fallback: for deals with no featured photo, fetch their first photo by display_order
     const dealsNeedingFallback = (deals || []).filter(d => !d.property_photos?.length).map(d => d.id);
@@ -261,8 +272,8 @@ export async function GET(request) {
     let manualProperties = [];
     let manualCount = 0;
     try {
-      if (manualResult.status === 'fulfilled' && !manualResult.value?.error) {
-        const { data: manualData, count: mCount } = manualResult.value;
+      if (manualResult[0].status === 'fulfilled' && !manualResult[0].value?.error) {
+        const { data: manualData, count: mCount } = manualResult[0].value;
         manualCount = mCount || 0;
         if (manualData && manualData.length > 0) {
           manualProperties = manualData.map(p => normalizeManualProperty(p, p.property_images || [])).filter(Boolean);
