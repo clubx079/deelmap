@@ -75,8 +75,6 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
 
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [mapBounds, setMapBounds] = useState(null)
-  const [displayCount, setDisplayCount] = useState(30)
-  const sentinelRef = useRef(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const sortDropdownRef = useRef(null)
   const [showMobileSortDropdown, setShowMobileSortDropdown] = useState(false)
@@ -104,21 +102,6 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   })
 
   const handleMarkerClick = (property) => setSelectedProperty(property)
-
-  // Reset display count when visible properties change (map pans / filters change)
-  useEffect(() => { setDisplayCount(30) }, [mapBounds, searchQuery, JSON.stringify(filters), sortBy])
-
-  // Infinite scroll — auto-load more when sentinel div enters viewport
-  useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) setDisplayCount(c => c + 30) },
-      { rootMargin: '200px' }
-    )
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -233,7 +216,6 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   }
 
   const locationFilteredPins = filterPinsByLocation(mapPins.length > 0 ? mapPins : properties)
-  const viewportPins = mapBounds ? locationFilteredPins.filter(p => isInBounds(p, mapBounds)) : locationFilteredPins
 
   const visibleProperties = (() => {
     let list = mapBounds && properties.length > 0
@@ -444,7 +426,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
         {mobileView === 'map' && (
           <div className="fixed inset-0 top-[252px]">
             <PropertyMap
-              properties={viewportPins}
+              properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
               onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
@@ -469,14 +451,22 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
               <ErrorState />
             ) : (
               <div className="p-3 grid grid-cols-1 gap-3">
-                {visibleProperties.slice(0, displayCount).map((p) => (
+                {visibleProperties.map((p) => (
                   <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="vertical" />
                 ))}
                 {visibleProperties.length === 0 && !loading && !loadingMore && !error && <div><EmptyState layout="vertical" /></div>}
-                {displayCount < visibleProperties.length && (
-                  <div className="py-4 flex justify-center">
-                    <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  </div>
+                {hasMore && properties.length > 0 && (
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="w-full h-12 border border-[#E8E8E4] rounded text-[14px] font-semibold text-[#1A1816] bg-white hover:bg-[#FAFAF8] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loadingMore ? (
+                      <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Loading...</>
+                    ) : (
+                      `Load More (${properties.length} of ${totalCount || '?'})`
+                    )}
+                  </button>
                 )}
               </div>
             )}
@@ -489,7 +479,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
         <div className="flex h-full">
           <div className="flex-1 bg-[#FAFAF8] relative min-w-[300px]">
             <PropertyMap
-              properties={viewportPins}
+              properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
               onBoundsChange={setMapBounds}
               selectedProperty={selectedProperty}
@@ -513,12 +503,22 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
             ) : (
               <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
                 <div className="space-y-4">
-                  {visibleProperties.slice(0, displayCount).map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
+                  {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
                 </div>
                 {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState layout="horizontal" />}
-                {displayCount < visibleProperties.length && (
-                  <div ref={sentinelRef} className="py-6 flex justify-center">
-                    <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                {hasMore && properties.length > 0 && (
+                  <div className="py-4 flex justify-center">
+                    <button
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="px-6 py-2.5 bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] disabled:opacity-50 text-white text-[13px] font-semibold rounded transition-all flex items-center gap-2"
+                    >
+                      {loadingMore ? (
+                        <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Loading...</>
+                      ) : (
+                        `Load More (${properties.length} of ${totalCount || '?'})`
+                      )}
+                    </button>
                   </div>
                 )}
               </div>
