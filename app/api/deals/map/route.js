@@ -41,11 +41,10 @@ export async function GET(request) {
 
     let query = supabase
       .from('wholesale_deals')
-      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, address_google_lat, address_google_lng, property_photos(photo_url, optimized_url, is_featured, display_order)')
+      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, address_google_lat, address_google_lng, latitude, longitude, property_photos(photo_url, optimized_url, is_featured, display_order)')
       .eq('status', 'active')
       .eq('is_incomplete', false)
-      .not('address_google_lat', 'is', null)
-      .not('address_google_lng', 'is', null);
+      .or('address_google_lat.not.is.null,latitude.not.is.null');
 
     // Apply filters
     if (minPrice !== null) query = query.gte('price', minPrice);
@@ -126,10 +125,10 @@ export async function GET(request) {
       bathrooms: d.bathrooms,
       sqft: d.sqft,
       property_photos: d.property_photos,
-      latitude: d.address_google_lat,
-      longitude: d.address_google_lng,
-      address_google_lat: d.address_google_lat,
-      address_google_lng: d.address_google_lng,
+      latitude: d.address_google_lat || d.latitude,
+      longitude: d.address_google_lng || d.longitude,
+      address_google_lat: d.address_google_lat || d.latitude,
+      address_google_lng: d.address_google_lng || d.longitude,
     }));
 
     // Also include manual seller properties on the map with same filters (skip when listing type filter active)
