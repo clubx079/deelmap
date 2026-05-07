@@ -222,11 +222,24 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
       ? properties.filter(p => isInBounds(p, mapBounds))
       : properties
     list = filterPinsByLocation(list)
-    if (sortBy === 'recommended') return [...list].sort((a, b) => {
-      const aAuction = a.listing_type === 'auction' ? 1 : 0
-      const bAuction = b.listing_type === 'auction' ? 1 : 0
-      return aAuction - bAuction
-    })
+    if (sortBy === 'recommended') {
+      const wholesale = list.filter(p => p.listing_type !== 'auction')
+      const auction = list.filter(p => p.listing_type === 'auction')
+      // First 3: wholesale, wholesale, auction
+      const head = [wholesale[0], wholesale[1], auction[0]].filter(Boolean)
+      const usedWholesale = head.filter(p => p?.listing_type !== 'auction').length
+      const usedAuction = head.filter(p => p?.listing_type === 'auction').length
+      // Remaining: interleave wholesale and auction evenly
+      const restWholesale = wholesale.slice(usedWholesale)
+      const restAuction = auction.slice(usedAuction)
+      const tail = []
+      const maxLen = Math.max(restWholesale.length, restAuction.length)
+      for (let i = 0; i < maxLen; i++) {
+        if (i < restWholesale.length) tail.push(restWholesale[i])
+        if (i < restAuction.length) tail.push(restAuction[i])
+      }
+      return [...head, ...tail]
+    }
     if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
     if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
     if (sortBy === 'roi') return [...list].sort((a, b) => (b.gross_yield || b.cap_rate || 0) - (a.gross_yield || a.cap_rate || 0))
