@@ -78,11 +78,10 @@ export async function GET(request) {
     };
 
     // Factory — builds a fresh query object each call so parallel .range() calls don't share state
-    // withCount=true only on the first batch to avoid 5x expensive COUNT(*) queries
-    const buildDealsQuery = (from, to, withCount = false) => {
+    const buildDealsQuery = (from, to) => {
       let q = supabaseMarketplace
         .from('wholesale_deals')
-        .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, withCount ? { count: 'exact' } : {})
+        .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
         .eq('status', statusToFilter)
         .eq('is_incomplete', false)
         .eq('property_photos.is_featured', true);
@@ -137,14 +136,13 @@ export async function GET(request) {
     };
 
     // Parallel batches — each gets its own fresh query object (Supabase builder mutates on .range())
-    // Only batch 0 requests count:exact to avoid N expensive COUNT(*) queries running simultaneously
     const SUPABASE_MAX = 1000;
     const numBatches = Math.ceil(limit / SUPABASE_MAX);
     const batchResults = await Promise.all(
       Array.from({ length: numBatches }, (_, i) => {
         const from = offset + i * SUPABASE_MAX;
         const to = Math.min(from + SUPABASE_MAX - 1, offset + limit - 1);
-        return buildDealsQuery(from, to, i === 0);
+        return buildDealsQuery(from, to);
       })
     );
     let totalCount = null;
