@@ -12,7 +12,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
 
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '5000');
+    const limit = parseInt(searchParams.get('limit') || '1000');
     const offset = (page - 1) * limit;
     const sortBy = searchParams.get('sortBy') || 'newest';
     const searchQuery = searchParams.get('searchQuery') || '';
@@ -48,6 +48,7 @@ export async function GET(request) {
     const listingType = searchParams.get('listingType') || null; // 'wholesale' | 'auction' | null=all
     const listingStatus = searchParams.get('listingStatus') || 'active'; // 'active' | 'pending' | 'sold'
 
+    // Query 1: Get deals with ONLY featured photo (using Supabase transform for speed)
     const dealCols = [
       'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
       'address_google_lat', 'address_google_lng',
@@ -61,8 +62,50 @@ export async function GET(request) {
 
     const validStatuses = ['active', 'pending', 'sold'];
     const statusToFilter = validStatuses.includes(listingStatus) ? listingStatus : 'active';
+
+    let query = supabaseMarketplace
+      .from('wholesale_deals')
+      .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
+      .eq('status', statusToFilter)
+      .eq('is_incomplete', false)
+      .eq('property_photos.is_featured', true);
+
+    // Sorting
+    if (sortBy === 'price-low') {
+      query = query.order('price', { ascending: true, nullsFirst: false });
+    } else if (sortBy === 'price-high') {
+      query = query.order('price', { ascending: false, nullsFirst: false });
+    } else if (sortBy === 'roi') {
+      query = query.order('cash_on_cash', { ascending: false, nullsFirst: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
+    // Filters
+    if (propertyTypes.length > 0) query = query.in('property_type', propertyTypes);
+    if (minPrice !== null) query = query.gte('price', minPrice);
+    if (maxPrice !== null) query = query.lte('price', maxPrice);
+    if (minBedrooms !== null) query = query.gte('bedrooms', minBedrooms);
+    if (maxBedrooms !== null) query = query.lte('bedrooms', maxBedrooms);
+    if (minBathrooms !== null) query = query.gte('bathrooms', minBathrooms);
+    if (maxBathrooms !== null) query = query.lte('bathrooms', maxBathrooms);
+    if (minSqft !== null) query = query.gte('sqft', minSqft);
+    if (maxSqft !== null) query = query.lte('sqft', maxSqft);
+    if (minYield !== null) query = query.gte('gross_yield', minYield);
+    if (maxYield !== null) query = query.lte('gross_yield', maxYield);
+    if (minCapRate !== null) query = query.gte('cap_rate', minCapRate);
+    if (maxCapRate !== null) query = query.lte('cap_rate', maxCapRate);
     const minCashOnCash = parseFloat(searchParams.get('minCashOnCash')) || null;
     const maxCashOnCash = parseFloat(searchParams.get('maxCashOnCash')) || null;
+    if (minCashOnCash !== null) query = query.gte('cash_on_cash', minCashOnCash);
+    if (maxCashOnCash !== null) query = query.lte('cash_on_cash', maxCashOnCash);
+    if (cities.length > 0) query = query.in('city', cities);
+    if (states.length > 0) query = query.in('state', states);
+    if (listingType === 'auction') {
+      query = query.eq('listing_type', 'auction');
+    } else if (listingType === 'wholesale') {
+      query = query.or('listing_type.is.null,listing_type.neq.auction');
+    }
 
     const stateNameToAbbr = {
       'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
@@ -77,81 +120,37 @@ export async function GET(request) {
       'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
     };
 
-    // Factory — builds a fresh query object each call so parallel .range() calls don't share state
-    const buildDealsQuery = (from, to) => {
-      let q = supabaseMarketplace
-        .from('wholesale_deals')
-        .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
-        .eq('status', statusToFilter)
-        .eq('is_incomplete', false)
-        .eq('property_photos.is_featured', true);
+    if (searchQuery) {
+      const rawTerm = searchQuery.trim();
 
-      if (sortBy === 'price-low') q = q.order('price', { ascending: true, nullsFirst: false });
-      else if (sortBy === 'price-high') q = q.order('price', { ascending: false, nullsFirst: false });
-      else if (sortBy === 'roi') q = q.order('cash_on_cash', { ascending: false, nullsFirst: false });
-      else q = q.order('created_at', { ascending: false });
-
-      if (propertyTypes.length > 0) q = q.in('property_type', propertyTypes);
-      if (minPrice !== null) q = q.gte('price', minPrice);
-      if (maxPrice !== null) q = q.lte('price', maxPrice);
-      if (minBedrooms !== null) q = q.gte('bedrooms', minBedrooms);
-      if (maxBedrooms !== null) q = q.lte('bedrooms', maxBedrooms);
-      if (minBathrooms !== null) q = q.gte('bathrooms', minBathrooms);
-      if (maxBathrooms !== null) q = q.lte('bathrooms', maxBathrooms);
-      if (minSqft !== null) q = q.gte('sqft', minSqft);
-      if (maxSqft !== null) q = q.lte('sqft', maxSqft);
-      if (minYield !== null) q = q.gte('gross_yield', minYield);
-      if (maxYield !== null) q = q.lte('gross_yield', maxYield);
-      if (minCapRate !== null) q = q.gte('cap_rate', minCapRate);
-      if (maxCapRate !== null) q = q.lte('cap_rate', maxCapRate);
-      if (minCashOnCash !== null) q = q.gte('cash_on_cash', minCashOnCash);
-      if (maxCashOnCash !== null) q = q.lte('cash_on_cash', maxCashOnCash);
-      if (cities.length > 0) q = q.in('city', cities);
-      if (states.length > 0) q = q.in('state', states);
-      if (listingType === 'auction') q = q.eq('listing_type', 'auction');
-      else if (listingType === 'wholesale') q = q.or('listing_type.is.null,listing_type.neq.auction');
-
-      if (searchQuery) {
-        const rawTerm = searchQuery.trim();
-        const commaIdx = rawTerm.indexOf(',');
-        if (commaIdx > 0) {
-          const cityPart = rawTerm.substring(0, commaIdx).trim();
-          const statePart = rawTerm.substring(commaIdx + 1).trim();
-          const stateAbbrFromName = stateNameToAbbr[statePart.toLowerCase()];
-          const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
-          const cq = `%${cityPart}%`;
-          if (stateAbbrFinal) q = q.ilike('city', cq).eq('state', stateAbbrFinal);
-          else q = q.or(`address.ilike.${cq},full_address.ilike.${cq},city.ilike.${cq}`);
+      // Handle "City, State" format from Google Places autocomplete (e.g. "Lexington, Kentucky")
+      const commaIdx = rawTerm.indexOf(',');
+      if (commaIdx > 0) {
+        const cityPart = rawTerm.substring(0, commaIdx).trim();
+        const statePart = rawTerm.substring(commaIdx + 1).trim();
+        const stateAbbrFromName = stateNameToAbbr[statePart.toLowerCase()];
+        // State could be full name ("Kentucky") or abbreviation ("KY")
+        const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
+        const cq = `%${cityPart}%`;
+        if (stateAbbrFinal) {
+          query = query.ilike('city', cq).eq('state', stateAbbrFinal);
         } else {
-          let searchTerm = rawTerm.replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
-          if (!searchTerm) searchTerm = rawTerm;
-          const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
-          const sq = `%${searchTerm}%`;
-          if (stateAbbr) q = q.or(`address.ilike.${sq},full_address.ilike.${sq},city.ilike.${sq},state.eq.${stateAbbr},zip_code.ilike.${sq}`);
-          else q = q.or(`address.ilike.${sq},full_address.ilike.${sq},city.ilike.${sq},state.ilike.${sq},zip_code.ilike.${sq}`);
+          query = query.or(`address.ilike.${cq},full_address.ilike.${cq},city.ilike.${cq}`);
+        }
+      } else {
+        let searchTerm = rawTerm.replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!searchTerm) searchTerm = rawTerm;
+        const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
+        const q = `%${searchTerm}%`;
+        if (stateAbbr) {
+          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
+        } else {
+          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
         }
       }
-
-      return q.range(from, to);
-    };
-
-    // Parallel batches — each gets its own fresh query object (Supabase builder mutates on .range())
-    const SUPABASE_MAX = 1000;
-    const numBatches = Math.ceil(limit / SUPABASE_MAX);
-    const batchResults = await Promise.all(
-      Array.from({ length: numBatches }, (_, i) => {
-        const from = offset + i * SUPABASE_MAX;
-        const to = Math.min(from + SUPABASE_MAX - 1, offset + limit - 1);
-        return buildDealsQuery(from, to);
-      })
-    );
-    let totalCount = null;
-    const allDeals = [];
-    for (const { data: batchData, error: batchError, count } of batchResults) {
-      if (batchError) throw batchError;
-      if (totalCount === null && count !== null) totalCount = count;
-      allDeals.push(...(batchData || []));
     }
+
+    query = query.range(offset, offset + limit - 1);
 
     // Build manual properties query
     let manualQuery = supabaseMarketplace
@@ -215,9 +214,17 @@ export async function GET(request) {
 
     // Skip manual properties when a listing type filter is active — that table has no listing_type
     const runManualQuery = !listingType;
-    const [manualResult] = await Promise.allSettled([runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 })]);
 
-    const deals = allDeals;
+    // Run both queries in parallel — each fails independently
+    const [dealsResult, manualResult] = await Promise.allSettled([query, runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 })]);
+
+    if (dealsResult.status === 'rejected' || dealsResult.value?.error) {
+      const err = dealsResult.value?.error || dealsResult.reason;
+      console.error('[DEALS-API] Error:', err);
+      throw err;
+    }
+
+    const { data: deals, count: totalCount } = dealsResult.value;
 
     // Fallback: for deals with no featured photo, fetch their first photo by display_order
     const dealsNeedingFallback = (deals || []).filter(d => !d.property_photos?.length).map(d => d.id);

@@ -97,7 +97,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     filters,
     sortBy,
     searchQuery,
-    pageSize: 5000,
+    pageSize: 1000,
     authToken: user?.id ? `Bearer ${user.id}` : undefined
   })
 
