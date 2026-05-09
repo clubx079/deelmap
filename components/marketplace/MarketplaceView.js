@@ -258,11 +258,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   const locationFilteredPins = filterPinsByLocation(mapPins.length > 0 ? mapPins : properties)
 
   const visibleProperties = (() => {
-    // Client-side fast filter: while waiting for the new API response (debounced 400ms),
-    // immediately hide stale properties that are outside the current map view.
-    const list = mapBounds && properties.length > 0
-      ? properties.filter(p => isInBounds(p, mapBounds))
-      : properties
+    const list = properties
 
     if (sortBy === 'recommended') {
       const wholesale = list.filter(p => p.listing_type !== 'auction')
