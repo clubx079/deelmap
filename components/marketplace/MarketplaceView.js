@@ -263,17 +263,13 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     if (sortBy === 'recommended') {
       const wholesale = list.filter(p => p.listing_type !== 'auction')
       const auction = list.filter(p => p.listing_type === 'auction')
-      // Cap auction at 1 per 3 wholesale (25% max) so wholesale always dominates
-      const maxAuction = Math.ceil(wholesale.length / 3) || (wholesale.length === 0 ? auction.length : 0)
-      const cappedAuction = auction.slice(0, maxAuction)
-      // Interleave: W W W A W W W A ...
+      // Interleave wholesale and auction 1:1 — show all, no cap
       const result = []
-      let ai = 0
-      for (let i = 0; i < wholesale.length; i++) {
-        result.push(wholesale[i])
-        if ((i + 1) % 3 === 0 && ai < cappedAuction.length) result.push(cappedAuction[ai++])
+      const maxLen = Math.max(wholesale.length, auction.length)
+      for (let i = 0; i < maxLen; i++) {
+        if (i < wholesale.length) result.push(wholesale[i])
+        if (i < auction.length) result.push(auction[i])
       }
-      while (ai < cappedAuction.length) result.push(cappedAuction[ai++])
       return result
     }
     if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
