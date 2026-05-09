@@ -255,7 +255,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     return bounds.contains({ lat, lng })
   }
 
-  const locationFilteredPins = filterPinsByLocation(mapPins.length > 0 ? mapPins : properties)
+  const locationFilteredPins = filterPinsByLocation(mapPins)
 
   const visibleProperties = (() => {
     const list = properties
