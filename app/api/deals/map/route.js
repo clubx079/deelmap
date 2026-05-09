@@ -109,7 +109,7 @@ export async function GET(request) {
       }
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.range(0, 9999);
 
     if (error) throw error;
 
@@ -177,7 +177,7 @@ export async function GET(request) {
         }
       }
 
-      const { data: manualData } = await manualQuery;
+      const { data: manualData } = await manualQuery.range(0, 9999);
 
       if (manualData && manualData.length > 0) {
         for (const p of manualData) {
