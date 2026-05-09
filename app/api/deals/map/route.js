@@ -41,12 +41,13 @@ export async function GET(request) {
 
     let query = supabase
       .from('wholesale_deals')
-      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng')
+      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng, property_photos!left(photo_url, optimized_url)')
       .eq('status', 'active')
       .eq('is_incomplete', false)
       .neq('state', 'HI')
       .not('address_google_lat', 'is', null)
-      .not('address_google_lng', 'is', null);
+      .not('address_google_lng', 'is', null)
+      .eq('property_photos.is_featured', true);
 
     // Apply filters
     if (minPrice !== null) query = query.gte('price', minPrice);
@@ -127,6 +128,7 @@ export async function GET(request) {
       bathrooms: d.bathrooms,
       sqft: d.sqft,
       listing_type: d.listing_type,
+      property_photos: d.property_photos || [],
       latitude: d.address_google_lat,
       longitude: d.address_google_lng,
       address_google_lat: d.address_google_lat,
@@ -137,10 +139,11 @@ export async function GET(request) {
     if (!listingType) try {
       let manualQuery = supabase
         .from('properties')
-        .select('id, slug, address, city, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type')
+        .select('id, slug, address, city, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type, property_images!left(image_url, sort_order)')
         .in('status', ['active', 'published'])
         .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+        .not('longitude', 'is', null)
+        .eq('property_images.sort_order', 0);
 
       if (states.length > 0) manualQuery = manualQuery.in('state', states);
       if (minPrice !== null) manualQuery = manualQuery.gte('price', minPrice);
@@ -181,6 +184,7 @@ export async function GET(request) {
 
       if (manualData && manualData.length > 0) {
         for (const p of manualData) {
+          const firstImg = Array.isArray(p.property_images) ? p.property_images[0] : null;
           pins.push({
             id: p.id,
             slug: p.slug,
@@ -191,6 +195,7 @@ export async function GET(request) {
             bedrooms: p.bedrooms,
             bathrooms: p.bathrooms,
             sqft: p.floor_area,
+            property_photos: firstImg ? [{ photo_url: firstImg.image_url, optimized_url: null, is_featured: true }] : [],
             latitude: p.latitude,
             longitude: p.longitude,
             address_google_lat: p.latitude,
