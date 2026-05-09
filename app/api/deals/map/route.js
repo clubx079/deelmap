@@ -41,7 +41,7 @@ export async function GET(request) {
 
     let query = supabase
       .from('wholesale_deals')
-      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng, property_photos(photo_url, optimized_url, is_featured, display_order)')
+      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng')
       .eq('status', 'active')
       .eq('is_incomplete', false)
       .neq('state', 'HI')
@@ -126,7 +126,7 @@ export async function GET(request) {
       bedrooms: d.bedrooms,
       bathrooms: d.bathrooms,
       sqft: d.sqft,
-      property_photos: d.property_photos,
+      listing_type: d.listing_type,
       latitude: d.address_google_lat,
       longitude: d.address_google_lng,
       address_google_lat: d.address_google_lat,
@@ -137,7 +137,7 @@ export async function GET(request) {
     if (!listingType) try {
       let manualQuery = supabase
         .from('properties')
-        .select('id, slug, address, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type, property_images(image_url, sort_order)')
+        .select('id, slug, address, city, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type')
         .in('status', ['active', 'published'])
         .not('latitude', 'is', null)
         .not('longitude', 'is', null);
@@ -181,26 +181,20 @@ export async function GET(request) {
 
       if (manualData && manualData.length > 0) {
         for (const p of manualData) {
-          const imgs = Array.isArray(p.property_images) ? p.property_images : [];
-          const sortedImgs = [...imgs].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-          const propertyPhotos = sortedImgs.map(img => ({
-            photo_url: img.image_url,
-            optimized_url: null,
-            is_featured: false,
-            display_order: img.sort_order || 0,
-          }));
           pins.push({
             id: p.id,
             slug: p.slug,
             address: p.address,
-            city: null,
+            city: p.city || null,
             state: p.state,
             price: p.price,
+            bedrooms: p.bedrooms,
+            bathrooms: p.bathrooms,
+            sqft: p.floor_area,
             latitude: p.latitude,
             longitude: p.longitude,
             address_google_lat: p.latitude,
             address_google_lng: p.longitude,
-            property_photos: propertyPhotos,
           });
         }
       }
