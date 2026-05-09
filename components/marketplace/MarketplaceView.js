@@ -374,12 +374,25 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center text-[#737370]">
-          <div className="flex justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="40" fill="#FEF0EF"/>
-              <path d="M40 16C31.163 16 24 23.163 24 32C24 44 40 62 40 62C40 62 56 44 56 32C56 23.163 48.837 16 40 16Z" fill="white" stroke="#D03839" strokeWidth="2.5" strokeLinejoin="round"/>
-              <line x1="34" y1="26" x2="46" y2="38" stroke="#D03839" strokeWidth="2.5" strokeLinecap="round"/>
-              <line x1="46" y1="26" x2="34" y2="38" stroke="#D03839" strokeWidth="2.5" strokeLinecap="round"/>
+          <div className="flex justify-center mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+              {/* Background */}
+              <circle cx="60" cy="60" r="60" fill="#FEF0EF"/>
+              {/* Dashed search radius ring */}
+              <circle cx="60" cy="47" r="36" stroke="#D03839" strokeWidth="1" strokeDasharray="3 4" opacity="0.2"/>
+              {/* Ghost pin — left */}
+              <path d="M18 64C15.239 64 13 66.239 13 69C13 73 18 80 18 80C18 80 23 73 23 69C23 66.239 20.761 64 18 64Z" fill="#C8C8C4" opacity="0.45"/>
+              {/* Ghost pin — right */}
+              <path d="M102 57C99.239 57 97 59.239 97 62C97 66 102 73 102 73C102 73 107 66 107 62C107 59.239 104.761 57 102 57Z" fill="#C8C8C4" opacity="0.45"/>
+              {/* Pin drop shadow */}
+              <path d="M62 18C48.745 18 38 28.745 38 42C38 56 62 85 62 85C62 85 86 56 86 42C86 28.745 75.255 18 62 18Z" fill="#D03839" opacity="0.07"/>
+              {/* Pin body */}
+              <path d="M60 16C46.745 16 36 26.745 36 40C36 54 60 83 60 83C60 83 84 54 84 40C84 26.745 73.255 16 60 16Z" fill="white" stroke="#D03839" strokeWidth="2.5"/>
+              {/* Pin inner circle */}
+              <circle cx="60" cy="38" r="11.5" fill="#FEF0EF" stroke="#D03839" strokeWidth="2"/>
+              {/* X mark */}
+              <path d="M55.5 33.5L64.5 42.5" stroke="#D03839" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M64.5 33.5L55.5 42.5" stroke="#D03839" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-[#1A1816] mb-2">
