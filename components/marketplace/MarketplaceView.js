@@ -75,6 +75,11 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
 
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [mapBounds, setMapBounds] = useState(null)
+  const [listBounds, setListBounds] = useState(null)
+  const listBoundsTimerRef = useRef(null)
+  const desktopSentinelRef = useRef(null)
+  const mobileSentinelRef = useRef(null)
+  const loadMoreStableRef = useRef(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const sortDropdownRef = useRef(null)
   const [showMobileSortDropdown, setShowMobileSortDropdown] = useState(false)
@@ -90,18 +95,44 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     loadingMore,
     error,
     hasMore,
-    totalCount,
     loadMore,
     refetch
   } = useProperties({
     filters,
     sortBy,
     searchQuery,
-    pageSize: 1000,
+    pageSize: 30,
+    bounds: listBounds,
     authToken: user?.id ? `Bearer ${user.id}` : undefined
   })
 
   const handleMarkerClick = (property) => setSelectedProperty(property)
+
+  const handleBoundsChange = (bounds) => {
+    setMapBounds(bounds)
+    clearTimeout(listBoundsTimerRef.current)
+    listBoundsTimerRef.current = setTimeout(() => {
+      if (!bounds) { setListBounds(null); return }
+      setListBounds({
+        swLat: bounds.getSouthWest().lat(),
+        swLng: bounds.getSouthWest().lng(),
+        neLat: bounds.getNorthEast().lat(),
+        neLng: bounds.getNorthEast().lng(),
+      })
+    }, 400)
+  }
+
+  // Keep a stable ref to loadMore so IntersectionObserver doesn't re-subscribe on every render
+  useEffect(() => { loadMoreStableRef.current = loadMore }, [loadMore])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMoreStableRef.current?.() },
+      { rootMargin: '300px' }
+    )
+    ;[desktopSentinelRef.current, mobileSentinelRef.current].forEach(el => { if (el) observer.observe(el) })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -218,27 +249,27 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   const locationFilteredPins = filterPinsByLocation(mapPins.length > 0 ? mapPins : properties)
 
   const visibleProperties = (() => {
-    let list = mapBounds && properties.length > 0
+    // Client-side fast filter: while waiting for the new API response (debounced 400ms),
+    // immediately hide stale properties that are outside the current map view.
+    const list = mapBounds && properties.length > 0
       ? properties.filter(p => isInBounds(p, mapBounds))
       : properties
-    list = filterPinsByLocation(list)
+
     if (sortBy === 'recommended') {
       const wholesale = list.filter(p => p.listing_type !== 'auction')
       const auction = list.filter(p => p.listing_type === 'auction')
-      // First 3: wholesale, wholesale, auction
-      const head = [wholesale[0], wholesale[1], auction[0]].filter(Boolean)
-      const usedWholesale = head.filter(p => p?.listing_type !== 'auction').length
-      const usedAuction = head.filter(p => p?.listing_type === 'auction').length
-      // Remaining: interleave wholesale and auction evenly
-      const restWholesale = wholesale.slice(usedWholesale)
-      const restAuction = auction.slice(usedAuction)
-      const tail = []
-      const maxLen = Math.max(restWholesale.length, restAuction.length)
-      for (let i = 0; i < maxLen; i++) {
-        if (i < restWholesale.length) tail.push(restWholesale[i])
-        if (i < restAuction.length) tail.push(restAuction[i])
+      // Cap auction at 1 per 3 wholesale (25% max) so wholesale always dominates
+      const maxAuction = Math.ceil(wholesale.length / 3) || (wholesale.length === 0 ? auction.length : 0)
+      const cappedAuction = auction.slice(0, maxAuction)
+      // Interleave: W W W A W W W A ...
+      const result = []
+      let ai = 0
+      for (let i = 0; i < wholesale.length; i++) {
+        result.push(wholesale[i])
+        if ((i + 1) % 3 === 0 && ai < cappedAuction.length) result.push(cappedAuction[ai++])
       }
-      return [...head, ...tail]
+      while (ai < cappedAuction.length) result.push(cappedAuction[ai++])
+      return result
     }
     if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
     if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
@@ -246,7 +277,10 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     return list
   })()
 
-  const resultCount = visibleProperties.length
+  // Count from map pins (not list) — accurate total for current viewport
+  const resultCount = mapBounds
+    ? locationFilteredPins.filter(p => isInBounds(p, mapBounds)).length
+    : locationFilteredPins.length
 
   const RightHeader = () => (
     <div className="px-5 py-4 border-b border-[#E8E8E4] bg-white">
@@ -428,7 +462,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
             <PropertyMap
               properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
-              onBoundsChange={setMapBounds}
+              onBoundsChange={handleBoundsChange}
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
@@ -455,19 +489,12 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                   <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="vertical" />
                 ))}
                 {visibleProperties.length === 0 && !loading && !loadingMore && !error && <div><EmptyState layout="vertical" /></div>}
-                {hasMore && properties.length > 0 && (
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="w-full h-12 border border-[#E8E8E4] rounded text-[14px] font-semibold text-[#1A1816] bg-white hover:bg-[#FAFAF8] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {loadingMore ? (
-                      <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Loading...</>
-                    ) : (
-                      `Load More (${properties.length} of ${totalCount || '?'})`
-                    )}
-                  </button>
+                {loadingMore && (
+                  <div className="flex justify-center py-4">
+                    <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  </div>
                 )}
+                <div ref={mobileSentinelRef} className="h-1" />
               </div>
             )}
           </div>
@@ -481,7 +508,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
             <PropertyMap
               properties={locationFilteredPins}
               onMarkerClick={handleMarkerClick}
-              onBoundsChange={setMapBounds}
+              onBoundsChange={handleBoundsChange}
               selectedProperty={selectedProperty}
               filters={filters}
               isLoggedIn={!!user}
@@ -506,21 +533,12 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                   {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
                 </div>
                 {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState layout="horizontal" />}
-                {hasMore && properties.length > 0 && (
-                  <div className="py-4 flex justify-center">
-                    <button
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                      className="px-6 py-2.5 bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] disabled:opacity-50 text-white text-[13px] font-semibold rounded transition-all flex items-center gap-2"
-                    >
-                      {loadingMore ? (
-                        <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Loading...</>
-                      ) : (
-                        `Load More (${properties.length} of ${totalCount || '?'})`
-                      )}
-                    </button>
+                {loadingMore && (
+                  <div className="flex justify-center py-4">
+                    <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                   </div>
                 )}
+                <div ref={desktopSentinelRef} className="h-1" />
               </div>
             )}
           </div>

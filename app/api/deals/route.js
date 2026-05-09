@@ -12,7 +12,14 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
 
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '1000');
+    const limit = parseInt(searchParams.get('limit') || '30');
+
+    // Viewport bounds for list (from map idle event, debounced)
+    const swLat = parseFloat(searchParams.get('swLat'));
+    const swLng = parseFloat(searchParams.get('swLng'));
+    const neLat = parseFloat(searchParams.get('neLat'));
+    const neLng = parseFloat(searchParams.get('neLng'));
+    const hasBounds = Number.isFinite(swLat) && Number.isFinite(swLng) && Number.isFinite(neLat) && Number.isFinite(neLng);
     const offset = (page - 1) * limit;
     const sortBy = searchParams.get('sortBy') || 'newest';
     const searchQuery = searchParams.get('searchQuery') || '';
@@ -106,6 +113,12 @@ export async function GET(request) {
       query = query.eq('listing_type', 'auction');
     } else if (listingType === 'wholesale') {
       query = query.or('listing_type.is.null,listing_type.neq.auction');
+    }
+
+    if (hasBounds) {
+      query = query
+        .gte('address_google_lat', swLat).lte('address_google_lat', neLat)
+        .gte('address_google_lng', swLng).lte('address_google_lng', neLng);
     }
 
     const stateNameToAbbr = {
@@ -211,6 +224,11 @@ export async function GET(request) {
     if (isHighlighted) manualQuery = manualQuery.eq('is_highlighted', true);
     if (isBoosted) manualQuery = manualQuery.eq('is_boosted', true);
     if (isHomepageFeatured) manualQuery = manualQuery.eq('is_homepage_featured', true);
+    if (hasBounds) {
+      manualQuery = manualQuery
+        .gte('latitude', swLat).lte('latitude', neLat)
+        .gte('longitude', swLng).lte('longitude', neLng);
+    }
     manualQuery = manualQuery.range(offset, offset + limit - 1);
 
     // Skip manual properties when a listing type filter is active — that table has no listing_type
