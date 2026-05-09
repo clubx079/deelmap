@@ -113,11 +113,20 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     clearTimeout(listBoundsTimerRef.current)
     listBoundsTimerRef.current = setTimeout(() => {
       if (!bounds) { setListBounds(null); return }
+      const sw = bounds.getSouthWest()
+      const ne = bounds.getNorthEast()
+      const latSpan = ne.lat() - sw.lat()
+      const lngSpan = ne.lng() - sw.lng()
+      // At national/world zoom or when longitude wraps past antimeridian, skip bounds filter
+      if (latSpan > 40 || lngSpan > 70 || lngSpan < 0) {
+        setListBounds(null)
+        return
+      }
       setListBounds({
-        swLat: bounds.getSouthWest().lat(),
-        swLng: bounds.getSouthWest().lng(),
-        neLat: bounds.getNorthEast().lat(),
-        neLng: bounds.getNorthEast().lng(),
+        swLat: sw.lat(),
+        swLng: sw.lng(),
+        neLat: ne.lat(),
+        neLng: ne.lng(),
       })
     }, 400)
   }
@@ -128,7 +137,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) loadMoreStableRef.current?.() },
-      { rootMargin: '300px' }
+      { rootMargin: '100px' }
     )
     ;[desktopSentinelRef.current, mobileSentinelRef.current].forEach(el => { if (el) observer.observe(el) })
     return () => observer.disconnect()
@@ -369,7 +378,14 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center text-[#737370]">
-          <div className="text-6xl mb-4">🏠</div>
+          <div className="flex justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="40" fill="#FEF0EF"/>
+              <path d="M40 16C31.163 16 24 23.163 24 32C24 44 40 62 40 62C40 62 56 44 56 32C56 23.163 48.837 16 40 16Z" fill="white" stroke="#D03839" strokeWidth="2.5" strokeLinejoin="round"/>
+              <line x1="34" y1="26" x2="46" y2="38" stroke="#D03839" strokeWidth="2.5" strokeLinecap="round"/>
+              <line x1="46" y1="26" x2="34" y2="38" stroke="#D03839" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          </div>
           <h3 className="text-xl font-semibold text-[#1A1816] mb-2">
             No properties found{locationLabel ? ` in "${locationLabel}"` : ''}
           </h3>
