@@ -258,7 +258,11 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
   const locationFilteredPins = filterPinsByLocation(mapPins)
 
   const visibleProperties = (() => {
-    const list = properties
+    // When zoomed into a viewport, trim the 400ms-stale API results to match exactly what's on the map now.
+    // Skip this when listBounds is null (national zoom) to avoid filtering nationwide results against a tight viewport.
+    const list = (listBounds && mapBounds && properties.length > 0)
+      ? properties.filter(p => isInBounds(p, mapBounds))
+      : properties
 
     if (sortBy === 'recommended') {
       const wholesale = list.filter(p => p.listing_type !== 'auction')
