@@ -515,9 +515,10 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                     <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                   </div>
                 )}
-                <div ref={mobileSentinelRef} className="h-1" />
               </div>
             )}
+            {/* Sentinel always in DOM so IntersectionObserver can observe it on mount */}
+            <div ref={mobileSentinelRef} className="h-1" />
           </div>
         )}
       </div>
@@ -544,24 +545,39 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                 <div className="h-full bg-[#D03839]" style={{ width: '40%', animation: 'progress-slide 1.2s ease-in-out infinite' }} />
               </div>
             )}
-            {(loading && properties.length === 0) ? (
-              <LoadingState />
-            ) : error ? (
-              <ErrorState />
-            ) : (
-              <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
-                <div className="space-y-4">
-                  {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
-                </div>
-                {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState layout="horizontal" />}
-                {loadingMore && (
-                  <div className="flex justify-center py-4">
-                    <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+            {/* Always render the scrollable container so desktopSentinelRef is in DOM on mount */}
+            <div className="flex-1 overflow-y-auto p-4" style={{ scrollBehavior: 'smooth' }}>
+              {(loading && properties.length === 0) ? (
+                <div className="flex items-center justify-center min-h-[200px]">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-[#E8E8E4] border-t-[#D03839] mx-auto mb-4"></div>
+                    <p className="text-[14px] text-[#737370]">Loading properties...</p>
                   </div>
-                )}
-                <div ref={desktopSentinelRef} className="h-1" />
-              </div>
-            )}
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center p-6">
+                  <div className="text-center max-w-md">
+                    <div className="text-[#D03839] text-base font-semibold mb-2">Unable to Load Properties</div>
+                    <p className="text-[#737370] mb-4">{error}</p>
+                    <Button onClick={refetch} className="mt-4" variant="primary">Try Again</Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {visibleProperties.map((p) => <PropertyCard key={p.id} property={p} isLoggedIn={!!user} layout="horizontal" />)}
+                  </div>
+                  {visibleProperties.length === 0 && !loading && !loadingMore && !error && <EmptyState layout="horizontal" />}
+                  {loadingMore && (
+                    <div className="flex justify-center py-4">
+                      <svg className="animate-spin h-5 w-5 text-[#D03839]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    </div>
+                  )}
+                </>
+              )}
+              {/* Sentinel always in DOM so IntersectionObserver can observe it on mount */}
+              <div ref={desktopSentinelRef} className="h-1" />
+            </div>
           </div>
         </div>
       </div>
