@@ -56,7 +56,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       items: [
         { href: '/buyer/financerequests', icon: DollarSign, label: 'Financing' },
         { href: '/buyer/insights', icon: TrendingUp, label: 'Market Insights' },
-        { href: '/contracts', icon: ScrollText, label: 'Contracts' },
+        { href: '/buyer/contracts', icon: ScrollText, label: 'Contracts' },
       ]
     },
     {

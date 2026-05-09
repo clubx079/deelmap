@@ -68,6 +68,7 @@ export async function GET(request) {
       .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
       .eq('status', statusToFilter)
       .eq('is_incomplete', false)
+      .neq('state', 'HI')
       .eq('property_photos.is_featured', true);
 
     // Sorting

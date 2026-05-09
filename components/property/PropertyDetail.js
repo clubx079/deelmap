@@ -516,7 +516,7 @@ export function PropertyDetail({ property }) {
       )}
 
       {/* Expired banner */}
-      {property.status === 'expired' && (
+      {(property.status === 'expired' || (property.created_at && (Date.now() - new Date(property.created_at).getTime()) > 30 * 24 * 60 * 60 * 1000)) && (
         <div className="bg-[#FEF0EF] border-b border-[#F5C4C0] px-4 sm:px-6 py-4">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>

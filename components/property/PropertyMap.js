@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
 import { loadGoogleMapsAPI } from '@/utils/googleMapsLoader'
 
@@ -25,9 +25,9 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
+  const clustererRef = useRef(null)
   const infoOverlayRef = useRef(null)
   const boundaryPolygonsRef = useRef([])
-  const router = useRouter()
   const propertiesRef = useRef(properties)
   const filtersRef = useRef(filters)
   const onBoundsChangeRef = useRef(onBoundsChange)
@@ -40,9 +40,10 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
   useEffect(() => { filtersRef.current = filters }, [filters])
   useEffect(() => {
     searchLocationRef.current = searchLocation
-    // Any search change (apply or remove) resets user-interaction flag so the
-    // new context can auto-fit once before the user starts panning/zooming.
-    userInteractedRef.current = false
+    // Only reset when a new location is applied — not when the boundary is removed.
+    if (searchLocation?.city || searchLocation?.state) {
+      userInteractedRef.current = false
+    }
   }, [searchLocation])
 
   useEffect(() => { initMap() }, [])
@@ -240,90 +241,87 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     const currentProperties = propertiesRef.current
     if (!currentProperties || currentProperties.length === 0) return
 
-    markersRef.current.forEach(({ overlay }) => overlay?.setMap(null))
+    // Clear previous clusterer and markers
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers()
+      clustererRef.current = null
+    }
+    markersRef.current.forEach(m => m?.setMap?.(null))
     markersRef.current = []
+    hideInfoCard()
 
     const bounds = new window.google.maps.LatLngBounds()
+    const markers = []
 
     currentProperties.forEach((p) => {
-      // Use Google verified coordinates from wholesale_deals; fallback chain for missing coords
       let lat = parseFloat(p.address_google_lat)
       let lng = parseFloat(p.address_google_lng)
-      
-      // Fallback 1: Try latitude/longitude fields
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         lat = parseFloat(p.latitude)
         lng = parseFloat(p.longitude)
       }
-      
-      // Skip properties with no real coordinates — don't place fallback pins
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        return
-      }
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
 
-      const anchor = new window.google.maps.Marker({
+      const isAuctionPin = p.listing_type === 'auction'
+      const pinColor = isAuctionPin ? '#E8923A' : '#D03839'
+      const svgContent = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="${pinColor}"/><circle cx="16" cy="12" r="5" fill="white"/></svg>`
+      const svgUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgContent)}`
+      const normalIcon = { url: svgUrl, scaledSize: new window.google.maps.Size(20, 26), anchor: new window.google.maps.Point(10, 26) }
+      const hoverIcon = { url: svgUrl, scaledSize: new window.google.maps.Size(24, 31), anchor: new window.google.maps.Point(12, 31) }
+
+      const marker = new window.google.maps.Marker({
         position: { lat, lng },
-        map,
-        visible: false
+        icon: normalIcon,
+        cursor: 'pointer',
       })
 
-      const chip = document.createElement('div')
-      chip.className = 'price-marker-dot'
-      chip.style.cssText = [
-        'position: absolute',
-        'transform: translate(-50%, -100%)',
-        'z-index: 1000',
-        'cursor: pointer',
-        'transition: transform 0.15s ease',
-        'width: 20px',
-        'height: 26px',
-        'display: flex',
-        'align-items: center',
-        'justify-content: center'
-      ].join(';')
-      chip.innerHTML = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="#D03839"/>
-        <circle cx="16" cy="12" r="5" fill="white"/>
-      </svg>`
-
-      chip.addEventListener('mouseenter', () => {
-        chip.style.transform = 'translate(-50%, -100%) scale(1.2)'
-        chip.style.zIndex = '1100'
-      })
-
-      chip.addEventListener('mouseleave', () => {
-        chip.style.transform = 'translate(-50%, -100%) scale(1)'
-        chip.style.zIndex = '1000'
-      })
-
-      chip.addEventListener('click', (e) => {
-        e.stopPropagation()
-        showInfoCard(p, anchor)
+      marker.addListener('click', () => {
+        showInfoCard(p, marker)
         onMarkerClick?.(p)
       })
+      marker.addListener('mouseover', () => {
+        marker.setIcon(hoverIcon)
+        marker.setZIndex(window.google.maps.Marker.MAX_ZINDEX + 1)
+      })
+      marker.addListener('mouseout', () => {
+        marker.setIcon(normalIcon)
+        marker.setZIndex(null)
+      })
 
-      const overlay = new window.google.maps.OverlayView()
-      overlay.onAdd = function () { this.getPanes().overlayMouseTarget.appendChild(chip) }
-      overlay.draw = function () {
-        const proj = this.getProjection()
-        const pt = proj.fromLatLngToDivPixel(anchor.getPosition())
-        chip.style.left = `${pt.x}px`
-        chip.style.top = `${pt.y}px`
-      }
-      overlay.onRemove = function () { chip.remove() }
-      overlay.setMap(map)
-
-      markersRef.current.push({ overlay })
-      bounds.extend(anchor.getPosition())
+      markers.push(marker)
+      bounds.extend({ lat, lng })
     })
 
+    markersRef.current = markers
 
-    // Only auto-fit on initial load or after a new search/filter is applied.
-    // Once the user has manually panned or zoomed, stop snapping back.
-    // When a searchLocation is active its own useEffect already handles the zoom.
+    // Cluster renderer — color-coded circles by count range
+    const renderer = {
+      render: ({ count, position }) => {
+        const clusterColor = count >= 10 ? '#D03839' : '#E8923A'
+        const size = count >= 100 ? 52 : count >= 50 ? 44 : count >= 10 ? 38 : 32
+        const r = Math.round(size / 2)
+        const innerR = r - 5
+        const fontSize = count >= 100 ? 13 : 12
+        const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg"><circle cx="${r}" cy="${r}" r="${r}" fill="${clusterColor}" fill-opacity="0.25"/><circle cx="${r}" cy="${r}" r="${innerR}" fill="${clusterColor}"/><text x="50%" y="50%" dy="0.35em" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${fontSize}px" font-weight="700" fill="white">${count}</text></svg>`
+        return new window.google.maps.Marker({
+          position,
+          icon: {
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+            scaledSize: new window.google.maps.Size(size, size),
+            anchor: new window.google.maps.Point(r, r),
+          },
+          cursor: 'pointer',
+          zIndex: window.google.maps.Marker.MAX_ZINDEX + count,
+        })
+      }
+    }
+
+    clustererRef.current = new MarkerClusterer({ map, markers, renderer })
+
     const searchActive = !!(searchLocationRef.current?.city || searchLocationRef.current?.state)
     if (!bounds.isEmpty() && !userInteractedRef.current && !searchActive) {
       map.fitBounds(bounds)
+      userInteractedRef.current = true
       window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
         if (map.getZoom() > 15) map.setZoom(15)
       })
@@ -370,9 +368,10 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
 
     const cityState = [prop.city, prop.state].filter(Boolean).join(', ')
     const displayAddr = getDisplayAddress(prop)
-    const priceStr = fullPrice(prop.price, prop.listing_type)
+    const isAuction = prop.listing_type === 'auction'
+    const priceStr = isAuction ? 'Auction' : fullPrice(prop.price, prop.listing_type)
     const arvNum = Number(prop.arv) || 0
-    const arvStr = arvNum > 0 ? shortPrice(arvNum) : null
+    const arvStr = !isAuction && arvNum > 0 ? shortPrice(arvNum) : null
 
     // floor_area is the sqft column in the properties table
     const sqftVal = prop.sqft || prop.floor_area
@@ -418,7 +417,10 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
           <!-- Stats + Price row -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
             ${stats ? `<div style="font-size:10px;color:#737370;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${stats}</div>` : `<div style="font-size:10px;color:#737370;">${cityState || ''}</div>`}
-            <div style="font-size:13px;font-weight:700;color:#1A1816;flex-shrink:0;">${priceStr}</div>
+            ${isAuction
+              ? `<div style="font-size:11px;font-weight:700;color:#D03839;background:#FEF0EF;border:1px solid #F5C4C0;border-radius:4px;padding:1px 6px;flex-shrink:0;">Auction</div>`
+              : `<div style="font-size:13px;font-weight:700;color:#1A1816;flex-shrink:0;">${priceStr}</div>`
+            }
           </div>
         </div>
       </div>
@@ -427,7 +429,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       hideInfoCard()
-      router.push(`/${prop.slug || prop.id}`)
+      window.open(`/${prop.slug || prop.id}`, '_blank', 'noopener,noreferrer')
     })
 
     el.addEventListener('mouseenter', () => {
@@ -604,6 +606,10 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
         : 0
       const minFinalTop = (topPadding - mapHeight / 2) - transformYShift
       if (finalTop < minFinalTop) finalTop = minFinalTop
+
+      // Clamp so the popup never overflows the bottom of the map container.
+      const maxFinalTop = (mapHeight / 2) - edgePadding - transformYShift - cardHeight
+      if (finalTop > maxFinalTop) finalTop = maxFinalTop
 
       el.style.left = `${finalLeft}px`
       el.style.top = `${finalTop}px`

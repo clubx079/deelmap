@@ -26,8 +26,17 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
     id, property_photos, price, arv, bedrooms, bathrooms, sqft,
     full_address, address, city, state, zip_code,
     gross_yield, cap_rate, cash_on_cash, deal_type, status,
-    is_highlighted,
+    is_highlighted, listing_type, created_at,
   } = property
+
+  const isAuction = listing_type === 'auction'
+
+  const daysOnDeelMap = created_at
+    ? Math.floor((Date.now() - new Date(created_at).getTime()) / (1000 * 60 * 60 * 24))
+    : null
+  const ageLabel = daysOnDeelMap === null ? null
+    : daysOnDeelMap === 0 ? 'Just Listed'
+    : `${daysOnDeelMap} days on DeelMap`
 
   const featurePhoto = property_photos?.find(p => p?.is_featured) || property_photos?.[0]
   const featureImage = featurePhoto ? (featurePhoto.optimized_url || featurePhoto.photo_url || '') : ''
@@ -44,9 +53,10 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
     : cityState
 
   const formatPriceFull = (val) => {
-    if (!val) return property.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price'
+    if (isAuction) return 'Auction'
+    if (!val) return 'Contact for Price'
     const n = Number(val)
-    if (!isFinite(n) || n === 0) return property.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price'
+    if (!isFinite(n) || n === 0) return 'Contact for Price'
     return `$${Math.round(n).toLocaleString()}`
   }
 
@@ -127,7 +137,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
         >
           <div className={`bg-white ${is_highlighted ? '' : 'border border-[#E8E8E4]'} rounded overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col`} style={is_highlighted ? { borderRadius: '5px' } : {}}>
             {/* Photo */}
-            <Link href={`/${slug}`} className="relative block w-full h-[160px] flex-shrink-0 group bg-[#FAFAF8]">
+            <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="relative block w-full h-[160px] flex-shrink-0 group bg-[#FAFAF8]">
               {is_highlighted && (
                 <div className="absolute top-0 inset-x-0 h-[3px] z-10" style={{ background: 'linear-gradient(90deg, #D03839, #E8633E, #D03839)' }} />
               )}
@@ -159,12 +169,12 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
 
             {/* Content */}
             <div className="p-3 flex flex-col flex-1 min-w-0" style={is_highlighted ? { background: 'linear-gradient(160deg, #fff 50%, #FEF5F4 100%)' } : {}}>
-              <Link href={`/${slug}`} className="flex items-center gap-1 mb-0.5">
+              <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 mb-0.5">
                 <MapPin className="w-3 h-3 text-[#737370] flex-shrink-0" />
                 <span className="text-[11px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
               </Link>
               {isLoggedIn ? (
-                <Link href={`/${slug}`}>
+                <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer">
                   <h3 className="text-[13px] font-bold text-[#1A1816] leading-snug line-clamp-2 hover:text-[#D03839] transition-colors mb-1">
                     {full_address || address || cityState}
                   </h3>
@@ -187,13 +197,20 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                 </div>
               )}
               <div className="flex items-center gap-1.5 mt-auto pt-1.5">
-                <span className="text-[15px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
-                {arvNum > 0 && (
+                {isAuction ? (
+                  <span className="text-[13px] font-bold px-2 py-0.5 bg-[#FEF0EF] text-[#D03839] border border-[#F5C4C0] rounded">Auction</span>
+                ) : (
+                  <span className="text-[15px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
+                )}
+                {!isAuction && arvNum > 0 && (
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
                     ARV {formatPriceShort(arv)}
                   </span>
                 )}
               </div>
+              {ageLabel && (
+                <span className="text-[10px] text-[#A8A8A4] mt-1">{ageLabel}</span>
+              )}
             </div>
           </div>
         </div>
@@ -204,7 +221,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
         >
           <div className={`bg-white ${is_highlighted ? '' : 'border border-[#E8E8E4]'} rounded overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col sm:flex-row sm:min-h-[230px]`} style={is_highlighted ? { borderRadius: '5px' } : {}}>
             {/* Photo */}
-            <Link href={`/${slug}`} className="relative flex-shrink-0 w-full h-[200px] sm:w-[280px] sm:h-auto sm:self-stretch block group">
+            <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="relative flex-shrink-0 w-full h-[200px] sm:w-[280px] sm:h-auto sm:self-stretch block group">
               {is_highlighted && (
                 <div className="absolute top-0 inset-x-0 h-[3px] z-10" style={{ background: 'linear-gradient(90deg, #D03839, #E8633E, #D03839)' }} />
               )}
@@ -237,7 +254,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
             <div className="flex-1 p-4 flex flex-col min-w-0 overflow-hidden" style={is_highlighted ? { background: 'linear-gradient(160deg, #fff 50%, #FEF5F4 100%)' } : {}}>
               {/* Row 1: city/state + icons */}
               <div className="flex items-center justify-between gap-2 mb-1">
-                <Link href={`/${slug}`} className="flex items-center gap-1 min-w-0">
+                <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 min-w-0">
                   <MapPin className="w-3 h-3 text-[#737370] flex-shrink-0" />
                   <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
                 </Link>
@@ -260,7 +277,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
               )}
               <div className="mb-1.5">
                 {isLoggedIn ? (
-                  <Link href={`/${slug}`}>
+                  <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer">
                     <h3 className="text-[15px] font-bold text-[#1A1816] leading-snug line-clamp-1 hover:text-[#D03839] transition-colors">
                       {full_address || address || cityState}
                     </h3>
@@ -283,13 +300,22 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                 {bathrooms && <span>{bathrooms} bath</span>}
               </div>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[20px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
-                {arvNum > 0 && (
-                  <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
-                    ARV {formatPriceShort(arv)}
-                  </span>
+                {isAuction ? (
+                  <span className="text-[16px] font-bold px-2.5 py-1 bg-[#FEF0EF] text-[#D03839] border border-[#F5C4C0] rounded">Auction</span>
+                ) : (
+                  <>
+                    <span className="text-[20px] font-bold text-[#1A1816]">{formatPriceFull(price)}</span>
+                    {arvNum > 0 && (
+                      <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
+                        ARV {formatPriceShort(arv)}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
+              {ageLabel && (
+                <p className="text-[11px] text-[#A8A8A4] mb-1">{ageLabel}</p>
+              )}
               {spreadNum > 0 && (
                 <p className="text-[13px] text-[#0F6E56] font-medium mb-3">
                   ↑ ${spreadNum.toLocaleString()} spread potential
@@ -297,6 +323,8 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
               )}
               <Link
                 href={`/${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`mt-auto w-full sm:w-auto text-center text-[13px] font-semibold rounded px-3 min-h-[44px] flex items-center justify-center transition-all duration-200 ${
                   is_highlighted
                     ? 'text-white hover:opacity-90'

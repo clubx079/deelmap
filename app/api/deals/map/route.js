@@ -41,9 +41,10 @@ export async function GET(request) {
 
     let query = supabase
       .from('wholesale_deals')
-      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, address_google_lat, address_google_lng, property_photos(photo_url, optimized_url, is_featured, display_order)')
+      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng, property_photos(photo_url, optimized_url, is_featured, display_order)')
       .eq('status', 'active')
       .eq('is_incomplete', false)
+      .neq('state', 'HI')
       .not('address_google_lat', 'is', null)
       .not('address_google_lng', 'is', null);
 

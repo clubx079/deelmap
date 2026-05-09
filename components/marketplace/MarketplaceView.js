@@ -211,7 +211,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
       lat = parseFloat(property.latitude)
       lng = parseFloat(property.longitude)
     }
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return true
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
     return bounds.contains({ lat, lng })
   }
 
