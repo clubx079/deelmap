@@ -75,74 +75,83 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     }
     const stateFullName = abbrToFull[searchLocation.state?.toUpperCase()] || searchLocation.state || ''
 
-    // Build Nominatim params: city+state or state-only
-    const params = searchLocation.city
-      ? new URLSearchParams({
-          city: searchLocation.city,
-          state: stateFullName,
-          country: 'US',
-          polygon_geojson: '1',
-          format: 'json',
-          limit: '1',
+    const drawBoundary = (geojson) => {
+      const map = mapInstanceRef.current
+      if (!map || !window.google || !geojson) return
+      const drawRing = (coordinates) => {
+        const path = coordinates[0].map(([lng, lat]) => ({ lat, lng }))
+        const poly = new window.google.maps.Polygon({
+          paths: path,
+          strokeColor: '#D03839',
+          strokeOpacity: 0.8,
+          strokeWeight: 2.5,
+          fillOpacity: 0,
+          map,
+          zIndex: 1,
         })
-      : new URLSearchParams({
-          state: stateFullName,
-          country: 'US',
-          polygon_geojson: '1',
-          format: 'json',
-          limit: '5',
-          addressdetails: '1',
-        })
+        boundaryPolygonsRef.current.push(poly)
+      }
+      if (geojson.type === 'Polygon') drawRing(geojson.coordinates)
+      else if (geojson.type === 'MultiPolygon') geojson.coordinates.forEach(c => drawRing(c))
+    }
 
-    fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-      headers: { 'Accept-Language': 'en' }
-    })
-      .then(r => r.json())
-      .then(results => {
-        const map = mapInstanceRef.current
-        if (!map || !window.google || !results?.length) return
+    const fitToBbox = (bbox) => {
+      const map = mapInstanceRef.current
+      if (!map || !window.google || !bbox) return
+      map.fitBounds(new window.google.maps.LatLngBounds(
+        { lat: parseFloat(bbox[0]), lng: parseFloat(bbox[2]) },
+        { lat: parseFloat(bbox[1]), lng: parseFloat(bbox[3]) }
+      ))
+    }
 
-        // For state-only searches, prefer the result with addresstype === 'state'
-        let best = results[0]
-        if (!searchLocation.city && results.length > 1) {
-          const stateResult = results.find(r => r.addresstype === 'state' || (r.class === 'boundary' && r.type === 'administrative'))
-          if (stateResult) best = stateResult
-        }
-
-        const geojson = best.geojson
-        if (!geojson) return
-
-        const drawRing = (coordinates) => {
-          // GeoJSON coords are [lng, lat], Google Maps needs {lat, lng}
-          const path = coordinates[0].map(([lng, lat]) => ({ lat, lng }))
-          const poly = new window.google.maps.Polygon({
-            paths: path,
-            strokeColor: '#D03839',
-            strokeOpacity: 0.8,
-            strokeWeight: 2.5,
-            fillOpacity: 0,
-            map,
-            zIndex: 1,
-          })
-          boundaryPolygonsRef.current.push(poly)
-        }
-
-        if (geojson.type === 'Polygon') {
-          drawRing(geojson.coordinates)
-        } else if (geojson.type === 'MultiPolygon') {
-          geojson.coordinates.forEach(coords => drawRing(coords))
-        }
-
-        // Zoom to the boundary
-        const bbox = best.boundingbox // [minLat, maxLat, minLng, maxLng]
-        if (bbox) {
-          map.fitBounds(new window.google.maps.LatLngBounds(
-            { lat: parseFloat(bbox[0]), lng: parseFloat(bbox[2]) },
-            { lat: parseFloat(bbox[1]), lng: parseFloat(bbox[3]) }
-          ))
-        }
+    if (searchLocation.city) {
+      // City search: fetch city first (with addressdetails to get county name),
+      // then use the county boundary so suburbs that share the city name are inside the polygon.
+      fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(searchLocation.city)}&state=${encodeURIComponent(stateFullName)}&country=US&polygon_geojson=1&format=json&limit=1&addressdetails=1`, {
+        headers: { 'Accept-Language': 'en' }
       })
-      .catch(err => console.error('[BOUNDARY]', err))
+        .then(r => r.json())
+        .then(async results => {
+          const map = mapInstanceRef.current
+          if (!map || !window.google || !results?.length) return
+          const cityResult = results[0]
+          const countyName = cityResult?.address?.county
+
+          if (countyName) {
+            // Fetch county polygon — this covers the full metro area instead of strict city limits
+            const countyRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?county=${encodeURIComponent(countyName)}&state=${encodeURIComponent(stateFullName)}&country=US&polygon_geojson=1&format=json&limit=1`,
+              { headers: { 'Accept-Language': 'en' } }
+            )
+            const countyResults = await countyRes.json()
+            const countyResult = countyResults?.[0]
+            if (countyResult?.geojson) {
+              drawBoundary(countyResult.geojson)
+              fitToBbox(countyResult.boundingbox)
+              return
+            }
+          }
+
+          // Fallback: draw city polygon if county fetch failed
+          drawBoundary(cityResult.geojson)
+          fitToBbox(cityResult.boundingbox)
+        })
+        .catch(err => console.error('[BOUNDARY]', err))
+    } else {
+      // State-only search: fetch state boundary directly
+      fetch(`https://nominatim.openstreetmap.org/search?state=${encodeURIComponent(stateFullName)}&country=US&polygon_geojson=1&format=json&limit=5&addressdetails=1`, {
+        headers: { 'Accept-Language': 'en' }
+      })
+        .then(r => r.json())
+        .then(results => {
+          const map = mapInstanceRef.current
+          if (!map || !window.google || !results?.length) return
+          const best = results.find(r => r.addresstype === 'state' || (r.class === 'boundary' && r.type === 'administrative')) || results[0]
+          drawBoundary(best.geojson)
+          fitToBbox(best.boundingbox)
+        })
+        .catch(err => console.error('[BOUNDARY]', err))
+    }
   }, [searchLocation])
 
   const initMap = () => {
