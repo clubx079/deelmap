@@ -54,6 +54,15 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     }
   }, [properties, filters])
 
+  // Force all existing markers to red — runs on every render so HMR picks it up instantly
+  useEffect(() => {
+    if (!markersRef.current.length || typeof window === 'undefined' || !window.google) return
+    const svg = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="#D03839"/><circle cx="16" cy="12" r="5" fill="white"/></svg>`
+    const url = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+    const icon = { url, scaledSize: new window.google.maps.Size(20, 26), anchor: new window.google.maps.Point(10, 26) }
+    markersRef.current.forEach(m => m?.setIcon?.(icon))
+  })
+
   useEffect(() => {
     // Clear previous boundary polygons
     boundaryPolygonsRef.current.forEach(p => p.setMap(null))
@@ -271,8 +280,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
       }
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
 
-      const isAuctionPin = p.listing_type === 'auction'
-      const pinColor = isAuctionPin ? '#E8923A' : '#D03839'
+      const pinColor = '#D03839'
       const svgContent = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="${pinColor}"/><circle cx="16" cy="12" r="5" fill="white"/></svg>`
       const svgUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgContent)}`
       const normalIcon = { url: svgUrl, scaledSize: new window.google.maps.Size(20, 26), anchor: new window.google.maps.Point(10, 26) }
@@ -306,7 +314,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     // Cluster renderer — color-coded circles by count range
     const renderer = {
       render: ({ count, position }) => {
-        const clusterColor = count >= 10 ? '#D03839' : '#E8923A'
+        const clusterColor = count >= 50 ? '#9B1B1B' : count >= 10 ? '#D03839' : '#E8923A'
         const size = count >= 100 ? 52 : count >= 50 ? 44 : count >= 10 ? 38 : 32
         const r = Math.round(size / 2)
         const innerR = r - 5
