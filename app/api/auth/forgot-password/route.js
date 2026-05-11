@@ -64,7 +64,7 @@ export async function POST(request) {
       console.log(`[forgot-password] Sending SMS reset code to ${e164Phone}`)
 
       const smsResponse = await withTimeout(
-        fetch('https://ap.airosofts.com/api/external/sms/send', {
+        fetch('https://app.airophone.com/api/external/sms/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.AIROSOFTS_SMS_API_KEY}`,
