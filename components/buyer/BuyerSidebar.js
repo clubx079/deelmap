@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Search, MessageSquare, Star, FileText,
-  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText
+  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -62,6 +62,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
     {
       label: 'ACCOUNT',
       items: [
+        { href: '/buyer/referral', icon: Gift, label: 'Referral' },
         { href: '/buyer/billing', icon: CreditCard, label: 'Billing' },
         { href: '/profile', icon: Settings, label: 'Settings' },
       ]
