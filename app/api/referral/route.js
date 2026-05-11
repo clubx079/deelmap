@@ -110,7 +110,7 @@ export async function POST(request) {
 
     // Create promotion code in Stripe under the referral coupon
     const promoCode = await stripe.promotionCodes.create({
-      coupon: REFERRAL_COUPON_ID,
+      promotion: { type: 'coupon', coupon: REFERRAL_COUPON_ID },
       code,
       metadata: { user_id: userId, user_type },
     })
