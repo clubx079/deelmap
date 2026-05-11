@@ -31,7 +31,7 @@ export default function BuyerContractsPage() {
   useEffect(() => { setPageTitle('Contracts') }, [])
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-4 lg:p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 h-7 px-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded mb-4">
