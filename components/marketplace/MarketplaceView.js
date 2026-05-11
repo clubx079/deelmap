@@ -267,12 +267,13 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     if (sortBy === 'recommended') {
       const wholesale = list.filter(p => p.listing_type !== 'auction')
       const auction = list.filter(p => p.listing_type === 'auction')
-      // Interleave wholesale and auction 1:1 — show all, no cap
+      // Pattern: W, W, A, W, W, A, ...
       const result = []
-      const maxLen = Math.max(wholesale.length, auction.length)
-      for (let i = 0; i < maxLen; i++) {
-        if (i < wholesale.length) result.push(wholesale[i])
-        if (i < auction.length) result.push(auction[i])
+      let wi = 0, ai = 0
+      while (wi < wholesale.length || ai < auction.length) {
+        if (wi < wholesale.length) result.push(wholesale[wi++])
+        if (wi < wholesale.length) result.push(wholesale[wi++])
+        if (ai < auction.length) result.push(auction[ai++])
       }
       return result
     }
