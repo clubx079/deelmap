@@ -51,6 +51,8 @@ export async function POST(request) {
       } catch {}
     }
 
+    const originalAmount = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 2900
+
     // Enhancement-only payment (for existing active listings)
     if (body.listing_id) {
       const paymentIntent = await stripe.paymentIntents.create({
@@ -62,6 +64,7 @@ export async function POST(request) {
           userId,
           listing_id: body.listing_id,
           ...(body.add_ons?.length ? { add_ons: body.add_ons.join(',') } : {}),
+          ...(body.promo_code_id ? { promo_code_id: body.promo_code_id, original_amount: String(originalAmount) } : {}),
         },
       })
       return NextResponse.json({ clientSecret: paymentIntent.client_secret })
@@ -94,6 +97,7 @@ export async function POST(request) {
         formData: essentialData,
         ...(body.draft_id ? { draft_id: body.draft_id } : {}),
         ...(body.add_ons?.length ? { add_ons: body.add_ons.join(',') } : {}),
+        ...(body.promo_code_id ? { promo_code_id: body.promo_code_id, original_amount: String(originalAmount) } : {}),
       },
     })
 
