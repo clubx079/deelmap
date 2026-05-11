@@ -264,23 +264,27 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
       ? properties.filter(p => isInBounds(p, mapBounds))
       : properties
 
+    // Boosted properties always pin to the top regardless of sort
+    const boosted = list.filter(p => p.is_boosted)
+    const rest = list.filter(p => !p.is_boosted)
+
     if (sortBy === 'recommended') {
-      const wholesale = list.filter(p => p.listing_type !== 'auction')
-      const auction = list.filter(p => p.listing_type === 'auction')
+      const wholesale = rest.filter(p => p.listing_type !== 'auction')
+      const auction = rest.filter(p => p.listing_type === 'auction')
       // Pattern: W, W, A, W, W, A, ...
-      const result = []
+      const interleaved = []
       let wi = 0, ai = 0
       while (wi < wholesale.length || ai < auction.length) {
-        if (wi < wholesale.length) result.push(wholesale[wi++])
-        if (wi < wholesale.length) result.push(wholesale[wi++])
-        if (ai < auction.length) result.push(auction[ai++])
+        if (wi < wholesale.length) interleaved.push(wholesale[wi++])
+        if (wi < wholesale.length) interleaved.push(wholesale[wi++])
+        if (ai < auction.length) interleaved.push(auction[ai++])
       }
-      return result
+      return [...boosted, ...interleaved]
     }
-    if (sortBy === 'price-low') return [...list].sort((a, b) => (a.price || 0) - (b.price || 0))
-    if (sortBy === 'price-high') return [...list].sort((a, b) => (b.price || 0) - (a.price || 0))
-    if (sortBy === 'roi') return [...list].sort((a, b) => (b.gross_yield || b.cap_rate || 0) - (a.gross_yield || a.cap_rate || 0))
-    return list
+    if (sortBy === 'price-low') return [...boosted, ...[...rest].sort((a, b) => (a.price || 0) - (b.price || 0))]
+    if (sortBy === 'price-high') return [...boosted, ...[...rest].sort((a, b) => (b.price || 0) - (a.price || 0))]
+    if (sortBy === 'roi') return [...boosted, ...[...rest].sort((a, b) => (b.gross_yield || b.cap_rate || 0) - (a.gross_yield || a.cap_rate || 0))]
+    return [...boosted, ...rest]
   })()
 
   // Count from map pins (not list) — accurate total for current viewport
