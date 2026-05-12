@@ -383,19 +383,21 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
             <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
               {/* Background */}
               <circle cx="60" cy="60" r="60" fill="#FEF0EF"/>
-              {/* Subtle dashed search radius */}
-              <circle cx="60" cy="47" r="34" stroke="#D03839" strokeWidth="1" strokeDasharray="3 4" opacity="0.15"/>
-              {/* Pin shadow layer */}
-              <path d="M62 19C48.745 19 38 29.745 38 43C38 57 62 86 62 86C62 86 86 57 86 43C86 29.745 75.255 19 62 19Z" fill="#D03839" opacity="0.06"/>
-              {/* Pin body */}
-              <path d="M60 17C46.745 17 36 27.745 36 41C36 55 60 84 60 84C60 84 84 55 84 41C84 27.745 73.255 17 60 17Z" fill="white" stroke="#D03839" strokeWidth="2.5"/>
-              {/* House silhouette inside pin — outline only signals empty/no property */}
-              <path d="M50 43L60 32L70 43V53H50Z" stroke="#D03839" strokeWidth="2" strokeLinejoin="round" fill="none"/>
-              <path d="M57 53V46H63V53" stroke="#D03839" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              {/* "Not found" X badge sits on the top-right of the pin outline */}
-              <circle cx="77" cy="24" r="10" fill="white" stroke="#D03839" strokeWidth="2"/>
-              <path d="M73.5 20.5L80.5 27.5" stroke="#D03839" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M80.5 20.5L73.5 27.5" stroke="#D03839" strokeWidth="2" strokeLinecap="round"/>
+              <g transform="translate(0, 6)">
+                {/* Subtle dashed search radius */}
+                <circle cx="60" cy="47" r="34" stroke="#D03839" strokeWidth="1" strokeDasharray="3 4" opacity="0.15"/>
+                {/* Pin shadow layer */}
+                <path d="M62 19C48.745 19 38 29.745 38 43C38 57 62 86 62 86C62 86 86 57 86 43C86 29.745 75.255 19 62 19Z" fill="#D03839" opacity="0.06"/>
+                {/* Pin body */}
+                <path d="M60 17C46.745 17 36 27.745 36 41C36 55 60 84 60 84C60 84 84 55 84 41C84 27.745 73.255 17 60 17Z" fill="white" stroke="#D03839" strokeWidth="2.5"/>
+                {/* House silhouette inside pin — outline only signals empty/no property */}
+                <path d="M50 43L60 32L70 43V53H50Z" stroke="#D03839" strokeWidth="2" strokeLinejoin="round" fill="none"/>
+                <path d="M57 53V46H63V53" stroke="#D03839" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                {/* "Not found" X badge sits on the top-right of the pin outline */}
+                <circle cx="77" cy="24" r="10" fill="white" stroke="#D03839" strokeWidth="2"/>
+                <path d="M73.5 20.5L80.5 27.5" stroke="#D03839" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M80.5 20.5L73.5 27.5" stroke="#D03839" strokeWidth="2" strokeLinecap="round"/>
+              </g>
             </svg>
           </div>
           <h3 className="text-xl font-semibold text-[#1A1816] mb-2">
