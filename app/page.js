@@ -191,7 +191,7 @@ export default function HomePage() {
           </div>
 
           {/* Medium pin — center, fills the void left by removed card */}
-          <div className="absolute" style={{ right: '26%', top: '46%' }}>
+          <div className="absolute" style={{ right: '20%', top: '46%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 10s ease-in-out infinite', animationDelay: '1.2s' }}>
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '58px', height: '58px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s', animationFillMode: 'backwards' }} />
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '58px', height: '58px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '2.6s', animationFillMode: 'backwards' }} />
