@@ -5,10 +5,10 @@ import { FileText, PenLine, ShieldCheck, Clock } from 'lucide-react'
 
 export const metadata = {
   title: 'Contracts | DeelMap',
-  description: 'Digital contracts and e-signatures for wholesale real estate deals — coming soon to DeelMap.',
+  description: 'Digital contracts and e-signatures for wholesale real estate deals on DeelMap.',
 }
 
-const COMING_FEATURES = [
+const FEATURES = [
   {
     icon: FileText,
     title: 'Contract templates',
@@ -39,43 +39,43 @@ export default function ContractsPage() {
       {/* Hero */}
       <section className="pt-16 pb-12 lg:pt-20 lg:pb-16 bg-white">
         <div className="max-w-[720px] mx-auto px-6 sm:px-8 text-center">
-          <div className="inline-flex items-center gap-2 h-8 px-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D03839]" />
-            <span className="text-[12px] font-semibold text-[#D03839] uppercase tracking-[1.5px]">Coming Soon</span>
+          <div className="inline-flex items-center gap-2 h-8 px-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
+            <span className="text-[12px] font-semibold text-[#16A34A] uppercase tracking-[1.5px]">Now Live</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#1A1816] leading-tight mb-6">
             Contracts on DeelMap
           </h1>
           <p className="text-[16px] text-[#444441] leading-relaxed mb-8">
-            We're building a fully integrated contracts and e-signature experience inside DeelMap — so you can go from deal found to deal signed without leaving the platform.
+            Sign and manage your wholesale deal contracts without leaving the platform. Powered by DocuSeal — secure, legally binding, and built for real estate.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/marketplace"
+              href="/buyer/contracts"
               className="h-12 px-8 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors flex items-center"
             >
-              Browse Deals
+              View My Contracts
             </Link>
             <Link
-              href="/contact"
+              href="/marketplace"
               className="h-12 px-8 border border-[#E8E8E4] text-[#444441] hover:border-[#1A1816] font-medium rounded transition-colors flex items-center"
             >
-              Get notified
+              Browse Deals
             </Link>
           </div>
         </div>
       </section>
 
-      {/* What's coming */}
+      {/* Features */}
       <section className="py-14 lg:py-20 bg-[#FAFAF8]">
         <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
-          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3 text-center">WHAT'S COMING</p>
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3 text-center">HOW IT WORKS</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-3 text-center">Close deals without leaving DeelMap</h2>
           <p className="text-[15px] text-[#444441] text-center mb-10 max-w-[580px] mx-auto">
-            Today you find and contact sellers on DeelMap. Soon you'll be able to send, sign, and store every contract here too.
+            Find a deal, agree on terms, and sign the contract — all in one place.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {COMING_FEATURES.map((feature) => {
+            {FEATURES.map((feature) => {
               const Icon = feature.icon
               return (
                 <div key={feature.title} className="bg-white border border-[#E8E8E4] rounded p-6">
@@ -91,22 +91,21 @@ export default function ContractsPage() {
         </div>
       </section>
 
-      {/* Timeline note */}
+      {/* CTA */}
       <section className="py-14 lg:py-20 bg-white">
         <div className="max-w-[680px] mx-auto px-6">
           <div className="bg-[#1A1816] rounded p-8 sm:p-10 text-center">
-            <p className="text-[11px] font-semibold text-[#737370] uppercase tracking-[2px] mb-4">IN DEVELOPMENT</p>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-              Contracts are actively being built
+              Ready to sign your first deal?
             </h2>
             <p className="text-[15px] text-[#737370] leading-relaxed mb-6">
-              Our contracts feature is in active development. When it launches, you'll be able to manage every document for every deal you find on DeelMap — all in one place.
+              Sign in to your buyer account to view and sign contracts sent to you by sellers.
             </p>
             <Link
-              href="/contact"
+              href="/buyer/contracts"
               className="inline-flex items-center h-11 px-7 bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold rounded transition-colors text-[14px]"
             >
-              Contact us for updates
+              Go to My Contracts
             </Link>
           </div>
         </div>
