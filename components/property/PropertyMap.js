@@ -341,6 +341,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
       userInteractedRef.current = true
       window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
         if (map.getZoom() > 15) map.setZoom(15)
+        if (map.getZoom() < 4) map.setZoom(4)
       })
     }
   }
