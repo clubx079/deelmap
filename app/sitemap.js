@@ -1,6 +1,18 @@
 import { supabaseMarketplace } from '@/lib/supabase'
 import { toCitySlug } from '@/lib/cityUtils'
 
+const ABBR_TO_SLUG = {
+  AL:'alabama',AK:'alaska',AZ:'arizona',AR:'arkansas',CA:'california',CO:'colorado',
+  CT:'connecticut',DE:'delaware',FL:'florida',GA:'georgia',HI:'hawaii',ID:'idaho',
+  IL:'illinois',IN:'indiana',IA:'iowa',KS:'kansas',KY:'kentucky',LA:'louisiana',
+  ME:'maine',MD:'maryland',MA:'massachusetts',MI:'michigan',MN:'minnesota',MS:'mississippi',
+  MO:'missouri',MT:'montana',NE:'nebraska',NV:'nevada',NH:'new-hampshire',NJ:'new-jersey',
+  NM:'new-mexico',NY:'new-york',NC:'north-carolina',ND:'north-dakota',OH:'ohio',
+  OK:'oklahoma',OR:'oregon',PA:'pennsylvania',RI:'rhode-island',SC:'south-carolina',
+  SD:'south-dakota',TN:'tennessee',TX:'texas',UT:'utah',VT:'vermont',VA:'virginia',
+  WA:'washington',WV:'west-virginia',WI:'wisconsin',WY:'wyoming',
+}
+
 export const revalidate = 3600
 
 const SITE = 'https://deelmap.com'
@@ -15,11 +27,19 @@ export default async function sitemap() {
     { url: `${SITE}/what-is-arv`, changeFrequency: 'monthly', priority: 0.5 },
   ]
 
-  const statePages = [
-    'tennessee', 'florida', 'texas', 'georgia', 'ohio', 'michigan',
-    'north-carolina', 'south-carolina', 'illinois', 'indiana',
-    'kentucky', 'alabama', 'mississippi', 'arkansas',
-  ].map(state => ({
+  const { data: stateRows } = await supabaseMarketplace
+    .from('wholesale_deals')
+    .select('state')
+    .eq('status', 'active')
+    .not('state', 'is', null)
+
+  const stateSlugs = [...new Set(
+    (stateRows || [])
+      .map(r => ABBR_TO_SLUG[r.state?.trim().toUpperCase()])
+      .filter(Boolean)
+  )]
+
+  const statePages = stateSlugs.map(state => ({
     url: `${SITE}/wholesale-real-estate/${state}`,
     changeFrequency: 'weekly',
     priority: 0.7,

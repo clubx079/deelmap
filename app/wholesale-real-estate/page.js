@@ -2,6 +2,62 @@ import Link from 'next/link'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { Search, BarChart2, MessageCircle, Hammer, Home, Building2, MapPin } from 'lucide-react'
+import { supabaseMarketplace } from '@/lib/supabase'
+
+export const revalidate = 3600
+
+const ABBR_TO_META = {
+  AL:{slug:'alabama',name:'Alabama',cities:'Birmingham, Huntsville, Montgomery'},
+  AK:{slug:'alaska',name:'Alaska',cities:'Anchorage, Fairbanks, Juneau'},
+  AZ:{slug:'arizona',name:'Arizona',cities:'Phoenix, Tucson, Scottsdale'},
+  AR:{slug:'arkansas',name:'Arkansas',cities:'Little Rock, Fayetteville, Fort Smith'},
+  CA:{slug:'california',name:'California',cities:'Los Angeles, San Diego, Sacramento'},
+  CO:{slug:'colorado',name:'Colorado',cities:'Denver, Colorado Springs, Aurora'},
+  CT:{slug:'connecticut',name:'Connecticut',cities:'Bridgeport, Hartford, New Haven'},
+  DE:{slug:'delaware',name:'Delaware',cities:'Wilmington, Dover, Newark'},
+  FL:{slug:'florida',name:'Florida',cities:'Miami, Tampa, Orlando'},
+  GA:{slug:'georgia',name:'Georgia',cities:'Atlanta, Savannah, Augusta'},
+  HI:{slug:'hawaii',name:'Hawaii',cities:'Honolulu, Kailua, Hilo'},
+  ID:{slug:'idaho',name:'Idaho',cities:'Boise, Nampa, Meridian'},
+  IL:{slug:'illinois',name:'Illinois',cities:'Chicago, Rockford, Peoria'},
+  IN:{slug:'indiana',name:'Indiana',cities:'Indianapolis, Fort Wayne, South Bend'},
+  IA:{slug:'iowa',name:'Iowa',cities:'Des Moines, Cedar Rapids, Davenport'},
+  KS:{slug:'kansas',name:'Kansas',cities:'Wichita, Overland Park, Topeka'},
+  KY:{slug:'kentucky',name:'Kentucky',cities:'Louisville, Lexington, Bowling Green'},
+  LA:{slug:'louisiana',name:'Louisiana',cities:'New Orleans, Baton Rouge, Shreveport'},
+  ME:{slug:'maine',name:'Maine',cities:'Portland, Lewiston, Bangor'},
+  MD:{slug:'maryland',name:'Maryland',cities:'Baltimore, Rockville, Frederick'},
+  MA:{slug:'massachusetts',name:'Massachusetts',cities:'Boston, Worcester, Springfield'},
+  MI:{slug:'michigan',name:'Michigan',cities:'Detroit, Grand Rapids, Ann Arbor'},
+  MN:{slug:'minnesota',name:'Minnesota',cities:'Minneapolis, Saint Paul, Rochester'},
+  MS:{slug:'mississippi',name:'Mississippi',cities:'Jackson, Gulfport, Hattiesburg'},
+  MO:{slug:'missouri',name:'Missouri',cities:'Kansas City, St. Louis, Springfield'},
+  MT:{slug:'montana',name:'Montana',cities:'Billings, Missoula, Bozeman'},
+  NE:{slug:'nebraska',name:'Nebraska',cities:'Omaha, Lincoln, Bellevue'},
+  NV:{slug:'nevada',name:'Nevada',cities:'Las Vegas, Henderson, Reno'},
+  NH:{slug:'new-hampshire',name:'New Hampshire',cities:'Manchester, Nashua, Concord'},
+  NJ:{slug:'new-jersey',name:'New Jersey',cities:'Newark, Jersey City, Trenton'},
+  NM:{slug:'new-mexico',name:'New Mexico',cities:'Albuquerque, Las Cruces, Santa Fe'},
+  NY:{slug:'new-york',name:'New York',cities:'New York City, Buffalo, Rochester'},
+  NC:{slug:'north-carolina',name:'North Carolina',cities:'Charlotte, Raleigh, Durham'},
+  ND:{slug:'north-dakota',name:'North Dakota',cities:'Fargo, Bismarck, Grand Forks'},
+  OH:{slug:'ohio',name:'Ohio',cities:'Columbus, Cleveland, Cincinnati'},
+  OK:{slug:'oklahoma',name:'Oklahoma',cities:'Oklahoma City, Tulsa, Norman'},
+  OR:{slug:'oregon',name:'Oregon',cities:'Portland, Salem, Eugene'},
+  PA:{slug:'pennsylvania',name:'Pennsylvania',cities:'Philadelphia, Pittsburgh, Allentown'},
+  RI:{slug:'rhode-island',name:'Rhode Island',cities:'Providence, Cranston, Warwick'},
+  SC:{slug:'south-carolina',name:'South Carolina',cities:'Charleston, Columbia, Greenville'},
+  SD:{slug:'south-dakota',name:'South Dakota',cities:'Sioux Falls, Rapid City, Aberdeen'},
+  TN:{slug:'tennessee',name:'Tennessee',cities:'Nashville, Memphis, Knoxville'},
+  TX:{slug:'texas',name:'Texas',cities:'Dallas, Houston, San Antonio'},
+  UT:{slug:'utah',name:'Utah',cities:'Salt Lake City, Provo, St. George'},
+  VT:{slug:'vermont',name:'Vermont',cities:'Burlington, South Burlington, Rutland'},
+  VA:{slug:'virginia',name:'Virginia',cities:'Virginia Beach, Norfolk, Richmond'},
+  WA:{slug:'washington',name:'Washington',cities:'Seattle, Spokane, Tacoma'},
+  WV:{slug:'west-virginia',name:'West Virginia',cities:'Charleston, Huntington, Morgantown'},
+  WI:{slug:'wisconsin',name:'Wisconsin',cities:'Milwaukee, Madison, Green Bay'},
+  WY:{slug:'wyoming',name:'Wyoming',cities:'Cheyenne, Casper, Laramie'},
+}
 
 export const metadata = {
   title: 'Wholesale Real Estate Deals | Find Verified Properties | DeelMap',
@@ -82,7 +138,18 @@ const DEELMAP_LIST = [
   'Powerful filters for deal type, location, and returns',
 ]
 
-export default function WholesaleRealEstatePage() {
+export default async function WholesaleRealEstatePage() {
+  const { data: stateRows } = await supabaseMarketplace
+    .from('wholesale_deals')
+    .select('state')
+    .eq('status', 'active')
+    .not('state', 'is', null)
+
+  const activeStates = [...new Set((stateRows || []).map(r => r.state?.trim().toUpperCase()).filter(Boolean))]
+    .map(abbr => ABBR_TO_META[abbr])
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -247,22 +314,7 @@ export default function WholesaleRealEstatePage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-3 text-center">Wholesale deals by state</h2>
           <p className="text-[16px] text-[#444441] text-center mb-10 max-w-[600px] mx-auto">Browse wholesale real estate investment opportunities in top markets across the country.</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { slug: 'kentucky', name: 'Kentucky', cities: 'Louisville, Lexington, Bowling Green' },
-              { slug: 'tennessee', name: 'Tennessee', cities: 'Nashville, Memphis, Knoxville' },
-              { slug: 'texas', name: 'Texas', cities: 'Dallas, Houston, San Antonio' },
-              { slug: 'florida', name: 'Florida', cities: 'Miami, Tampa, Orlando' },
-              { slug: 'georgia', name: 'Georgia', cities: 'Atlanta, Savannah, Augusta' },
-              { slug: 'ohio', name: 'Ohio', cities: 'Columbus, Cleveland, Cincinnati' },
-              { slug: 'michigan', name: 'Michigan', cities: 'Detroit, Grand Rapids, Ann Arbor' },
-              { slug: 'north-carolina', name: 'North Carolina', cities: 'Charlotte, Raleigh, Durham' },
-              { slug: 'south-carolina', name: 'South Carolina', cities: 'Charleston, Columbia, Greenville' },
-              { slug: 'illinois', name: 'Illinois', cities: 'Chicago, Rockford, Peoria' },
-              { slug: 'indiana', name: 'Indiana', cities: 'Indianapolis, Fort Wayne, South Bend' },
-              { slug: 'alabama', name: 'Alabama', cities: 'Birmingham, Huntsville, Montgomery' },
-              { slug: 'mississippi', name: 'Mississippi', cities: 'Jackson, Gulfport, Hattiesburg' },
-              { slug: 'arkansas', name: 'Arkansas', cities: 'Little Rock, Fayetteville, Fort Smith' },
-            ].map(s => (
+            {activeStates.map(s => (
               <Link
                 key={s.slug}
                 href={`/wholesale-real-estate/${s.slug}`}
