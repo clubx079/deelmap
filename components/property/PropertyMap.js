@@ -339,7 +339,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
     if (!bounds.isEmpty() && !userInteractedRef.current && !searchActive) {
       map.fitBounds(bounds)
       userInteractedRef.current = true
-      window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+      window.google.maps.event.addListenerOnce(map, 'idle', () => {
         if (map.getZoom() > 15) map.setZoom(15)
         if (map.getZoom() < 5) map.setZoom(5)
       })
