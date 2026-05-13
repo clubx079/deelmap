@@ -9,11 +9,21 @@ export default async function sitemap() {
   const staticPages = [
     { url: SITE, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE}/marketplace`, changeFrequency: 'hourly', priority: 0.9 },
+    { url: `${SITE}/wholesale-real-estate`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE}/how-to-find-off-market-properties`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE}/how-to-wholesale-real-estate`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE}/what-is-arv`, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${SITE}/wholesale-real-estate`, changeFrequency: 'monthly', priority: 0.5 },
   ]
+
+  const statePages = [
+    'tennessee', 'florida', 'texas', 'georgia', 'ohio', 'michigan',
+    'north-carolina', 'south-carolina', 'illinois', 'indiana',
+    'kentucky', 'alabama', 'mississippi', 'arkansas',
+  ].map(state => ({
+    url: `${SITE}/wholesale-real-estate/${state}`,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }))
 
   const { data: deals } = await supabaseMarketplace
     .from('wholesale_deals')
@@ -62,5 +72,5 @@ export default async function sitemap() {
     cityPages.push({ url: `${SITE}/deals/${citySlug}`, changeFrequency: 'daily', priority: 0.7 })
   }
 
-  return [...staticPages, ...listingPages, ...manualPages, ...cityPages]
+  return [...staticPages, ...statePages, ...listingPages, ...manualPages, ...cityPages]
 }

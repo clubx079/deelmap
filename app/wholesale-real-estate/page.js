@@ -240,8 +240,49 @@ export default function WholesaleRealEstatePage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* State Directory */}
       <section className="py-14 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
+          <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3 text-center">BY STATE</p>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-3 text-center">Wholesale deals by state</h2>
+          <p className="text-[16px] text-[#444441] text-center mb-10 max-w-[600px] mx-auto">Browse wholesale real estate investment opportunities in top markets across the country.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { slug: 'kentucky', name: 'Kentucky', cities: 'Louisville, Lexington, Bowling Green' },
+              { slug: 'tennessee', name: 'Tennessee', cities: 'Nashville, Memphis, Knoxville' },
+              { slug: 'texas', name: 'Texas', cities: 'Dallas, Houston, San Antonio' },
+              { slug: 'florida', name: 'Florida', cities: 'Miami, Tampa, Orlando' },
+              { slug: 'georgia', name: 'Georgia', cities: 'Atlanta, Savannah, Augusta' },
+              { slug: 'ohio', name: 'Ohio', cities: 'Columbus, Cleveland, Cincinnati' },
+              { slug: 'michigan', name: 'Michigan', cities: 'Detroit, Grand Rapids, Ann Arbor' },
+              { slug: 'north-carolina', name: 'North Carolina', cities: 'Charlotte, Raleigh, Durham' },
+              { slug: 'south-carolina', name: 'South Carolina', cities: 'Charleston, Columbia, Greenville' },
+              { slug: 'illinois', name: 'Illinois', cities: 'Chicago, Rockford, Peoria' },
+              { slug: 'indiana', name: 'Indiana', cities: 'Indianapolis, Fort Wayne, South Bend' },
+              { slug: 'alabama', name: 'Alabama', cities: 'Birmingham, Huntsville, Montgomery' },
+              { slug: 'mississippi', name: 'Mississippi', cities: 'Jackson, Gulfport, Hattiesburg' },
+              { slug: 'arkansas', name: 'Arkansas', cities: 'Little Rock, Fayetteville, Fort Smith' },
+            ].map(s => (
+              <Link
+                key={s.slug}
+                href={`/wholesale-real-estate/${s.slug}`}
+                className="flex items-start gap-4 bg-[#FAFAF8] border border-[#E8E8E4] rounded p-5 hover:border-[#1A1816] transition-colors group"
+              >
+                <div className="w-9 h-9 bg-[#D03839]/10 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MapPin className="w-4 h-4 text-[#D03839]" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-semibold text-[#1A1816] group-hover:text-[#D03839] transition-colors mb-0.5">Wholesale Deals in {s.name}</p>
+                  <p className="text-[13px] text-[#737370]">{s.cities}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-14 lg:py-20 bg-[#FAFAF8]">
         <div className="max-w-[680px] mx-auto px-6 text-center">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-4">GET STARTED</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-4">Start finding wholesale deals today</h2>
