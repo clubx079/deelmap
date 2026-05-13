@@ -169,11 +169,11 @@ export default function HomePage() {
         {/* Animated pin elements — desktop only */}
         <div className="absolute inset-0 hidden lg:block pointer-events-none" style={{ zIndex: 5 }}>
 
-          {/* Large pin */}
-          <div className="absolute" style={{ right: '30%', top: '16%' }}>
+          {/* Large pin — upper left of right section */}
+          <div className="absolute" style={{ right: '36%', top: '8%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 8s ease-in-out infinite' }}>
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0s' }} />
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0s', animationFillMode: 'backwards' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s', animationFillMode: 'backwards' }} />
               <img src="/assets/hero-pin-lg.svg" alt="" style={{ width: '90px', height: '90px', display: 'block', position: 'relative', zIndex: 1 }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px', animation: 'heroShadowPulse 8s ease-in-out infinite' }}>
@@ -181,20 +181,20 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Group pin */}
-          <div className="absolute" style={{ right: '13%', top: '18%' }}>
+          {/* Group pin — upper right */}
+          <div className="absolute" style={{ right: '6%', top: '10%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 9s ease-in-out infinite', animationDelay: '0.6s' }}>
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0.65s' }} />
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.95s' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0.65s', animationFillMode: 'backwards' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.95s', animationFillMode: 'backwards' }} />
               <img src="/assets/hero-group.svg" alt="" style={{ width: '96px', height: '102px', display: 'block', position: 'relative', zIndex: 1 }} />
             </div>
           </div>
 
-          {/* Medium pin */}
-          <div className="absolute" style={{ right: '36%', top: '54%' }}>
+          {/* Medium pin — center, fills the void left by removed card */}
+          <div className="absolute" style={{ right: '18%', top: '36%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 10s ease-in-out infinite', animationDelay: '1.2s' }}>
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '58px', height: '58px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s' }} />
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '58px', height: '58px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '2.6s' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '58px', height: '58px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s', animationFillMode: 'backwards' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '58px', height: '58px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '2.6s', animationFillMode: 'backwards' }} />
               <img src="/assets/hero-pin-md.svg" alt="" style={{ width: '72px', height: '72px', display: 'block', position: 'relative', zIndex: 1 }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px', animation: 'heroShadowPulse 10s ease-in-out infinite', animationDelay: '1.2s' }}>
@@ -202,11 +202,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Small pin */}
-          <div className="absolute" style={{ right: '6%', top: '56%' }}>
+          {/* Small pin — lower area */}
+          <div className="absolute" style={{ right: '38%', top: '60%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 8s ease-in-out infinite', animationDelay: '1.8s' }}>
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '46px', height: '46px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.95s' }} />
-              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '46px', height: '46px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '3.25s' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '46px', height: '46px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.95s', animationFillMode: 'backwards' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '45%', width: '46px', height: '46px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '3.25s', animationFillMode: 'backwards' }} />
               <img src="/assets/hero-pin-sm.svg" alt="" style={{ width: '58px', height: '58px', display: 'block', position: 'relative', zIndex: 1 }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '4px', animation: 'heroShadowPulse 8s ease-in-out infinite', animationDelay: '1.8s' }}>
