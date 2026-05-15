@@ -18,7 +18,7 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function NewContractModal({ buyerEmail, onClose, onCreated }) {
+function NewContractModal({ buyerEmail, buyerName, onClose, onCreated }) {
   const [templates, setTemplates] = useState([])
   const [form, setForm] = useState({ sellerName: '', sellerEmail: '', property: '', templateId: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -43,10 +43,11 @@ function NewContractModal({ buyerEmail, onClose, onCreated }) {
       const res = await fetch('/api/contracts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, buyerEmail }),
+        body: JSON.stringify({ ...form, buyerEmail, buyerName }),
       })
       const data = await res.json()
       if (!res.ok || data.error) { setError(data.error || 'Failed to create contract'); return }
+      if (data.assignor_slug) window.open(`https://docuseal.com/s/${data.assignor_slug}`, '_blank')
       onCreated()
     } catch {
       setError('Something went wrong. Please try again.')
@@ -181,6 +182,7 @@ export default function BuyerContractsPage() {
       {showModal && (
         <NewContractModal
           buyerEmail={user?.email}
+          buyerName={user?.name || user?.full_name || user?.first_name || ''}
           onClose={() => setShowModal(false)}
           onCreated={() => { setShowModal(false); fetchContracts() }}
         />

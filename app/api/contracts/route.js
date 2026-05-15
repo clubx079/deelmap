@@ -53,10 +53,10 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { sellerName, sellerEmail, property, buyerEmail, templateId } = await request.json()
+    const { sellerName, sellerEmail, property, buyerEmail, buyerName, templateId } = await request.json()
 
-    if (!sellerEmail || !templateId) {
-      return NextResponse.json({ error: 'sellerEmail and templateId are required' }, { status: 400 })
+    if (!sellerEmail || !templateId || !buyerEmail) {
+      return NextResponse.json({ error: 'sellerEmail, buyerEmail and templateId are required' }, { status: 400 })
     }
 
     const res = await fetch(`${DOCUSEAL_BASE}/submissions`, {
@@ -65,17 +65,29 @@ export async function POST(request) {
       body: JSON.stringify({
         template_id: Number(templateId),
         name: property || '',
-        submitters: [{
-          role: 'First Submitter',
-          email: sellerEmail,
-          name: sellerName || sellerEmail,
-          application_key: `buyer:${buyerEmail}`,
-        }],
+        submitters: [
+          {
+            role: 'Assignor',
+            email: buyerEmail,
+            name: buyerName || buyerEmail,
+            send_email: false,
+            application_key: `buyer:${buyerEmail}`,
+          },
+          {
+            role: 'Assignee',
+            email: sellerEmail,
+            name: sellerName || sellerEmail,
+            send_email: false,
+          },
+        ],
       }),
     })
 
     const json = await res.json()
-    return NextResponse.json(json)
+    if (!Array.isArray(json) || !json[0]) return NextResponse.json({ error: 'DocuSeal error' }, { status: 500 })
+
+    const assignorSubmitter = json.find(s => s.role === 'Assignor') || json[0]
+    return NextResponse.json({ submission_id: assignorSubmitter.submission_id, assignor_slug: assignorSubmitter.slug })
   } catch {
     return NextResponse.json({ error: 'Failed to create contract' }, { status: 500 })
   }
