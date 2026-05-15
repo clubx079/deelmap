@@ -59,12 +59,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'sellerEmail, buyerEmail and templateId are required' }, { status: 400 })
     }
 
+    const assigneePlaceholder = `pending-${Date.now()}@noreply.deelmap.com`
+
     const res = await fetch(`${DOCUSEAL_BASE}/submissions`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({
         template_id: Number(templateId),
         name: property || '',
+        metadata: {
+          assigneeEmail: sellerEmail,
+          assigneeName: sellerName || sellerEmail,
+        },
         submitters: [
           {
             role: 'Assignor',
@@ -75,7 +81,7 @@ export async function POST(request) {
           },
           {
             role: 'Assignee',
-            email: sellerEmail,
+            email: assigneePlaceholder,
             name: sellerName || sellerEmail,
             send_email: false,
           },
