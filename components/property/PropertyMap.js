@@ -341,7 +341,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
       userInteractedRef.current = true
       window.google.maps.event.addListenerOnce(map, 'idle', () => {
         const z = map.getZoom()
-        map.setZoom(Math.max(4, Math.min(15, z)))
+        map.setZoom(Math.max(10, Math.min(15, z)))
       })
     }
   }
