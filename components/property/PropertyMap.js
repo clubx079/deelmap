@@ -340,8 +340,8 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
       map.fitBounds(bounds)
       userInteractedRef.current = true
       window.google.maps.event.addListenerOnce(map, 'idle', () => {
-        if (map.getZoom() > 15) map.setZoom(15)
-        if (map.getZoom() < 5) map.setZoom(5)
+        const z = map.getZoom()
+        map.setZoom(Math.max(4, Math.min(15, z - 1)))
       })
     }
   }

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff, X, ArrowLeft } from 'lucide-react'
 
-export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defaultRole = 'buyer', preventClose = false, backUrl = null }) {
+export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defaultRole = 'buyer', preventClose = false, backUrl = null, backLabel = 'Back to listings' }) {
   const { signIn, sendOTP, verifyOTP, signInWithGoogle, signInWithFacebook } = useAuth()
   const [authStep, setAuthStep] = useState(initialStep)
   const [authData, setAuthData] = useState({
@@ -284,7 +284,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
                   className="inline-flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] mb-5 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to listings
+                  {backLabel}
                 </a>
               )}
               <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[1px] mb-2">Log In</p>

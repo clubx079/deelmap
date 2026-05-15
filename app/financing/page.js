@@ -220,7 +220,7 @@ export default function FinancingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <RegistrationModal isOpen={showLoginModal} onClose={() => {}} preventClose={true} />
+      <RegistrationModal isOpen={showLoginModal} onClose={() => {}} preventClose={true} backUrl="/" backLabel="Back to Homepage" />
       <div className={showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}>
       <Navbar currentPage="financing" />
 
