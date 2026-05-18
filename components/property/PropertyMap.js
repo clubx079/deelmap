@@ -168,7 +168,7 @@ export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, fi
 
     const bootstrap = () => {
       const map = new window.google.maps.Map(mapRef.current, {
-        zoom: 9,
+        zoom: 4,
         center: { lat: 39.8283, lng: -98.5795 },
         mapTypeControl: false,
         streetViewControl: false,
