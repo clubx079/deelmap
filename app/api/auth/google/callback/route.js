@@ -5,7 +5,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-function getBaseUrl() {
+function getBaseUrl(request) {
+  const host = request.headers.get('host')
+  const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https')
+  if (host) return `${proto}://${host}`
   return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
 
@@ -21,7 +24,7 @@ function getClientIP(request) {
 
 export async function GET(request) {
   try {
-    const baseUrl = getBaseUrl()
+    const baseUrl = getBaseUrl(request)
     const clientIP = getClientIP(request)
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
@@ -149,7 +152,7 @@ export async function GET(request) {
     return response
   } catch (error) {
     console.error('Google callback error:', error)
-    const baseUrl = getBaseUrl()
+    const baseUrl = getBaseUrl(request)
     return NextResponse.redirect(
       `${baseUrl}?error=auth_failed`
     )

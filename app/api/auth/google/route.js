@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 
-function getBaseUrl() {
+function getBaseUrl(request) {
+  const host = request.headers.get('host')
+  const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https')
+  if (host) return `${proto}://${host}`
   return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 }
 
 export async function POST(request) {
   try {
-    const baseUrl = getBaseUrl()
+    const baseUrl = getBaseUrl(request)
     const redirectUri = `${baseUrl}/api/auth/google/callback`
     const clientId = process.env.GOOGLE_CLIENT_ID
 
