@@ -182,6 +182,33 @@ export function PropertyDetail({ property }) {
     }
   }, [property?.id, isFavorited])
 
+  // Save to recently viewed in localStorage
+  useEffect(() => {
+    if (!property?.id) return
+    const snapshot = {
+      id: property.id,
+      slug: property.slug || property.id,
+      address: property.address,
+      full_address: property.full_address || property.display_address,
+      city: property.city,
+      state: property.state,
+      price: property.price,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      sqft: property.sqft,
+      gross_yield: property.gross_yield,
+      purchase_price: property.purchase_price,
+      property_photos: property.property_photos?.slice(0, 1) || [],
+      viewedAt: new Date().toISOString(),
+    }
+    try {
+      const raw = localStorage.getItem('deelmap_recently_viewed')
+      const existing = raw ? JSON.parse(raw) : []
+      const filtered = existing.filter(p => p.id !== property.id)
+      localStorage.setItem('deelmap_recently_viewed', JSON.stringify([snapshot, ...filtered].slice(0, 10)))
+    } catch {}
+  }, [property?.id])
+
   useEffect(() => {
     if (user && similarProperties?.length > 0) {
       loadFavorites(similarProperties.map(p => p.id))

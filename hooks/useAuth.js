@@ -237,7 +237,10 @@ export function AuthProvider({ children }) {
   }
 
   const signOut = async () => {
-    console.log("signOut clicked");
+    try {
+      const { resetIdentity } = await import('@/lib/analytics')
+      resetIdentity()
+    } catch {}
 
     try {
       setUser(null)

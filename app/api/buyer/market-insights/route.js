@@ -8,25 +8,45 @@ const supabase = createClient(
 
 const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
+async function fetchAllPages(buildQuery) {
+  const BATCH = 1000;
+  const all = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery(from, from + BATCH - 1);
+    if (error) throw error;
+    if (!data?.length) break;
+    all.push(...data);
+    if (data.length < BATCH) break;
+    from += BATCH;
+  }
+  return all;
+}
+
 export async function GET() {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Fetch from both tables in parallel
-    const [{ data: wholesaleDeals }, { data: manualProperties }] = await Promise.all([
-      supabase
-        .from('wholesale_deals')
-        .select('state, price, gross_yield, cap_rate, property_type, created_at')
-        .eq('status', 'active')
-        .eq('is_incomplete', false),
-      supabase
-        .from('properties')
-        .select('state, price, property_type, created_at, status, admin_status')
-        .eq('admin_status', 'active')
-        .in('status', ['published', 'active']),
+    // Fetch all records from both tables with pagination to exceed 1000-row limit
+    const [wholesaleDeals, manualProperties] = await Promise.all([
+      fetchAllPages((from, to) =>
+        supabase
+          .from('wholesale_deals')
+          .select('state, price, gross_yield, cap_rate, property_type, created_at')
+          .eq('status', 'active')
+          .eq('is_incomplete', false)
+          .range(from, to)
+      ),
+      fetchAllPages((from, to) =>
+        supabase
+          .from('properties')
+          .select('state, price, property_type, created_at, status, admin_status')
+          .eq('admin_status', 'active')
+          .in('status', ['published', 'active'])
+          .range(from, to)
+      ),
     ]);
 
-    // Normalise to a common shape (properties has no gross_yield/cap_rate)
     const wholesaleNorm = (wholesaleDeals || []).map(d => ({
       state: d.state || null,
       price: d.price || null,

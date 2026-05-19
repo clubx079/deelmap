@@ -206,6 +206,8 @@ export default function SignupPage() {
         phone: formData.phone,
         statesOfInterest: formData.statesOfInterest
       })
+      const { trackEvent } = await import('@/lib/analytics')
+      trackEvent('user_signed_up', { method: 'email' })
       router.push('/marketplace')
     } catch (err) {
       setError(err.message || 'Invalid verification code')

@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useFavorites } from '@/hooks/useFavorites';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
+import { ShareModal } from '@/components/property/ShareModal';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -72,10 +74,9 @@ export default function BuyerDashboard() {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${user.id}` };
 
-      const [conversationsRes, favoritesRes, dealsRes, offersRes, listingsRes] = await Promise.allSettled([
+      const [conversationsRes, favoritesRes, offersRes, listingsRes] = await Promise.allSettled([
         fetch('/api/buyer/chat?action=get_conversations', { headers }),
         fetch('/api/favorites/list', { headers }),
-        fetch('/api/deals?limit=10&sortBy=newest'),
         fetch('/api/buyer/offers', { headers }),
         fetch('/api/buyer/listings', { headers: { 'x-user-id': user.id } }),
       ]);
@@ -125,13 +126,11 @@ export default function BuyerDashboard() {
         setStats(prev => ({ ...prev, myActiveListings: active }));
       }
 
-      // Recent deals for carousel
-      if (dealsRes.status === 'fulfilled' && dealsRes.value.ok) {
-        const data = await dealsRes.value.json();
-        if (data.success) {
-          setRecentDeals((data.properties || []).slice(0, 8));
-        }
-      }
+      // Recently viewed — read from localStorage
+      try {
+        const raw = localStorage.getItem('deelmap_recently_viewed');
+        if (raw) setRecentDeals(JSON.parse(raw).slice(0, 8));
+      } catch {}
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -543,92 +542,136 @@ function QuickAction({ href, icon, title, subtitle }) {
 }
 
 function DealCard({ deal, getFeatureImage, formatCurrency }) {
+  const { user } = useAuth();
+  const { isFavorited, toggleFavorite, loadFavorites } = useFavorites();
+  const [isFav, setIsFav] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.id && deal?.id) loadFavorites([deal.id]);
+  }, [user?.id, deal?.id]);
+
+  useEffect(() => {
+    setIsFav(isFavorited(deal?.id));
+  }, [deal?.id, isFavorited]);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user?.id) return;
+    setFavLoading(true);
+    try {
+      const next = await toggleFavorite(deal.id);
+      setIsFav(next);
+    } catch {}
+    setFavLoading(false);
+  };
+
   const image = getFeatureImage(deal);
   const arv = deal.purchase_price || (deal.price ? Math.round(deal.price * 1.8) : null);
   const spread = arv && deal.price ? arv - deal.price : null;
   const roi = arv && deal.price ? Math.round(((arv - deal.price) / deal.price) * 100) : null;
+  const listingUrl = `https://deelmap.com/${deal.slug || deal.id}`;
 
   return (
-    <div className="flex-shrink-0 w-[280px] bg-white rounded border border-[#E8E8E4] overflow-hidden group">
-      {/* Image */}
-      <div className="relative h-[170px] bg-[#FAFAF8] overflow-hidden">
-        {image ? (
-          <Image
-            src={image}
-            alt={deal.address || 'Property'}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="280px"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <MapPin className="w-8 h-8 text-[#A8A8A4]" />
+    <>
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={listingUrl}
+        title={deal.address || 'Property'}
+        description={`${deal.bedrooms || 0}bd / ${deal.bathrooms || 0}ba — ${deal.city || ''}, ${deal.state || ''}`}
+      />
+      <div className="flex-shrink-0 w-[280px] bg-white rounded border border-[#E8E8E4] overflow-hidden group">
+        {/* Image */}
+        <div className="relative h-[170px] bg-[#FAFAF8] overflow-hidden">
+          {image ? (
+            <Image
+              src={image}
+              alt={deal.address || 'Property'}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="280px"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <MapPin className="w-8 h-8 text-[#A8A8A4]" />
+            </div>
+          )}
+          <div className="absolute top-2.5 left-2.5 flex gap-1.5">
+            {deal.gross_yield && deal.gross_yield > 15 && (
+              <span className="px-2 py-0.5 bg-[#0F6E56] text-white text-[11px] font-semibold rounded-full">
+                High ROI
+              </span>
+            )}
           </div>
-        )}
-        {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-          {deal.gross_yield && deal.gross_yield > 15 && (
-            <span className="px-2 py-0.5 bg-[#0F6E56] text-white text-[11px] font-semibold rounded-full">
-              High ROI
+          {roi && (
+            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-[#1A1816]/70 text-white text-[11px] font-semibold rounded-full">
+              +{roi}% ROI
             </span>
           )}
         </div>
-        {roi && (
-          <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-[#1A1816]/70 text-white text-[11px] font-semibold rounded-full">
-            +{roi}% ROI
-          </span>
-        )}
-      </div>
 
-      {/* Content */}
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1 text-[11px] text-[#737370]">
-            <MapPin className="w-3 h-3" />
-            <span className="truncate">{deal.city}{deal.state ? `, ${deal.state}` : ''}</span>
+        {/* Content */}
+        <div className="p-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1 text-[11px] text-[#737370]">
+              <MapPin className="w-3 h-3" />
+              <span className="truncate">{deal.city}{deal.state ? `, ${deal.state}` : ''}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}
+                className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-[#FAFAF8] rounded transition-colors duration-200"
+              >
+                <Share2 className="w-3.5 h-3.5 text-[#A8A8A4]" />
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={favLoading}
+                className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-[#FAFAF8] rounded transition-colors duration-200"
+              >
+                <Heart className={`w-3.5 h-3.5 transition-colors ${isFav ? 'text-[#D03839] fill-[#D03839]' : 'text-[#A8A8A4]'}`} />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-[#FAFAF8] rounded transition-colors duration-200">
-              <Share2 className="w-3.5 h-3.5 text-[#A8A8A4]" />
-            </button>
-            <button className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-[#FAFAF8] rounded transition-colors duration-200">
-              <Heart className="w-3.5 h-3.5 text-[#A8A8A4]" />
-            </button>
-          </div>
-        </div>
 
-        <p className="text-[14px] font-semibold text-[#1A1816] truncate mb-1">
-          {deal.bedrooms ? `${deal.bedrooms}BR` : ''} {deal.address || 'Property'}
-        </p>
-
-        <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-2">
-          {deal.sqft && <span>{deal.sqft.toLocaleString()} sq ft</span>}
-          {deal.bedrooms && <><span className="text-[#D4D4CF]">·</span><span>{deal.bedrooms} bed</span></>}
-          {deal.bathrooms && <><span className="text-[#D4D4CF]">·</span><span>{deal.bathrooms} bath</span></>}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-[18px] font-bold text-[#1A1816]">{formatCurrency(deal.price)}</span>
-            {arv && (
-              <span className="ml-2 text-[12px] text-[#0F6E56] font-medium">ARV {formatCurrency(arv)}</span>
-            )}
-          </div>
-        </div>
-
-        {spread && (
-          <p className="text-[11px] text-[#0F6E56] font-medium mt-1 flex items-center gap-0.5">
-            <span>&#8593;</span> {formatCurrency(spread)} spread potential
+          <p className="text-[14px] font-semibold text-[#1A1816] truncate mb-1">
+            {deal.bedrooms ? `${deal.bedrooms}BR` : ''} {deal.address || 'Property'}
           </p>
-        )}
 
-        <Link
-          href={`/marketplace/${deal.slug || deal.id}`}
-          className="mt-2.5 w-full flex items-center justify-center px-3 py-2 border border-[#D03839] text-[#D03839] text-[14px] font-semibold rounded hover:bg-[#FEF0EF] transition-colors duration-200"
-        >
-          View Listing
-        </Link>
+          <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-2">
+            {deal.sqft && <span>{deal.sqft.toLocaleString()} sq ft</span>}
+            {deal.bedrooms && <><span className="text-[#D4D4CF]">·</span><span>{deal.bedrooms} bed</span></>}
+            {deal.bathrooms && <><span className="text-[#D4D4CF]">·</span><span>{deal.bathrooms} bath</span></>}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[18px] font-bold text-[#1A1816]">{formatCurrency(deal.price)}</span>
+              {arv && (
+                <span className="ml-2 text-[12px] text-[#0F6E56] font-medium">ARV {formatCurrency(arv)}</span>
+              )}
+            </div>
+          </div>
+
+          {spread && (
+            <p className="text-[11px] text-[#0F6E56] font-medium mt-1 flex items-center gap-0.5">
+              <span>&#8593;</span> {formatCurrency(spread)} spread potential
+            </p>
+          )}
+
+          <Link
+            href={`/${deal.slug || deal.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2.5 w-full flex items-center justify-center px-3 py-2 border border-[#D03839] text-[#D03839] text-[14px] font-semibold rounded hover:bg-[#FEF0EF] transition-colors duration-200"
+          >
+            View Listing
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
