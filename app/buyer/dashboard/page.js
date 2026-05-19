@@ -74,11 +74,12 @@ export default function BuyerDashboard() {
       setLoading(true);
       const headers = { 'Authorization': `Bearer ${user.id}` };
 
-      const [conversationsRes, favoritesRes, offersRes, listingsRes] = await Promise.allSettled([
+      const [conversationsRes, favoritesRes, offersRes, listingsRes, recentlyViewedRes] = await Promise.allSettled([
         fetch('/api/buyer/chat?action=get_conversations', { headers }),
         fetch('/api/favorites/list', { headers }),
         fetch('/api/buyer/offers', { headers }),
         fetch('/api/buyer/listings', { headers: { 'x-user-id': user.id } }),
+        fetch('/api/buyer/recently-viewed', { headers }),
       ]);
 
       // Conversations
@@ -126,11 +127,11 @@ export default function BuyerDashboard() {
         setStats(prev => ({ ...prev, myActiveListings: active }));
       }
 
-      // Recently viewed — read from localStorage
-      try {
-        const raw = localStorage.getItem('deelmap_recently_viewed');
-        if (raw) setRecentDeals(JSON.parse(raw).slice(0, 8));
-      } catch {}
+      // Recently viewed — fetch from DB
+      if (recentlyViewedRes.status === 'fulfilled' && recentlyViewedRes.value.ok) {
+        const data = await recentlyViewedRes.value.json();
+        setRecentDeals(data.properties || []);
+      }
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);

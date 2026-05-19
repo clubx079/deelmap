@@ -182,9 +182,27 @@ export function PropertyDetail({ property }) {
     }
   }, [property?.id, isFavorited])
 
-  // Save to recently viewed in localStorage
+  // Track property view in PostHog
   useEffect(() => {
     if (!property?.id) return
+    import('@/lib/analytics').then(({ trackEvent }) => {
+      trackEvent('property_viewed', {
+        property_id: property.id,
+        address: property.address,
+        city: property.city,
+        state: property.state,
+        price: property.price,
+        property_type: property.property_type,
+        listing_type: property.listing_type,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+      })
+    })
+  }, [property?.id])
+
+  // Save to recently viewed in DB
+  useEffect(() => {
+    if (!property?.id || !user?.id) return
     const snapshot = {
       id: property.id,
       slug: property.slug || property.id,
@@ -199,15 +217,13 @@ export function PropertyDetail({ property }) {
       gross_yield: property.gross_yield,
       purchase_price: property.purchase_price,
       property_photos: property.property_photos?.slice(0, 1) || [],
-      viewedAt: new Date().toISOString(),
     }
-    try {
-      const raw = localStorage.getItem('deelmap_recently_viewed')
-      const existing = raw ? JSON.parse(raw) : []
-      const filtered = existing.filter(p => p.id !== property.id)
-      localStorage.setItem('deelmap_recently_viewed', JSON.stringify([snapshot, ...filtered].slice(0, 10)))
-    } catch {}
-  }, [property?.id])
+    fetch('/api/buyer/recently-viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+      body: JSON.stringify({ property_id: property.id, property_data: snapshot }),
+    }).catch(() => {})
+  }, [property?.id, user?.id])
 
   useEffect(() => {
     if (user && similarProperties?.length > 0) {
