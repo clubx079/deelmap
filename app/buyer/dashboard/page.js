@@ -473,10 +473,10 @@ export default function BuyerDashboard() {
         </div>
 
         {/* Recently Viewed Deals */}
-        {recentDeals.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[20px] font-bold text-[#1A1816] tracking-[-0.66px]">Recently viewed deals</h2>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[20px] font-bold text-[#1A1816] tracking-[-0.66px]">Recently viewed deals</h2>
+            {recentDeals.length > 0 && (
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => scrollDeals('left')}
@@ -491,7 +491,9 @@ export default function BuyerDashboard() {
                   <ChevronRight className="w-4 h-4 text-[#444441]" />
                 </button>
               </div>
-            </div>
+            )}
+          </div>
+          {recentDeals.length > 0 ? (
             <div
               ref={scrollRef}
               className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
@@ -501,8 +503,13 @@ export default function BuyerDashboard() {
                 <DealCard key={deal.id} deal={deal} getFeatureImage={getFeatureImage} formatCurrency={formatCurrency} />
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center justify-between p-5 bg-[#FAFAF8] border border-[#E8E8E4] rounded-lg">
+              <p className="text-[14px] text-[#737370]">Properties you view will appear here.</p>
+              <Link href="/marketplace" className="text-[14px] font-semibold text-[#1A1816] hover:underline">Browse deals →</Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
