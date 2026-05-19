@@ -299,6 +299,9 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         setNewMessage('');
         scrollToBottom();
         setTimeout(() => textareaRef.current?.focus(), 0);
+        import('@/lib/analytics').then(({ trackEvent }) => {
+          trackEvent('message_sent', { conversation_id: conversation.id })
+        })
       } else {
         alert(data.error || 'Failed to send message.');
       }

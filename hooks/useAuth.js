@@ -159,6 +159,10 @@ export function AuthProvider({ children }) {
     setUser(loggedInUser)
     localStorage.setItem('ableman_user', JSON.stringify(loggedInUser))
 
+    import('@/lib/analytics').then(({ trackEvent }) => {
+      trackEvent('user_logged_in', { method: 'email' })
+    })
+
     return result
   }
 

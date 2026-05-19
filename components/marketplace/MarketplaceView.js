@@ -164,7 +164,27 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     { value: 'roi', label: 'Highest ROI' },
   ]
   const sortLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Recommended'
-  const handleFiltersChange = (newFilters) => setFilters(newFilters)
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters)
+    const hasActiveFilters = newFilters.states?.length > 0 ||
+      newFilters.propertyTypes?.length > 0 ||
+      newFilters.minPrice > 0 || newFilters.maxPrice > 0 ||
+      newFilters.listingType ||
+      newFilters.minBeds > 0 || newFilters.minBaths > 0
+    if (hasActiveFilters) {
+      import('@/lib/analytics').then(({ trackEvent }) => {
+        trackEvent('search_applied', {
+          states: newFilters.states,
+          property_types: newFilters.propertyTypes,
+          min_price: newFilters.minPrice,
+          max_price: newFilters.maxPrice,
+          listing_type: newFilters.listingType,
+          min_beds: newFilters.minBeds,
+          min_baths: newFilters.minBaths,
+        })
+      })
+    }
+  }
 
   const handleRemoveBoundary = () => {
     setSearchLocation(null)

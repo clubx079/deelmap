@@ -154,6 +154,15 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
       if (!offerRes.ok || offerData.error) throw new Error(offerData.error || 'Failed to submit offer')
 
       setSuccess(true)
+      import('@/lib/analytics').then(({ trackEvent }) => {
+        trackEvent('offer_submitted', {
+          property_id: property?.id,
+          property_address: propertyTitle,
+          offer_amount: numericAmount,
+          closing_timeline: closingTimeline,
+          financing_type: financingType,
+        })
+      })
     } catch (err) {
       setError(err.message || 'Something went wrong')
     } finally {
