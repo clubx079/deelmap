@@ -14,30 +14,49 @@ export async function POST(request) {
     const body = await request.json()
     const { event_type, data } = body
 
-    if (event_type !== 'submitter.completed') return NextResponse.json({ ok: true })
-    if (data?.role !== 'Assignor') return NextResponse.json({ ok: true })
-    if (!data?.submission?.submitters) return NextResponse.json({ ok: true })
+    console.log('[webhook] received event_type:', event_type, '| role:', data?.role)
+
+    if (event_type !== 'form.completed') return NextResponse.json({ ok: true })
+    if (data?.role !== 'Assignor') {
+      console.log('[webhook] skipping — role is not Assignor, got:', data?.role)
+      return NextResponse.json({ ok: true })
+    }
+    if (!data?.submission?.submitters) {
+      console.log('[webhook] no submitters in payload')
+      return NextResponse.json({ ok: true })
+    }
 
     const metadata = data.submission.metadata || {}
     const assigneeEmail = metadata.assigneeEmail
     const assigneeName = metadata.assigneeName
 
-    if (!assigneeEmail) return NextResponse.json({ ok: true })
+    console.log('[webhook] assigneeEmail from metadata:', assigneeEmail)
+
+    if (!assigneeEmail) {
+      console.log('[webhook] no assigneeEmail in metadata — aborting')
+      return NextResponse.json({ ok: true })
+    }
 
     const assigneeSubmitter = data.submission.submitters.find(s => s.role === 'Assignee')
-    if (!assigneeSubmitter?.id) return NextResponse.json({ ok: true })
+    if (!assigneeSubmitter?.id) {
+      console.log('[webhook] no Assignee submitter found')
+      return NextResponse.json({ ok: true })
+    }
 
-    await fetch(`${DOCUSEAL_BASE}/submitters/${assigneeSubmitter.id}`, {
+    console.log('[webhook] patching assignee submitter id:', assigneeSubmitter.id, 'with email:', assigneeEmail)
+    const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${assigneeSubmitter.id}`, {
       method: 'PATCH',
       headers: dsHeaders(),
       body: JSON.stringify({ email: assigneeEmail, name: assigneeName }),
     })
+    console.log('[webhook] patch status:', patchRes.status)
 
     const assignorName = data.name || data.email || 'The Buyer'
     const property = data.submission.name || ''
     const signingUrl = `https://docuseal.com/s/${assigneeSubmitter.slug}`
 
-    await resend.emails.send({
+    console.log('[webhook] sending email to:', assigneeEmail)
+    const emailResult = await resend.emails.send({
       from: FROM,
       to: assigneeEmail,
       subject: property
@@ -93,8 +112,10 @@ export async function POST(request) {
       text: `Hello${assigneeName ? ` ${assigneeName}` : ''},\n\n${assignorName} has completed their portion of the contract${property ? ` for ${property}` : ''}.\n\nSign here: ${signingUrl}\n\n— DeelMap`,
     })
 
+    console.log('[webhook] email result:', JSON.stringify(emailResult))
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (err) {
+    console.error('[webhook] error:', err?.message || err)
     return NextResponse.json({ ok: true })
   }
 }
