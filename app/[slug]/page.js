@@ -131,8 +131,14 @@ async function getProperty(slugParam) {
   if (manualProperty) {
     let agent = null
 
-    // Buyer-posted deal: fetch buyer's phone from users table
-    if (manualProperty.posted_by) {
+    // Use contact fields set directly on the listing first
+    if (manualProperty.contact_name || manualProperty.contact_phone) {
+      agent = {
+        name: manualProperty.contact_name || 'Seller',
+        phone: manualProperty.contact_phone || null
+      }
+    } else if (manualProperty.posted_by) {
+      // Buyer-posted deal: fetch buyer's phone from users table
       const { data: buyer } = await supabaseMarketplace
         .from('users')
         .select('first_name, last_name, phone')
@@ -142,18 +148,6 @@ async function getProperty(slugParam) {
         agent = {
           name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || 'Buyer',
           phone: buyer.phone || null
-        }
-      }
-    } else if (manualProperty.seller_id) {
-      const { data: seller } = await supabaseMarketplace
-        .from('users')
-        .select('first_name, last_name, phone')
-        .eq('id', manualProperty.seller_id)
-        .single()
-      if (seller) {
-        agent = {
-          name: [seller.first_name, seller.last_name].filter(Boolean).join(' ') || 'Seller',
-          phone: seller.phone || null
         }
       }
     }
