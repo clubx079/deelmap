@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
 import {
   User, Mail, Phone, Lock, Edit2, Save, X, CheckCircle,
-  LogOut, ChevronDown, ShieldBan, RefreshCw, Loader2, Bell
+  LogOut, ChevronDown, ShieldBan, RefreshCw, Loader2, Bell, MapPin, Search
 } from 'lucide-react'
 
 export default function ProfilePage() {
@@ -46,16 +46,31 @@ export default function ProfilePage() {
   const [buyBoxError, setBuyBoxError] = useState('')
   const [buyBoxSuccess, setBuyBoxSuccess] = useState('')
   const [locationInput, setLocationInput] = useState('')
+  const [locationSuggestions, setLocationSuggestions] = useState([])
+  const [locationSearch, setLocationSearch] = useState('')
+  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false)
 
   // Notifications
   const [notifPrefs, setNotifPrefs] = useState({ buyBoxMatch: false })
   const [isSavingNotifs, setIsSavingNotifs] = useState(false)
   const [notifSuccess, setNotifSuccess] = useState('')
 
+  const locationDropdownRef = useRef(null)
+
   useEffect(() => {
     if (user?.id) { fetchUserData(); fetchBuyBox() }
     else setIsLoading(false)
   }, [user])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(e.target)) {
+        setLocationDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const fetchUserData = async () => {
     if (!user?.id) return
@@ -86,6 +101,24 @@ export default function ProfilePage() {
         dealTypes: data.deal_types || []
       })
     }
+  }
+
+  const fetchLocationSuggestions = async () => {
+    if (locationSuggestions.length > 0) return
+    const [{ data: wDeals }, { data: props }] = await Promise.all([
+      supabase.from('wholesale_deals').select('city, state').not('city', 'is', null).not('state', 'is', null),
+      supabase.from('properties').select('city, state').not('city', 'is', null).not('state', 'is', null),
+    ])
+    const seen = new Set()
+    const all = []
+    for (const row of [...(wDeals || []), ...(props || [])]) {
+      const city = (row.city || '').trim()
+      const state = (row.state || '').trim()
+      if (!city && !state) continue
+      const key = city ? `${city}, ${state}` : state
+      if (!seen.has(key)) { seen.add(key); all.push(key) }
+    }
+    setLocationSuggestions(all.sort())
   }
 
   const handleInputChange = (e) => {
@@ -502,7 +535,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {!isEditingBuyBox && (
-                  <button onClick={() => setIsEditingBuyBox(true)} className="flex-shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-semibold transition-colors">
+                  <button onClick={() => { setIsEditingBuyBox(true); fetchLocationSuggestions() }} className="flex-shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-semibold transition-colors">
                     <Edit2 className="w-3.5 h-3.5" /> Edit
                   </button>
                 )}
@@ -584,15 +617,63 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Locations</label>
                   {isEditingBuyBox && (
-                    <div className="flex gap-2 mb-2">
-                      <input type="text" value={locationInput} onChange={(e) => setLocationInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
-                        placeholder="e.g. Dallas, TX"
-                        className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 outline-none" />
-                      <button type="button" onClick={addLocation}
-                        className="px-4 min-h-[44px] bg-[#1A1816] hover:bg-[#2D2B28] text-white text-[13px] font-semibold rounded transition-colors">
-                        Add
-                      </button>
+                    <div className="space-y-2 mb-2">
+                      {/* Dropdown from DB */}
+                      <div className="relative" ref={locationDropdownRef}>
+                        <div
+                          className="flex items-center gap-2 px-3 py-2.5 border border-[#E8E8E4] rounded bg-white cursor-pointer focus-within:border-[#D03839] focus-within:ring-1 focus-within:ring-[#D03839]/20"
+                          onClick={() => setLocationDropdownOpen(prev => !prev)}
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={locationSearch}
+                            onChange={(e) => { setLocationSearch(e.target.value); setLocationDropdownOpen(true) }}
+                            onFocus={() => setLocationDropdownOpen(true)}
+                            placeholder="Search city or state…"
+                            className="flex-1 text-[13px] text-[#1A1816] bg-transparent outline-none placeholder-[#A8A8A4]"
+                          />
+                          <ChevronDown className={`w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0 transition-transform ${locationDropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                        {locationDropdownOpen && (
+                          <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg max-h-48 overflow-y-auto">
+                            {locationSuggestions
+                              .filter(s => s.toLowerCase().includes(locationSearch.toLowerCase()))
+                              .filter(s => !buyBox.locations.includes(s))
+                              .slice(0, 50)
+                              .map(s => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault()
+                                    if (!buyBox.locations.includes(s)) setBuyBox(prev => ({ ...prev, locations: [...prev.locations, s] }))
+                                    setLocationSearch('')
+                                    setLocationDropdownOpen(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] text-[#1A1816] hover:bg-[#FAFAF8] transition-colors"
+                                >
+                                  {s}
+                                </button>
+                              ))
+                            }
+                            {locationSuggestions.filter(s => s.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+                              <p className="px-3 py-2 text-[12px] text-[#A8A8A4]">No matches</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {/* Custom text input */}
+                      <div className="flex gap-2">
+                        <input type="text" value={locationInput} onChange={(e) => setLocationInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
+                          placeholder="Or type custom (e.g. Dallas, TX)"
+                          className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 outline-none" />
+                        <button type="button" onClick={addLocation}
+                          className="px-4 min-h-[44px] bg-[#1A1816] hover:bg-[#2D2B28] text-white text-[13px] font-semibold rounded transition-colors">
+                          Add
+                        </button>
+                      </div>
                     </div>
                   )}
                   {buyBox.locations.length > 0 ? (
