@@ -569,6 +569,11 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Property Types</label>
                   <div className="flex flex-wrap gap-2">
+                    <button type="button"
+                      onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: [] }))}
+                      className={`${pillBase} ${buyBox.propertyTypes.length === 0 ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      All
+                    </button>
                     {['Single Family', 'Multi-Family', 'Condo', 'Townhouse', 'Commercial', 'Land'].map(type => (
                       <button key={type} type="button"
                         onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: toggleArrayItem(prev.propertyTypes, type) }))}
