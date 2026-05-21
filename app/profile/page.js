@@ -92,7 +92,8 @@ export default function ProfilePage() {
 
   const fetchBuyBox = async () => {
     if (!user?.id) return
-    const { data } = await supabase.from('buyer_buy_boxes').select('*').eq('user_id', user.id).maybeSingle()
+    const res = await fetch(`/api/buyer/buy-box?user_id=${user.id}`)
+    const data = await res.json()
     if (data) {
       setBuyBox({
         minPrice: data.min_price ?? '', maxPrice: data.max_price ?? '',
@@ -163,16 +164,22 @@ export default function ProfilePage() {
   const handleSaveBuyBox = async () => {
     setIsSavingBuyBox(true); setBuyBoxError(''); setBuyBoxSuccess('')
     try {
-      const { error } = await supabase.from('buyer_buy_boxes').upsert({
-        user_id: user.id,
-        min_price: buyBox.minPrice !== '' ? Number(buyBox.minPrice) : null,
-        max_price: buyBox.maxPrice !== '' ? Number(buyBox.maxPrice) : null,
-        property_types: buyBox.propertyTypes, locations: buyBox.locations,
-        min_beds: buyBox.minBeds !== '' ? Number(buyBox.minBeds) : null,
-        min_baths: buyBox.minBaths !== '' ? Number(buyBox.minBaths) : null,
-        deal_types: buyBox.dealTypes, updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' })
-      if (error) throw error
+      const res = await fetch('/api/buyer/buy-box', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          min_price: buyBox.minPrice !== '' ? Number(buyBox.minPrice) : null,
+          max_price: buyBox.maxPrice !== '' ? Number(buyBox.maxPrice) : null,
+          property_types: buyBox.propertyTypes,
+          locations: buyBox.locations,
+          min_beds: buyBox.minBeds !== '' ? Number(buyBox.minBeds) : null,
+          min_baths: buyBox.minBaths !== '' ? Number(buyBox.minBaths) : null,
+          deal_types: buyBox.dealTypes,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed')
       setBuyBoxSuccess('Buy box saved!')
       setIsEditingBuyBox(false)
     } catch { setBuyBoxError('Failed to save buy box. Please try again.') }
