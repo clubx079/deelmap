@@ -21,14 +21,21 @@ export async function POST(request) {
       console.log('[webhook] skipping — role is not First Party, got:', data?.role)
       return NextResponse.json({ ok: true })
     }
-    console.log('[webhook] full data keys:', Object.keys(data || {}))
-    console.log('[webhook] submission:', JSON.stringify(data?.submission))
-    if (!data?.submission?.submitters) {
-      console.log('[webhook] no submitters in payload')
+    const submissionId = data.submission_id || data.submission?.id
+    if (!submissionId) {
+      console.log('[webhook] no submission_id in payload')
       return NextResponse.json({ ok: true })
     }
 
-    const metadata = data.submission.metadata || {}
+    console.log('[webhook] fetching full submission:', submissionId)
+    const submissionRes = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, {
+      headers: dsHeaders(),
+    })
+    const fullSubmission = await submissionRes.json()
+    console.log('[webhook] full submission metadata:', JSON.stringify(fullSubmission.metadata))
+    console.log('[webhook] full submission submitters:', JSON.stringify(fullSubmission.submitters?.map(s => ({ id: s.id, role: s.role, slug: s.slug, email: s.email }))))
+
+    const metadata = fullSubmission.metadata || {}
     const assigneeEmail = metadata.assigneeEmail
     const assigneeName = metadata.assigneeName
 
@@ -39,9 +46,9 @@ export async function POST(request) {
       return NextResponse.json({ ok: true })
     }
 
-    const assigneeSubmitter = data.submission.submitters.find(s => s.role === 'Second Party')
+    const assigneeSubmitter = fullSubmission.submitters?.find(s => s.role === 'Second Party')
     if (!assigneeSubmitter?.id) {
-      console.log('[webhook] no Assignee submitter found')
+      console.log('[webhook] no Second Party submitter found')
       return NextResponse.json({ ok: true })
     }
 
@@ -54,7 +61,7 @@ export async function POST(request) {
     console.log('[webhook] patch status:', patchRes.status)
 
     const assignorName = data.name || data.email || 'The Buyer'
-    const property = data.submission.name || ''
+    const property = fullSubmission.name || ''
     const signingUrl = `https://docuseal.com/s/${assigneeSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
