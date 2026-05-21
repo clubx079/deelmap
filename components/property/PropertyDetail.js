@@ -1231,7 +1231,12 @@ export function PropertyDetail({ property }) {
                           <div className="fixed inset-0 z-[9]" onClick={() => setShowPhonePopup(false)} />
                           <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#E8E8E4] rounded shadow-lg p-4 z-10">
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737370]">Seller Phone</p>
+                              <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737370]">Seller Contact</p>
+                                {property.agent?.name && (
+                                  <p className="text-[13px] font-semibold text-[#1A1816] mt-0.5">{property.agent.name}</p>
+                                )}
+                              </div>
                               <button onClick={() => setShowPhonePopup(false)} className="p-0.5 text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
                                 <X className="w-3.5 h-3.5" />
                               </button>
