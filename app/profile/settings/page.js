@@ -39,6 +39,9 @@ export default function SettingsPage() {
   const [buyBoxError, setBuyBoxError] = useState('')
   const [buyBoxSuccess, setBuyBoxSuccess] = useState('')
   const [locationInput, setLocationInput] = useState('')
+  const [notifPrefs, setNotifPrefs] = useState({ buyBoxMatch: false })
+  const [isSavingNotifs, setIsSavingNotifs] = useState(false)
+  const [notifSuccess, setNotifSuccess] = useState('')
 
   useEffect(() => {
     if (user?.id) {
@@ -56,7 +59,7 @@ export default function SettingsPage() {
       setIsLoading(true)
       const { data, error } = await supabase
         .from('users')
-        .select('first_name, last_name, email, phone, nickname, is_anonymous')
+        .select('first_name, last_name, email, phone, nickname, is_anonymous, notification_preferences')
         .eq('id', user.id)
         .single()
 
@@ -76,6 +79,8 @@ export default function SettingsPage() {
         nickname: data.nickname || '',
         isAnonymous: data.is_anonymous || false
       })
+      const prefs = data.notification_preferences || {}
+      setNotifPrefs({ buyBoxMatch: prefs.buyBoxMatch || false })
 
     } catch (error) {
       console.error('Error fetching user data:', error)
@@ -216,6 +221,23 @@ export default function SettingsPage() {
     }
   }
 
+  const handleSaveNotifs = async (prefs) => {
+    setIsSavingNotifs(true)
+    setNotifSuccess('')
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ notification_preferences: prefs, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+      if (error) throw error
+      setNotifPrefs(prefs)
+      setNotifSuccess('Preferences saved!')
+      setTimeout(() => setNotifSuccess(''), 3000)
+    } catch { } finally {
+      setIsSavingNotifs(false)
+    }
+  }
+
   const toggleArrayItem = (arr, item) =>
     arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item]
 
@@ -309,7 +331,7 @@ export default function SettingsPage() {
       <div className="bg-white border-b border-slate-200">
         <div className="px-4 lg:px-6">
           <nav className="flex">
-            {[{ key: 'account', label: 'Account' }, { key: 'profile', label: 'Profile' }].map(({ key, label }) => (
+            {[{ key: 'account', label: 'Account' }, { key: 'profile', label: 'Profile' }, { key: 'notifications', label: 'Notifications' }].map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
@@ -901,6 +923,43 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+        {activeTab === 'notifications' && (
+          <div className="bg-white rounded shadow-sm border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+              <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Notifications</h2>
+                <p className="text-sm text-slate-500">Choose what emails you receive from DeelMap</p>
+              </div>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              <div className="px-6 py-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Buy box match alerts</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Get an email when a new deal matches your buy box criteria</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={isSavingNotifs}
+                  onClick={() => handleSaveNotifs({ ...notifPrefs, buyBoxMatch: !notifPrefs.buyBoxMatch })}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${notifPrefs.buyBoxMatch ? 'bg-slate-900' : 'bg-slate-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifPrefs.buyBoxMatch ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+            </div>
+
+            {notifSuccess && (
+              <div className="px-6 py-3 border-t border-slate-100 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <p className="text-sm text-green-600">{notifSuccess}</p>
+              </div>
+            )}
           </div>
         )}
       </div>
