@@ -17,8 +17,8 @@ export async function POST(request) {
     console.log('[webhook] received event_type:', event_type, '| role:', data?.role)
 
     if (event_type !== 'form.completed') return NextResponse.json({ ok: true })
-    if (data?.role !== 'Assignor') {
-      console.log('[webhook] skipping — role is not Assignor, got:', data?.role)
+    if (data?.role !== 'First Party') {
+      console.log('[webhook] skipping — role is not First Party, got:', data?.role)
       return NextResponse.json({ ok: true })
     }
     if (!data?.submission?.submitters) {
@@ -37,7 +37,7 @@ export async function POST(request) {
       return NextResponse.json({ ok: true })
     }
 
-    const assigneeSubmitter = data.submission.submitters.find(s => s.role === 'Assignee')
+    const assigneeSubmitter = data.submission.submitters.find(s => s.role === 'Second Party')
     if (!assigneeSubmitter?.id) {
       console.log('[webhook] no Assignee submitter found')
       return NextResponse.json({ ok: true })
