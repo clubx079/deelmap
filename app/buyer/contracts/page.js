@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useContext } from 'react'
-import { FileText, CheckCircle, ExternalLink, Plus, X } from 'lucide-react'
+import { FileText, CheckCircle, ExternalLink, Plus, X, Download } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 
@@ -144,6 +144,18 @@ export default function BuyerContractsPage() {
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [downloadingId, setDownloadingId] = useState(null)
+
+  async function handleViewDocument(contractId) {
+    setDownloadingId(contractId)
+    try {
+      const res = await fetch(`/api/contracts?type=document&id=${contractId}`)
+      const data = await res.json()
+      if (data.url) window.open(data.url, '_blank')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   useEffect(() => { setPageTitle('Contracts') }, [])
 
@@ -249,9 +261,21 @@ export default function BuyerContractsPage() {
                 </div>
 
                 {c.status === 'completed' ? (
-                  <span className="shrink-0 text-[12px] text-[#16A34A] font-medium flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5" /> Signed
-                  </span>
+                  <div className="shrink-0 flex items-center gap-2">
+                    <span className="text-[12px] text-[#16A34A] font-medium flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Signed
+                    </span>
+                    <button
+                      onClick={() => handleViewDocument(c.id)}
+                      disabled={downloadingId === c.id}
+                      className="h-8 px-3 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] text-[12px] font-semibold rounded transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {downloadingId === c.id
+                        ? <span className="w-3.5 h-3.5 border-2 border-[#A8A8A4] border-t-transparent rounded-full animate-spin" />
+                        : <Download className="w-3.5 h-3.5" />}
+                      Download
+                    </button>
+                  </div>
                 ) : url ? (
                   <a
                     href={url}

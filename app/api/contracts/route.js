@@ -18,6 +18,15 @@ export async function GET(request) {
       return NextResponse.json(json.data || [])
     }
 
+    if (type === 'document') {
+      const id = searchParams.get('id')
+      if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+      const res = await fetch(`${DOCUSEAL_BASE}/submissions/${id}`, { headers: headers(), cache: 'no-store' })
+      const json = await res.json()
+      const url = json.documents?.[0]?.url || null
+      return NextResponse.json({ url })
+    }
+
     // Contracts where buyer is a submitter (seller sent to buyer)
     const [subRes, createdRes, allRes] = await Promise.all([
       // submitters filtered by buyer email
