@@ -150,6 +150,19 @@ async function getProperty(slugParam) {
           phone: buyer.phone || null
         }
       }
+    } else if (manualProperty.seller_id) {
+      // Seller portal listing: fall back to seller account phone
+      const { data: seller } = await supabaseMarketplace
+        .from('seller_applications')
+        .select('contact_person_name, business_name, phone')
+        .eq('id', manualProperty.seller_id)
+        .single()
+      if (seller) {
+        agent = {
+          name: seller.contact_person_name || seller.business_name || 'Seller',
+          phone: seller.phone || null
+        }
+      }
     }
 
     // Normalize and return
