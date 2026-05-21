@@ -21,6 +21,8 @@ export async function POST(request) {
       console.log('[webhook] skipping — role is not First Party, got:', data?.role)
       return NextResponse.json({ ok: true })
     }
+    console.log('[webhook] full data keys:', Object.keys(data || {}))
+    console.log('[webhook] submission:', JSON.stringify(data?.submission))
     if (!data?.submission?.submitters) {
       console.log('[webhook] no submitters in payload')
       return NextResponse.json({ ok: true })
