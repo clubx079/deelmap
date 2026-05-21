@@ -32,10 +32,10 @@ export async function POST(request) {
       headers: dsHeaders(),
     })
     const fullSubmission = await submissionRes.json()
-    console.log('[webhook] full submission metadata:', JSON.stringify(fullSubmission.metadata))
+    console.log('[webhook] submitter metadata:', JSON.stringify(data.metadata))
     console.log('[webhook] full submission submitters:', JSON.stringify(fullSubmission.submitters?.map(s => ({ id: s.id, role: s.role, slug: s.slug, email: s.email }))))
 
-    const metadata = fullSubmission.metadata || {}
+    const metadata = data.metadata || {}
     const assigneeEmail = metadata.assigneeEmail
     const assigneeName = metadata.assigneeName
 
