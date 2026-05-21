@@ -664,12 +664,6 @@ function DealCard({ deal, getFeatureImage, formatCurrency }) {
             </div>
           </div>
 
-          {spread && (
-            <p className="text-[11px] text-[#0F6E56] font-medium mt-1 flex items-center gap-0.5">
-              <span>&#8593;</span> {formatCurrency(spread)} spread potential
-            </p>
-          )}
-
           <Link
             href={`/${deal.slug || deal.id}`}
             target="_blank"
