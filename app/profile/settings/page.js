@@ -27,6 +27,12 @@ export default function SettingsPage() {
   const [blockedUsers, setBlockedUsers] = useState([])
   const [blockedLoading, setBlockedLoading] = useState(false)
   const [unblockSuccessId, setUnblockSuccessId] = useState(null)
+  const [activeTab, setActiveTab] = useState('account')
+  const [profileData, setProfileData] = useState({ nickname: '', isAnonymous: false })
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [profileError, setProfileError] = useState('')
+  const [profileSuccess, setProfileSuccess] = useState('')
 
   useEffect(() => {
     if (user?.id) {
@@ -43,7 +49,7 @@ export default function SettingsPage() {
       setIsLoading(true)
       const { data, error } = await supabase
         .from('users')
-        .select('first_name, last_name, email, phone')
+        .select('first_name, last_name, email, phone, nickname, is_anonymous')
         .eq('id', user.id)
         .single()
 
@@ -58,6 +64,10 @@ export default function SettingsPage() {
         lastName: data.last_name || '',
         email: data.email || '',
         phone: data.phone || ''
+      })
+      setProfileData({
+        nickname: data.nickname || '',
+        isAnonymous: data.is_anonymous || false
       })
 
     } catch (error) {
@@ -125,6 +135,29 @@ export default function SettingsPage() {
     setIsEditing(false)
     setError('')
     setSuccess('')
+  }
+
+  const handleProfileSave = async () => {
+    setIsSavingProfile(true)
+    setProfileError('')
+    setProfileSuccess('')
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          nickname: profileData.nickname || null,
+          is_anonymous: profileData.isAnonymous,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+      if (error) throw error
+      setProfileSuccess('Profile updated successfully!')
+      setIsEditingProfile(false)
+    } catch {
+      setProfileError('Failed to update profile. Please try again.')
+    } finally {
+      setIsSavingProfile(false)
+    }
   }
 
   const fetchBlockedUsers = async () => {
@@ -205,6 +238,27 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Tab Nav */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="px-4 lg:px-6">
+          <nav className="flex">
+            {[{ key: 'account', label: 'Account' }, { key: 'profile', label: 'Profile' }].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === key
+                    ? 'border-slate-900 text-slate-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="px-4 lg:px-6 py-4 max-w-4xl mx-auto">
         {/* Alerts */}
@@ -222,6 +276,7 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {activeTab === 'account' && (<>
         {/* Profile Card */}
         <div className="bg-white rounded shadow-sm border border-slate-200 mb-6">
           {/* Card Header */}
@@ -486,6 +541,107 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+        </>)}
+
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded shadow-sm border border-slate-200 mb-6">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
+                  <User className="w-5 h-5 text-slate-700" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Public Profile</h2>
+                  <p className="text-sm text-slate-500">Control how you appear to sellers</p>
+                </div>
+              </div>
+              {!isEditingProfile && (
+                <button
+                  onClick={() => setIsEditingProfile(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+                </button>
+              )}
+            </div>
+
+            <div className="p-6 space-y-6">
+              {profileError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded flex items-center gap-3">
+                  <X className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <p className="text-red-600 text-sm">{profileError}</p>
+                </div>
+              )}
+              {profileSuccess && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <p className="text-green-600 text-sm">{profileSuccess}</p>
+                </div>
+              )}
+
+              {/* Nickname */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Nickname</label>
+                <input
+                  type="text"
+                  value={profileData.nickname}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, nickname: e.target.value }))}
+                  disabled={!isEditingProfile}
+                  placeholder="e.g. DealHunter_TX"
+                  className={`w-full px-4 py-3 border rounded transition-all ${
+                    isEditingProfile
+                      ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
+                      : 'border-slate-200 bg-slate-50 cursor-not-allowed'
+                  }`}
+                />
+                <p className="text-xs text-slate-500 mt-1">Shown to sellers instead of your real name when anonymous mode is on.</p>
+              </div>
+
+              {/* Anonymity toggle */}
+              <div className="flex items-center justify-between py-3 px-4 border border-slate-200 rounded">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Anonymous mode</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Show nickname to sellers instead of your real name</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => isEditingProfile && setProfileData(prev => ({ ...prev, isAnonymous: !prev.isAnonymous }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    profileData.isAnonymous ? 'bg-slate-900' : 'bg-slate-200'
+                  } ${!isEditingProfile ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    profileData.isAnonymous ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+
+              {isEditingProfile && (
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setIsEditingProfile(false); fetchUserData(); setProfileError(''); setProfileSuccess('') }}
+                    disabled={isSavingProfile}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-medium transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProfileSave}
+                    disabled={isSavingProfile}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSavingProfile ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
     </BuyerPortalLayout>
