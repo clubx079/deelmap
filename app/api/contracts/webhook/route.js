@@ -19,18 +19,16 @@ export async function POST(request) {
     // ── All parties have signed → email both with the completed document ──
     if (event_type === 'submission.completed') {
       const submissionId = data.submission_id || data.id
-      const property = data.name || ''
+      if (!submissionId) { console.log('[webhook] submission.completed — no id'); return NextResponse.json({ ok: true }) }
 
-      // Fetch full submission to get document URLs (list payload may omit them)
-      let documents = data.documents || []
-      if (documents.length === 0 && submissionId) {
-        const res = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, { headers: dsHeaders() })
-        const full = await res.json()
-        documents = full.documents || []
-      }
+      // Always fetch the full submission — webhook payload may have stale placeholder email for the Assignee
+      const fullRes = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, { headers: dsHeaders() })
+      const full = await fullRes.json()
 
+      const property = full.name || data.name || ''
+      const documents = full.documents || []
       const docUrl = documents[0]?.url || null
-      const submitters = data.submitters || []
+      const submitters = full.submitters || []
 
       await Promise.all(
         submitters
@@ -95,7 +93,7 @@ export async function POST(request) {
           )
       )
 
-      console.log('[webhook] submission.completed — notified', submitters.filter(s => s.email && !s.email.includes('noreply.deelmap.com')).length, 'parties')
+      console.log('[webhook] submission.completed — notified', (full.submitters || []).filter(s => s.email && !s.email.includes('noreply.deelmap.com')).length, 'parties')
       return NextResponse.json({ ok: true })
     }
 
