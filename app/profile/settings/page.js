@@ -33,10 +33,17 @@ export default function SettingsPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [profileError, setProfileError] = useState('')
   const [profileSuccess, setProfileSuccess] = useState('')
+  const [buyBox, setBuyBox] = useState({ minPrice: '', maxPrice: '', propertyTypes: [], locations: [], minBeds: '', minBaths: '', dealTypes: [] })
+  const [isEditingBuyBox, setIsEditingBuyBox] = useState(false)
+  const [isSavingBuyBox, setIsSavingBuyBox] = useState(false)
+  const [buyBoxError, setBuyBoxError] = useState('')
+  const [buyBoxSuccess, setBuyBoxSuccess] = useState('')
+  const [locationInput, setLocationInput] = useState('')
 
   useEffect(() => {
     if (user?.id) {
       fetchUserData()
+      fetchBuyBox()
     } else {
       setIsLoading(false)
     }
@@ -158,6 +165,66 @@ export default function SettingsPage() {
     } finally {
       setIsSavingProfile(false)
     }
+  }
+
+  const fetchBuyBox = async () => {
+    if (!user?.id) return
+    const { data } = await supabase
+      .from('buyer_buy_boxes')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (data) {
+      setBuyBox({
+        minPrice: data.min_price ?? '',
+        maxPrice: data.max_price ?? '',
+        propertyTypes: data.property_types || [],
+        locations: data.locations || [],
+        minBeds: data.min_beds ?? '',
+        minBaths: data.min_baths ?? '',
+        dealTypes: data.deal_types || []
+      })
+    }
+  }
+
+  const handleSaveBuyBox = async () => {
+    setIsSavingBuyBox(true)
+    setBuyBoxError('')
+    setBuyBoxSuccess('')
+    try {
+      const payload = {
+        user_id: user.id,
+        min_price: buyBox.minPrice !== '' ? Number(buyBox.minPrice) : null,
+        max_price: buyBox.maxPrice !== '' ? Number(buyBox.maxPrice) : null,
+        property_types: buyBox.propertyTypes,
+        locations: buyBox.locations,
+        min_beds: buyBox.minBeds !== '' ? Number(buyBox.minBeds) : null,
+        min_baths: buyBox.minBaths !== '' ? Number(buyBox.minBaths) : null,
+        deal_types: buyBox.dealTypes,
+        updated_at: new Date().toISOString()
+      }
+      const { error } = await supabase
+        .from('buyer_buy_boxes')
+        .upsert(payload, { onConflict: 'user_id' })
+      if (error) throw error
+      setBuyBoxSuccess('Buy box saved!')
+      setIsEditingBuyBox(false)
+    } catch {
+      setBuyBoxError('Failed to save buy box. Please try again.')
+    } finally {
+      setIsSavingBuyBox(false)
+    }
+  }
+
+  const toggleArrayItem = (arr, item) =>
+    arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item]
+
+  const addLocation = () => {
+    const val = locationInput.trim()
+    if (val && !buyBox.locations.includes(val)) {
+      setBuyBox(prev => ({ ...prev, locations: [...prev.locations, val] }))
+    }
+    setLocationInput('')
   }
 
   const fetchBlockedUsers = async () => {
@@ -636,6 +703,200 @@ export default function SettingsPage() {
                   >
                     <Save className="w-4 h-4" />
                     {isSavingProfile ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded shadow-sm border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Buy Box</h2>
+                  <p className="text-sm text-slate-500">Your preferred deal criteria — we'll alert you when matches come in</p>
+                </div>
+              </div>
+              {!isEditingBuyBox && (
+                <button
+                  onClick={() => setIsEditingBuyBox(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium transition-colors"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Edit
+                </button>
+              )}
+            </div>
+
+            <div className="p-6 space-y-6">
+              {buyBoxError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded flex items-center gap-3">
+                  <X className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <p className="text-red-600 text-sm">{buyBoxError}</p>
+                </div>
+              )}
+              {buyBoxSuccess && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <p className="text-green-600 text-sm">{buyBoxSuccess}</p>
+                </div>
+              )}
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Price Range</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      type="number" placeholder="Min price" value={buyBox.minPrice}
+                      onChange={(e) => setBuyBox(prev => ({ ...prev, minPrice: e.target.value }))}
+                      disabled={!isEditingBuyBox}
+                      className={`w-full px-4 py-3 border rounded text-sm transition-all ${isEditingBuyBox ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number" placeholder="Max price" value={buyBox.maxPrice}
+                      onChange={(e) => setBuyBox(prev => ({ ...prev, maxPrice: e.target.value }))}
+                      disabled={!isEditingBuyBox}
+                      className={`w-full px-4 py-3 border rounded text-sm transition-all ${isEditingBuyBox ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Property Types */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Property Types</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Single Family', 'Multi-Family', 'Condo', 'Townhouse', 'Commercial', 'Land'].map(type => (
+                    <button
+                      key={type} type="button"
+                      onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: toggleArrayItem(prev.propertyTypes, type) }))}
+                      className={`px-3 py-1.5 rounded border text-sm font-medium transition-colors ${
+                        buyBox.propertyTypes.includes(type)
+                          ? 'bg-slate-900 border-slate-900 text-white'
+                          : 'bg-white border-slate-300 text-slate-600'
+                      } ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'hover:border-slate-500 cursor-pointer'}`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Beds & Baths */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Min Beds</label>
+                  <select
+                    value={buyBox.minBeds}
+                    onChange={(e) => setBuyBox(prev => ({ ...prev, minBeds: e.target.value }))}
+                    disabled={!isEditingBuyBox}
+                    className={`w-full px-4 py-3 border rounded text-sm transition-all ${isEditingBuyBox ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}
+                  >
+                    <option value="">Any</option>
+                    {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}+</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Min Baths</label>
+                  <select
+                    value={buyBox.minBaths}
+                    onChange={(e) => setBuyBox(prev => ({ ...prev, minBaths: e.target.value }))}
+                    disabled={!isEditingBuyBox}
+                    className={`w-full px-4 py-3 border rounded text-sm transition-all ${isEditingBuyBox ? 'border-slate-300 bg-white focus:border-slate-900 focus:outline-none' : 'border-slate-200 bg-slate-50 cursor-not-allowed'}`}
+                  >
+                    <option value="">Any</option>
+                    {[1,2,3,4].map(n => <option key={n} value={n}>{n}+</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Deal Type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Deal Type</label>
+                <div className="flex gap-2">
+                  {['wholesale', 'auction'].map(type => (
+                    <button
+                      key={type} type="button"
+                      onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, dealTypes: toggleArrayItem(prev.dealTypes, type) }))}
+                      className={`px-3 py-1.5 rounded border text-sm font-medium capitalize transition-colors ${
+                        buyBox.dealTypes.includes(type)
+                          ? 'bg-slate-900 border-slate-900 text-white'
+                          : 'bg-white border-slate-300 text-slate-600'
+                      } ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-slate-500'}`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Locations */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Locations</label>
+                {isEditingBuyBox && (
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text" value={locationInput}
+                      onChange={(e) => setLocationInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
+                      placeholder="e.g. Dallas, TX"
+                      className="flex-1 px-4 py-2.5 border border-slate-300 rounded text-sm bg-white focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20"
+                    />
+                    <button
+                      type="button" onClick={addLocation}
+                      className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+                {buyBox.locations.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {buyBox.locations.map(loc => (
+                      <span key={loc} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded-full">
+                        {loc}
+                        {isEditingBuyBox && (
+                          <button
+                            type="button"
+                            onClick={() => setBuyBox(prev => ({ ...prev, locations: prev.locations.filter(l => l !== loc) }))}
+                            className="text-slate-400 hover:text-slate-700"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No locations added yet.</p>
+                )}
+              </div>
+
+              {isEditingBuyBox && (
+                <div className="flex gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setIsEditingBuyBox(false); fetchBuyBox(); setBuyBoxError(''); setBuyBoxSuccess('') }}
+                    disabled={isSavingBuyBox}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-medium transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                  <button
+                    type="button" onClick={handleSaveBuyBox} disabled={isSavingBuyBox}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSavingBuyBox ? 'Saving...' : 'Save Buy Box'}
                   </button>
                 </div>
               )}
