@@ -973,8 +973,12 @@ export async function POST(request) {
 
       // Insert notification for seller (new message)
       if (conversation.seller_id) {
-        const buyerMsgData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).maybeSingle();
-        const bName = buyerMsgData?.data ? `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer' : 'A buyer';
+        const buyerMsgData = await supabase.from('users').select('first_name, last_name, nickname, is_anonymous').eq('id', authCheck.userUuid).maybeSingle();
+        const bName = buyerMsgData?.data
+          ? (buyerMsgData.data.is_anonymous
+              ? (buyerMsgData.data.nickname || 'Anonymous')
+              : `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer')
+          : 'A buyer';
         supabase.from('notifications').insert({
           recipient_id: conversation.seller_id,
           recipient_type: 'seller',
@@ -1011,8 +1015,12 @@ export async function POST(request) {
               }
             }
           }
-          const buyerData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).single();
-          const buyerName = [buyerData?.data?.first_name, buyerData?.data?.last_name].filter(Boolean).join(' ').trim() || 'A buyer';
+          const buyerData = await supabase.from('users').select('first_name, last_name, nickname, is_anonymous').eq('id', authCheck.userUuid).single();
+          const buyerName = buyerData?.data
+            ? (buyerData.data.is_anonymous
+                ? (buyerData.data.nickname || 'Anonymous')
+                : [buyerData.data.first_name, buyerData.data.last_name].filter(Boolean).join(' ').trim() || 'A buyer')
+            : 'A buyer';
           let propertyAddress = conversation.property_address || null;
           if (!propertyAddress && conversation.property_id) {
             const { address } = await getDealAddressAndSlug(supabase, conversation.property_id);

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function BuyerDashboard() {
-  const { user } = useAuth();
+  const { user, displayName } = useAuth();
   const { setPageTitle } = useBuyerPageTitle();
   const [stats, setStats] = useState({
     savedDeals: 0,
@@ -189,9 +189,8 @@ export default function BuyerDashboard() {
   };
 
   const displayFirstName = () => {
-    const raw = user?.first_name || (user?.user_metadata?.name && user.user_metadata.name.split(' ')[0]) || 'User';
-    if (!raw || typeof raw !== 'string') return 'User';
-    return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+    if (!displayName || typeof displayName !== 'string') return 'User'
+    return displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase()
   };
 
   const scrollDeals = (direction) => {

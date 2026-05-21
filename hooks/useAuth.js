@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect, useRef, createContext, useContext } from 'react'
+import { supabase } from '@/lib/supabase'
 
 const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [profileExtras, setProfileExtras] = useState({ nickname: null, is_anonymous: false })
   const pollIntervalRef = useRef(null)
 
   // Check if user is suspended; if so, force logout
@@ -84,6 +86,19 @@ export function AuthProvider({ children }) {
       }
     }
   }, [user?.id])
+
+  useEffect(() => {
+    if (!user?.id) { setProfileExtras({ nickname: null, is_anonymous: false }); return }
+    supabase.from('users').select('nickname, is_anonymous').eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data) setProfileExtras({ nickname: data.nickname || null, is_anonymous: data.is_anonymous || false })
+      })
+  }, [user?.id])
+
+  // displayName: respects anonymous mode
+  const displayName = profileExtras.is_anonymous
+    ? (profileExtras.nickname || 'Anonymous')
+    : (user?.first_name || user?.user_metadata?.name?.split(' ')[0] || 'User')
 
   const sendOTP = async (email, name, lastName, method = 'email', phone = null) => {
     const response = await fetch('/api/auth/send-otp', {
@@ -288,6 +303,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
+    displayName,
+    profileExtras,
     sendOTP,
     verifyOTP,
     signIn,

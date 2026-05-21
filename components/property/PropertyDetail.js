@@ -27,7 +27,7 @@ export function PropertyDetail({ property }) {
   const searchParams = useSearchParams()
   const isPreview = searchParams.get('preview') === '1'
   const [showPreviewModal, setShowPreviewModal] = useState(false)
-  const { user, loading } = useAuth()
+  const { user, loading, displayName, profileExtras } = useAuth()
   const { isFavorited, toggleFavorite, loadFavorites } = useFavorites()
 
   // Property analytics tracking (trackImageView for photo view count)
@@ -534,9 +534,11 @@ export function PropertyDetail({ property }) {
             {user && (
               <Link href="/buyer/dashboard" className="flex items-center gap-2 group">
                 <div className="w-9 h-9 rounded-full bg-[#FEF0EF] flex items-center justify-center text-[#D03839] text-[13px] font-semibold ring-2 ring-[#F5C4C0] group-hover:ring-[#D03839] group-hover:scale-110 transition-all duration-200">
-                  {user.first_name
-                    ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
-                    : user.email?.[0]?.toUpperCase() || <User className="w-4 h-4" />
+                  {profileExtras.is_anonymous
+                    ? (profileExtras.nickname?.[0]?.toUpperCase() || '?')
+                    : user.first_name
+                      ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
+                      : user.email?.[0]?.toUpperCase() || <User className="w-4 h-4" />
                   }
                 </div>
               </Link>

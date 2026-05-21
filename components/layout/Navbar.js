@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
 export function Navbar() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, displayName, profileExtras } = useAuth()
   const pathname = usePathname()
   const [showAuth, setShowAuth] = useState(false)
   const [authInitialStep, setAuthInitialStep] = useState('login')
@@ -108,6 +108,9 @@ export function Navbar() {
   }, [])
 
   const getUserInitials = (user) => {
+    if (profileExtras.is_anonymous) {
+      return profileExtras.nickname ? profileExtras.nickname[0].toUpperCase() : '?'
+    }
     if (user?.first_name && user?.last_name) return (user.first_name[0] + user.last_name[0]).toUpperCase()
     if (user?.user_metadata?.name) {
       const parts = user.user_metadata.name.trim().split(' ')
@@ -118,12 +121,7 @@ export function Navbar() {
     return 'U'
   }
 
-  const getUserDisplayName = (user) => {
-    if (user?.first_name || user?.last_name) return `${user.first_name || ''} ${user.last_name || ''}`.trim()
-    if (user?.user_metadata?.name) return user.user_metadata.name
-    if (user?.email) return user.email.split('@')[0]
-    return 'User'
-  }
+  const getUserDisplayName = () => displayName
 
   const aboutDropdownItems = [
     { label: 'About Us', href: '/our-story' },
