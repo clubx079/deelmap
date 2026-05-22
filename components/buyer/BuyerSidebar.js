@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Search, MessageSquare, Star, FileText,
-  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift
+  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -49,6 +49,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         { href: '/saved-properties', icon: Star, label: 'Saved deals', badge: savedCount || null },
         { href: '/buyer/offers', icon: FileText, label: 'My offers' },
         { href: '/buyer/listings', icon: Building2, label: 'My listings' },
+        { href: '/community', icon: Users, label: 'Community' },
       ]
     },
     {
