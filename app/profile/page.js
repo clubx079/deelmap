@@ -602,61 +602,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Property types */}
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Property Types</label>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button"
-                      onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: [] }))}
-                      className={`${pillBase} ${buyBox.propertyTypes.length === 0 ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      All
-                    </button>
-                    {['Single Family', 'Multi-Family', 'Condo', 'Townhouse', 'Commercial', 'Land'].map(type => (
-                      <button key={type} type="button"
-                        onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: toggleArrayItem(prev.propertyTypes, type) }))}
-                        className={`${pillBase} ${buyBox.propertyTypes.includes(type) ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Beds & Baths */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Beds</label>
-                    <BedBathSelect
-                      value={buyBox.minBeds}
-                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBeds: v }))}
-                      disabled={!isEditingBuyBox}
-                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4,5].map(n => ({ value: n, label: `${n}+` }))]}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Baths</label>
-                    <BedBathSelect
-                      value={buyBox.minBaths}
-                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBaths: v }))}
-                      disabled={!isEditingBuyBox}
-                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4].map(n => ({ value: n, label: `${n}+` }))]}
-                    />
-                  </div>
-                </div>
-
-                {/* Deal type */}
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Deal Type</label>
-                  <div className="flex gap-2">
-                    {['wholesale', 'auction'].map(type => (
-                      <button key={type} type="button"
-                        onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, dealTypes: toggleArrayItem(prev.dealTypes, type) }))}
-                        className={`${pillBase} capitalize ${buyBox.dealTypes.includes(type) ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Locations */}
                 <div>
                   <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Locations</label>
@@ -736,6 +681,61 @@ export default function ProfilePage() {
                   ) : (
                     <p className="text-[13px] text-[#A8A8A4]">No locations added yet.</p>
                   )}
+                </div>
+
+                {/* Property types */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Property Types</label>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button"
+                      onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: [] }))}
+                      className={`${pillBase} ${buyBox.propertyTypes.length === 0 ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      All
+                    </button>
+                    {['Single Family', 'Multi-Family', 'Condo', 'Townhouse', 'Commercial', 'Land'].map(type => (
+                      <button key={type} type="button"
+                        onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, propertyTypes: toggleArrayItem(prev.propertyTypes, type) }))}
+                        className={`${pillBase} ${buyBox.propertyTypes.includes(type) ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Beds & Baths */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Beds</label>
+                    <BedBathSelect
+                      value={buyBox.minBeds}
+                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBeds: v }))}
+                      disabled={!isEditingBuyBox}
+                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4,5].map(n => ({ value: n, label: `${n}+` }))]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Baths</label>
+                    <BedBathSelect
+                      value={buyBox.minBaths}
+                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBaths: v }))}
+                      disabled={!isEditingBuyBox}
+                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4].map(n => ({ value: n, label: `${n}+` }))]}
+                    />
+                  </div>
+                </div>
+
+                {/* Deal type */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Deal Type</label>
+                  <div className="flex gap-2">
+                    {['wholesale', 'auction'].map(type => (
+                      <button key={type} type="button"
+                        onClick={() => isEditingBuyBox && setBuyBox(prev => ({ ...prev, dealTypes: toggleArrayItem(prev.dealTypes, type) }))}
+                        className={`${pillBase} capitalize ${buyBox.dealTypes.includes(type) ? pillOn : pillOff} ${!isEditingBuyBox ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        {type}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {isEditingBuyBox && (
