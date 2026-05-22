@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { use } from 'react'
-import { Plus, ThumbsUp, MessageSquare, Pin, X, ImagePlus, Loader2 } from 'lucide-react'
+import { Plus, ThumbsUp, MessageSquare, Pin, X, ImagePlus, Loader2, Send } from 'lucide-react'
 import { AuthModal } from '@/components/AuthModal'
 
 function Avatar({ name, size = 8 }) {
@@ -46,6 +46,11 @@ export default function CategoryPage({ params }) {
   const [votedMap, setVotedMap] = useState({})
   const [votingId, setVotingId] = useState(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [expandedId, setExpandedId] = useState(null)
+  const [repliesCache, setRepliesCache] = useState({})
+  const [fetchingReplies, setFetchingReplies] = useState(null)
+  const [inlineReply, setInlineReply] = useState({})
+  const [inlineSubmitting, setInlineSubmitting] = useState(null)
 
   const fetchThreads = useCallback(async (p = 1) => {
     setLoading(true)
@@ -66,6 +71,49 @@ export default function CategoryPage({ params }) {
       .catch(() => {})
     fetchThreads(1)
   }, [category, fetchThreads])
+
+  const toggleComments = async (e, threadId) => {
+    e.preventDefault()
+    if (!user) { setShowAuthModal(true); return }
+    if (expandedId === threadId) { setExpandedId(null); return }
+    setExpandedId(threadId)
+    if (!repliesCache[threadId]) {
+      setFetchingReplies(threadId)
+      try {
+        const res = await fetch(`/api/forum/threads/${threadId}`, {
+          headers: { Authorization: `Bearer ${user.id}` },
+        })
+        const data = await res.json()
+        setRepliesCache(prev => ({ ...prev, [threadId]: data.replies || [] }))
+      } finally {
+        setFetchingReplies(null)
+      }
+    }
+  }
+
+  const handleInlineReply = async (threadId) => {
+    const body = inlineReply[threadId]?.trim()
+    if (!body) return
+    setInlineSubmitting(threadId)
+    try {
+      const res = await fetch(`/api/forum/threads/${threadId}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+        body: JSON.stringify({
+          body,
+          user_name: [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Member',
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setRepliesCache(prev => ({ ...prev, [threadId]: [...(prev[threadId] || []), data.reply] }))
+        setThreads(prev => prev.map(t => t.id === threadId ? { ...t, reply_count: (t.reply_count || 0) + 1 } : t))
+        setInlineReply(prev => ({ ...prev, [threadId]: '' }))
+      }
+    } finally {
+      setInlineSubmitting(null)
+    }
+  }
 
   const handleVote = async (e, threadId) => {
     e.preventDefault()
@@ -324,24 +372,71 @@ export default function CategoryPage({ params }) {
                       <ThumbsUp className="w-3.5 h-3.5" />
                       {thread.vote_count || 0}
                     </button>
-                    {user ? (
-                      <Link
-                        href={`/community/${category}/${thread.id}#reply`}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816] transition-colors"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        {thread.reply_count || 0} {thread.reply_count === 1 ? 'Comment' : 'Comments'}
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={() => setShowAuthModal(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816] transition-colors"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        {thread.reply_count || 0} {thread.reply_count === 1 ? 'Comment' : 'Comments'}
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => toggleComments(e, thread.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
+                        expandedId === thread.id ? 'text-[#D03839] bg-[#FEF0EF]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
+                      }`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {thread.reply_count || 0} {(thread.reply_count || 0) === 1 ? 'Comment' : 'Comments'}
+                    </button>
                   </div>
+
+                  {/* Inline comments panel */}
+                  {expandedId === thread.id && (
+                    <div className="border-t border-[#F0F0EC]">
+                      {/* Reply input */}
+                      <div className="px-4 pt-3 pb-3 border-b border-[#F0F0EC]">
+                        <div className="flex gap-2.5">
+                          <Avatar name={[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'M'} size={7} />
+                          <div className="flex-1">
+                            <textarea
+                              value={inlineReply[thread.id] || ''}
+                              onChange={e => setInlineReply(prev => ({ ...prev, [thread.id]: e.target.value }))}
+                              placeholder="Write a comment..."
+                              rows={2}
+                              className="w-full px-3 py-2 text-[13px] border border-[#E8E8E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#D03839] focus:border-[#D03839] resize-none bg-[#FAFAF8]"
+                            />
+                            {inlineReply[thread.id]?.trim() && (
+                              <div className="flex justify-end mt-1.5">
+                                <button
+                                  onClick={() => handleInlineReply(thread.id)}
+                                  disabled={inlineSubmitting === thread.id}
+                                  className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors disabled:opacity-50"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  {inlineSubmitting === thread.id ? 'Posting...' : 'Post'}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Replies list */}
+                      {fetchingReplies === thread.id ? (
+                        <div className="px-4 py-4 flex items-center gap-2 text-[12px] text-[#A8A8A4]">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading comments...
+                        </div>
+                      ) : (repliesCache[thread.id] || []).length === 0 ? (
+                        <p className="px-4 py-4 text-[12px] text-[#A8A8A4]">No comments yet.</p>
+                      ) : (
+                        (repliesCache[thread.id] || []).map((reply, idx, arr) => (
+                          <div key={reply.id} className={`px-4 py-3 flex gap-2.5 ${idx < arr.length - 1 ? 'border-b border-[#F0F0EC]' : ''}`}>
+                            <Avatar name={reply.user_name} size={7} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline gap-2 mb-0.5">
+                                <span className="text-[12px] font-semibold text-[#1A1816]">{reply.user_name}</span>
+                                <span className="text-[11px] text-[#A8A8A4]">{timeAgo(reply.created_at)}</span>
+                              </div>
+                              <p className="text-[13px] text-[#444441] leading-relaxed">{reply.body}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
