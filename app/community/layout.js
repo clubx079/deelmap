@@ -80,7 +80,7 @@ function MobileCategoryNav({ categories, activeCategory }) {
   const toggle = (section) => setCollapsed(prev => ({ ...prev, [section]: !prev[section] }))
 
   return (
-    <div className="lg:hidden bg-white border-b border-[#E8E8E4]">
+    <div className="fixed top-[80px] left-0 right-0 z-[50] lg:hidden bg-white border-b border-[#E8E8E4]">
       <button
         onClick={() => setOpen(prev => !prev)}
         className="w-full flex items-center justify-between px-4 py-3"
@@ -154,10 +154,10 @@ export default function CommunityLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#FAFAF8]" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
       <Navbar />
-      <div className="pt-[80px]">
-        {/* Mobile: collapsible category nav */}
-        <MobileCategoryNav categories={categories} activeCategory={activeCategory} />
+      {/* Mobile: fixed right below navbar */}
+      <MobileCategoryNav categories={categories} activeCategory={activeCategory} />
 
+      <div className="pt-[124px] lg:pt-[80px]">
         {/* Two-column layout */}
         <div className="max-w-6xl mx-auto px-4 py-5 flex gap-5 items-start">
           <CommunitySidebar categories={categories} activeCategory={activeCategory} />
@@ -167,3 +167,4 @@ export default function CommunityLayout({ children }) {
     </div>
   )
 }
+

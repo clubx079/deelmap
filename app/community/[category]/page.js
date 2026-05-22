@@ -5,6 +5,17 @@ import Link from 'next/link'
 import { use } from 'react'
 import { Plus, ThumbsUp, MessageSquare, Pin, X, ImagePlus, Loader2 } from 'lucide-react'
 
+function Avatar({ name, size = 8 }) {
+  const initials = name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'M'
+  const colors = ['bg-[#EBF3FC] text-[#2563EB]', 'bg-[#E4F5EC] text-[#0F6E56]', 'bg-[#FEF3E2] text-[#B5620A]', 'bg-[#F3E8FF] text-[#7C3AED]']
+  const color = colors[(initials.charCodeAt(0) || 0) % colors.length]
+  return (
+    <div className={`w-${size} h-${size} rounded-full ${color} flex items-center justify-center flex-shrink-0 text-[11px] font-bold`}>
+      {initials}
+    </div>
+  )
+}
+
 function timeAgo(ts) {
   if (!ts) return ''
   const s = Math.floor((Date.now() - new Date(ts)) / 1000)
@@ -31,6 +42,8 @@ export default function CategoryPage({ params }) {
   const [imageFiles, setImageFiles] = useState([])
   const [imagePreviews, setImagePreviews] = useState([])
   const [uploadingImages, setUploadingImages] = useState(false)
+  const [votedMap, setVotedMap] = useState({})
+  const [votingId, setVotingId] = useState(null)
 
   const fetchThreads = useCallback(async (p = 1) => {
     setLoading(true)
@@ -51,6 +64,25 @@ export default function CategoryPage({ params }) {
       .catch(() => {})
     fetchThreads(1)
   }, [category, fetchThreads])
+
+  const handleVote = async (e, threadId) => {
+    e.preventDefault()
+    if (!user) return
+    setVotingId(threadId)
+    try {
+      const res = await fetch(`/api/forum/threads/${threadId}/vote`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${user.id}` },
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setVotedMap(prev => ({ ...prev, [threadId]: data.voted }))
+        setThreads(prev => prev.map(t => t.id === threadId ? { ...t, vote_count: data.vote_count } : t))
+      }
+    } finally {
+      setVotingId(null)
+    }
+  }
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files || [])
@@ -250,41 +282,58 @@ export default function CategoryPage({ params }) {
       ) : (
         <>
           <div className="space-y-2">
-            {threads.map(thread => (
-              <Link
-                key={thread.id}
-                href={`/community/${category}/${thread.id}`}
-                className="block bg-white rounded border border-[#E8E8E4] px-4 py-4 hover:bg-[#FAFAF8] hover:border-[#D4D4CF] transition-all group"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {thread.is_pinned && (
-                        <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#0F6E56] bg-[#E4F5EC] px-1.5 py-0.5 rounded shrink-0">
-                          <Pin className="w-2.5 h-2.5" /> Pinned
-                        </span>
-                      )}
-                      <p className="text-[14px] font-semibold text-[#1A1816] group-hover:text-[#D03839] transition-colors truncate">
-                        {thread.title}
-                      </p>
+            {threads.map(thread => {
+              const voted = votedMap[thread.id] || false
+              return (
+                <div key={thread.id} className="bg-white rounded border border-[#E8E8E4]">
+                  <Link href={`/community/${category}/${thread.id}`} className="block px-4 pt-4 pb-3 hover:bg-[#FAFAF8] transition-colors">
+                    {/* Author row */}
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Avatar name={thread.user_name} size={7} />
+                      <div>
+                        <span className="text-[13px] font-semibold text-[#1A1816]">{thread.user_name}</span>
+                        <span className="text-[12px] text-[#A8A8A4] ml-2">{timeAgo(thread.created_at)}</span>
+                        {thread.is_pinned && (
+                          <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#0F6E56] bg-[#E4F5EC] px-1.5 py-0.5 rounded">
+                            <Pin className="w-2.5 h-2.5" /> Pinned
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-[12px] text-[#737370]">
-                        by <span className="font-medium text-[#444441]">{thread.user_name}</span>
-                        {' · '}{timeAgo(thread.created_at)}
-                      </p>
-                      {thread.images?.length > 0 && (
-                        <span className="text-[11px] text-[#A8A8A4]">📷 {thread.images.length}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0 text-[#737370]">
-                    <span className="flex items-center gap-1 text-[12px]"><ThumbsUp className="w-3.5 h-3.5" />{thread.vote_count || 0}</span>
-                    <span className="flex items-center gap-1 text-[12px]"><MessageSquare className="w-3.5 h-3.5" />{thread.reply_count || 0}</span>
+                    {/* Title */}
+                    <p className="text-[14px] font-semibold text-[#1A1816] mb-1.5 leading-snug">{thread.title}</p>
+                    {/* Body preview */}
+                    {thread.body && (
+                      <p className="text-[13px] text-[#444441] leading-relaxed line-clamp-3 mb-2">{thread.body}</p>
+                    )}
+                    {thread.images?.length > 0 && (
+                      <span className="text-[11px] text-[#A8A8A4]">📷 {thread.images.length} photo{thread.images.length > 1 ? 's' : ''}</span>
+                    )}
+                  </Link>
+                  {/* Action bar */}
+                  <div className="px-4 py-2 border-t border-[#F0F0EC] flex items-center gap-1">
+                    <button
+                      onClick={(e) => handleVote(e, thread.id)}
+                      disabled={!user || votingId === thread.id}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
+                        voted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
+                      } disabled:cursor-not-allowed`}
+                      title={!user ? 'Sign in to like' : undefined}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      {thread.vote_count || 0}
+                    </button>
+                    <Link
+                      href={`/community/${category}/${thread.id}#reply`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816] transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {thread.reply_count || 0} {thread.reply_count === 1 ? 'Comment' : 'Comments'}
+                    </Link>
                   </div>
                 </div>
-              </Link>
-            ))}
+              )
+            })}
           </div>
 
           {totalPages > 1 && (
