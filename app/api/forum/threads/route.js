@@ -36,7 +36,7 @@ export async function POST(request) {
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
-  const { category_slug, title, body: postBody, user_name } = body
+  const { category_slug, title, body: postBody, user_name, images } = body
   if (!category_slug || !title?.trim() || !postBody?.trim()) {
     return NextResponse.json({ error: 'category_slug, title, and body are required' }, { status: 400 })
   }
@@ -59,6 +59,7 @@ export async function POST(request) {
       body: postBody.trim(),
       user_id: userId,
       user_name: user_name || 'Member',
+      images: Array.isArray(images) ? images.slice(0, 4) : [],
     })
     .select()
     .single()
