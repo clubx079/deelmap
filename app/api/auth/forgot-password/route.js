@@ -64,7 +64,7 @@ export async function POST(request) {
       console.log(`[forgot-password] Sending SMS reset code to ${e164Phone}`)
 
       const smsResponse = await withTimeout(
-        fetch('https://ap.airosofts.com/api/external/sms/send', {
+        fetch('https://app.airophone.com/api/external/sms/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.AIROSOFTS_SMS_API_KEY}`,
@@ -73,7 +73,7 @@ export async function POST(request) {
           body: JSON.stringify({
             from: process.env.AIROSOFTS_SMS_FROM,
             to: e164Phone,
-            message: `Your Deelmap password reset code is ${resetOtp}. Valid for 15 minutes. Do not share this code.`
+            message: `Your DeelMap password reset code is ${resetOtp}. Valid for 15 minutes. Do not share this code.`
           })
         }),
         10000,
@@ -97,13 +97,13 @@ export async function POST(request) {
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="Deelmap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
         <td style="padding:36px 40px 32px;background:#ffffff">
           <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#1A1816;letter-spacing:-0.4px;line-height:1.25">Reset your password</h1>
-          <p style="margin:0 0 28px;font-size:14px;line-height:1.65;color:#737370">We received a request to reset your Deelmap password. Use the code below to continue. This code expires in 15 minutes.</p>
+          <p style="margin:0 0 28px;font-size:14px;line-height:1.65;color:#737370">We received a request to reset your DeelMap password. Use the code below to continue. This code expires in 15 minutes.</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
             <tr><td align="center">
               <table cellpadding="0" cellspacing="0">
@@ -122,7 +122,7 @@ export async function POST(request) {
       </tr>
       <tr>
         <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
         </td>
       </tr>
     </table>
@@ -137,7 +137,7 @@ Password Reset
 
 Hello,
 
-We received a request to reset your password for your Deelmap account. Use the following code to complete the password reset procedure.
+We received a request to reset your password for your DeelMap account. Use the following code to complete the password reset procedure.
 
 PASSWORD RESET CODE: ${resetOtp}
 
@@ -156,7 +156,7 @@ DeelMap Team
     console.log(`[${new Date().toISOString()}] Sending password reset email via Resend...`)
 
     const { data, error } = await resend.emails.send({
-      from: 'Deelmap Security <noreply@deelmap.com>',
+      from: 'DeelMap Security <noreply@deelmap.com>',
       to: [email],
       subject: `${resetOtp} is your password reset code`,
       html: htmlTemplate,

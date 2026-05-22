@@ -1,11 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Search, MessageSquare, Star, FileText,
-  DollarSign, TrendingUp, Settings, X
+  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -49,6 +48,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         { href: '/buyer/inbox', icon: MessageSquare, label: 'Messages', badge: unreadCount },
         { href: '/saved-properties', icon: Star, label: 'Saved deals', badge: savedCount || null },
         { href: '/buyer/offers', icon: FileText, label: 'My offers' },
+        { href: '/buyer/listings', icon: Building2, label: 'My listings' },
       ]
     },
     {
@@ -56,11 +56,14 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       items: [
         { href: '/buyer/financerequests', icon: DollarSign, label: 'Financing' },
         { href: '/buyer/insights', icon: TrendingUp, label: 'Market Insights' },
+        { href: '/buyer/contracts', icon: ScrollText, label: 'Contracts' },
       ]
     },
     {
       label: 'ACCOUNT',
       items: [
+        { href: '/buyer/referral', icon: Gift, label: 'Referral' },
+        { href: '/buyer/billing', icon: CreditCard, label: 'Billing' },
         { href: '/profile', icon: Settings, label: 'Settings' },
       ]
     }
@@ -90,18 +93,11 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
         <div className="px-5 pt-5 pb-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="block">
-              <Image
-                src="/assets/logo.svg"
-                alt="DeelMap"
-                width={240}
-                height={56}
-                className="h-14 w-auto object-contain"
-                priority
-              />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-14 w-auto object-contain" />
             </Link>
             <button
               onClick={onClose}
-              className="lg:hidden p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors duration-200"
+              className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors duration-200"
               aria-label="Close menu"
             >
               <X className="w-4 h-4" />
@@ -127,7 +123,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
                       href={item.href}
                       onClick={onClose}
                       className={`
-                        flex items-center gap-2.5 px-3 py-2 rounded
+                        flex items-center gap-2.5 px-3 py-2 min-h-[44px] rounded
                         transition-all duration-200
                         text-[14px]
                         ${isActive

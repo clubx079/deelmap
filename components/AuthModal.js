@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Eye, EyeOff, ChevronDown, X, Check } from 'lucide-react'
 import { US_STATES } from '@/utils/constants'
 
-export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
+export function AuthModal({ isOpen, onClose, initialStep = 'login', hideClose = false }) {
   const { signIn, sendOTP, verifyOTP, forgotPassword } = useAuth()
   const [authStep, setAuthStep] = useState(initialStep)
   const [authData, setAuthData] = useState({
@@ -24,6 +24,9 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isSuspended, setIsSuspended] = useState(false)
+  const [appealMessage, setAppealMessage] = useState('')
+  const [appealSubmitted, setAppealSubmitted] = useState(false)
   const [phoneError, setPhoneError] = useState('')
   const [validatingPhone, setValidatingPhone] = useState(false)
 
@@ -61,6 +64,9 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
     })
     setAuthStep(initialStep)
     setError('')
+    setIsSuspended(false)
+    setAppealMessage('')
+    setAppealSubmitted(false)
     setPhoneError('')
     setLoading(false)
     setValidatingPhone(false)
@@ -335,19 +341,43 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    
+
     try {
       await signIn(authData.email, authData.password)
       handleClose()
     } catch (error) {
-      setError(error.message || 'Invalid email or password')
+      if (error.suspended === true || (error.message || '').toLowerCase().includes('suspended')) {
+        setAuthStep('suspended')
+      } else {
+        setError(error.message || 'Invalid email or password')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmitAppeal = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/request-review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authData.email, message: appealMessage }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to submit appeal')
+      setAppealSubmitted(true)
+    } catch (err) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
+    <Modal isOpen={isOpen} onClose={handleClose} hideClose={hideClose}>
       <div className="p-6 sm:p-8">
         {authStep === 'login' && (
           <>
@@ -635,7 +665,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
                   {/* Selected states display */}
                   <div
                     onClick={() => setShowStatesDropdown(!showStatesDropdown)}
-                    className={`min-h-[44px] sm:min-h-[48px] w-full px-3 py-2 border rounded-lg cursor-pointer flex flex-wrap gap-1.5 items-center ${
+                    className={`min-h-[44px] sm:min-h-[48px] w-full px-3 py-2 border rounded cursor-pointer flex flex-wrap gap-1.5 items-center ${
                       showStatesDropdown ? 'border-[#b29578] ring-2 ring-[#b29578]/20' : 'border-gray-300'
                     } ${authData.statesOfInterest?.length === 0 ? 'text-gray-400' : ''}`}
                   >
@@ -647,7 +677,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
                         return (
                           <span
                             key={stateCode}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#b29578]/10 text-[#b29578] rounded-md text-xs font-medium"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#b29578]/10 text-[#b29578] rounded text-xs font-medium"
                           >
                             {state?.label || stateCode}
                             <button
@@ -672,7 +702,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
 
                   {/* Dropdown */}
                   {showStatesDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-60 overflow-hidden">
                       {/* Search input */}
                       <div className="p-2 border-b border-gray-100">
                         <input
@@ -680,7 +710,7 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
                           placeholder="Search states..."
                           value={statesSearch}
                           onChange={(e) => setStatesSearch(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-[#b29578]"
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:border-[#b29578]"
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
@@ -772,6 +802,71 @@ export function AuthModal({ isOpen, onClose, initialStep = 'login' }) {
                 Already have an account? Sign in
               </button>
             </div>
+          </>
+        )}
+
+        {authStep === 'suspended' && (
+          <>
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Account Suspended</h2>
+              <p className="text-sm text-gray-600">
+                Your account has been temporarily suspended. You can submit an appeal and our team will review it.
+              </p>
+            </div>
+
+            {!appealSubmitted ? (
+              <form onSubmit={handleSubmitAppeal} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Reason for appeal <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    value={appealMessage}
+                    onChange={(e) => setAppealMessage(e.target.value)}
+                    placeholder="Explain why you believe this suspension is incorrect..."
+                    rows={4}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#b29578] focus:ring-2 focus:ring-[#b29578]/20 resize-none"
+                  />
+                </div>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#b29578] hover:bg-[#9a7e61] h-11 text-base font-medium disabled:opacity-50"
+                >
+                  {loading ? 'Submitting...' : 'Submit Appeal'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setAuthStep('login')}
+                  className="w-full text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Back to Sign In
+                </button>
+              </form>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+                  <Check className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 mb-1">Appeal Submitted</p>
+                  <p className="text-sm text-gray-600">Our team will review your request and get back to you via email.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="text-[#b29578] hover:underline text-sm font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </>
         )}
 

@@ -85,20 +85,34 @@ function buildPropertyBlock({ address, price, bedrooms, bathrooms, sqft, thumbna
 
 function buildEmailHtml(logoUrl, title, titleColor, propertyBlock, bodyHtml, ctaUrl, ctaLabel) {
   return `
-<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;padding:24px">
-  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-    <div style="background:#1A1816;color:#fff;padding:24px;text-align:center">
-      <img src="${logoUrl}" alt="Deelmap" width="160" height="48" style="display:block;max-width:160px;height:auto;border:0;margin:0 auto" />
-    </div>
-    <div style="padding:24px">
-      <p style="margin:0 0 16px;font-size:18px;font-weight:600;color:${titleColor || '#1A1816'}">${title}</p>
-      ${propertyBlock}
-      ${bodyHtml}
-      <a href="${ctaUrl}" style="display:inline-block;background:#D03839;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:16px">${ctaLabel}</a>
-    </div>
-    <div style="padding:16px;text-align:center;font-size:12px;color:#888;border-top:1px solid #eee">You received this because you have an active listing on Deelmap.</div>
-  </div>
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F5F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
+      <tr>
+        <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
+          <img src="${logoUrl}" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:36px 40px 32px;background:#ffffff">
+          <p style="margin:0 0 20px;font-size:22px;font-weight:700;color:${titleColor || '#1A1816'};letter-spacing:-0.4px;line-height:1.25">${title}</p>
+          ${propertyBlock}
+          ${bodyHtml}
+          <table cellpadding="0" cellspacing="0" style="margin-top:20px">
+            <tr><td style="background:#D03839;border-radius:4px">
+              <a href="${ctaUrl}" style="display:inline-block;padding:12px 28px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600">${ctaLabel}</a>
+            </td></tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
 </body></html>`;
 }
 
@@ -108,7 +122,7 @@ async function sendEmailToSeller(sellerEmail, subject, html) {
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
       to: sellerEmail,
       subject,
       html,
@@ -209,7 +223,7 @@ export async function POST(request) {
       const seller = sellerRes.data;
       const buyerName = buyer ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || buyer.email : 'A buyer';
       const sellerEmail = seller?.email;
-      const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production.up.railway.app').replace(/\/$/, '');
+      const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app').replace(/\/$/, '');
       const logoUrl = `${sellerBase}/deelmap.png`;
       const messagesUrl = `${sellerBase}/messages?conversation=${conversation_id}`;
       const amountStr = formatCurrency(amount);
@@ -239,7 +253,7 @@ export async function POST(request) {
         'Review Offer'
       );
 
-      await sendEmailToSeller(sellerEmail, `New offer of ${amountStr} from ${buyerName} - Deelmap`, html);
+      await sendEmailToSeller(sellerEmail, `New offer of ${amountStr} from ${buyerName} - DeelMap`, html);
     }).catch(err => console.error('[buyer/offers] Post-insert async error:', err?.message));
 
     return NextResponse.json({ offer });
@@ -365,7 +379,7 @@ export async function PATCH(request) {
 
     if (offerErr || !offer) return NextResponse.json({ error: 'Offer not found' }, { status: 404 });
 
-    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production.up.railway.app').replace(/\/$/, '');
+    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app').replace(/\/$/, '');
     const logoUrl = `${sellerBase}/deelmap.png`;
     // offer.conversation_id is UUID — convert back to numeric for URL
     const convNumeric = uuidToNumeric(offer.conversation_id) ?? offer.conversation_id;
@@ -410,7 +424,7 @@ export async function PATCH(request) {
           messagesUrl,
           'View Conversation'
         );
-        await sendEmailToSeller(sellerEmail, `${buyerName} withdrew their offer of ${amountStr} - Deelmap`, html);
+        await sendEmailToSeller(sellerEmail, `${buyerName} withdrew their offer of ${amountStr} - DeelMap`, html);
       }).catch(err => console.error('[buyer/offers] withdraw async error:', err?.message));
 
       return NextResponse.json({ success: true });
@@ -455,7 +469,7 @@ export async function PATCH(request) {
           messagesUrl,
           'View Conversation'
         );
-        await sendEmailToSeller(sellerEmail, `${buyerName} declined your counter offer of ${amountStr} - Deelmap`, html);
+        await sendEmailToSeller(sellerEmail, `${buyerName} declined your counter offer of ${amountStr} - DeelMap`, html);
       }).catch(err => console.error('[buyer/offers] reject_counter async error:', err?.message));
 
       return NextResponse.json({ success: true });
@@ -501,7 +515,7 @@ export async function PATCH(request) {
         messagesUrl,
         'View Conversation'
       );
-      await sendEmailToSeller(sellerEmail, `${buyerName} accepted your counter offer of ${amountStr} - Deelmap`, html);
+      await sendEmailToSeller(sellerEmail, `${buyerName} accepted your counter offer of ${amountStr} - DeelMap`, html);
     }).catch(err => console.error('[buyer/offers] accept_counter async error:', err?.message));
 
     return NextResponse.json({ success: true });

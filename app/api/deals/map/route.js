@@ -6,6 +6,21 @@ const supabase = createClient(
   process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Fetch all rows past Supabase's 1000-row hard limit by paginating internally
+async function fetchAllPages(buildQuery) {
+  const results = [];
+  let offset = 0;
+  while (true) {
+    const { data: page, error } = await buildQuery().range(offset, offset + 999);
+    if (error) throw error;
+    if (!page || page.length === 0) break;
+    results.push(...page);
+    if (page.length < 1000) break;
+    offset += 1000;
+  }
+  return results;
+}
+
 // Lightweight endpoint — returns only coordinates + minimal info for map pins
 export async function GET(request) {
   try {
@@ -26,131 +41,216 @@ export async function GET(request) {
     const minCashOnCash = parseFloat(searchParams.get('minCashOnCash')) || null;
     const maxCashOnCash = parseFloat(searchParams.get('maxCashOnCash')) || null;
     const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
-    const propertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
+    const rawPropertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
+    const propertyTypes = rawPropertyTypes.length > 0
+      ? [...new Set(rawPropertyTypes.flatMap(t => {
+          const variants = [t]
+          if (/multi.?family/i.test(t)) variants.push('Multi Family', 'Multi-Family', 'Multifamily')
+          if (/single.?family/i.test(t)) variants.push('Single Family', 'Single-Family')
+          if (/mobile.?home/i.test(t)) variants.push('Mobile Home', 'Mobile-Home', 'Manufactured Home')
+          return variants
+        }))]
+      : [];
     const searchQuery = searchParams.get('searchQuery') || '';
+    const listingType = searchParams.get('listingType') || '';
 
-    let query = supabase
-      .from('wholesale_deals')
-      .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, address_google_lat, address_google_lng, property_photos(photo_url, optimized_url, is_featured, display_order)')
-      .eq('status', 'active')
-      .eq('is_incomplete', false)
-      .not('address_google_lat', 'is', null)
-      .not('address_google_lng', 'is', null);
+    const stateNameToAbbr = {
+      'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+      'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+      'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+      'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+      'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+      'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+      'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+      'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+      'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+      'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+    };
 
-    // Apply filters
-    if (minPrice !== null) query = query.gte('price', minPrice);
-    if (maxPrice !== null) query = query.lte('price', maxPrice);
-    if (minBedrooms !== null) query = query.gte('bedrooms', minBedrooms);
-    if (maxBedrooms !== null) query = query.lte('bedrooms', maxBedrooms);
-    if (minBathrooms !== null) query = query.gte('bathrooms', minBathrooms);
-    if (maxBathrooms !== null) query = query.lte('bathrooms', maxBathrooms);
-    if (minSqft !== null) query = query.gte('sqft', minSqft);
-    if (maxSqft !== null) query = query.lte('sqft', maxSqft);
-    if (minYield !== null) query = query.gte('gross_yield', minYield);
-    if (maxYield !== null) query = query.lte('gross_yield', maxYield);
-    if (minCapRate !== null) query = query.gte('cap_rate', minCapRate);
-    if (maxCapRate !== null) query = query.lte('cap_rate', maxCapRate);
-    if (minCashOnCash !== null) query = query.gte('cash_on_cash', minCashOnCash);
-    if (maxCashOnCash !== null) query = query.lte('cash_on_cash', maxCashOnCash);
-    if (propertyTypes.length > 0) query = query.in('property_type', propertyTypes);
-    if (states.length > 0) query = query.in('state', states);
-    if (searchQuery) {
-      const stateNameToAbbr = {
-        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-        'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
-        'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
-        'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
-        'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-        'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
-        'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
-        'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
-      };
-      let searchTerm = searchQuery.trim();
-      const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
-      const q = `%${searchTerm}%`;
-      if (stateAbbr) {
-        query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
+    const applySearchQuery = (q, rawTerm, cityField = 'city', stateField = 'state', addressFields = ['address', 'full_address', 'city', 'state', 'zip_code']) => {
+      const commaIdx = rawTerm.indexOf(',');
+      if (commaIdx > 0) {
+        const cityPart = rawTerm.substring(0, commaIdx).trim();
+        const statePart = rawTerm.substring(commaIdx + 1).trim();
+        const stateAbbrFromName = stateNameToAbbr[statePart.toLowerCase()];
+        const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
+        const cq = `%${cityPart}%`;
+        if (stateAbbrFinal) {
+          return q.ilike(cityField, cq).eq(stateField, stateAbbrFinal);
+        } else {
+          return q.or(`${addressFields[0]}.ilike.${cq},${addressFields[2]}.ilike.${cq}`);
+        }
       } else {
-        query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
+        const stateAbbr = stateNameToAbbr[rawTerm.toLowerCase()];
+        const q2 = `%${rawTerm}%`;
+        if (stateAbbr) {
+          return q.or(`${addressFields[0]}.ilike.${q2},${addressFields[1] ? addressFields[1] + '.ilike.' + q2 + ',' : ''}${addressFields[2]}.ilike.${q2},${stateField}.eq.${stateAbbr}${addressFields[4] ? ',' + addressFields[4] + '.ilike.' + q2 : ''}`);
+        } else {
+          return q.or(`${addressFields[0]}.ilike.${q2},${addressFields[1] ? addressFields[1] + '.ilike.' + q2 + ',' : ''}${addressFields[2]}.ilike.${q2},${stateField}.ilike.${q2}${addressFields[4] ? ',' + addressFields[4] + '.ilike.' + q2 : ''}`);
+        }
       }
+    };
+
+    // Build the wholesale_deals base query (no photo join — fetched separately to avoid LEFT JOIN exclusion)
+    const buildWholesaleQuery = () => {
+      let q = supabase
+        .from('wholesale_deals')
+        .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng')
+        .eq('status', 'active')
+        .eq('is_incomplete', false)
+        .neq('state', 'HI')
+        .not('address_google_lat', 'is', null)
+        .not('address_google_lng', 'is', null);
+
+      if (minPrice !== null) q = q.gte('price', minPrice);
+      if (maxPrice !== null) q = q.lte('price', maxPrice);
+      if (minBedrooms !== null) q = q.gte('bedrooms', minBedrooms);
+      if (maxBedrooms !== null) q = q.lte('bedrooms', maxBedrooms);
+      if (minBathrooms !== null) q = q.gte('bathrooms', minBathrooms);
+      if (maxBathrooms !== null) q = q.lte('bathrooms', maxBathrooms);
+      if (minSqft !== null) q = q.gte('sqft', minSqft);
+      if (maxSqft !== null) q = q.lte('sqft', maxSqft);
+      if (minYield !== null) q = q.gte('gross_yield', minYield);
+      if (maxYield !== null) q = q.lte('gross_yield', maxYield);
+      if (minCapRate !== null) q = q.gte('cap_rate', minCapRate);
+      if (maxCapRate !== null) q = q.lte('cap_rate', maxCapRate);
+      if (minCashOnCash !== null) q = q.gte('cash_on_cash', minCashOnCash);
+      if (maxCashOnCash !== null) q = q.lte('cash_on_cash', maxCashOnCash);
+      if (propertyTypes.length > 0) q = q.in('property_type', propertyTypes);
+      if (states.length > 0) q = q.in('state', states);
+      if (listingType === 'auction') {
+        q = q.eq('listing_type', 'auction');
+      } else if (listingType === 'wholesale') {
+        q = q.or('listing_type.is.null,listing_type.neq.auction');
+      }
+      if (searchQuery) {
+        q = applySearchQuery(q, searchQuery.trim(), 'city', 'state', ['address', 'full_address', 'city', 'state', 'zip_code']);
+      }
+      return q;
+    };
+
+    // Fetch all deal coordinates (paginated to bypass 1000-row limit)
+    const dealData = await fetchAllPages(buildWholesaleQuery);
+
+    // Fetch all featured photos in one separate query (avoids LEFT JOIN exclusion bug)
+    const photoData = await fetchAllPages(() =>
+      supabase
+        .from('property_photos')
+        .select('deal_id, photo_url, optimized_url')
+        .eq('is_featured', true)
+    );
+
+    // Build photo lookup map
+    const photoMap = {};
+    for (const ph of photoData) {
+      if (!photoMap[ph.deal_id]) photoMap[ph.deal_id] = ph;
     }
 
-    const { data, error } = await query;
+    const pins = dealData.map(d => {
+      const photo = photoMap[d.id];
+      return {
+        id: d.id,
+        slug: d.slug,
+        address: d.address,
+        full_address: d.full_address,
+        city: d.city,
+        state: d.state,
+        zip_code: d.zip_code,
+        price: d.price,
+        arv: d.arv,
+        bedrooms: d.bedrooms,
+        bathrooms: d.bathrooms,
+        sqft: d.sqft,
+        listing_type: d.listing_type,
+        property_photos: photo ? [{ photo_url: photo.photo_url, optimized_url: photo.optimized_url }] : [],
+        latitude: d.address_google_lat,
+        longitude: d.address_google_lng,
+        address_google_lat: d.address_google_lat,
+        address_google_lng: d.address_google_lng,
+      };
+    });
 
-    if (error) throw error;
+    // Also include manual seller properties (skip when listing type filter active)
+    if (!listingType) try {
+      const buildManualQuery = () => {
+        let q = supabase
+          .from('properties')
+          .select('id, slug, address, city, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type')
+          .in('status', ['active', 'published'])
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null);
 
-    const pins = (data || []).map(d => ({
-      id: d.id,
-      slug: d.slug,
-      address: d.address,
-      full_address: d.full_address,
-      city: d.city,
-      state: d.state,
-      zip_code: d.zip_code,
-      price: d.price,
-      arv: d.arv,
-      bedrooms: d.bedrooms,
-      bathrooms: d.bathrooms,
-      sqft: d.sqft,
-      property_photos: d.property_photos,
-      latitude: d.address_google_lat,
-      longitude: d.address_google_lng,
-      address_google_lat: d.address_google_lat,
-      address_google_lng: d.address_google_lng,
-    }));
+        if (states.length > 0) q = q.in('state', states);
+        if (minPrice !== null) q = q.gte('price', minPrice);
+        if (maxPrice !== null) q = q.lte('price', maxPrice);
+        if (minBedrooms !== null) q = q.gte('bedrooms', minBedrooms);
+        if (maxBedrooms !== null) q = q.lte('bedrooms', maxBedrooms);
+        if (minBathrooms !== null) q = q.gte('bathrooms', minBathrooms);
+        if (maxBathrooms !== null) q = q.lte('bathrooms', maxBathrooms);
+        if (minSqft !== null) q = q.gte('floor_area', minSqft);
+        if (maxSqft !== null) q = q.lte('floor_area', maxSqft);
+        if (propertyTypes.length > 0) q = q.in('property_type', propertyTypes);
+        if (searchQuery) {
+          const rawTerm = searchQuery.trim();
+          const commaIdx = rawTerm.indexOf(',');
+          if (commaIdx > 0) {
+            const cityPart = rawTerm.substring(0, commaIdx).trim();
+            const remainder = rawTerm.substring(commaIdx + 1);
+            let stateAbbrFinal = null;
+            for (const seg of remainder.split(',')) {
+              const s = seg.trim();
+              const fromName = stateNameToAbbr[s.toLowerCase()];
+              if (fromName) { stateAbbrFinal = fromName; break; }
+              if (s.length === 2 && /^[A-Za-z]{2}$/.test(s)) { stateAbbrFinal = s.toUpperCase(); break; }
+            }
+            const cq = `%${cityPart}%`;
+            if (stateAbbrFinal) {
+              q = q.ilike('city', cq).eq('state', stateAbbrFinal);
+            } else {
+              q = q.or(`city.ilike.${cq},address.ilike.${cq}`);
+            }
+          } else {
+            const qt = `%${rawTerm}%`;
+            q = q.or(`city.ilike.${qt},address.ilike.${qt},state.ilike.${qt}`);
+          }
+        }
+        return q;
+      };
 
-    // Also include manual seller properties on the map with same filters
-    try {
-      let manualQuery = supabase
-        .from('properties')
-        .select('id, slug, address, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type, property_images(image_url, sort_order)')
-        .in('status', ['active', 'published'])
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+      const manualData = await fetchAllPages(buildManualQuery);
 
-      if (states.length > 0) manualQuery = manualQuery.in('state', states);
-      if (minPrice !== null) manualQuery = manualQuery.gte('price', minPrice);
-      if (maxPrice !== null) manualQuery = manualQuery.lte('price', maxPrice);
-      if (minBedrooms !== null) manualQuery = manualQuery.gte('bedrooms', minBedrooms);
-      if (maxBedrooms !== null) manualQuery = manualQuery.lte('bedrooms', maxBedrooms);
-      if (minBathrooms !== null) manualQuery = manualQuery.gte('bathrooms', minBathrooms);
-      if (maxBathrooms !== null) manualQuery = manualQuery.lte('bathrooms', maxBathrooms);
-      if (minSqft !== null) manualQuery = manualQuery.gte('floor_area', minSqft);
-      if (maxSqft !== null) manualQuery = manualQuery.lte('floor_area', maxSqft);
-      if (propertyTypes.length > 0) manualQuery = manualQuery.in('property_type', propertyTypes);
-      if (searchQuery) {
-        const q = `%${searchQuery.trim()}%`;
-        manualQuery = manualQuery.or(`address.ilike.${q},state.ilike.${q}`);
+      // Fetch images for manual properties separately
+      const manualIds = manualData.map(p => p.id);
+      let manualPhotoMap = {};
+      if (manualIds.length > 0) {
+        const { data: manualPhotos } = await supabase
+          .from('property_images')
+          .select('property_id, image_url')
+          .in('property_id', manualIds)
+          .eq('sort_order', 0);
+        for (const img of (manualPhotos || [])) {
+          manualPhotoMap[img.property_id] = img;
+        }
       }
 
-      const { data: manualData } = await manualQuery;
-
-      if (manualData && manualData.length > 0) {
-        for (const p of manualData) {
-          const imgs = Array.isArray(p.property_images) ? p.property_images : [];
-          const sortedImgs = [...imgs].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-          const propertyPhotos = sortedImgs.map(img => ({
-            photo_url: img.image_url,
-            optimized_url: null,
-            is_featured: false,
-            display_order: img.sort_order || 0,
-          }));
-          pins.push({
-            id: p.id,
-            slug: p.slug,
-            address: p.address,
-            city: null,
-            state: p.state,
-            price: p.price,
-            latitude: p.latitude,
-            longitude: p.longitude,
-            address_google_lat: p.latitude,
-            address_google_lng: p.longitude,
-            property_photos: propertyPhotos,
-          });
-        }
+      for (const p of manualData) {
+        const img = manualPhotoMap[p.id];
+        pins.push({
+          id: p.id,
+          slug: p.slug,
+          address: p.address,
+          city: p.city || null,
+          state: p.state,
+          price: p.price,
+          bedrooms: p.bedrooms,
+          bathrooms: p.bathrooms,
+          sqft: p.floor_area,
+          property_photos: img ? [{ photo_url: img.image_url, optimized_url: null }] : [],
+          latitude: p.latitude,
+          longitude: p.longitude,
+          address_google_lat: p.latitude,
+          address_google_lng: p.longitude,
+        });
       }
     } catch {
       // Silently skip — manual properties are optional

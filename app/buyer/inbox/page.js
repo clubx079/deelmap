@@ -260,7 +260,7 @@ export default function InboxPage() {
                 const name = getDisplayName(conversation);
                 const initials = getInitials(name);
                 const isActive = selectedConversation?.id === conversation.id;
-                const hasUnread = (conversation.unread_count ?? 0) > 0;
+                const hasUnread = conversation.has_unread || (conversation.unread_count ?? 0) > 0;
 
                 return (
                   <div
@@ -290,9 +290,14 @@ export default function InboxPage() {
                         <h3 className={`text-[14px] truncate ${hasUnread ? 'font-bold text-[#1A1816]' : 'font-medium text-[#1A1816]'}`}>
                           {name}
                         </h3>
-                        <span className="text-[11px] text-[#A8A8A4] flex-shrink-0">
-                          {formatTimeAgo(conversation.last_message_at)}
-                        </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {conversation.is_pinned && (
+                            <Pin className="w-3 h-3 text-[#A8A8A4]" />
+                          )}
+                          <span className="text-[11px] text-[#A8A8A4]">
+                            {formatTimeAgo(conversation.last_message_at)}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
                         <p className={`text-[12px] truncate ${hasUnread ? 'text-[#444441] font-medium' : 'text-[#737370]'}`}>

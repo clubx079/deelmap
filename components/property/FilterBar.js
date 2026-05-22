@@ -2,10 +2,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, SlidersHorizontal, X, Search, Check } from 'lucide-react'
 import { supabaseMarketplace } from '@/lib/supabase'
+import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const PROPERTY_TYPES = [
   'Single Family',
-  'Multi Family',
+  'Multi-Family',
   'Duplex',
   'Condo',
   'Townhouse',
@@ -22,18 +23,34 @@ const PRICE_PRESETS = [
   { label: 'Over $1M', min: 1000000, max: undefined },
 ]
 
-export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange }) {
+const LISTING_TYPES = [
+  { value: 'all', label: 'All Listings' },
+  { value: 'wholesale', label: 'Wholesale' },
+  { value: 'auction', label: 'Auction' },
+]
+
+const LISTING_STATUSES = ['active', 'pending', 'sold']
+
+export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChange, onLocationSelect }) {
+  const [localSearch, setLocalSearch] = useState(searchQuery || '')
+  useEffect(() => { setLocalSearch(searchQuery || '') }, [searchQuery])
   const [showAllFilters, setShowAllFilters] = useState(false)
   const [availableStates, setAvailableStates] = useState([])
 
   const [showPropertyTypes, setShowPropertyTypes] = useState(false)
+  const [showListingType, setShowListingType] = useState(false)
   const [showPrice, setShowPrice] = useState(false)
   const [showBedsBaths, setShowBedsBaths] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
 
   const [tempPrice, setTempPrice] = useState({ min: filters.minPrice || '', max: filters.maxPrice || '' })
   const [tempBedsBaths, setTempBedsBaths] = useState({ minBeds: filters.minBeds || '', minBaths: filters.minBaths || '' })
   const [tempFilters, setTempFilters] = useState({
     states: filters.states || [],
+    propertyTypes: filters.propertyTypes || [],
+    listingStatus: filters.listingStatus || 'active',
+    minBeds: filters.minBeds || '',
+    minBaths: filters.minBaths || '',
     minFloorArea: filters.minFloorArea || '',
     maxFloorArea: filters.maxFloorArea || '',
     minGrossYield: filters.minGrossYield || '',
@@ -45,8 +62,16 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   })
 
   const propertyTypesRef = useRef(null)
+  const listingTypeRef = useRef(null)
+  const mobileListingTypeRef = useRef(null)
+  const mobileListingTypePanelRef = useRef(null)
   const priceRef = useRef(null)
+  const mobilePriceRef = useRef(null)
+  const mobilePricePanelRef = useRef(null)
+  const mobileBedsBathsRef = useRef(null)
   const bedsBathsRef = useRef(null)
+  const [allFiltersMounted, setAllFiltersMounted] = useState(false)
+  const [allFiltersVisible, setAllFiltersVisible] = useState(false)
 
   const STATE_NAMES = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
@@ -64,10 +89,23 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   useEffect(() => { fetchAvailableStates() }, [])
 
   useEffect(() => {
+    if (showAllFilters) {
+      setAllFiltersMounted(true)
+      const raf = requestAnimationFrame(() => requestAnimationFrame(() => setAllFiltersVisible(true)))
+      return () => cancelAnimationFrame(raf)
+    } else {
+      setAllFiltersVisible(false)
+      const t = setTimeout(() => setAllFiltersMounted(false), 320)
+      return () => clearTimeout(t)
+    }
+  }, [showAllFilters])
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (propertyTypesRef.current && !propertyTypesRef.current.contains(e.target)) setShowPropertyTypes(false)
-      if (priceRef.current && !priceRef.current.contains(e.target)) setShowPrice(false)
-      if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
+      if (listingTypeRef.current && !listingTypeRef.current.contains(e.target) && mobileListingTypeRef.current && !mobileListingTypeRef.current.contains(e.target) && (!mobileListingTypePanelRef.current || !mobileListingTypePanelRef.current.contains(e.target))) setShowListingType(false)
+      if (priceRef.current && !priceRef.current.contains(e.target) && mobilePriceRef.current && !mobilePriceRef.current.contains(e.target) && (!mobilePricePanelRef.current || !mobilePricePanelRef.current.contains(e.target))) setShowPrice(false)
+      if (bedsBathsRef.current && !bedsBathsRef.current.contains(e.target) && mobileBedsBathsRef.current && !mobileBedsBathsRef.current.contains(e.target)) setShowBedsBaths(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -78,13 +116,19 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
       const { data, error } = await supabaseMarketplace
         .from('wholesale_deals').select('state').not('state', 'is', null)
       if (error) return
-      const uniqueStates = [...new Set(data.map(i => i.state))].filter(Boolean).sort()
-        .map(code => ({ value: code, label: STATE_NAMES[code] || code }))
+      const uniqueStates = [...new Set(data.map(i => i.state))].filter(code => STATE_NAMES[code]).sort()
+        .map(code => ({ value: code, label: STATE_NAMES[code] }))
       setAvailableStates(uniqueStates)
     } catch {}
   }
 
-  const closeAll = () => { setShowPropertyTypes(false); setShowPrice(false); setShowBedsBaths(false) }
+  const closeAll = () => { setShowPropertyTypes(false); setShowListingType(false); setShowPrice(false); setShowBedsBaths(false) }
+
+  const listingTypeLabel = () => {
+    const val = filters.listingType || 'all'
+    if (val === 'all') return 'Listing Type'
+    return LISTING_TYPES.find(t => t.value === val)?.label || 'Listing Type'
+  }
 
   const applyPrice = () => {
     onFiltersChange({
@@ -126,6 +170,10 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
     onFiltersChange({
       ...filters,
       states: tempFilters.states,
+      propertyTypes: tempFilters.propertyTypes,
+      listingStatus: tempFilters.listingStatus || 'active',
+      minBeds: tempFilters.minBeds ? parseInt(tempFilters.minBeds) : undefined,
+      minBaths: tempFilters.minBaths ? parseFloat(tempFilters.minBaths) : undefined,
       minFloorArea: tempFilters.minFloorArea ? parseInt(tempFilters.minFloorArea) : undefined,
       maxFloorArea: tempFilters.maxFloorArea ? parseInt(tempFilters.maxFloorArea) : undefined,
       minGrossYield: tempFilters.minGrossYield ? parseFloat(tempFilters.minGrossYield) : undefined,
@@ -139,7 +187,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   }
 
   const resetAllFilters = () => {
-    setTempFilters({ states: [], minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '' })
+    setTempFilters({ states: [], propertyTypes: [], listingStatus: 'active', minBeds: '', minBaths: '', minFloorArea: '', maxFloorArea: '', minGrossYield: '', maxGrossYield: '', minCapRate: '', maxCapRate: '', minCashOnCash: '', maxCashOnCash: '' })
   }
 
   const formatPrice = (val) => {
@@ -177,13 +225,15 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   const hasPriceFilter = filters.minPrice || filters.maxPrice
   const hasBedsBathsFilter = filters.minBeds || filters.minBaths
   const hasPropertyTypesFilter = filters.propertyTypes?.length > 0
+  const hasListingTypeFilter = filters.listingType && filters.listingType !== 'all'
+  const hasStatusFilter = filters.listingStatus && filters.listingStatus !== 'active'
   const hasActiveFilters = filters.states?.length > 0 || hasPriceFilter || hasBedsBathsFilter ||
-    hasPropertyTypesFilter || filters.minFloorArea || filters.maxFloorArea ||
+    hasPropertyTypesFilter || hasListingTypeFilter || hasStatusFilter || filters.minFloorArea || filters.maxFloorArea ||
     filters.minGrossYield || filters.maxGrossYield || filters.minCapRate || filters.maxCapRate ||
     filters.minCashOnCash || filters.maxCashOnCash
 
   const filterBtn = (active) =>
-    `flex items-center gap-2 h-[42px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
+    `flex items-center gap-2 h-[44px] px-4 border rounded text-[14px] font-medium whitespace-nowrap transition-all cursor-pointer select-none ${
       active
         ? 'bg-[#D03839] border-[#D03839] text-white'
         : 'bg-white border-[#E8E8E4] text-[#1A1816] hover:border-[#1A1816]'
@@ -192,24 +242,209 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
   return (
     <>
       <div className="bg-white border-b border-[#E8E8E4] fixed top-[80px] left-0 right-0 z-40">
-        <div className="w-full px-6 lg:px-10 py-3 flex items-center gap-3">
+        {/* Mobile layout: search on top, filters below */}
+        <div className="lg:hidden px-4 pt-3 pb-2 space-y-2">
+          {/* Search row */}
+          <div
+            className="flex items-center h-[44px] rounded w-full transition-all duration-200"
+            style={{
+              border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
+              boxShadow: searchFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
+            }}
+          >
+            <LocationAutocomplete
+              value={localSearch}
+              onChange={setLocalSearch}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              onSelect={({ label, city, state }) => { setLocalSearch(label); onSearchChange?.(label); onLocationSelect?.({ city, state }) }}
+              onSubmit={(val) => onSearchChange?.(val)}
+            />
+          </div>
+          {/* Filters row — relative wrapper so dropdown panels escape overflow-x-auto */}
+          <div className="relative">
+            <div className="flex items-center gap-2 pb-1 overflow-x-auto">
+              {/* Listing Type button (mobile) */}
+              <div className="flex-shrink-0" ref={mobileListingTypeRef}>
+                <button
+                  className={filterBtn(hasListingTypeFilter)}
+                  onClick={() => { setShowListingType(!showListingType); setShowPrice(false) }}
+                >
+                  {listingTypeLabel()}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+
+              {/* Price button (mobile) */}
+              <div className="flex-shrink-0" ref={mobilePriceRef}>
+                <button
+                  className={filterBtn(hasPriceFilter)}
+                  onClick={() => {
+                    setShowPrice(!showPrice)
+                    setTempPrice({ min: filters.minPrice || '', max: filters.maxPrice || '' })
+                  }}
+                >
+                  {priceLabel()}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showPrice ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+              {/* All Filters button */}
+            <button
+              className={filterBtn(hasActiveFilters)}
+              onClick={() => {
+                closeAll()
+                setTempFilters({
+                  states: filters.states || [],
+                  propertyTypes: filters.propertyTypes || [],
+                  listingStatus: filters.listingStatus || 'active',
+                  minBeds: filters.minBeds || '',
+                  minBaths: filters.minBaths || '',
+                  minFloorArea: filters.minFloorArea || '',
+                  maxFloorArea: filters.maxFloorArea || '',
+                  minGrossYield: filters.minGrossYield || '',
+                  maxGrossYield: filters.maxGrossYield || '',
+                  minCapRate: filters.minCapRate || '',
+                  maxCapRate: filters.maxCapRate || '',
+                  minCashOnCash: filters.minCashOnCash || '',
+                  maxCashOnCash: filters.maxCashOnCash || '',
+                })
+                setShowAllFilters(true)
+              }}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              All Filters
+              {hasActiveFilters && (
+                <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
+                  {[hasListingTypeFilter, hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, hasStatusFilter, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+            </div>{/* end overflow-x-auto */}
+
+            {/* Listing Type dropdown panel — outside scroll wrapper to prevent clipping */}
+            {showListingType && (
+              <div ref={mobileListingTypePanelRef} className="absolute top-full left-0 mt-1 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
+                <div className="py-2">
+                  {LISTING_TYPES.map(({ value, label }) => {
+                    const active = (filters.listingType || 'all') === value
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
+                      >
+                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
+                        {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Price dropdown panel — outside scroll wrapper to prevent clipping */}
+            {showPrice && (
+              <div ref={mobilePricePanelRef} className="absolute top-full left-0 mt-1 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-[min(320px,calc(100vw-2rem))] overflow-hidden">
+                <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
+                  <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Price Range</p>
+                </div>
+                <div className="px-4 py-3 border-b border-[#F0F0EC] flex flex-wrap gap-2">
+                  {PRICE_PRESETS.map((p) => {
+                    const active = tempPrice.min === String(p.min || '') && tempPrice.max === String(p.max || '')
+                    return (
+                      <button key={p.label} onClick={() => setTempPrice({ min: p.min || '', max: p.max || '' })}
+                        className={`px-3 py-1 rounded-full border text-[12px] font-medium transition-all ${active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
+                        {p.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="px-4 py-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Min</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
+                        <input type="number" placeholder="0" value={tempPrice.min}
+                          onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">Max</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A8A8A4] text-[13px]">$</span>
+                        <input type="number" placeholder="Any" value={tempPrice.max}
+                          onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    {hasPriceFilter && (
+                      <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">Clear</button>
+                    )}
+                    <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors">Apply</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>{/* end relative wrapper */}
+        </div>
+
+        {/* Desktop layout: all in one row */}
+        <div className="hidden lg:flex w-full py-3 items-center gap-3" style={{ paddingLeft: '45px', paddingRight: '85px' }}>
 
           {/* Search */}
-          <div className="flex items-center h-[42px] border border-[#E8E8E4] rounded overflow-hidden flex-1 min-w-0 lg:w-[480px] lg:flex-none focus-within:border-[#1A1816] transition-colors">
-            <input
-              type="text"
-              placeholder="Search markets, cities, or ZIP codes"
-              value={searchQuery}
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="flex-1 h-full px-4 text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none bg-transparent"
+          <div
+            className="flex items-center h-[44px] rounded w-[480px] flex-none transition-all duration-200"
+            style={{
+              border: searchFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
+              boxShadow: searchFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
+            }}
+          >
+            <LocationAutocomplete
+              value={localSearch}
+              onChange={setLocalSearch}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              onSelect={({ label, city, state }) => { setLocalSearch(label); onSearchChange?.(label); onLocationSelect?.({ city, state }) }}
+              onSubmit={(val) => onSearchChange?.(val)}
             />
-            <button className="h-full px-4 bg-[#D03839] hover:bg-[#C73022] transition-colors flex items-center justify-center flex-shrink-0">
-              <Search className="w-4 h-4 text-white" />
+          </div>
+
+          {/* Listing Type dropdown */}
+          <div className="relative" ref={listingTypeRef}>
+            <button
+              className={filterBtn(hasListingTypeFilter)}
+              onClick={() => { setShowListingType(!showListingType); setShowPropertyTypes(false); setShowPrice(false); setShowBedsBaths(false) }}
+            >
+              {listingTypeLabel()}
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showListingType ? 'rotate-180' : ''}`} />
             </button>
+            {showListingType && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-48 overflow-hidden">
+                <div className="py-2">
+                  {LISTING_TYPES.map(({ value, label }) => {
+                    const active = (filters.listingType || 'all') === value
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => { onFiltersChange({ ...filters, listingType: value === 'all' ? undefined : value }); setShowListingType(false) }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-[14px] transition-colors hover:bg-[#FAFAF8]"
+                      >
+                        <span className={active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}>{label}</span>
+                        {active && <Check className="w-4 h-4 text-[#D03839]" strokeWidth={2.5} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Property Types */}
-          <div className="relative hidden lg:block" ref={propertyTypesRef}>
+          <div className="relative" ref={propertyTypesRef}>
             <button
               className={filterBtn(hasPropertyTypesFilter)}
               onClick={() => { setShowPropertyTypes(!showPropertyTypes); setShowPrice(false); setShowBedsBaths(false) }}
@@ -219,7 +454,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             </button>
 
             {showPropertyTypes && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-64 overflow-hidden">
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-64 overflow-hidden">
                 <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
                   <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Property Type</p>
                 </div>
@@ -270,7 +505,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             </button>
 
             {showPrice && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-80 overflow-hidden">
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-80 overflow-hidden">
                 <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
                   <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Price Range</p>
                 </div>
@@ -305,7 +540,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           placeholder="0"
                           value={tempPrice.min}
                           onChange={(e) => setTempPrice({ ...tempPrice, min: e.target.value })}
-                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors"
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors"
                         />
                       </div>
                     </div>
@@ -318,18 +553,18 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           placeholder="Any"
                           value={tempPrice.max}
                           onChange={(e) => setTempPrice({ ...tempPrice, max: e.target.value })}
-                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors"
+                          className="w-full h-10 pl-6 pr-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors"
                         />
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2 pt-1">
                     {hasPriceFilter && (
-                      <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">
+                      <button onClick={clearPrice} className="flex-1 h-10 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">
                         Clear
                       </button>
                     )}
-                    <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">
+                    <button onClick={applyPrice} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors">
                       Apply
                     </button>
                   </div>
@@ -352,7 +587,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             </button>
 
             {showBedsBaths && (
-              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-50 w-72 overflow-hidden">
+              <div className="absolute top-full left-0 mt-2 bg-white border border-[#E8E8E4] rounded shadow-xl z-50 w-72 overflow-hidden">
                 <div className="px-4 pt-4 pb-2 border-b border-[#F0F0EC]">
                   <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider">Beds & Baths</p>
                 </div>
@@ -368,7 +603,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           <button
                             key={n}
                             onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBeds: val })}
-                            className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${
+                            className={`flex-1 h-9 rounded border text-[13px] font-medium transition-all ${
                               active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
                             }`}
                           >
@@ -389,7 +624,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                           <button
                             key={n}
                             onClick={() => setTempBedsBaths({ ...tempBedsBaths, minBaths: val })}
-                            className={`flex-1 h-9 rounded-lg border text-[13px] font-medium transition-all ${
+                            className={`flex-1 h-9 rounded border text-[13px] font-medium transition-all ${
                               active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
                             }`}
                           >
@@ -402,11 +637,11 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
                   <div className="flex gap-2 pt-1">
                     {hasBedsBathsFilter && (
-                      <button onClick={clearBedsBaths} className="flex-1 h-10 border border-[#E8E8E4] rounded-lg text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">
+                      <button onClick={clearBedsBaths} className="flex-1 h-10 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#737370] hover:border-[#C0C0BC] hover:text-[#1A1816] transition-colors">
                         Clear
                       </button>
                     )}
-                    <button onClick={applyBedsBaths} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">
+                    <button onClick={applyBedsBaths} className="flex-1 h-10 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors">
                       Apply
                     </button>
                   </div>
@@ -424,20 +659,21 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
             All Filters
             {hasActiveFilters && (
               <span className="w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0 bg-white text-[#D03839]">
-                {[hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
+                {[hasListingTypeFilter, hasPriceFilter, hasBedsBathsFilter, hasPropertyTypesFilter, filters.states?.length > 0, hasStatusFilter, filters.minFloorArea || filters.maxFloorArea, filters.minCapRate || filters.maxCapRate, filters.minGrossYield || filters.maxGrossYield, filters.minCashOnCash || filters.maxCashOnCash].filter(Boolean).length}
               </span>
             )}
           </button>
-        </div>
+        </div>{/* end desktop row */}
       </div>
 
       {/* All Filters Modal */}
-      {showAllFilters && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[88vh] overflow-y-auto shadow-2xl">
+      {allFiltersMounted && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+          <div className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${allFiltersVisible ? 'opacity-100' : 'opacity-0'}`} onClick={() => setShowAllFilters(false)} />
+          <div className={`relative bg-white rounded-t sm:rounded max-w-3xl w-full max-h-[92dvh] sm:max-h-[88vh] overflow-y-auto shadow-2xl transition-all duration-300 ease-out ${allFiltersVisible ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'translate-y-full sm:opacity-0 sm:scale-95'}`}>
 
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+            <div className="sticky top-0 bg-white border-b border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-t z-10">
               <div>
                 <h2 className="text-[18px] font-bold text-[#1A1816]">All Filters</h2>
                 <p className="text-[12px] text-[#A8A8A4] mt-0.5">Refine your search results</p>
@@ -449,6 +685,32 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
 
             <div className="p-6 space-y-8">
 
+              {/* Property Types */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[15px] font-bold text-[#1A1816]">Property Type</h3>
+                  {tempFilters.propertyTypes.length > 0 && (
+                    <button onClick={() => setTempFilters({ ...tempFilters, propertyTypes: [] })} className="text-[12px] text-[#D03839] font-medium hover:underline">Clear</button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {PROPERTY_TYPES.map((type) => {
+                    const active = tempFilters.propertyTypes.includes(type)
+                    return (
+                      <label key={type} className={`flex items-center gap-2.5 p-3 rounded border cursor-pointer transition-all ${active ? 'bg-[#FAFAF8] border-[#1A1816]' : 'border-[#E8E8E4] hover:border-[#C0C0BC]'}`}>
+                        <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all ${active ? 'bg-[#D03839] border-[#D03839]' : 'border-[#C0C0BC]'}`}>
+                          {active && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                        </span>
+                        <input type="checkbox" checked={active} onChange={(e) => setTempFilters({ ...tempFilters, propertyTypes: e.target.checked ? [...tempFilters.propertyTypes, type] : tempFilters.propertyTypes.filter(t => t !== type) })} className="sr-only" />
+                        <span className={`text-[13px] ${active ? 'font-semibold text-[#1A1816]' : 'text-[#444441]'}`}>{type}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-[#F0F0EC]" />
+
               {/* States */}
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -459,11 +721,11 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {availableStates.map((state) => {
                     const active = tempFilters.states.includes(state.value)
                     return (
-                      <label key={state.value} className={`flex items-center gap-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
+                      <label key={state.value} className={`flex items-center gap-2.5 p-3 rounded border cursor-pointer transition-all ${
                         active ? 'bg-[#FAFAF8] border-[#1A1816]' : 'border-[#E8E8E4] hover:border-[#C0C0BC]'
                       }`}>
                         <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all ${
@@ -503,9 +765,32 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                       <label className="block text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wider mb-1.5">{label}</label>
                       <input type="number" placeholder={placeholder} value={tempFilters[key]}
                         onChange={(e) => setTempFilters({ ...tempFilters, [key]: e.target.value })}
-                        className="w-full h-11 px-4 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                        className="w-full h-11 px-4 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="border-t border-[#F0F0EC]" />
+
+              {/* Listing Status */}
+              <div>
+                <h3 className="text-[15px] font-bold text-[#1A1816] mb-4">Listing Status</h3>
+                <div className="flex gap-2">
+                  {LISTING_STATUSES.map((status) => {
+                    const active = (tempFilters.listingStatus || 'active') === status
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setTempFilters({ ...tempFilters, listingStatus: status })}
+                        className={`flex-1 h-10 rounded border text-[13px] font-medium capitalize transition-all ${
+                          active ? 'bg-[#1A1816] border-[#1A1816] text-white' : 'bg-white border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -520,7 +805,7 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                     { label: 'Cap Rate', unit: '%', minKey: 'minCapRate', maxKey: 'maxCapRate' },
                     { label: 'Cash on Cash Return', unit: '%', minKey: 'minCashOnCash', maxKey: 'maxCashOnCash' },
                   ].map(({ label, unit, minKey, maxKey }) => (
-                    <div key={label} className="grid grid-cols-[1fr_2fr] gap-6 items-center">
+                    <div key={label} className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-2 sm:gap-6 sm:items-center">
                       <div>
                         <p className="text-[13px] font-semibold text-[#1A1816]">{label}</p>
                         <p className="text-[11px] text-[#A8A8A4]">In {unit}</p>
@@ -529,30 +814,31 @@ export function FilterBar({ filters, onFiltersChange, searchQuery, onSearchChang
                         <div className="relative">
                           <input type="number" placeholder="Min" value={tempFilters[minKey]}
                             onChange={(e) => setTempFilters({ ...tempFilters, [minKey]: e.target.value })}
-                            className="w-full h-10 px-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                            className="w-full h-10 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
                         </div>
                         <div className="relative">
                           <input type="number" placeholder="Max" value={tempFilters[maxKey]}
                             onChange={(e) => setTempFilters({ ...tempFilters, [maxKey]: e.target.value })}
-                            className="w-full h-10 px-3 border border-[#E8E8E4] rounded-lg text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
+                            className="w-full h-10 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder:text-[#C0C0BC] focus:outline-none focus:border-[#1A1816] transition-colors" />
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-b-2xl">
+            <div className="sticky bottom-0 bg-white border-t border-[#E8E8E4] px-6 py-4 flex items-center justify-between rounded-b">
               <button onClick={resetAllFilters} className="text-[14px] font-medium text-[#737370] hover:text-[#1A1816] transition-colors underline underline-offset-2">
                 Clear all
               </button>
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowAllFilters(false)} className="h-11 px-5 border border-[#E8E8E4] rounded-lg text-[14px] font-medium text-[#1A1816] hover:bg-[#FAFAF8] transition-colors">
+                <button onClick={() => setShowAllFilters(false)} className="h-11 px-5 border border-[#E8E8E4] rounded text-[14px] font-medium text-[#1A1816] hover:bg-[#FAFAF8] transition-colors">
                   Cancel
                 </button>
-                <button onClick={applyAllFilters} className="h-11 px-6 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded-lg transition-colors">
+                <button onClick={applyAllFilters} className="h-11 px-6 bg-[#D03839] hover:bg-[#C73022] text-white text-[14px] font-semibold rounded transition-colors">
                   Show results
                 </button>
               </div>

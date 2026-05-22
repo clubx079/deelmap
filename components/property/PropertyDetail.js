@@ -1,15 +1,17 @@
 // /components/property/PropertyDetail.js
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft, Heart, Share2,
   MapPin, Building2, Calendar, Square, Map, Bed, Droplets, Car,
   ChevronLeft, ChevronRight,
-  TrendingUp, Shield, Star, DollarSign, Wrench, Home
+  TrendingUp, Shield, Star, DollarSign, Wrench, Home, Phone, X, User, Copy, Check
 } from 'lucide-react'
 import { useProperties } from '@/hooks/useProperties'
+import { toCitySlug } from '@/lib/cityUtils'
 import { getPreferredPhotoUrl, getThumbnailUrl } from '@/utils/propertyPhotos'
 import { getStartingTier, recordImageLoad } from '@/utils/adaptiveImageLoader'
 import { useAuth } from '@/hooks/useAuth'
@@ -18,10 +20,14 @@ import { usePropertyAnalytics } from '@/hooks/usePropertyAnalytics'
 import { loadGoogleMapsAPI } from '@/utils/googleMapsLoader'
 import { RegistrationModal } from '@/components/RegistrationModal'
 import { PropertyImageModal } from './PropertyImageModal'
+import { ShareModal } from './ShareModal'
 import { Footer } from '@/components/layout/Footer'
 
 export function PropertyDetail({ property }) {
-  const { user, loading } = useAuth()
+  const searchParams = useSearchParams()
+  const isPreview = searchParams.get('preview') === '1'
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const { user, loading, displayName, profileExtras } = useAuth()
   const { isFavorited, toggleFavorite, loadFavorites } = useFavorites()
 
   // Property analytics tracking (trackImageView for photo view count)
@@ -33,8 +39,13 @@ export function PropertyDetail({ property }) {
   const [downPaymentPercent, setDownPaymentPercent] = useState(25)
   const [estimatedRent, setEstimatedRent] = useState(property.estimated_rent ?? null)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showPhonePopup, setShowPhonePopup] = useState(false)
+  const [phoneCopied, setPhoneCopied] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [modalInitialIndex, setModalInitialIndex] = useState(0)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [shareUrl, setShareUrl] = useState('')
+  const [shareTitle, setShareTitle] = useState('')
   const [showOfferModal] = useState(false)
   const [isFav, setIsFav] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
@@ -43,7 +54,7 @@ export function PropertyDetail({ property }) {
   const mapRef = useRef(null)
 
   const { properties: similarProperties } = useProperties({
-    filters: { statuses: ['available'], city: property.city },
+    filters: { statuses: ['available'], city: property.city, listingType: 'wholesale' },
     sortBy: 'newest',
     pageSize: 14,
   })
@@ -127,15 +138,16 @@ export function PropertyDetail({ property }) {
   const fullAddress = property.full_address || property.display_address ||
     `${property.address || ''}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim()
 
-  // Show login modal if user is not authenticated
+  // Show login modal if user is not authenticated (skip in preview mode)
   useEffect(() => {
     if (loading) return
-    if (!user) {
-      setShowLoginModal(true)
-    } else {
+    if (isPreview) {
       setShowLoginModal(false)
+      return
     }
-  }, [user, loading])
+    // Don't auto-show login modal — let user browse with blurred sections
+    setShowLoginModal(false)
+  }, [user, loading, isPreview])
 
   useEffect(() => {
     if (user && showLoginModal && !loading) {
@@ -169,6 +181,55 @@ export function PropertyDetail({ property }) {
       setIsFav(isFavorited(property.id))
     }
   }, [property?.id, isFavorited])
+
+  // Track property view in PostHog
+  useEffect(() => {
+    if (!property?.id) return
+    import('@/lib/analytics').then(({ trackEvent }) => {
+      trackEvent('property_viewed', {
+        property_id: property.id,
+        address: property.address,
+        city: property.city,
+        state: property.state,
+        price: property.price,
+        property_type: property.property_type,
+        listing_type: property.listing_type,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+      })
+    })
+  }, [property?.id])
+
+  // Save to recently viewed in DB
+  useEffect(() => {
+    if (!property?.id || !user?.id) return
+    const snapshot = {
+      id: property.id,
+      slug: property.slug || property.id,
+      address: property.address,
+      full_address: property.full_address || property.display_address,
+      city: property.city,
+      state: property.state,
+      price: property.price,
+      bedrooms: property.bedrooms,
+      bathrooms: property.bathrooms,
+      sqft: property.sqft,
+      gross_yield: property.gross_yield,
+      purchase_price: property.purchase_price,
+      property_photos: property.property_photos?.slice(0, 1) || [],
+    }
+    fetch('/api/buyer/recently-viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+      body: JSON.stringify({ property_id: property.id, property_data: snapshot }),
+    }).catch(() => {})
+  }, [property?.id, user?.id])
+
+  useEffect(() => {
+    if (user && similarProperties?.length > 0) {
+      loadFavorites(similarProperties.map(p => p.id))
+    }
+  }, [user, similarProperties, loadFavorites])
 
   // Initialize Google Map
   useEffect(() => {
@@ -348,14 +409,53 @@ export function PropertyDetail({ property }) {
 
   const hasRehabData = property.rehab_cost || property.rehab_description || property.condition
 
+  // Helper: intercept action clicks in preview mode
+  const handlePreviewAction = (e) => {
+    if (isPreview) { e.preventDefault(); setShowPreviewModal(true) }
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] relative overflow-x-hidden">
+      {/* Preview mode modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded w-full max-w-sm p-6 text-center shadow-xl">
+            <div className="w-12 h-12 bg-[#FEF0EF] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-[#D03839]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </div>
+            <h3 className="text-[16px] font-bold text-[#1A1816] mb-2">You're in Preview Mode</h3>
+            <p className="text-[13px] text-[#737370] mb-5">This is how buyers see your listing. When a buyer clicks this button, they'll be prompted to log in before taking any action.</p>
+            <button
+              onClick={() => setShowPreviewModal(false)}
+              className="w-full h-[40px] bg-[#1A1816] hover:bg-[#2A2825] text-white text-[13px] font-semibold rounded transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Preview banner */}
+      {isPreview && (
+        <div className="sticky top-0 z-[100] bg-[#1A1816] text-white text-center py-2 px-4 text-[13px] font-medium">
+          Preview Mode — this is how your listing appears to buyers
+        </div>
+      )}
+
+      {/* Preview overlay — blocks all content below the nav */}
+      {isPreview && (
+        <div
+          className="fixed inset-0 z-[45] cursor-default"
+          onClick={() => setShowPreviewModal(true)}
+        />
+      )}
+
       {/* Login Modal */}
       <RegistrationModal
         isOpen={showLoginModal}
-        onClose={() => {}}
+        onClose={() => setShowLoginModal(false)}
         initialStep="login"
-        preventClose={true}
+        preventClose={false}
         backUrl="/marketplace"
       />
 
@@ -364,24 +464,24 @@ export function PropertyDetail({ property }) {
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
         photos={photos}
-        initialIndex={currentPhotoIndex}
+        initialIndex={modalInitialIndex}
         onPhotoView={handlePhotoViewFromModal}
-        preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[currentPhotoIndex]) || null : null}
+        preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[modalInitialIndex]) || null : null}
       />
 
-      {/* Page content — blurred when not logged in */}
-      <div className={showLoginModal ? 'blur-sm pointer-events-none select-none' : ''}>
+      {/* Page content */}
+      <div>
 
       {/* Sticky Navbar */}
       <nav className="sticky top-0 z-50 bg-white border-b border-[#E8E8E4] h-14 flex items-center px-4 sm:px-6">
         <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
           {/* Left: Back link */}
           <Link
-            href="/marketplace"
-            className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors"
+            href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/listings` : '/marketplace'}
+            className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors relative z-[50]"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to listings</span>
+            <ArrowLeft className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">{isPreview ? 'Back to listings' : 'Back to listings'}</span>
           </Link>
 
           {/* Center: Logo */}
@@ -392,22 +492,23 @@ export function PropertyDetail({ property }) {
                 alt="DeelMap"
                 width={143}
                 height={50}
-                className="h-[50px] w-[143px]"
+                className="h-[38px] w-auto sm:h-[50px] sm:w-[143px]"
               />
             </Link>
           </div>
 
-          {/* Right: Share + Favorite */}
+          {/* Right: Share + Save + User (desktop only — mobile versions live below photo) */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowShareModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
+              onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShareTitle(property.full_address || property.display_address || property.address || 'Property'); setShowShareModal(true) }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#E8E8E4] bg-white text-[#444441] hover:bg-[#FAFAF8] transition-colors text-sm font-medium"
             >
               <Share2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Share</span>
+              <span>Share</span>
             </button>
             <button
-              onClick={async () => {
+              onClick={async (e) => {
+                if (isPreview) { setShowPreviewModal(true); return }
                 if (!user) { setShowLoginModal(true); return }
                 setFavoriteLoading(true)
                 try {
@@ -421,29 +522,89 @@ export function PropertyDetail({ property }) {
                 }
               }}
               disabled={favoriteLoading}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors text-sm font-medium ${
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded border transition-colors text-sm font-medium ${
                 isFav
                   ? 'bg-[#FEF0EF] border-[#F5C4C0] text-[#D03839]'
                   : 'bg-white border-[#E8E8E4] text-[#444441] hover:bg-[#FAFAF8]'
               } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">{isFav ? 'Saved' : 'Save'}</span>
+              <span>{isFav ? 'Saved' : 'Save'}</span>
             </button>
+            {user && (
+              <Link href="/buyer/dashboard" className="flex items-center gap-2 group">
+                <div className="w-9 h-9 rounded-full bg-[#FEF0EF] flex items-center justify-center text-[#D03839] text-[13px] font-semibold ring-2 ring-[#F5C4C0] group-hover:ring-[#D03839] group-hover:scale-110 transition-all duration-200">
+                  {profileExtras.is_anonymous
+                    ? (profileExtras.nickname?.[0]?.toUpperCase() || '?')
+                    : user.first_name
+                      ? `${user.first_name[0]}${user.last_name?.[0] || ''}`.toUpperCase()
+                      : user.email?.[0]?.toUpperCase() || <User className="w-4 h-4" />
+                  }
+                </div>
+              </Link>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Photo Grid */}
-      <div className="bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="relative h-[340px] sm:h-[460px] rounded overflow-hidden"
-               style={{ display: 'grid', gridTemplateColumns: photos.length > 1 ? '1fr 1fr' : '1fr', gap: '6px' }}>
+      {/* Breadcrumb */}
+      {toCitySlug(property.city, property.state) && !isPreview && (
+        <div className="bg-white border-b border-[#E8E8E4] px-4 sm:px-6 py-2">
+          <nav className="text-[12px] text-[#737370] flex items-center gap-1.5 max-w-7xl mx-auto">
+            <Link href="/marketplace" className="hover:text-[#1A1816] transition-colors shrink-0">Marketplace</Link>
+            <span>/</span>
+            <Link href={`/deals/${toCitySlug(property.city, property.state)}`} className="hover:text-[#1A1816] transition-colors shrink-0">{property.city}, {property.state}</Link>
+            <span>/</span>
+            <span className="text-[#1A1816] truncate">{property.full_address || property.display_address || property.address || 'Property'}</span>
+          </nav>
+        </div>
+      )}
 
-            {/* Main photo — left half, full height */}
+      {/* Expired banner */}
+      {(property.status === 'expired' || (property.created_at && (Date.now() - new Date(property.created_at).getTime()) > 30 * 24 * 60 * 60 * 1000)) && (
+        <div className="bg-[#FEF0EF] border-b border-[#F5C4C0] px-4 sm:px-6 py-4">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-[15px] font-semibold text-[#D03839]">This listing is no longer available</p>
+              <p className="text-[13px] text-[#737370] mt-0.5">The deal has expired or been removed by the seller.</p>
+            </div>
+            <Link
+              href="/marketplace"
+              className="flex-shrink-0 flex items-center gap-2 bg-[#D03839] text-white text-[13px] font-semibold px-4 py-2 rounded hover:bg-[#E0493B] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Marketplace
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Grid */}
+      <div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className={`relative h-[260px] sm:h-[460px] rounded overflow-hidden grid gap-[6px] ${photos.length > 1 ? 'sm:grid-cols-2' : ''} grid-cols-1`}>
+            {!user && !isPreview && photos.length > 1 && (
+              <div className="absolute hidden sm:flex left-[50%] right-0 top-0 bottom-0 z-20 flex-col items-center justify-center gap-3 bg-black/10 backdrop-blur-sm">
+                <div className="bg-white rounded px-5 py-4 text-center shadow-lg max-w-xs">
+                  <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Sign in to view photos</p>
+                  <p className="text-[12px] text-[#737370] mb-3">Create a free account to see all property photos</p>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="w-full bg-[#D03839] text-white text-[13px] font-semibold py-2 rounded hover:bg-[#E0493B] transition-colors"
+                  >
+                    Sign in / Create account
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Main photo — full width on mobile, left half on sm+ */}
             <div
               className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
-              onClick={() => photos.length > 0 && setShowImageModal(true)}
+              onClick={() => {
+                if (!user && !isPreview) { setShowLoginModal(true); return; }
+                if (photos.length > 0) { setModalInitialIndex(currentPhotoIndex); setShowImageModal(true) }
+              }}
             >
               {photos.length > 0 ? (
                 <img
@@ -454,17 +615,113 @@ export function PropertyDetail({ property }) {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-2">
-                  <div className="relative w-40 h-12">
-                    <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+                  <div className="relative w-48 h-16">
+                    <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain" />
                   </div>
                   <span className="text-sm text-[#A8A8A4]">Photos coming soon</span>
                 </div>
               )}
+              {/* Mobile-only: Show all photos button on main photo */}
+              {photos.length > 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!user && !isPreview) { setShowLoginModal(true); return; } setModalInitialIndex(0); setShowImageModal(true) }}
+                  className="sm:hidden absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                  Show all photos
+                </button>
+              )}
             </div>
 
-            {/* Right side: 2×2 grid */}
-            {photos.length > 1 && (
-              <div className="grid grid-cols-2 grid-rows-2 gap-[6px]">
+            {/* Right side — hidden on mobile, layout adapts to photo count */}
+            {photos.length === 2 && (
+              // 2 photos: right = single photo, full height
+              <div
+                className="hidden sm:block relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                onClick={() => { setModalInitialIndex(1); setShowImageModal(true) }}
+              >
+                <img
+                  src={getThumbnailUrl(photos[1], 800) || getPreferredPhotoUrl(photos[1]) || '/placeholder.jpg'}
+                  alt="Property photo 2"
+                  className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                  className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                  Show all photos
+                </button>
+              </div>
+            )}
+
+            {photos.length === 3 && (
+              // 3 photos: right = 2 photos stacked vertically
+              <div className="hidden sm:grid grid-cols-1 grid-rows-2 gap-[6px]">
+                {[1, 2].map((offset) => (
+                  <div
+                    key={offset}
+                    className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                    onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
+                  >
+                    <img
+                      src={getThumbnailUrl(photos[offset], 800) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
+                      alt={`Property photo ${offset + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                    />
+                    {offset === 2 && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                        Show all photos
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {photos.length === 4 && (
+              // 4 photos: right = top 2 side by side + bottom 1 full width
+              <div className="hidden sm:grid grid-cols-2 grid-rows-2 gap-[6px]">
+                {[1, 2].map((offset) => (
+                  <div
+                    key={offset}
+                    className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                    onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
+                  >
+                    <img
+                      src={getThumbnailUrl(photos[offset], 800) || getPreferredPhotoUrl(photos[offset]) || '/placeholder.jpg'}
+                      alt={`Property photo ${offset + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                    />
+                  </div>
+                ))}
+                <div
+                  className="col-span-2 relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
+                  onClick={() => { setModalInitialIndex(3); setShowImageModal(true) }}
+                >
+                  <img
+                    src={getThumbnailUrl(photos[3], 800) || getPreferredPhotoUrl(photos[3]) || '/placeholder.jpg'}
+                    alt="Property photo 4"
+                    className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                  />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
+                    className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="1.5"/></svg>
+                    Show all photos
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {photos.length >= 5 && (
+              // 5+ photos: full 2×2 grid
+              <div className="hidden sm:grid grid-cols-2 grid-rows-2 gap-[6px]">
                 {[1, 2, 3, 4].map((offset) => {
                   const photo = photos[offset]
                   const isLast = offset === 4
@@ -472,22 +729,14 @@ export function PropertyDetail({ property }) {
                     <div
                       key={offset}
                       className="relative bg-[#E8E8E4] cursor-pointer overflow-hidden rounded"
-                      onClick={() => {
-                        setCurrentPhotoIndex(offset < photos.length ? offset : 0)
-                        setShowImageModal(true)
-                      }}
+                      onClick={() => { setModalInitialIndex(offset); setShowImageModal(true) }}
                     >
-                      {photo ? (
-                        <img
-                          src={getThumbnailUrl(photo, 400) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
-                          alt={`Property photo ${offset + 1}`}
-                          className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-[#E8E8E4]" />
-                      )}
-                      {/* "Show all photos" button on last cell */}
-                      {isLast && photos.length > 0 && (
+                      <img
+                        src={getThumbnailUrl(photo, 800) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'}
+                        alt={`Property photo ${offset + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                      />
+                      {isLast && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setShowImageModal(true) }}
                           className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white backdrop-blur-sm border border-[#E8E8E4] text-[#1A1816] text-[13px] font-semibold px-3 py-1.5 rounded shadow-sm transition-all duration-200"
@@ -514,18 +763,51 @@ export function PropertyDetail({ property }) {
 
             {/* Property overview card */}
             <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-6">
-              {/* Location */}
-              {(property.city || property.state) && (
-                <div className="flex items-center gap-1.5 text-[#737370] text-[13px] mb-2">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span>{[property.city, property.state].filter(Boolean).join(', ')}</span>
+              {/* Location + mobile Share/Save + Active badge */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                {(property.city || property.state) && (
+                  <div className="flex items-center gap-1.5 text-[#737370] text-[13px]">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{[property.city, property.state].filter(Boolean).join(', ')}</span>
+                  </div>
+                )}
+                {/* Mobile only: Share icon + Save icon + Active badge */}
+                <div className="flex items-center gap-2 sm:hidden flex-shrink-0">
+                  <button
+                    onClick={() => { setShareUrl(typeof window !== 'undefined' ? window.location.href : ''); setShareTitle(property.full_address || property.display_address || property.address || 'Property'); setShowShareModal(true) }}
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center text-[#737370] hover:text-[#1A1816] transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (isPreview) { setShowPreviewModal(true); return }
+                      if (!user) { setShowLoginModal(true); return }
+                      setFavoriteLoading(true)
+                      try {
+                        await toggleFavorite(property.id)
+                        window.dispatchEvent(new CustomEvent('favoriteChanged'))
+                      } catch (error) { alert(error.message || 'Failed to update favorite') }
+                      finally { setFavoriteLoading(false) }
+                    }}
+                    disabled={favoriteLoading}
+                    className={`min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors ${favoriteLoading ? 'opacity-50' : ''} ${isFav ? 'text-[#D03839]' : 'text-[#737370] hover:text-[#D03839]'}`}
+                  >
+                    <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+                  </button>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[12px] font-semibold rounded border border-[#9FDBB8]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] inline-block"></span>
+                    {property.status || 'Active'}
+                  </span>
                 </div>
-              )}
+              </div>
 
-              {/* Title + Active Deal badge */}
+              {/* Title + Active Deal badge (desktop) */}
               <div className="flex items-start justify-between gap-4 mb-2">
-                <h1 className="text-[22px] sm:text-[26px] font-bold text-[#1A1816] leading-snug break-words">{fullAddress}</h1>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
+                <h1 className={`text-[22px] sm:text-[26px] font-bold text-[#1A1816] leading-snug break-words ${!user && !isPreview ? 'blur-sm select-none' : ''}`}>
+                  {!user && !isPreview ? (property.city && property.state ? `${property.city}, ${property.state}` : 'Address hidden') : fullAddress}
+                </h1>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
                   <span className="w-2 h-2 rounded-full bg-[#16A34A] inline-block"></span>
                   {property.status || 'Active Deal'}
                 </span>
@@ -546,6 +828,15 @@ export function PropertyDetail({ property }) {
                     <span><span className="font-semibold">{property.bathrooms}</span> bath</span>
                   </>
                 )}
+                {property.created_at && (() => {
+                  const days = Math.floor((Date.now() - new Date(property.created_at).getTime()) / 86400000)
+                  return (
+                    <>
+                      <span className="text-[#D4D4CF]">·</span>
+                      <span><span className="font-semibold">{days === 0 ? 'Today' : days}</span>{days > 0 ? ` day${days === 1 ? '' : 's'} on DeelMap` : ' on DeelMap'}</span>
+                    </>
+                  )
+                })()}
               </div>
 
               {/* Divider */}
@@ -554,25 +845,43 @@ export function PropertyDetail({ property }) {
               {/* Description */}
               {property.description && (
                 <div className="mb-4">
+                  {(() => {
+                    const plainText = property.description.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+                    return (
+                      <>
+                        <div
+                          className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: showFullDescription || plainText.length <= 300
+                              ? property.description
+                              : `${plainText.substring(0, 300)}...`
+                          }}
+                        />
+                        {plainText.length > 300 && (
+                          <button
+                            onClick={() => setShowFullDescription(!showFullDescription)}
+                            className="text-[#D03839] hover:text-[#E0493B] text-[13px] font-medium mt-2 flex items-center gap-1 transition-colors"
+                          >
+                            {showFullDescription ? 'Show less' : 'Show more'}
+                            <svg className={`w-4 h-4 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+
+              {/* Repairs & Renovations */}
+              {property.repairs && (
+                <div className="mb-4">
+                  <h3 className="text-[13px] font-semibold text-[#1A1816] uppercase tracking-[0.8px] mb-2">Repairs &amp; Renovations</h3>
                   <div
                     className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap break-words"
-                    dangerouslySetInnerHTML={{
-                      __html: showFullDescription || property.description.length <= 300
-                        ? property.description
-                        : `${property.description.substring(0, 300)}...`
-                    }}
+                    dangerouslySetInnerHTML={{ __html: property.repairs }}
                   />
-                  {property.description.length > 300 && (
-                    <button
-                      onClick={() => setShowFullDescription(!showFullDescription)}
-                      className="text-[#D03839] hover:text-[#E0493B] text-[13px] font-medium mt-2 flex items-center gap-1 transition-colors"
-                    >
-                      {showFullDescription ? 'Show less' : 'Show more'}
-                      <svg className={`w-4 h-4 transition-transform ${showFullDescription ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  )}
                 </div>
               )}
 
@@ -645,12 +954,59 @@ export function PropertyDetail({ property }) {
                         if (v === '') setEstimatedRent(null)
                         else { const n = parseFloat(v); setEstimatedRent(!isNaN(n) ? n : null) }
                       }}
+                      placeholder="e.g. 1,500"
                       className="w-full h-10 pl-7 pr-3 border border-[#E8E8E4] rounded focus:border-[#D03839] focus:ring-2 focus:ring-[#D03839]/[.12] outline-none text-sm text-[#1A1816]"
                     />
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[#A8A8A4]">Enter values above to calculate your estimated returns and cash flow projections.</p>
+              {estimatedRentNum > 0 ? (
+                <>
+                  <div className="border-t border-[#E8E8E4] pt-4 mt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                        <p className="text-[11px] text-[#737370] mb-1">Monthly Cash Flow</p>
+                        <p className={`text-[17px] font-bold ${monthlyNetCashFlow >= 0 ? 'text-[#0F6E56]' : 'text-[#D03839]'}`}>
+                          {monthlyNetCashFlow >= 0 ? '+' : ''}{formatPrice(monthlyNetCashFlow)}
+                        </p>
+                      </div>
+                      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                        <p className="text-[11px] text-[#737370] mb-1">Annual Cash Flow</p>
+                        <p className={`text-[17px] font-bold ${netCashFlow >= 0 ? 'text-[#0F6E56]' : 'text-[#D03839]'}`}>
+                          {netCashFlow >= 0 ? '+' : ''}{formatPrice(netCashFlow)}
+                        </p>
+                      </div>
+                      {cashOnCash != null && (
+                        <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                          <p className="text-[11px] text-[#737370] mb-1">Cash-on-Cash</p>
+                          <p className={`text-[17px] font-bold ${cashOnCash >= 0 ? 'text-[#0F6E56]' : 'text-[#D03839]'}`}>
+                            {cashOnCash >= 0 ? '+' : ''}{Number(cashOnCash).toFixed(1)}%
+                          </p>
+                        </div>
+                      )}
+                      {capRate != null && (
+                        <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                          <p className="text-[11px] text-[#737370] mb-1">Cap Rate</p>
+                          <p className="text-[17px] font-bold text-[#1A1816]">{Number(capRate).toFixed(1)}%</p>
+                        </div>
+                      )}
+                      {grossYield != null && (
+                        <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                          <p className="text-[11px] text-[#737370] mb-1">Gross Yield</p>
+                          <p className="text-[17px] font-bold text-[#1A1816]">{Number(grossYield).toFixed(1)}%</p>
+                        </div>
+                      )}
+                      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-3">
+                        <p className="text-[11px] text-[#737370] mb-1">Monthly Mortgage</p>
+                        <p className="text-[17px] font-bold text-[#1A1816]">{formatPrice(monthlyPayment)}</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[#A8A8A4] mt-3">Assumes 7% interest rate, 30-year fixed, 10% vacancy + management expenses.</p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-[#A8A8A4]">Enter an estimated monthly rent above to unlock your projected cash flow, ROI, and annual return.</p>
+              )}
             </div>
 
             {/* PROPERTY SNAPSHOT */}
@@ -658,7 +1014,7 @@ export function PropertyDetail({ property }) {
               <div className="mb-6">
                 <h3 className="text-xs font-bold text-[#D03839] uppercase tracking-[1.1px] mb-3">Property Snapshot</h3>
                 <div className="bg-white border border-[#E8E8E4] rounded p-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
                     {snapshotItems.map((item, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-10 h-10 flex-shrink-0 bg-[#F5F5F3] rounded flex items-center justify-center text-[#444441]">
@@ -750,75 +1106,202 @@ export function PropertyDetail({ property }) {
 
           {/* Right sidebar */}
           <div className="lg:w-[380px] shrink-0">
-            <div className="sticky top-20">
+            <div className={`sticky top-20 ${!user && !isPreview ? 'relative' : ''}`}>
+              {!user && !isPreview && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded pointer-events-none">
+                  <div className="bg-white border border-[#E8E8E4] rounded px-5 py-4 text-center shadow-md pointer-events-auto">
+                    <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Sign in to contact seller</p>
+                    <p className="text-[12px] text-[#737370] mb-3">Free account required to view contact info and the map</p>
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="w-full bg-[#D03839] text-white text-[13px] font-semibold py-2 rounded hover:bg-[#E0493B] transition-colors"
+                    >
+                      Sign in / Create account
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-4">
-                {/* Price row */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[13px] font-medium text-[#737370]">Price</span>
-                  <span className="text-[22px] font-bold text-[#1A1816]">{formatPrice(price)}</span>
-                </div>
-
-                {/* ARV row */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[13px] font-medium text-[#737370]">ARV</span>
-                  <span className="text-[16px] font-semibold text-[#0F6E56]">{arv ? formatPrice(arv) : '—'}</span>
-                </div>
-
-                <hr className="border-[#E8E8E4] mb-3" />
-
-                {/* Estimated Profit row */}
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-[13px] font-medium text-[#737370]">Estimated Profit</span>
-                  <span className="text-[16px] font-semibold text-[#0F6E56]">
-                    {estimatedProfit != null && estimatedProfit > 0 ? formatPrice(estimatedProfit) : '—'}
-                  </span>
-                </div>
-
-                {/* Call Agent */}
-                {property.agent?.phone ? (
-                  <a
-                    href={`tel:${property.agent.phone}`}
-                    className="flex items-center justify-center gap-2 w-full bg-[#1A1816] hover:bg-[#2C2A28] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.63a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    Call Agent
-                  </a>
-                ) : (
-                  <button
-                    disabled
-                    className="flex items-center justify-center gap-2 w-full bg-[#E8E8E4] text-[#A8A8A4] font-semibold py-2.5 px-4 rounded text-center text-sm cursor-not-allowed mb-3"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.63a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    Call Agent
-                  </button>
+                {property.listing_type !== 'auction' && (
+                  /* Price row — wholesale only */
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[13px] font-medium text-[#737370]">Price</span>
+                    <span className="text-[22px] font-bold text-[#1A1816]">{formatPrice(price)}</span>
+                  </div>
                 )}
 
-                {/* Message Seller */}
-                <Link
-                  href={user && (property.temp_seller_id || property.seller_id)
-                    ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
-                    : user ? '/buyer/inbox' : '/login'
-                  }
-                  className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
-                >
-                  Message Seller
-                </Link>
-
-                {/* Make Offer */}
-                {user ? (
-                  <Link
-                    href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
-                    className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
-                  >
-                    Make Offer
-                  </Link>
+                {property.listing_type === 'auction' ? (
+                  /* ── Auction Details ── */
+                  <>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#737370] mb-3">Auction Details</p>
+                    <div className="space-y-2.5 mb-5">
+                      {property.auction_date && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[13px] text-[#737370] shrink-0">Date</span>
+                          <span className="text-[13px] font-semibold text-[#1A1816] text-right">
+                            {new Date(property.auction_date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}
+                          </span>
+                        </div>
+                      )}
+                      {property.auction_time && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[13px] text-[#737370] shrink-0">Time</span>
+                          <span className="text-[13px] font-semibold text-[#1A1816] text-right">{property.auction_time}</span>
+                        </div>
+                      )}
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-[13px] text-[#737370] shrink-0">Location</span>
+                        <span className="text-[13px] font-semibold text-[#1A1816] text-right leading-snug">{property.auction_location || 'To Be Determined'}</span>
+                      </div>
+                    </div>
+                    {property.auction_date && (() => {
+                      const datePart = property.auction_date.replace(/-/g, '')
+                      let startDate, endDate
+                      const match = property.auction_time?.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+                      if (match) {
+                        let h = parseInt(match[1])
+                        const m = match[2]
+                        const ap = match[3].toUpperCase()
+                        if (ap === 'PM' && h !== 12) h += 12
+                        if (ap === 'AM' && h === 12) h = 0
+                        const hh = String(h).padStart(2, '0')
+                        startDate = `${datePart}T${hh}${m}00`
+                        endDate = `${datePart}T${String(h + 1).padStart(2, '0')}${m}00`
+                      } else {
+                        const next = new Date(property.auction_date)
+                        next.setDate(next.getDate() + 1)
+                        startDate = datePart
+                        endDate = next.toISOString().slice(0, 10).replace(/-/g, '')
+                      }
+                      const title = encodeURIComponent(`Auction: ${property.full_address || property.address || 'Property'}`)
+                      const loc = encodeURIComponent(property.auction_location || '')
+                      const details = encodeURIComponent([
+                        property.auction_time && `Time: ${property.auction_time}`,
+                        property.auction_location && `Location: ${property.auction_location}`,
+                        property.full_address && `Property: ${property.full_address}`,
+                      ].filter(Boolean).join('\n'))
+                      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${loc}`
+                      return (
+                        <a
+                          href={calUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full bg-[#D03839] hover:bg-[#E0493B] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          Add to Calendar
+                        </a>
+                      )
+                    })()}
+                  </>
                 ) : (
-                  <button
-                    onClick={() => setShowLoginModal(true)}
-                    className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
-                  >
-                    Make Offer
-                  </button>
+                  /* ── Standard wholesale sidebar ── */
+                  <>
+                    {/* ARV row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[13px] font-medium text-[#737370]">ARV</span>
+                      <span className="text-[16px] font-semibold text-[#0F6E56]">{arv ? formatPrice(arv) : '—'}</span>
+                    </div>
+
+                    <hr className="border-[#E8E8E4] mb-3" />
+
+                    {/* Estimated Profit row */}
+                    <div className="flex items-center justify-between mb-5">
+                      <span className="text-[13px] font-medium text-[#737370]">Estimated Profit</span>
+                      <span className="text-[16px] font-semibold text-[#0F6E56]">
+                        {estimatedProfit != null && estimatedProfit > 0 ? formatPrice(estimatedProfit) : '—'}
+                      </span>
+                    </div>
+
+                    {/* Call Seller */}
+                    <div className="relative mb-3">
+                      <button
+                        onClick={() => { if (isPreview) { setShowPreviewModal(true); return } property.agent?.phone && setShowPhonePopup(true) }}
+                        disabled={!property.agent?.phone}
+                        className={`flex items-center justify-center gap-2 w-full font-semibold py-2.5 px-4 rounded text-sm transition-colors ${
+                          property.agent?.phone
+                            ? 'bg-[#1A1816] hover:bg-[#2C2A28] text-white'
+                            : 'bg-[#E8E8E4] text-[#A8A8A4] cursor-not-allowed'
+                        }`}
+                      >
+                        <Phone className="w-4 h-4" />
+                        Call Seller
+                      </button>
+
+                      {showPhonePopup && property.agent?.phone && (
+                        <>
+                          <div className="fixed inset-0 z-[9]" onClick={() => setShowPhonePopup(false)} />
+                          <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-[#E8E8E4] rounded shadow-lg p-4 z-10">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#737370]">Seller Contact</p>
+                                {property.agent?.name && (
+                                  <p className="text-[13px] font-semibold text-[#1A1816] mt-0.5">{property.agent.name}</p>
+                                )}
+                              </div>
+                              <button onClick={() => setShowPhonePopup(false)} className="p-0.5 text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`tel:${property.agent.phone}`}
+                                className="flex items-center gap-2.5 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#D03839] hover:bg-[#FEF0EF] transition-colors group flex-1"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center shrink-0 group-hover:bg-[#D03839] transition-colors">
+                                  <Phone className="w-4 h-4 text-[#D03839] group-hover:text-white transition-colors" />
+                                </div>
+                                <span className="text-[15px] font-semibold text-[#1A1816]">{property.agent.phone}</span>
+                              </a>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(property.agent.phone)
+                                  setPhoneCopied(true)
+                                  setTimeout(() => setPhoneCopied(false), 2000)
+                                }}
+                                className="p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded hover:border-[#1A1816] transition-colors shrink-0"
+                                title="Copy number"
+                              >
+                                {phoneCopied ? <Check className="w-4 h-4 text-[#0F6E56]" /> : <Copy className="w-4 h-4 text-[#737370]" />}
+                              </button>
+                            </div>
+                            <p className="text-[11px] text-[#A8A8A4] mt-2 text-center">Tap the number to call</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Buyer-posted: only show Call Seller, hide Message Seller + Make Offer */}
+                    {!property.posted_by && (
+                      <>
+                        <Link
+                          href={user && (property.temp_seller_id || property.seller_id)
+                            ? `/buyer/inbox?seller_id=${property.temp_seller_id || property.seller_id}&deal_id=${property.id}`
+                            : user ? '/buyer/inbox' : '/login'
+                          }
+                          onClick={handlePreviewAction}
+                          className="block w-full bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white font-semibold py-2.5 px-4 rounded text-center text-sm transition-colors mb-3"
+                        >
+                          Message Seller
+                        </Link>
+                        {user && !isPreview ? (
+                          <Link
+                            href={`/buyer/make-offer?property_id=${property.id}&slug=${property.slug || property.id}${property.temp_seller_id || property.seller_id ? `&seller_id=${property.temp_seller_id || property.seller_id}` : ''}`}
+                            className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                          >
+                            Make Offer
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => isPreview ? setShowPreviewModal(true) : setShowLoginModal(true)}
+                            className="block w-full border border-[#1A1816] text-[#1A1816] font-semibold py-2.5 px-4 rounded text-center text-sm hover:bg-[#FAFAF8] transition-colors"
+                          >
+                            Make Offer
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -878,7 +1361,7 @@ export function PropertyDetail({ property }) {
                   const roiVal = p.cash_on_cash ?? p.gross_yield
                   const roi = roiVal && Number(roiVal) > 0 ? `+${Number(roiVal).toFixed(0)}% ROI` : null
                   const clean = v => (v && String(v).toLowerCase() !== 'unknown' ? v : null)
-                  const title = clean(p.title) || clean(p.name) || clean(p.property_type) || 'Investment Property'
+                  const title = clean(p.full_address) || clean(p.display_address) || clean(p.address) || cityState || 'Address unavailable'
                   const dealType = (p.deal_type || '').toLowerCase()
                   const dealBadge = dealType.includes('quick')
                     ? { label: 'Quick Sale', cls: 'bg-[#D03839] text-white' }
@@ -888,9 +1371,9 @@ export function PropertyDetail({ property }) {
                     ? { label: 'Just Listed', cls: 'bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8]' }
                     : { label: 'New Deal', cls: 'bg-[#FEF3E2] text-[#B5620A] border border-[#F3C97D]' }
                   return (
-                    <div key={p.id} className="bg-white rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
+                    <div key={p.id} className="bg-white rounded overflow-hidden hover:shadow-xl transition-shadow duration-200 flex flex-col">
                       {/* Photo */}
-                      <Link href={`/${p.slug || p.id}`} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
+                      <Link href={isPreview ? '#' : `/${p.slug || p.id}`} onClick={isPreview ? (e) => { e.preventDefault(); setShowPreviewModal(true) } : undefined} className="relative h-[200px] bg-[#FAFAF8] flex-shrink-0 overflow-hidden block group">
                         {thumbUrl ? (
                           <Image
                             src={thumbUrl}
@@ -902,8 +1385,11 @@ export function PropertyDetail({ property }) {
                             onError={(e) => { e.target.style.display = 'none' }}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Home className="w-8 h-8 text-[#E8E8E4]" />
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-[#FAFAF8]">
+                            <div className="relative w-24 h-8 mb-1.5">
+                              <Image src="/assets/logo.svg" alt="DeelMap" fill className="object-contain opacity-30" />
+                            </div>
+                            <span className="text-[10px] text-[#A8A8A4]">Photos coming soon</span>
                           </div>
                         )}
                         <div className="absolute top-2.5 left-2.5">
@@ -924,11 +1410,17 @@ export function PropertyDetail({ property }) {
                             <span className="text-[12px] text-[#737370] truncate">{cityState || 'Location unavailable'}</span>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                            <button className="text-[#A8A8A4] hover:text-[#1A1816] transition-colors">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShareUrl(typeof window !== 'undefined' ? `${window.location.origin}/${p.slug || p.id}` : ''); setShareTitle(p.full_address || p.display_address || p.address || 'Property'); setShowShareModal(true) }}
+                              className="text-[#A8A8A4] hover:text-[#1A1816] transition-colors"
+                            >
                               <Share2 className="w-3.5 h-3.5" />
                             </button>
-                            <button className="text-[#A8A8A4] hover:text-[#D03839] transition-colors">
-                              <Heart className="w-3.5 h-3.5" />
+                            <button
+                              onClick={async (e) => { e.stopPropagation(); e.preventDefault(); if (isPreview) { setShowPreviewModal(true); return } if (!user) { setShowLoginModal(true); return } try { await toggleFavorite(p.id); window.dispatchEvent(new CustomEvent('favoriteChanged')) } catch (err) { alert(err.message || 'Failed to update favorite') } }}
+                              className={`transition-colors ${isFavorited(p.id) ? 'text-[#D03839]' : 'text-[#A8A8A4] hover:text-[#D03839]'}`}
+                            >
+                              <Heart className={`w-3.5 h-3.5 ${isFavorited(p.id) ? 'fill-current' : ''}`} />
                             </button>
                           </div>
                         </div>
@@ -944,7 +1436,7 @@ export function PropertyDetail({ property }) {
                         </div>
                         {/* Price + ARV */}
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[20px] font-bold text-[#1A1816]">{pPrice ? `$${pPrice.toLocaleString()}` : 'Contact for Price'}</span>
+                          <span className="text-[20px] font-bold text-[#1A1816]">{pPrice ? `$${pPrice.toLocaleString()}` : (p.listing_type === 'auction' ? 'Auction Listing' : 'Contact for Price')}</span>
                           {pArv > 0 && (
                             <span className="text-[11px] font-semibold px-1.5 py-0.5 bg-[#E4F5EC] text-[#0F6E56] border border-[#9FDBB8] rounded whitespace-nowrap">
                               ARV {pArv >= 1000000 ? `$${(pArv/1000000).toFixed(1)}M` : `$${Math.round(pArv/1000)}k`}
@@ -957,14 +1449,21 @@ export function PropertyDetail({ property }) {
                         )}
                         {/* Invest Now */}
                         <div className="mt-auto pt-3 flex justify-end">
-                          <Link
-                            href={user
-                              ? `/buyer/make-offer?property_id=${p.id}&slug=${p.slug || p.id}${p.temp_seller_id || p.seller_id ? `&seller_id=${p.temp_seller_id || p.seller_id}` : ''}`
-                              : `/${p.slug || p.id}`}
-                            className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
-                          >
-                            View Listing
-                          </Link>
+                          {isPreview ? (
+                            <button
+                              onClick={() => setShowPreviewModal(true)}
+                              className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
+                            >
+                              View Listing
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/${p.slug || p.id}`}
+                              className="px-4 py-2 bg-[#1A1816] text-white text-[12px] font-semibold rounded hover:bg-[#333] transition-colors"
+                            >
+                              View Listing
+                            </Link>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -981,40 +1480,13 @@ export function PropertyDetail({ property }) {
       <Footer />
 
       {/* Share Modal — outside blur wrapper */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowShareModal(false)}>
-          <div className="bg-white rounded max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-[#1A1816] mb-1">Share Property</h3>
-            <p className="text-sm text-[#737370] mb-4">Share this property with others</p>
-            <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4 mb-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[#444441] mb-1">Property Link</p>
-                  <p className="text-sm text-[#737370] truncate">{typeof window !== 'undefined' ? window.location.href : ''}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href)
-                    const btn = event.target.closest('button')
-                    const originalText = btn.textContent
-                    btn.textContent = 'Copied!'
-                    setTimeout(() => btn.textContent = originalText, 2000)
-                  }}
-                  className="px-4 py-2 bg-[#1A1816] text-white rounded hover:bg-[#2A2825] transition-colors text-sm font-semibold whitespace-nowrap"
-                >
-                  Copy Link
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="w-full px-4 py-2.5 bg-[#FAFAF8] border border-[#E8E8E4] text-[#444441] rounded hover:bg-[#F0F0EC] transition-colors text-sm font-semibold"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        url={shareUrl}
+        title={shareTitle}
+        description={shareTitle}
+      />
     </div>
   )
 }

@@ -77,6 +77,10 @@ export function useFavorites() {
         throw new Error(error.error || 'Failed to update favorite')
       }
 
+      import('@/lib/analytics').then(({ trackEvent }) => {
+        trackEvent(isCurrentlyFavorited ? 'property_unsaved' : 'property_saved', { property_id: propertyId })
+      })
+
       // Update local state
       setFavorites(prev => {
         const updated = { ...prev }

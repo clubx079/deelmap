@@ -10,7 +10,7 @@ const TESTIMONIALS = [
     name: 'Raj Mehta',
     role: 'Fix & Flip Investor',
     deals: 25,
-    initials: 'MC',
+    initials: 'RM',
     color: 'bg-orange-400',
   },
   {
@@ -18,7 +18,7 @@ const TESTIMONIALS = [
     name: 'Jonathan Reed',
     role: 'First-time Investor',
     deals: 15,
-    initials: 'MH',
+    initials: 'JR',
     color: 'bg-blue-500',
   },
   {
@@ -26,7 +26,7 @@ const TESTIMONIALS = [
     name: 'Emily Johnson',
     role: 'Real Estate Investor',
     deals: 10,
-    initials: 'SM',
+    initials: 'EJ',
     color: 'bg-emerald-500',
   },
 ]
@@ -60,7 +60,7 @@ export default function AboutPage() {
 
       {/* Hero */}
       <section className="pt-16 pb-12 lg:pt-20 lg:pb-16 bg-white">
-        <div className="max-w-[720px] mx-auto px-6 sm:px-8 lg:px-10 text-center">
+        <div className="max-w-[720px] mx-auto px-6 sm:px-8 lg:px-[72px] text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#1A1816] leading-tight mb-6">
             Your trusted platform for finding{' '}
             <span className="text-[#D03839]">real estate deals</span>
@@ -73,15 +73,15 @@ export default function AboutPage() {
               From accurate ARV insights to structured deal data and secure communication, DeelMap brings everything you need into one place. Whether you're flipping properties or building a rental portfolio, our platform is designed to help you move with clarity and confidence.
             </p>
             <p className="text-[15px] font-semibold text-[#1A1816]">
-              Deelmap helps investors find, analyze, and close better deals faster.
+              DeelMap helps investors find, analyze, and close better deals faster.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Why we built Deelmap */}
+      {/* Why we built DeelMap */}
       <section className="py-14 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="rounded overflow-hidden">
               <Image
@@ -93,26 +93,26 @@ export default function AboutPage() {
               />
             </div>
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-5">Why we built Deelmap</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-5">Why we built DeelMap</h2>
               <p className="text-[16px] text-[#444441] leading-relaxed mb-4">
                 Real estate investing is full of noise — duplicate listings, unverified sellers, and wasted time. Investors spend more time filtering deals than actually closing them.
               </p>
               <p className="text-[16px] text-[#444441] leading-relaxed">
-                We built Deelmap to change that. A platform where every deal is structured, every seller is verified, and every opportunity is worth your time.
+                We built DeelMap to change that. A platform where every deal is structured, every seller is verified, and every opportunity is worth your time.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* What makes Deelmap different */}
+      {/* What makes DeelMap different */}
       <section className="py-14 lg:py-20 bg-[#FAFAF8]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3 text-center">WHY DEELMAP</p>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1816] mb-10 text-center">What makes DeelMap different</h2>
-          <div className="grid md:grid-cols-2 gap-0 overflow-hidden rounded border border-[#E8E8E4]">
+          <div className="grid md:grid-cols-2 gap-6">
             {/* Others */}
-            <div className="bg-[#F3F3F1] p-8">
+            <div className="bg-[#F3F3F1] p-8 rounded border border-[#E8E8E4]">
               <h3 className="text-[18px] font-bold text-[#1A1816] mb-5">Others</h3>
               <ul className="space-y-5">
                 {OTHERS_LIST.map((item) => (
@@ -127,9 +127,9 @@ export default function AboutPage() {
                 ))}
               </ul>
             </div>
-            {/* Deelmap */}
-            <div className="bg-[#1A1816] p-8">
-              <h3 className="text-[18px] font-bold text-white mb-5">Deelmap</h3>
+            {/* DeelMap */}
+            <div className="bg-[#1A1816] p-8 rounded">
+              <h3 className="text-[18px] font-bold text-white mb-5">DeelMap</h3>
               <ul className="space-y-5">
                 {DEELMAP_LIST.map((item) => (
                   <li key={item} className="flex items-start gap-3 text-[14px] text-[#A8A8A4]">
@@ -149,7 +149,7 @@ export default function AboutPage() {
 
       {/* Testimonials */}
       <section className="py-14 lg:py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <p className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[2px] mb-3">USER STORIES</p>
           <h2 className="text-3xl font-bold text-[#1A1816] mb-10">What our users say about us</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

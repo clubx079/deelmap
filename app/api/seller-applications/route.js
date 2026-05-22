@@ -149,9 +149,9 @@ export async function POST(request) {
         } else {
           // Send approval email with credentials
           const { error: emailError } = await resend.emails.send({
-            from: 'Deelmap <noreply@deelmap.com>',
+            from: 'DeelMap <noreply@deelmap.com>',
             to: [email],
-            subject: 'Your Deelmap Seller Account Has Been Approved',
+            subject: 'Your DeelMap Seller Account Has Been Approved',
             html: `
               <!DOCTYPE html>
               <html lang="en">
@@ -336,12 +336,12 @@ export async function POST(request) {
                   <div class="email-container">
                     <div class="header" style="background-color: #1e3a5f; padding: 24px 40px; text-align: center;">
                       <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                        Deelmap
+                        DeelMap
                       </div>
                     </div>
                     <div class="content">
                       <h1 style="margin: 0 0 20px 0; font-size: 32px; font-weight: 700; color: #1f2937; text-align: center;">
-                        Welcome to Deelmap
+                        Welcome to DeelMap
                       </h1>
                       
                       <div class="greeting">Dear ${contactPersonName},</div>
@@ -351,7 +351,7 @@ export async function POST(request) {
                       </p>
                       
                       <p class="message">
-                        You can now access your seller dashboard and start listing your properties on Deelmap.
+                        You can now access your seller dashboard and start listing your properties on DeelMap.
                       </p>
 
                       <div class="credentials-card">
@@ -379,12 +379,12 @@ export async function POST(request) {
                         <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
                         <div class="signature">
                           Best regards,<br>
-                          <strong>The Deelmap Team</strong>
+                          <strong>The DeelMap Team</strong>
                         </div>
                       </div>
                     </div>
                     <div class="footer">
-                      <p>&copy; ${new Date().getFullYear()} Deelmap. All rights reserved.</p>
+                      <p>&copy; ${new Date().getFullYear()} DeelMap. All rights reserved.</p>
                     </div>
                   </div>
                 </body>

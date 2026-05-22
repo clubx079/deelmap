@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 
@@ -11,14 +10,7 @@ export function MarketplaceNavbar({ searchQuery, onSearchChange }) {
         {/* Logo */}
         <div className="flex items-center flex-shrink-0">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/assets/logo.svg"
-              alt="DeelMap"
-              width={140}
-              height={45}
-              className="h-9 w-auto"
-              priority
-            />
+            <img src="/assets/logo.svg" alt="DeelMap" className="h-9 w-auto" />
           </Link>
         </div>
 
@@ -32,7 +24,7 @@ export function MarketplaceNavbar({ searchQuery, onSearchChange }) {
           </Link>
           <Link
             href="/signup"
-            className="px-4 py-2 text-sm font-medium text-white bg-[#4A90E2] hover:bg-[#357ABD] rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-[#4A90E2] hover:bg-[#357ABD] rounded transition-colors"
           >
             Sign up
           </Link>

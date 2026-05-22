@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Highlighted Listing — Deelmap Design v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #EDEDEA;
+      min-height: 100vh;
+      padding: 56px 24px 72px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 52px;
+    }
+    .page-label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: #A8A8A4;
+      margin-bottom: 10px;
+    }
+    .page-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1A1816;
+      letter-spacing: -0.64px;
+      margin-bottom: 8px;
+    }
+    .page-sub {
+      font-size: 14px;
+      color: #737370;
+    }
+
+    /* ── Section label ── */
+    .section {
+      max-width: 1080px;
+      margin: 0 auto 56px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #A8A8A4;
+      margin-bottom: 16px;
+    }
+
+    /* ════════════════════════════════════════════
+       CARD — BASE
+    ════════════════════════════════════════════ */
+    .card-wrap {
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #E8E8E4;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      min-height: 228px;
+      position: relative;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 28px rgba(0,0,0,0.09);
+      transform: translateY(-1px);
+    }
+
+    /* Photo */
+    .photo {
+      flex-shrink: 0;
+      width: 240px;
+      position: relative;
+      background: #F5F5F2;
+      overflow: hidden;
+    }
+    .photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+    .card:hover .photo img { transform: scale(1.05); }
+
+    /* Photo overlays */
+    .photo-bottom-overlay {
+      position: absolute;
+      inset: 50% 0 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+      pointer-events: none;
+    }
+    .photo-badges-top {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 2;
+    }
+    .roi-chip {
+      background: rgba(15,15,12,0.72);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 100px;
+    }
+    .photo-stats-bottom {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 2;
+    }
+    .stat-chip {
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 7px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    /* Body */
+    .body {
+      flex: 1;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .location-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+    .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #737370;
+    }
+    .action-btns {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+    }
+    .icon-btn {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; border: none; background: transparent;
+      cursor: pointer; color: #A8A8A4;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+    .icon-btn:hover { background: #F5F5F2; color: #444441; }
+
+    .address {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1A1816;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+      transition: color 0.2s;
+    }
+    .card:hover .address { color: #D03839; }
+
+    .prop-type {
+      font-size: 12px;
+      color: #737370;
+      margin-bottom: 10px;
+    }
+
+    .divider-light { height: 1px; background: #F0F0EC; margin-bottom: 10px; }
+
+    .metrics-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .metric-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1A1816;
+    }
+    .metric-val.green { color: #0F6E56; }
+    .metric-lbl {
+      font-size: 10px;
+      color: #A8A8A4;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .metric-sep { width: 1px; background: #E8E8E4; align-self: stretch; }
+
+    .spread-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+    .spread-icon {
+      width: 18px; height: 18px;
+      background: #E4F5EC;
+      border-radius: 100px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+    .spread-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0F6E56;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .seller-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .seller-avatar {
+      width: 22px; height: 22px;
+      border-radius: 100px;
+      background: #E4F5EC;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      color: #0F6E56;
+      flex-shrink: 0;
+    }
+    .seller-name {
+      font-size: 11px;
+      color: #737370;
+    }
+
+    .view-btn {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1A1816;
+      border: 1px solid #D4D4CF;
+      border-radius: 4px;
+      padding: 6px 14px;
+      background: transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .view-btn:hover {
+      background: #1A1816;
+      border-color: #1A1816;
+      color: #fff;
+    }
+
+
+    /* ════════════════════════════════════════════
+       HIGHLIGHTED CARD
+    ════════════════════════════════════════════ */
+
+    /* Gradient border via wrapper */
+    .card-wrap--highlighted {
+      padding: 2px;
+      background: linear-gradient(135deg, #D03839 0%, #E8633E 50%, #D03839 100%);
+      border-radius: 7px;
+      box-shadow:
+        0 0 0 4px rgba(208, 56, 57, 0.10),
+        0 8px 32px rgba(208, 56, 57, 0.18),
+        0 2px 8px rgba(0,0,0,0.08);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow:
+          0 0 0 4px rgba(208, 56, 57, 0.10),
+          0 8px 32px rgba(208, 56, 57, 0.18),
+          0 2px 8px rgba(0,0,0,0.08);
+      }
+      50% {
+        box-shadow:
+          0 0 0 5px rgba(208, 56, 57, 0.16),
+          0 10px 40px rgba(208, 56, 57, 0.26),
+          0 2px 8px rgba(0,0,0,0.08);
+      }
+    }
+
+    .card--highlighted {
+      border: none;
+      border-radius: 5px;
+    }
+
+    .card--highlighted:hover {
+      transform: translateY(-2px);
+      box-shadow: none; /* shadow lives on wrap */
+    }
+
+    /* Photo top bar */
+    .card--highlighted .photo::after {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, #D03839, #E8633E, #D03839);
+      z-index: 3;
+    }
+
+    /* Warm body tint */
+    .card--highlighted .body {
+      background: linear-gradient(160deg, #fff 50%, #FEF5F4 100%);
+    }
+
+    /* Highlighted badge — sits above the address */
+    .highlight-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: #fff;
+      background: linear-gradient(90deg, #D03839, #E0583A);
+      border-radius: 100px;
+      padding: 3px 10px 3px 7px;
+      margin-bottom: 5px;
+      width: fit-content;
+      box-shadow: 0 2px 8px rgba(208,56,57,0.30);
+    }
+    .highlight-badge svg { width: 11px; height: 11px; }
+
+    /* Override address hover on highlighted */
+    .card--highlighted .address { color: #1A1816; }
+    .card--highlighted:hover .address { color: #D03839; }
+
+    /* Override view btn on highlighted */
+    .card--highlighted .view-btn {
+      background: #D03839;
+      border-color: #D03839;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(208,56,57,0.28);
+    }
+    .card--highlighted .view-btn:hover {
+      background: #E0493B;
+      border-color: #E0493B;
+    }
+
+    /* Priority tag on photo */
+    .priority-chip {
+      background: linear-gradient(90deg, #D03839, #E0583A);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 8px rgba(208,56,57,0.40);
+    }
+
+    /* ════════════════════════════════════════════
+       SIDE BY SIDE LAYOUT
+    ════════════════════════════════════════════ */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    .compare-col {}
+    .compare-col-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #A8A8A4;
+      margin-bottom: 12px;
+    }
+
+    /* ════════════════════════════════════════════
+       FEED CONTEXT
+    ════════════════════════════════════════════ */
+    .feed-wrapper {
+      max-width: calc((1080px - 32px) / 2);
+    }
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .feed .photo { width: 180px; }
+    .feed .body { padding: 12px 14px; }
+    .feed .address { font-size: 14px; }
+    .feed .metric-val { font-size: 13px; }
+    .feed .card { min-height: 170px; }
+    .feed .card-wrap--highlighted { }
+
+    /* ════════════════════════════════════════════
+       SPEC NOTES
+    ════════════════════════════════════════════ */
+    .specs {
+      background: #fff;
+      border: 1px solid #E8E8E4;
+      border-radius: 6px;
+      padding: 28px 32px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    .specs h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1A1816;
+      margin-bottom: 20px;
+      letter-spacing: -0.2px;
+    }
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .spec-key {
+      font-size: 11px;
+      font-weight: 600;
+      color: #D03839;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-val {
+      font-size: 13px;
+      color: #444441;
+      line-height: 1.5;
+    }
+
+    /* SVG icon helpers */
+    svg { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <span class="page-label">Deelmap · Listing Feature</span>
+    <h1 class="page-title">Highlighted Listing — Design v2</h1>
+    <p class="page-sub">Gradient border · photo overlay stats · pulsing glow · premium CTA</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════
+       SECTION 1 — Side by side comparison
+  ════════════════════════════════════════ -->
+  <div class="section">
+    <p class="section-title">Side-by-side comparison</p>
+    <div class="compare-grid">
+
+      <!-- REGULAR -->
+      <div class="compare-col">
+        <p class="compare-col-label">Standard listing</p>
+        <div class="card-wrap">
+          <div class="card">
+            <div class="photo">
+              <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&q=85" alt="Property" />
+              <div class="photo-bottom-overlay"></div>
+              <div class="photo-badges-top">
+                <span class="roi-chip">+24% ROI</span>
+              </div>
+              <div class="photo-stats-bottom">
+                <span class="stat-chip">3 bed</span>
+                <span class="stat-chip">2 bath</span>
+                <span class="stat-chip">1,840 sf</span>
+              </div>
+            </div>
+            <div class="body">
+              <div class="location-row">
+                <span class="location">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Memphis, TN
+                </span>
+                <div class="action-btns">
+                  <button class="icon-btn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  </button>
+                  <button class="icon-btn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="address">4217 Getwell Rd</div>
+              <div class="prop-type">Single Family Residence</div>
+              <div class="divider-light"></div>
+              <div class="metrics-row">
+                <div class="metric">
+                  <span class="metric-val">$112,000</span>
+                  <span class="metric-lbl">Asking</span>
+                </div>
+                <div class="metric-sep"></div>
+                <div class="metric">
+                  <span class="metric-val green">$185k</span>
+                  <span class="metric-lbl">ARV</span>
+                </div>
+                <div class="metric-sep"></div>
+                <div class="metric">
+                  <span class="metric-val green">24%</span>
+                  <span class="metric-lbl">Cash-on-Cash</span>
+                </div>
+              </div>
+              <div class="spread-row">
+                <span class="spread-icon">↑</span>
+                <span class="spread-text">$73,000 spread potential</span>
+              </div>
+              <div class="card-footer">
+                <div class="seller-row">
+                  <div class="seller-avatar">JD</div>
+                  <span class="seller-name">John D. · Verified seller</span>
+                </div>
+                <a href="#" class="view-btn">View Listing</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HIGHLIGHTED -->
+      <div class="compare-col">
+        <p class="compare-col-label">Highlighted listing</p>
+        <div class="card-wrap card-wrap--highlighted">
+          <div class="card card--highlighted">
+            <div class="photo">
+              <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&q=85" alt="Property" />
+              <div class="photo-bottom-overlay"></div>
+              <div class="photo-badges-top">
+                <span class="priority-chip">⭐ Highlighted</span>
+                <span class="roi-chip">+24% ROI</span>
+              </div>
+              <div class="photo-stats-bottom">
+                <span class="stat-chip">3 bed</span>
+                <span class="stat-chip">2 bath</span>
+                <span class="stat-chip">1,840 sf</span>
+              </div>
+            </div>
+            <div class="body">
+              <div class="location-row">
+                <span class="location">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Memphis, TN
+                </span>
+                <div class="action-btns">
+                  <button class="icon-btn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  </button>
+                  <button class="icon-btn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="address">4217 Getwell Rd</div>
+              <div class="prop-type">Single Family Residence</div>
+              <div class="divider-light"></div>
+              <div class="metrics-row">
+                <div class="metric">
+                  <span class="metric-val">$112,000</span>
+                  <span class="metric-lbl">Asking</span>
+                </div>
+                <div class="metric-sep"></div>
+                <div class="metric">
+                  <span class="metric-val green">$185k</span>
+                  <span class="metric-lbl">ARV</span>
+                </div>
+                <div class="metric-sep"></div>
+                <div class="metric">
+                  <span class="metric-val green">24%</span>
+                  <span class="metric-lbl">Cash-on-Cash</span>
+                </div>
+              </div>
+              <div class="spread-row">
+                <span class="spread-icon">↑</span>
+                <span class="spread-text">$73,000 spread potential</span>
+              </div>
+              <div class="card-footer">
+                <div class="seller-row">
+                  <div class="seller-avatar">JD</div>
+                  <span class="seller-name">John D. · Verified seller</span>
+                </div>
+                <a href="#" class="view-btn">View Listing</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════
+       SECTION 2 — In feed context
+  ════════════════════════════════════════ -->
+  <div class="section">
+    <p class="section-title">How it looks in the listing feed</p>
+    <div class="feed-wrapper"><div class="feed">
+
+      <!-- Regular -->
+      <div class="card-wrap">
+        <div class="card">
+          <div class="photo">
+            <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80" alt="Property" />
+            <div class="photo-bottom-overlay"></div>
+            <div class="photo-stats-bottom">
+              <span class="stat-chip">4 bed</span>
+              <span class="stat-chip">2 bath</span>
+            </div>
+          </div>
+          <div class="body">
+            <div class="location-row">
+              <span class="location"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Phoenix, AZ</span>
+            </div>
+            <div class="address">1802 W Flower St</div>
+            <div class="prop-type">Single Family</div>
+            <div class="divider-light"></div>
+            <div class="metrics-row">
+              <div class="metric"><span class="metric-val">$168,000</span><span class="metric-lbl">Asking</span></div>
+              <div class="metric-sep"></div>
+              <div class="metric"><span class="metric-val green">$248k</span><span class="metric-lbl">ARV</span></div>
+            </div>
+            <div class="card-footer" style="margin-top:auto;">
+              <div class="seller-row"><div class="seller-avatar" style="background:#EBF3FC;color:#4A90E2;">MR</div><span class="seller-name">Mike R.</span></div>
+              <a href="#" class="view-btn">View Listing</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Highlighted in feed -->
+      <div class="card-wrap card-wrap--highlighted">
+        <div class="card card--highlighted">
+          <div class="photo">
+            <img src="https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&q=80" alt="Property" />
+            <div class="photo-bottom-overlay"></div>
+            <div class="photo-badges-top">
+              <span class="priority-chip" style="font-size:9px; padding:2px 7px;">⭐ Highlighted</span>
+            </div>
+            <div class="photo-stats-bottom">
+              <span class="stat-chip">3 bed</span>
+              <span class="stat-chip">2 bath</span>
+            </div>
+          </div>
+          <div class="body">
+            <div class="location-row">
+              <span class="location"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Memphis, TN</span>
+            </div>
+            <div class="address">4217 Getwell Rd</div>
+            <div class="prop-type">Single Family Residence</div>
+            <div class="divider-light"></div>
+            <div class="metrics-row">
+              <div class="metric"><span class="metric-val">$112,000</span><span class="metric-lbl">Asking</span></div>
+              <div class="metric-sep"></div>
+              <div class="metric"><span class="metric-val green">$185k</span><span class="metric-lbl">ARV</span></div>
+              <div class="metric-sep"></div>
+              <div class="metric"><span class="metric-val green">24%</span><span class="metric-lbl">CoC</span></div>
+            </div>
+            <div class="card-footer" style="margin-top:auto;">
+              <div class="seller-row"><div class="seller-avatar">JD</div><span class="seller-name">John D. · Verified seller</span></div>
+              <a href="#" class="view-btn">View Listing</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Regular -->
+      <div class="card-wrap">
+        <div class="card">
+          <div class="photo">
+            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80" alt="Property" />
+            <div class="photo-bottom-overlay"></div>
+            <div class="photo-stats-bottom">
+              <span class="stat-chip">3 bed</span>
+              <span class="stat-chip">1 bath</span>
+            </div>
+          </div>
+          <div class="body">
+            <div class="location-row">
+              <span class="location"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Atlanta, GA</span>
+            </div>
+            <div class="address">902 Pryor St SW</div>
+            <div class="prop-type">Single Family</div>
+            <div class="divider-light"></div>
+            <div class="metrics-row">
+              <div class="metric"><span class="metric-val">$89,500</span><span class="metric-lbl">Asking</span></div>
+              <div class="metric-sep"></div>
+              <div class="metric"><span class="metric-val green">$142k</span><span class="metric-lbl">ARV</span></div>
+            </div>
+            <div class="card-footer" style="margin-top:auto;">
+              <div class="seller-row"><div class="seller-avatar" style="background:#F3EEFF;color:#7C3AED;">SA</div><span class="seller-name">Sarah A.</span></div>
+              <a href="#" class="view-btn">View Listing</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    </div></div>
+
+
+  <!-- ═══════════════════════════════════════
+       SPEC NOTES
+  ════════════════════════════════════════ -->
+  <div class="specs">
+    <h3>Design specifications</h3>
+    <div class="specs-grid">
+      <div class="spec-item">
+        <span class="spec-key">Border treatment</span>
+        <span class="spec-val">2px gradient wrapper (135°, #D03839 → #E8633E → #D03839) — renders as a true gradient border without affecting layout</span>
+      </div>
+      <div class="spec-item">
+        <span class="spec-key">Glow &amp; shadow</span>
+        <span class="spec-val">4px rgba(208,56,57,0.10) ring + 32px rgba(208,56,57,0.18) ambient glow — pulses on a 3s ease loop</span>
+      </div>
+      <div class="spec-item">
+        <span class="spec-key">Photo top stripe</span>
+        <span class="spec-val">3px gradient bar (same red–orange) via ::after pseudo — signals premium on scroll before reading content</span>
+      </div>
+      <div class="spec-item">
+        <span class="spec-key">Highlighted badge</span>
+        <span class="spec-val">Gradient pill on photo (white text) — more visible than a content-area badge, catches eye immediately</span>
+      </div>
+      <div class="spec-item">
+        <span class="spec-key">Metrics row</span>
+        <span class="spec-val">Asking / ARV / Cash-on-Cash — three separated columns replace the inline stat string, communicates investment value at a glance</span>
+      </div>
+      <div class="spec-item">
+        <span class="spec-key">CTA button</span>
+        <span class="spec-val">Filled #D03839 + red shadow (0 2px 10px rgba(208,56,57,0.28)) — primary action is red on highlighted cards, black on standard cards</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

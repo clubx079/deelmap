@@ -96,7 +96,7 @@ export async function POST(request) {
       console.log(`[send-otp] Sending SMS OTP to ${e164Phone}...`)
 
       const smsResponse = await withTimeout(
-        fetch('https://ap.airosofts.com/api/external/sms/send', {
+        fetch('https://app.airophone.com/api/external/sms/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.AIROSOFTS_SMS_API_KEY}`,
@@ -105,7 +105,7 @@ export async function POST(request) {
           body: JSON.stringify({
             from: process.env.AIROSOFTS_SMS_FROM,
             to: e164Phone,
-            message: `Your Deelmap verification code is ${otp}. Valid for 10 minutes. Do not share this code.`
+            message: `Your DeelMap verification code is ${otp}. Valid for 10 minutes. Do not share this code.`
           })
         }),
         10000,
@@ -135,7 +135,7 @@ export async function POST(request) {
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="Deelmap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -161,7 +161,7 @@ export async function POST(request) {
       </tr>
       <tr>
         <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
         </td>
       </tr>
     </table>
@@ -193,9 +193,9 @@ DeelMap Team
 
     const { data, error } = await withTimeout(
       resend.emails.send({
-        from: 'Deelmap <noreply@deelmap.com>',
+        from: 'DeelMap <noreply@deelmap.com>',
         to: [email],
-        subject: `${otp} is your Deelmap verification code`,
+        subject: `${otp} is your DeelMap verification code`,
         html: htmlTemplate,
         text: textContent,
         headers: {

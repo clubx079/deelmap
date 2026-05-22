@@ -53,7 +53,7 @@ export default function TestSMSPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+      <div className="bg-white rounded shadow-lg p-8 max-w-2xl w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-brand-red mb-2">SMS API Test</h1>
@@ -61,7 +61,7 @@ export default function TestSMSPage() {
         </div>
 
         {/* API Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
           <h3 className="font-semibold text-blue-900 mb-2">OpenPhone API Info</h3>
           <div className="text-sm text-blue-700 space-y-1">
             <p><strong>From Number:</strong> (332) 333-3839</p>
@@ -80,7 +80,7 @@ export default function TestSMSPage() {
               type="tel"
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red focus:border-transparent"
               placeholder="+1234567890 or (123) 456-7890"
               required
             />
@@ -96,7 +96,7 @@ export default function TestSMSPage() {
             <textarea
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-brand-red focus:border-transparent"
               rows={4}
               placeholder="Enter your test message..."
               required
@@ -108,7 +108,7 @@ export default function TestSMSPage() {
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <div className="bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-red-800">Error</p>
@@ -119,7 +119,7 @@ export default function TestSMSPage() {
 
           {/* Success Display */}
           {result && result.success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded p-4">
               <div className="flex items-start gap-3 mb-3">
                 <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                 <div>
@@ -139,7 +139,7 @@ export default function TestSMSPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-red text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-brand-red text-white py-3 rounded font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

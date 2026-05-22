@@ -1,19 +1,19 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
 export function Navbar() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, displayName, profileExtras } = useAuth()
   const pathname = usePathname()
   const [showAuth, setShowAuth] = useState(false)
   const [authInitialStep, setAuthInitialStep] = useState('login')
   const [authDefaultRole, setAuthDefaultRole] = useState('buyer')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showMobileMore, setShowMobileMore] = useState(false)
   const [showAboutDropdown, setShowAboutDropdown] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifUnread, setNotifUnread] = useState(0)
@@ -75,8 +75,14 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [notifOpen])
 
-  // Close about dropdown on route change
-  useEffect(() => { setShowAboutDropdown(false) }, [pathname])
+  // Body scroll lock when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = showMobileMenu ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [showMobileMenu])
+
+  // Close dropdowns on route change
+  useEffect(() => { setShowAboutDropdown(false); setShowMobileMore(false) }, [pathname])
 
   // Close about dropdown on outside click
   useEffect(() => {
@@ -102,6 +108,9 @@ export function Navbar() {
   }, [])
 
   const getUserInitials = (user) => {
+    if (profileExtras.is_anonymous) {
+      return profileExtras.nickname ? profileExtras.nickname[0].toUpperCase() : '?'
+    }
     if (user?.first_name && user?.last_name) return (user.first_name[0] + user.last_name[0]).toUpperCase()
     if (user?.user_metadata?.name) {
       const parts = user.user_metadata.name.trim().split(' ')
@@ -112,42 +121,41 @@ export function Navbar() {
     return 'U'
   }
 
-  const getUserDisplayName = (user) => {
-    if (user?.first_name || user?.last_name) return `${user.first_name || ''} ${user.last_name || ''}`.trim()
-    if (user?.user_metadata?.name) return user.user_metadata.name
-    if (user?.email) return user.email.split('@')[0]
-    return 'User'
-  }
+  const getUserDisplayName = () => displayName
 
   const aboutDropdownItems = [
-    { label: 'About', href: '/our-story' },
-    { label: 'Contact us', href: '/contact' },
+    { label: 'About Us', href: '/our-story' },
+    { label: 'Resources', href: '/resources' },
+    { label: 'Advertise with us', href: '/advertise' },
+    { label: 'Contact Us', href: '/contact' },
   ]
 
   const navItems = [
     { label: 'Buy', href: '/marketplace' },
     { label: 'Sell', href: '/join-seller' },
     { label: 'Finance', href: '/financing' },
-    { label: 'About us', href: '/our-story', hasDropdown: true },
+    { label: 'Community', href: '/community' },
+    { label: 'More', href: '/our-story', hasDropdown: true },
   ]
 
   const isActive = (href) => {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
-    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact'
+    if (href === '/community') return pathname === '/community' || pathname.startsWith('/community/')
+    if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/resources' || pathname.startsWith('/resources/') || pathname === '/advertise'
     return false
   }
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-colors duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white'}`}>
-        <div className="w-full px-6 lg:px-10">
+      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white border-b border-[#E8E8E4]'}`}>
+        <div className="w-full pl-2 pr-4 md:pl-[45px] md:pr-[85px]">
           <div className="flex items-center justify-between h-[80px]">
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-90 transition-opacity">
-              <Image src="/assets/logo.svg" alt="DeelMap" width={190} height={68} className="h-[68px] w-[190px]" priority />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-[46px] w-auto md:h-[68px] md:w-[190px]" />
             </Link>
 
             {/* Nav links – center */}
@@ -159,7 +167,7 @@ export function Navbar() {
                     <div key={item.label} className="relative" ref={aboutButtonRef}>
                       <button
                         onClick={() => setShowAboutDropdown(!showAboutDropdown)}
-                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[18px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
+                        className={`flex items-center gap-1 px-4 pt-2 pb-0.5 text-[17px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                       >
                         {item.label}
                         {/* Filled triangle arrow */}
@@ -173,7 +181,7 @@ export function Navbar() {
 
                       {showAboutDropdown && typeof window !== 'undefined' && createPortal(
                         <div
-                          className="fixed bg-white rounded-lg shadow-lg border border-[#E8E8E4] py-1.5 about-dropdown-menu"
+                          className="fixed bg-white rounded shadow-lg border border-[#E8E8E4] py-1.5 about-dropdown-menu"
                           style={{
                             top: aboutButtonRef.current ? aboutButtonRef.current.getBoundingClientRect().bottom + 4 : 68,
                             left: aboutButtonRef.current ? aboutButtonRef.current.getBoundingClientRect().left : 0,
@@ -205,7 +213,7 @@ export function Navbar() {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className={`px-4 pt-2 pb-0.5 text-[18px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
+                    className={`px-4 pt-2 pb-0.5 text-[17px] transition-colors ${active ? 'font-semibold text-[#1A1816] border-b-2 border-[#1A1816]' : 'font-medium text-[#444441] hover:text-[#1A1816]'}`}
                   >
                     {item.label}
                   </Link>
@@ -217,6 +225,13 @@ export function Navbar() {
             <div className="flex items-center gap-3">
               {user ? (
                 <div className="flex items-center gap-3">
+                  {/* Post a Deal */}
+                  <Link
+                    href="/buyer/listings?new=1"
+                    className="hidden sm:flex items-center gap-1.5 h-[36px] px-4 bg-[#D03839] hover:bg-[#C73022] text-white text-[13px] font-semibold rounded transition-colors"
+                  >
+                    + Post a Deal
+                  </Link>
                   {/* Notifications */}
                   <div className="relative" ref={notifBellRef}>
                     <button
@@ -234,7 +249,7 @@ export function Navbar() {
                     </button>
 
                     {notifOpen && (
-                      <div className="fixed top-[84px] left-3 right-3 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:mt-2 sm:w-[380px] bg-white border border-[#E8E8E4] rounded-xl shadow-xl z-[99999] overflow-hidden">
+                      <div className="fixed top-[84px] left-3 right-3 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:mt-2 sm:w-[380px] bg-white border border-[#E8E8E4] rounded shadow-xl z-[99999] overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
                           <span className="text-[14px] font-semibold text-[#1A1816]">Notifications</span>
                           {notifUnread > 0 && (
@@ -256,7 +271,13 @@ export function Navbar() {
                           ) : notifications.map(n => (
                             <Link
                               key={n.id}
-                              href={n.related_conversation_id ? `/buyer/inbox?conversation=${n.related_conversation_id}` : '/buyer/inbox'}
+                              href={
+                                n.related_conversation_id
+                                  ? `/buyer/inbox?conversation=${n.related_conversation_id}`
+                                  : (n.type === 'listing_approved' || n.type === 'listing_rejected')
+                                    ? '/buyer/listings'
+                                    : '/buyer/inbox'
+                              }
                               onClick={async () => {
                                 setNotifOpen(false)
                                 if (!n.is_read) {
@@ -287,18 +308,18 @@ export function Navbar() {
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-center gap-[10px]">
-                  <button
-                    onClick={() => { setAuthInitialStep('signup'); setShowAuth(true) }}
-                    className="py-2 px-[18px] text-[14px] font-semibold text-[#1A1816] border border-[#D1D1CE] rounded hover:bg-[#FAFAF8] transition-colors"
-                  >
-                    Sign up
-                  </button>
+                <div className="hidden md:flex items-center gap-[10px]">
                   <button
                     onClick={() => { setAuthInitialStep('login'); setShowAuth(true) }}
+                    className="py-2 px-[18px] text-[14px] font-semibold text-[#1A1816] border border-[#D1D1CE] rounded hover:bg-[#FAFAF8] transition-colors"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => { setAuthInitialStep('signup'); setShowAuth(true) }}
                     className="py-2 px-[18px] text-[14px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors"
                   >
-                    Log in
+                    Create account
                   </button>
                 </div>
               )}
@@ -318,10 +339,14 @@ export function Navbar() {
       </nav>
 
       {/* Mobile Menu */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-[9999] md:hidden">
+      <div className={`fixed inset-0 z-[9999] md:hidden ${showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+        {/* Backdrop */}
+        {showMobileMenu && (
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
-          <div className="absolute right-0 top-0 h-full w-72 bg-white shadow-xl border-l border-[#E8E8E4]">
+        )}
+        <div
+          className={`absolute right-0 top-0 h-full w-[85vw] max-w-[300px] bg-white shadow-xl border-l border-[#E8E8E4] transition-transform duration-300 ease-in-out pointer-events-auto ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}
+        >
             <div className="flex items-center justify-between p-5 border-b border-[#E8E8E4]">
               <span className="text-[15px] font-semibold text-[#1A1816]">Menu</span>
               <button onClick={() => setShowMobileMenu(false)} className="p-1 text-[#737370] hover:text-[#1A1816]">
@@ -336,16 +361,24 @@ export function Navbar() {
                 if (item.hasDropdown) {
                   return (
                     <div key={item.label}>
-                      <div className={`py-3 px-3 text-[15px] font-medium rounded ${active ? 'text-[#1A1816] font-semibold' : 'text-[#444441]'}`}>
+                      <button
+                        onClick={() => setShowMobileMore(p => !p)}
+                        className={`w-full flex items-center justify-between py-3 px-3 text-[15px] font-medium rounded transition-colors ${active ? 'text-[#1A1816] font-semibold' : 'text-[#444441] hover:text-[#1A1816] hover:bg-[#FAFAF8]'}`}
+                      >
                         {item.label}
-                      </div>
-                      <div className="pl-4 space-y-0.5">
-                        {aboutDropdownItems.map((d) => (
-                          <Link key={d.href} href={d.href} onClick={() => setShowMobileMenu(false)}
-                            className="block py-2.5 px-3 text-[14px] text-[#737370] hover:text-[#1A1816] rounded hover:bg-[#FAFAF8] transition-colors">
-                            {d.label}
-                          </Link>
-                        ))}
+                        <svg className={`w-4 h-4 transition-transform ${showMobileMore ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      <div className={`overflow-hidden transition-all duration-250 ease-in-out ${showMobileMore ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className="pl-4 space-y-0.5 pb-1">
+                          {aboutDropdownItems.map((d) => (
+                            <Link key={d.href} href={d.href} onClick={() => setShowMobileMenu(false)}
+                              className="block py-2.5 px-3 text-[14px] text-[#737370] hover:text-[#1A1816] rounded hover:bg-[#FAFAF8] transition-colors">
+                              {d.label}
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )
@@ -361,7 +394,7 @@ export function Navbar() {
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#E8E8E4] bg-white">
               {user ? (
                 <Link href="/buyer/dashboard" onClick={() => setShowMobileMenu(false)}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-[#1A1816] hover:bg-[#2A2825] transition-colors">
+                  className="flex items-center gap-3 p-3 rounded bg-[#1A1816] hover:bg-[#2A2825] transition-colors">
                   <div className="w-10 h-10 rounded-full bg-[#D03839] flex items-center justify-center text-white font-semibold">
                     {getUserInitials(user)}
                   </div>
@@ -372,20 +405,19 @@ export function Navbar() {
                 </Link>
               ) : (
                 <div className="space-y-2">
-                  <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('signup'); setShowAuth(true) }}
-                    className="w-full h-11 text-[14px] font-semibold text-[#1A1816] border border-[#E8E8E4] rounded hover:bg-[#FAFAF8] transition-colors">
-                    Sign up
-                  </button>
                   <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('login'); setShowAuth(true) }}
+                    className="w-full h-11 text-[14px] font-semibold text-[#1A1816] border border-[#E8E8E4] rounded hover:bg-[#FAFAF8] transition-colors">
+                    Login
+                  </button>
+                  <button onClick={() => { setShowMobileMenu(false); setAuthInitialStep('signup'); setShowAuth(true) }}
                     className="w-full h-11 text-[14px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors">
-                    Log in
+                    Create account
                   </button>
                 </div>
               )}
             </div>
-          </div>
         </div>
-      )}
+      </div>
 
       <RegistrationModal
         isOpen={showAuth}

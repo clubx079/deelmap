@@ -1,9 +1,9 @@
 'use client'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { RegistrationModal } from '@/components/RegistrationModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabaseMarketplace } from '@/lib/supabase'
 import { Lock, ChevronDown } from 'lucide-react'
 
@@ -54,7 +54,6 @@ function CustomSelect({ value, onChange, options, placeholder, disabled }) {
 
 export default function FinancingPage() {
   const { user, loading: authLoading } = useAuth()
-  const router = useRouter()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -74,11 +73,7 @@ export default function FinancingPage() {
   const [propertyList, setPropertyList] = useState([])
   const [loadingProperties, setLoadingProperties] = useState(true)
   const [selectedPropertyPrice, setSelectedPropertyPrice] = useState(null)
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login?redirect=/financing')
-    }
-  }, [authLoading, user, router])
+  const showLoginModal = !authLoading && !user
 
   const formatPhoneNumber = (value) => {
     const cleaned = value.replace(/\D/g, '').slice(0, 10)
@@ -225,6 +220,8 @@ export default function FinancingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <RegistrationModal isOpen={showLoginModal} onClose={() => {}} preventClose={true} backUrl="/" backLabel="Back to Homepage" />
+      <div>
       <Navbar currentPage="financing" />
 
       {/* Success toast */}
@@ -497,6 +494,7 @@ export default function FinancingPage() {
       </section>
 
       <Footer />
+      </div>
     </div>
   )
 }

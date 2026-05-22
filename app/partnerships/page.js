@@ -15,7 +15,7 @@ export default function PartnershipsPage() {
               Partnerships
             </h1>
             <p className="text-xl sm:text-2xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
-              Building strategic partnerships to enhance the Deelmap experience.
+              Building strategic partnerships to enhance the DeelMap experience.
             </p>
           </div>
         </div>
@@ -26,7 +26,7 @@ export default function PartnershipsPage() {
         <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10">
           <div className="text-center space-y-6">
             <p className="text-lg lg:text-xl leading-relaxed text-slate-700">
-              We're always looking for strategic partnerships that can benefit our community of investors and wholesalers. If you're interested in partnering with Deelmap, please reach out to us.
+              We're always looking for strategic partnerships that can benefit our community of investors and wholesalers. If you're interested in partnering with DeelMap, please reach out to us.
             </p>
           </div>
         </div>

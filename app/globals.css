@@ -1,17 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --primary-color: #022b41;
-  --secondary-color: #b29578;
+  --primary-color: #D03839;
+  --text-primary: #1A1816;
+  --bg-surface: #FAFAF8;
+  --border-color: #E8E8E4;
 }
 
 body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #111827;
-  background: #f9fafb;
+  color: #1A1816;
+  background: #FAFAF8;
   line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.01em;
+}
+
+/* Hero pin float */
+@keyframes heroPinFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-9px); }
+}
+/* Radar ring — expands outward from pin center and fades */
+@keyframes heroPinRadar {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  12%  { opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(3);   opacity: 0; }
+}
+@keyframes heroShadowPulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 0.1; transform: scale(0.7); }
 }
 
 /* Smooth scrollbars */
@@ -80,7 +101,7 @@ body {
 
 /* Map price markers - clean style */
 .price-marker-clean {
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   position: absolute;
   transform: translate(-50%, -100%);
   color: #fff;
@@ -111,7 +132,7 @@ body {
   box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
   overflow: hidden;
   border: 1px solid rgba(0,0,0,0.05);
-  font-family: 'Open Sans', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   z-index: 1200;
 }
 
@@ -403,14 +424,14 @@ nav {
 
 /* Filter button active states */
 .filter-button-active {
-  background-color: var(--secondary-color) !important;
+  background-color: #1A1816 !important;
   color: white !important;
-  border-color: var(--secondary-color) !important;
+  border-color: #1A1816 !important;
 }
 
 .filter-button-active:hover {
-  background-color: #9a7e61 !important;
-  border-color: #9a7e61 !important;
+  background-color: #2D2A27 !important;
+  border-color: #2D2A27 !important;
 }
 
 /* Prevent text selection on interactive elements */
@@ -665,4 +686,9 @@ nav {
 
 .animate-spin-slow {
   animation: rotate-slow 3s linear infinite;
+}
+
+@keyframes progress-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
 }

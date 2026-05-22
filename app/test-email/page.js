@@ -39,7 +39,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -176,7 +176,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -195,7 +195,7 @@ export default function TestEmailPage() {
 
               <!-- Instruction Text -->
               <p style="margin: 0 0 40px 0; font-size: 16px; line-height: 1.6; color: #4b5563; text-align: center;">
-                We received a request to reset your password for your Deelmap account. Use the following code to complete the password reset procedure. This code is valid for <strong style="color: #1f2937;">15 minutes</strong>.
+                We received a request to reset your password for your DeelMap account. Use the following code to complete the password reset procedure. This code is valid for <strong style="color: #1f2937;">15 minutes</strong>.
               </p>
 
               <!-- Code Display -->
@@ -240,7 +240,7 @@ export default function TestEmailPage() {
                       🔒 Security Tips
                     </p>
                     <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #78350F;">
-                      This code will only work once. Never share it with anyone. Deelmap will never ask for your code.
+                      This code will only work once. Never share it with anyone. DeelMap will never ask for your code.
                     </p>
                   </td>
                 </tr>
@@ -327,7 +327,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -341,7 +341,7 @@ export default function TestEmailPage() {
               
               <!-- Title -->
               <h1 style="margin: 0 0 20px 0; font-size: 32px; font-weight: 700; color: #1f2937; text-align: center;">
-                Welcome to Deelmap
+                Welcome to DeelMap
               </h1>
 
               <!-- Greeting -->
@@ -355,7 +355,7 @@ export default function TestEmailPage() {
               </p>
               
               <p style="margin: 0 0 32px 0; font-size: 15px; line-height: 1.7; color: #4b5563; text-align: left;">
-                You can now access your seller dashboard and start listing your properties on Deelmap.
+                You can now access your seller dashboard and start listing your properties on DeelMap.
               </p>
 
               <!-- Credentials Card -->
@@ -429,7 +429,7 @@ export default function TestEmailPage() {
               
               <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #1f2937; text-align: left;">
                 Best regards,<br>
-                <strong>The Deelmap Team</strong>
+                <strong>The DeelMap Team</strong>
               </p>
 
             </td>
@@ -502,7 +502,7 @@ export default function TestEmailPage() {
                 <tr>
                   <td align="center" style="vertical-align: middle;">
                     <div style="font-size: 32px; font-weight: 700; color: #ffffff; letter-spacing: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
-                      Deelmap
+                      DeelMap
                     </div>
                   </td>
                 </tr>
@@ -660,7 +660,7 @@ export default function TestEmailPage() {
             <button
               key={key}
               onClick={() => setSelectedTemplate(key)}
-              className={`w-full text-left px-4 py-2 rounded-lg transition-all ${
+              className={`w-full text-left px-4 py-2 rounded transition-all ${
                 selectedTemplate === key
                   ? 'bg-slate-700 text-white font-semibold'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -684,9 +684,9 @@ export default function TestEmailPage() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-full mx-auto">
             {/* Preview */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded shadow-lg p-6">
               <h2 className="text-lg font-semibold text-slate-900 mb-4">Preview</h2>
-              <div className="border-2 border-slate-200 rounded-lg overflow-hidden">
+              <div className="border-2 border-slate-200 rounded overflow-hidden">
                 <iframe
                   srcDoc={currentTemplate.html}
                   className="w-full"

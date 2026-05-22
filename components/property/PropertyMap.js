@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { MarkerClusterer } from '@googlemaps/markerclusterer'
 import { getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
 import { loadGoogleMapsAPI } from '@/utils/googleMapsLoader'
 
@@ -21,18 +21,30 @@ const STATE_CENTROIDS = {
   WI: [43.7844, -88.7879], WY: [43.0760, -107.2903], DC: [38.9072, -77.0369]
 }
 
-export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedIn = false }) {
+export function PropertyMap({ properties = [], onMarkerClick, onBoundsChange, filters, isLoggedIn = false, searchLocation = null, onRemoveBoundary }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
+  const clustererRef = useRef(null)
   const infoOverlayRef = useRef(null)
-  const router = useRouter()
+  const boundaryPolygonsRef = useRef([])
   const propertiesRef = useRef(properties)
   const filtersRef = useRef(filters)
+  const onBoundsChangeRef = useRef(onBoundsChange)
+  const userInteractedRef = useRef(false)
+  const searchLocationRef = useRef(searchLocation)
+  useEffect(() => { onBoundsChangeRef.current = onBoundsChange }, [onBoundsChange])
 
   // Keep refs in sync so callbacks always see latest values
   useEffect(() => { propertiesRef.current = properties }, [properties])
   useEffect(() => { filtersRef.current = filters }, [filters])
+  useEffect(() => {
+    searchLocationRef.current = searchLocation
+    // Only reset when a new location is applied — not when the boundary is removed.
+    if (searchLocation?.city || searchLocation?.state) {
+      userInteractedRef.current = false
+    }
+  }, [searchLocation])
 
   useEffect(() => { initMap() }, [])
   useEffect(() => {
@@ -41,6 +53,115 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       if (filters?.states?.length) zoomToStates(filters.states)
     }
   }, [properties, filters])
+
+  // Force all existing markers to red — runs on every render so HMR picks it up instantly
+  useEffect(() => {
+    if (!markersRef.current.length || typeof window === 'undefined' || !window.google) return
+    const svg = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="#D03839"/><circle cx="16" cy="12" r="5" fill="white"/></svg>`
+    const url = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+    const icon = { url, scaledSize: new window.google.maps.Size(20, 26), anchor: new window.google.maps.Point(10, 26) }
+    markersRef.current.forEach(m => m?.setIcon?.(icon))
+  })
+
+  useEffect(() => {
+    // Clear previous boundary polygons
+    boundaryPolygonsRef.current.forEach(p => p.setMap(null))
+    boundaryPolygonsRef.current = []
+
+    if (!searchLocation?.city && !searchLocation?.state) return
+
+    const abbrToFull = {
+      'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+      'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+      'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+      'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+      'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+      'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+      'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+      'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+      'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+      'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
+    }
+    const stateFullName = abbrToFull[searchLocation.state?.toUpperCase()] || searchLocation.state || ''
+
+    const drawBoundary = (geojson) => {
+      const map = mapInstanceRef.current
+      if (!map || !window.google || !geojson) return
+      const drawRing = (coordinates) => {
+        const path = coordinates[0].map(([lng, lat]) => ({ lat, lng }))
+        const poly = new window.google.maps.Polygon({
+          paths: path,
+          strokeColor: '#D03839',
+          strokeOpacity: 0.8,
+          strokeWeight: 2.5,
+          fillOpacity: 0,
+          map,
+          zIndex: 1,
+        })
+        boundaryPolygonsRef.current.push(poly)
+      }
+      if (geojson.type === 'Polygon') drawRing(geojson.coordinates)
+      else if (geojson.type === 'MultiPolygon') geojson.coordinates.forEach(c => drawRing(c))
+    }
+
+    const fitToBbox = (bbox) => {
+      const map = mapInstanceRef.current
+      if (!map || !window.google || !bbox) return
+      map.fitBounds(new window.google.maps.LatLngBounds(
+        { lat: parseFloat(bbox[0]), lng: parseFloat(bbox[2]) },
+        { lat: parseFloat(bbox[1]), lng: parseFloat(bbox[3]) }
+      ))
+    }
+
+    if (searchLocation.city) {
+      // City search: fetch city first (with addressdetails to get county name),
+      // then use the county boundary so suburbs that share the city name are inside the polygon.
+      fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(searchLocation.city)}&state=${encodeURIComponent(stateFullName)}&country=US&polygon_geojson=1&format=json&limit=1&addressdetails=1`, {
+        headers: { 'Accept-Language': 'en' }
+      })
+        .then(r => r.json())
+        .then(async results => {
+          const map = mapInstanceRef.current
+          if (!map || !window.google || !results?.length) return
+          const cityResult = results[0]
+          const countyName = cityResult?.address?.county
+
+          if (countyName) {
+            // Fetch county polygon — this covers the full metro area instead of strict city limits
+            const countyRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?county=${encodeURIComponent(countyName)}&state=${encodeURIComponent(stateFullName)}&country=US&polygon_geojson=1&format=json&limit=1`,
+              { headers: { 'Accept-Language': 'en' } }
+            )
+            const countyResults = await countyRes.json()
+            const countyResult = countyResults?.[0]
+            if (countyResult?.geojson) {
+              drawBoundary(countyResult.geojson)
+              fitToBbox(countyResult.boundingbox)
+              return
+            }
+          }
+
+          // Fallback: draw city polygon if county fetch failed
+          drawBoundary(cityResult.geojson)
+          fitToBbox(cityResult.boundingbox)
+        })
+        .catch(err => console.error('[BOUNDARY]', err))
+    } else {
+      // State-only search: fetch state boundary directly
+      fetch(`https://nominatim.openstreetmap.org/search?state=${encodeURIComponent(stateFullName)}&country=US&polygon_geojson=1&format=json&limit=5&addressdetails=1`, {
+        headers: { 'Accept-Language': 'en' }
+      })
+        .then(r => r.json())
+        .then(results => {
+          const map = mapInstanceRef.current
+          if (!map || !window.google || !results?.length) return
+          const best = results.find(r => r.addresstype === 'state' || (r.class === 'boundary' && r.type === 'administrative')) || results[0]
+          drawBoundary(best.geojson)
+          fitToBbox(best.boundingbox)
+        })
+        .catch(err => console.error('[BOUNDARY]', err))
+    }
+  }, [searchLocation])
 
   const initMap = () => {
     if (typeof window === 'undefined') return
@@ -71,6 +192,11 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
       mapInstanceRef.current = map
       
+      // Notify parent of bounds after every pan/zoom settles
+      map.addListener('idle', () => {
+        onBoundsChangeRef.current?.(map.getBounds())
+      })
+
       // Close popup when clicking anywhere on the map
       map.addListener('click', (e) => {
         if (e.placeId === undefined) {
@@ -78,10 +204,18 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         }
       })
 
-      // Close popup when dragging the map
+      // Close popup when dragging the map; also mark that user has moved the map manually
       map.addListener('dragstart', () => {
+        userInteractedRef.current = true
         hideInfoCard()
       })
+
+      // Mark user interaction on scroll-zoom so fitBounds doesn't snap back
+      if (mapRef.current) {
+        mapRef.current.addEventListener('wheel', () => {
+          userInteractedRef.current = true
+        }, { passive: true })
+      }
 
       // Update markers when map is ready (read from ref to get latest properties)
       window.google.maps.event.addListenerOnce(map, 'idle', () => {
@@ -106,9 +240,9 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     return `$${n}`
   }
 
-  const fullPrice = (price) => {
+  const fullPrice = (price, listingType) => {
     const n = Math.round(Number(price) || 0)
-    return n ? `$${n.toLocaleString()}` : 'Contact for price'
+    return n ? `$${n.toLocaleString()}` : (listingType === 'auction' ? 'Auction Listing' : 'Contact for price')
   }
 
   const chipColor = (status) => {
@@ -125,98 +259,89 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     const currentProperties = propertiesRef.current
     if (!currentProperties || currentProperties.length === 0) return
 
-    markersRef.current.forEach(({ overlay }) => overlay?.setMap(null))
+    // Clear previous clusterer and markers
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers()
+      clustererRef.current = null
+    }
+    markersRef.current.forEach(m => m?.setMap?.(null))
     markersRef.current = []
+    hideInfoCard()
 
     const bounds = new window.google.maps.LatLngBounds()
+    const markers = []
 
     currentProperties.forEach((p) => {
-      // Use Google verified coordinates from wholesale_deals; fallback chain for missing coords
       let lat = parseFloat(p.address_google_lat)
       let lng = parseFloat(p.address_google_lng)
-      
-      // Fallback 1: Try latitude/longitude fields
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         lat = parseFloat(p.latitude)
         lng = parseFloat(p.longitude)
       }
-      
-      // Fallback 2: Try state centroid
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        const state = (p.state || '').trim().toUpperCase().slice(0, 2)
-        const centroid = state && STATE_CENTROIDS[state]
-        if (centroid) {
-          lat = centroid[0]
-          lng = centroid[1]
-        } else {
-          // Fallback 3: Default US center as last resort
-          console.warn(`Property ${p.id} missing coordinates and state, using US center`)
-          lat = 39.8283
-          lng = -98.5795
-        }
-      }
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
 
-      const anchor = new window.google.maps.Marker({
+      const pinColor = '#D03839'
+      const svgContent = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="${pinColor}"/><circle cx="16" cy="12" r="5" fill="white"/></svg>`
+      const svgUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgContent)}`
+      const normalIcon = { url: svgUrl, scaledSize: new window.google.maps.Size(20, 26), anchor: new window.google.maps.Point(10, 26) }
+      const hoverIcon = { url: svgUrl, scaledSize: new window.google.maps.Size(24, 31), anchor: new window.google.maps.Point(12, 31) }
+
+      const marker = new window.google.maps.Marker({
         position: { lat, lng },
-        map,
-        visible: false
+        icon: normalIcon,
+        cursor: 'pointer',
       })
 
-      const chip = document.createElement('div')
-      chip.className = 'price-marker-dot'
-      chip.style.cssText = [
-        'position: absolute',
-        'transform: translate(-50%, -100%)',
-        'z-index: 1000',
-        'cursor: pointer',
-        'transition: all 0.15s ease',
-        'width: 20px',
-        'height: 26px',
-        'display: flex',
-        'align-items: center',
-        'justify-content: center'
-      ].join(';')
-      chip.innerHTML = `<svg width="20" height="26" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="#D03839"/>
-        <circle cx="16" cy="12" r="5" fill="white"/>
-      </svg>`
-
-      chip.addEventListener('mouseenter', () => {
-        chip.style.transform = 'translate(-50%, -100%) scale(1.2)'
-        chip.style.zIndex = '1100'
-      })
-
-      chip.addEventListener('mouseleave', () => {
-        chip.style.transform = 'translate(-50%, -100%) scale(1)'
-        chip.style.zIndex = '1000'
-      })
-
-      chip.addEventListener('click', (e) => {
-        e.stopPropagation()
-        showInfoCard(p, anchor)
+      marker.addListener('click', () => {
+        showInfoCard(p, marker)
         onMarkerClick?.(p)
       })
+      marker.addListener('mouseover', () => {
+        marker.setIcon(hoverIcon)
+        marker.setZIndex(window.google.maps.Marker.MAX_ZINDEX + 1)
+      })
+      marker.addListener('mouseout', () => {
+        marker.setIcon(normalIcon)
+        marker.setZIndex(null)
+      })
 
-      const overlay = new window.google.maps.OverlayView()
-      overlay.onAdd = function () { this.getPanes().overlayMouseTarget.appendChild(chip) }
-      overlay.draw = function () {
-        const proj = this.getProjection()
-        const pt = proj.fromLatLngToDivPixel(anchor.getPosition())
-        chip.style.left = `${pt.x}px`
-        chip.style.top = `${pt.y}px`
-      }
-      overlay.onRemove = function () { chip.remove() }
-      overlay.setMap(map)
-
-      markersRef.current.push({ overlay })
-      bounds.extend(anchor.getPosition())
+      markers.push(marker)
+      bounds.extend({ lat, lng })
     })
 
+    markersRef.current = markers
 
-    if (!bounds.isEmpty()) {
+    // Cluster renderer — color-coded circles by count range
+    const renderer = {
+      render: ({ count, position }) => {
+        const clusterColor = count >= 50 ? '#9B1B1B' : count >= 10 ? '#D03839' : '#E8923A'
+        const size = count >= 100 ? 52 : count >= 50 ? 44 : count >= 10 ? 38 : 32
+        const r = Math.round(size / 2)
+        const innerR = r - 5
+        const fontSize = count >= 100 ? 13 : 12
+        const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg"><circle cx="${r}" cy="${r}" r="${r}" fill="${clusterColor}" fill-opacity="0.25"/><circle cx="${r}" cy="${r}" r="${innerR}" fill="${clusterColor}"/><text x="50%" y="50%" dy="0.35em" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="${fontSize}px" font-weight="700" fill="white">${count}</text></svg>`
+        return new window.google.maps.Marker({
+          position,
+          icon: {
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+            scaledSize: new window.google.maps.Size(size, size),
+            anchor: new window.google.maps.Point(r, r),
+          },
+          cursor: 'pointer',
+          zIndex: window.google.maps.Marker.MAX_ZINDEX + count,
+        })
+      }
+    }
+
+    clustererRef.current = new MarkerClusterer({ map, markers, renderer })
+
+    const searchActive = !!(searchLocationRef.current?.city || searchLocationRef.current?.state)
+    if (!bounds.isEmpty() && !userInteractedRef.current && !searchActive) {
       map.fitBounds(bounds)
-      window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-        if (map.getZoom() > 15) map.setZoom(15)
+      userInteractedRef.current = true
+      window.google.maps.event.addListenerOnce(map, 'idle', () => {
+        const z = map.getZoom()
+        if (z > 5) map.setZoom(5)
       })
     }
   }
@@ -244,7 +369,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     return cityState || 'Address not available'
   }
 
-  const buildInfoEl = (prop) => {
+  const buildInfoEl = (prop, mapWidth = 0) => {
+    const isMobile = mapWidth > 0 && mapWidth < 500
+    const cw = isMobile ? 220 : 260
+    const imgH = isMobile ? 120 : 144
     // Support both wholesale_deals (property_photos) and properties (property_images)
     let rawImg = getPrimaryPhotoUrl(prop.property_photos)
     if (!rawImg && Array.isArray(prop.property_images) && prop.property_images.length > 0) {
@@ -258,9 +386,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
     const cityState = [prop.city, prop.state].filter(Boolean).join(', ')
     const displayAddr = getDisplayAddress(prop)
-    const priceStr = fullPrice(prop.price)
+    const isAuction = prop.listing_type === 'auction'
+    const priceStr = isAuction ? 'Auction' : fullPrice(prop.price, prop.listing_type)
     const arvNum = Number(prop.arv) || 0
-    const arvStr = arvNum > 0 ? shortPrice(arvNum) : null
+    const arvStr = !isAuction && arvNum > 0 ? shortPrice(arvNum) : null
 
     // floor_area is the sqft column in the properties table
     const sqftVal = prop.sqft || prop.floor_area
@@ -272,7 +401,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
 
     const el = document.createElement('div')
     el.className = 'map-info-card-fixed'
-    el.style.cssText = 'cursor: pointer; width: 260px;'
+    el.style.cssText = `cursor: pointer; width: ${cw}px;`
 
     el.innerHTML = `
       <div style="
@@ -284,16 +413,16 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        width: 260px;
+        width: ${cw}px;
         transition: box-shadow 0.2s ease;
       ">
         <!-- Image (top, same proportions as vertical listing card) -->
         ${hasPhoto ? `
-          <div style="width:260px;height:144px;flex-shrink:0;background-image:url('${img}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#FAFAF8;"></div>
+          <div style="width:${cw}px;height:${imgH}px;flex-shrink:0;background-image:url('${img}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:#FAFAF8;"></div>
         ` : `
-          <div style="width:260px;height:144px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#FAFAF8;">
-            <img src="/assets/logo.svg" alt="DeelMap" style="width:60px;opacity:0.3;" />
-            <span style="font-size:10px;color:#A8A8A4;">No photo</span>
+          <div style="width:${cw}px;height:${imgH}px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#FAFAF8;">
+            <img src="/assets/logo.svg" alt="DeelMap" style="width:90px;" />
+            <span style="font-size:10px;color:#A8A8A4;">Photos coming soon</span>
           </div>
         `}
 
@@ -306,7 +435,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
           <!-- Stats + Price row -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
             ${stats ? `<div style="font-size:10px;color:#737370;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${stats}</div>` : `<div style="font-size:10px;color:#737370;">${cityState || ''}</div>`}
-            <div style="font-size:13px;font-weight:700;color:#1A1816;flex-shrink:0;">${priceStr}</div>
+            ${isAuction
+              ? `<div style="font-size:11px;font-weight:700;color:#D03839;background:#FEF0EF;border:1px solid #F5C4C0;border-radius:4px;padding:1px 6px;flex-shrink:0;">Auction</div>`
+              : `<div style="font-size:13px;font-weight:700;color:#1A1816;flex-shrink:0;">${priceStr}</div>`
+            }
           </div>
         </div>
       </div>
@@ -315,7 +447,7 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       hideInfoCard()
-      router.push(`/${prop.slug || prop.id}`)
+      window.open(`/${prop.slug || prop.id}`, '_blank', 'noopener,noreferrer')
     })
 
     el.addEventListener('mouseenter', () => {
@@ -333,22 +465,23 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     if (!map) return
     hideInfoCard()
 
-    const el = buildInfoEl(prop)
+    const mapDiv = map.getDiv()
+    const el = buildInfoEl(prop, mapDiv.offsetWidth)
 
     const overlay = new window.google.maps.OverlayView()
     overlay.onAdd = function () { this.getPanes().floatPane.appendChild(el) }
     overlay.draw = function () {
       const proj = this.getProjection()
       const pt = proj.fromLatLngToDivPixel(anchorMarker.getPosition())
-      
-      const mapDiv = map.getDiv()
+
       const mapWidth = mapDiv.offsetWidth
       const mapHeight = mapDiv.offsetHeight
-      
-      const edgePadding = 15
+
+      const isMobile = mapWidth < 500
+      const edgePadding = isMobile ? 20 : 15
       const topPadding = 80
-      const cardWidth = 260
-      const cardHeight = 215
+      const cardWidth = isMobile ? 220 : 260
+      const cardHeight = isMobile ? 190 : 215
       const popupOffset = 15
 
       const screenX = pt.x + (mapWidth / 2)
@@ -492,6 +625,10 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
       const minFinalTop = (topPadding - mapHeight / 2) - transformYShift
       if (finalTop < minFinalTop) finalTop = minFinalTop
 
+      // Clamp so the popup never overflows the bottom of the map container.
+      const maxFinalTop = (mapHeight / 2) - edgePadding - transformYShift - cardHeight
+      if (finalTop > maxFinalTop) finalTop = maxFinalTop
+
       el.style.left = `${finalLeft}px`
       el.style.top = `${finalTop}px`
       el.style.transform = selectedPosition.transform
@@ -500,6 +637,11 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     }
     overlay.onRemove = function () { el.remove() }
     overlay.setMap(map)
+
+    // Reposition after map settles — projection is unstable during fitBounds animation
+    window.google.maps.event.addListenerOnce(map, 'idle', () => {
+      if (infoOverlayRef.current === overlay) overlay.draw()
+    })
 
     infoOverlayRef.current = overlay
   }
@@ -526,5 +668,20 @@ export function PropertyMap({ properties = [], onMarkerClick, filters, isLoggedI
     }
   }
 
-  return <div ref={mapRef} className="w-full h-full min-h-[600px] map-container" />
+  return (
+    <div className="relative w-full h-full min-h-[600px]">
+      <div ref={mapRef} className="w-full h-full map-container" />
+      {searchLocation && (searchLocation.city || searchLocation.state) && onRemoveBoundary && (
+        <button
+          onClick={onRemoveBoundary}
+          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 h-8 px-3 bg-white border border-[#D03839] rounded-full shadow-sm text-[12px] font-semibold text-[#D03839] hover:bg-[#D03839] hover:text-white transition-all"
+        >
+          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>Remove Boundary</span>
+        </button>
+      )}
+    </div>
+  )
 }

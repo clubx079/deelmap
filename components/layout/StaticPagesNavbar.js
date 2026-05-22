@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { Menu } from 'lucide-react'
 import { StaticPagesMobileNav } from './StaticPagesMobileNav'
@@ -19,19 +18,12 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
 
   return (
     <>
-      <nav className="bg-[#022b41] text-white shadow-lg w-full relative z-30">
+      <nav className="bg-[#1A1816] text-white shadow-lg w-full relative z-30">
         <div className="flex items-center justify-between h-24 px-6">
           {/* LEFT: Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <Image
-                src="/assets/ablemanlogo.png"
-                alt="Ableman"
-                width={200}
-                height={65}
-                className="h-16 w-auto"
-                priority
-              />
+              <img src="/assets/logo.svg" alt="DeelMap" className="h-16 w-auto" />
             </Link>
           </div>
 
@@ -45,16 +37,16 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
                     href={item.href}
                     target={item.external ? '_blank' : '_self'}
                     rel={item.external ? 'noopener noreferrer' : undefined}
-                    className={`relative px-5 py-3 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                    className={`relative px-5 py-3 text-sm font-medium transition-colors duration-200 rounded ${
                       currentPage === item.page
-                        ? 'text-[#b29578] bg-white/10'
-                        : 'text-white hover:text-[#b29578] hover:bg-white/5'
+                        ? 'text-[#D03839] bg-white/10'
+                        : 'text-white hover:text-[#D03839] hover:bg-white/5'
                     }`}
                   >
                     {item.label}
                   </Link>
                   {item.hasNew && (
-                    <span className="absolute -top-3 right-1/2 translate-x-1/2 bg-[#b29578] text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow-sm">
+                    <span className="absolute -top-3 right-1/2 translate-x-1/2 bg-[#D03839] text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow-sm">
                       NEW
                     </span>
                   )}
@@ -68,7 +60,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
                 href="https://forms.monday.com/forms/160d7a7c32a951f6ab92b8812e440dc3?r=use1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-7 py-3 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                className="bg-[#D03839] hover:bg-[#E0493B] text-white px-7 py-3 rounded font-medium transition-all duration-200 shadow-md hover:shadow-lg text-sm"
               >
                 Join Our Buyer's List
               </a>
@@ -78,7 +70,7 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
             <div className="md:hidden">
               <button
                 onClick={() => setShowMobileMenu(true)}
-                className="p-2 text-white hover:text-[#b29578] hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 text-white hover:text-[#D03839] hover:bg-white/10 rounded transition-colors"
               >
                 <Menu className="h-6 w-6" />
               </button>

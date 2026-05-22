@@ -35,18 +35,17 @@ export default function ContactPage() {
       <Navbar />
 
       <section className="pt-20 pb-20 lg:pt-28 lg:pb-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto px-6 lg:px-[72px]">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
 
             {/* Left */}
             <div>
               <h1 className="text-4xl sm:text-5xl font-bold text-[#1A1816] leading-tight mb-5">
-                Contact us and<br />
-                we&apos;ll help you{' '}
-                <span className="text-[#D03839]">find<br />the right deal</span>
+                Have a question?<br />
+                <span className="text-[#D03839]">We&apos;re here<br />to help.</span>
               </h1>
               <p className="text-[15px] text-[#737370] leading-relaxed mb-8 max-w-sm">
-                Tell us what you&apos;re looking for and we&apos;ll guide you to the right opportunity, from discovering deals to making informed decisions.
+                Whether you have a question about a listing, want to list your deals as a verified seller, need help with your account, or are interested in a partnership — send us a message and we&apos;ll get back to you promptly.
               </p>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -73,7 +72,7 @@ export default function ContactPage() {
             </div>
 
             {/* Right – Form */}
-            <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 shadow-sm">
+            <div className="bg-white border border-[#E8E8E4] rounded p-8 shadow-sm">
               <h2 className="text-[20px] font-bold text-[#1A1816] mb-6">Contact Us</h2>
 
               {success ? (

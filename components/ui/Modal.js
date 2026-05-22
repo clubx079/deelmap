@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
 
-export function Modal({ isOpen, onClose, children, className = '' }) {
+export function Modal({ isOpen, onClose, children, className = '', hideClose = false }) {
   useEffect(() => {
     if (isOpen) {
       // Add modal-open class to body instead of directly setting overflow
@@ -35,15 +35,17 @@ export function Modal({ isOpen, onClose, children, className = '' }) {
         />
         {/* Modal content */}
         <div
-          className={`relative bg-white rounded-xl shadow-2xl max-w-lg w-full ${className}`}
+          className={`relative bg-white rounded shadow-2xl max-w-lg w-full ${className}`}
           style={{ zIndex: 10000 }}
         >
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {!hideClose && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 p-1 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           {children}
         </div>
       </div>

@@ -5,7 +5,7 @@ import { generateReplyToAddress } from '@/lib/emailReplyUtils';
 import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
 import { withTimeout, fireAndForget } from '@/lib/timeout';
 
-// Marketplace (Deelmap) Supabase: conversations & messages – same DB as rest of site
+// Marketplace (DeelMap) Supabase: conversations & messages – same DB as rest of site
 function getSupabase() {
   const url =
     process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL ||
@@ -118,7 +118,7 @@ async function getDealAddressAndSlug(supabase, dealId) {
   // 1) Try properties table first (seller-added manual listings – "address" column)
   const { data: prop, error: propErr } = await supabase
     .from('properties')
-    .select('address, city, state, zip_code, postal_code, slug')
+    .select('address, city, state, postal_code, slug')
     .eq('id', idStr)
     .maybeSingle();
   if (propErr) {
@@ -127,7 +127,7 @@ async function getDealAddressAndSlug(supabase, dealId) {
   if (!propErr && prop) {
     const address = (prop.address != null && String(prop.address).trim() !== '')
       ? String(prop.address).trim()
-      : [prop.address, prop.city, prop.state, prop.zip_code || prop.postal_code].filter(Boolean).join(', ') || null;
+      : [prop.address, prop.city, prop.state, prop.postal_code].filter(Boolean).join(', ') || null;
     return { address: address || null, slug: prop.slug || null, source: 'properties' };
   }
 
@@ -276,7 +276,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="Deelmap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -294,7 +294,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
       </tr>
       <tr>
         <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 Deelmap. All rights reserved.</p>
+          <p style="margin:0;font-size:12px;color:#A8A8A4">© 2026 DeelMap. All rights reserved.</p>
         </td>
       </tr>
     </table>
@@ -302,9 +302,9 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
 </body></html>`;
     await withTimeout(
       resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
         to: sellerEmail,
-        subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - Deelmap`,
+        subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - DeelMap`,
         html
       }),
       15000,
@@ -539,6 +539,7 @@ export async function GET(request) {
             .eq('seller_id', sellerIdParam)
             .eq('buyer_uuid', authCheck.userUuid)
             .eq('property_id', String(dealIdParam))
+            .eq('is_active', true)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -972,8 +973,12 @@ export async function POST(request) {
 
       // Insert notification for seller (new message)
       if (conversation.seller_id) {
-        const buyerMsgData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).maybeSingle();
-        const bName = buyerMsgData?.data ? `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer' : 'A buyer';
+        const buyerMsgData = await supabase.from('users').select('first_name, last_name, nickname, is_anonymous').eq('id', authCheck.userUuid).maybeSingle();
+        const bName = buyerMsgData?.data
+          ? (buyerMsgData.data.is_anonymous
+              ? (buyerMsgData.data.nickname || 'Anonymous')
+              : `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer')
+          : 'A buyer';
         supabase.from('notifications').insert({
           recipient_id: conversation.seller_id,
           recipient_type: 'seller',
@@ -1010,8 +1015,12 @@ export async function POST(request) {
               }
             }
           }
-          const buyerData = await supabase.from('users').select('first_name, last_name').eq('id', authCheck.userUuid).single();
-          const buyerName = [buyerData?.data?.first_name, buyerData?.data?.last_name].filter(Boolean).join(' ').trim() || 'A buyer';
+          const buyerData = await supabase.from('users').select('first_name, last_name, nickname, is_anonymous').eq('id', authCheck.userUuid).single();
+          const buyerName = buyerData?.data
+            ? (buyerData.data.is_anonymous
+                ? (buyerData.data.nickname || 'Anonymous')
+                : [buyerData.data.first_name, buyerData.data.last_name].filter(Boolean).join(' ').trim() || 'A buyer')
+            : 'A buyer';
           let propertyAddress = conversation.property_address || null;
           if (!propertyAddress && conversation.property_id) {
             const { address } = await getDealAddressAndSlug(supabase, conversation.property_id);

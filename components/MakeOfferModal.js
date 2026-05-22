@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, AlertCircle, Check, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -49,6 +49,8 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [createdConversationId, setCreatedConversationId] = useState(conversationId || null)
+  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
 
   // Step 1
   const [amount, setAmount] = useState('')
@@ -60,7 +62,19 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
   const [inspectionPeriod, setInspectionPeriod] = useState('10 days')
   const [notes, setNotes] = useState('')
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true)
+      const raf = requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
+      return () => cancelAnimationFrame(raf)
+    } else {
+      setVisible(false)
+      const t = setTimeout(() => setMounted(false), 320)
+      return () => clearTimeout(t)
+    }
+  }, [isOpen])
+
+  if (!mounted) return null
 
   const propertyTitle = property?.full_address || property?.display_address ||
     `${property?.address || ''}, ${property?.city || ''}, ${property?.state || ''}`.trim().replace(/^,\s*/, '').replace(/,\s*$/, '')
@@ -140,6 +154,15 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
       if (!offerRes.ok || offerData.error) throw new Error(offerData.error || 'Failed to submit offer')
 
       setSuccess(true)
+      import('@/lib/analytics').then(({ trackEvent }) => {
+        trackEvent('offer_submitted', {
+          property_id: property?.id,
+          property_address: propertyTitle,
+          offer_amount: numericAmount,
+          closing_timeline: closingTimeline,
+          financing_type: financingType,
+        })
+      })
     } catch (err) {
       setError(err.message || 'Something went wrong')
     } finally {
@@ -158,10 +181,14 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
   const numericEarnest = Number(String(earnestMoney).replace(/[^0-9.]/g, ''))
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={handleClose}>
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4">
+      {/* Backdrop */}
       <div
-        className="bg-white rounded w-full max-w-[640px] max-h-[90vh] overflow-y-auto shadow-2xl relative"
-        onClick={e => e.stopPropagation()}
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+      />
+      <div
+        className={`relative bg-white rounded-t sm:rounded w-full sm:max-w-[640px] max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto shadow-2xl transition-all duration-300 ease-out ${visible ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'translate-y-full sm:opacity-0 sm:scale-95'}`}
       >
         {!success && (
           <button onClick={handleClose} className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#FAFAF8] transition-colors z-10">
@@ -169,7 +196,7 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
           </button>
         )}
 
-        <div className="p-6 sm:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           {/* Success Screen */}
           {success ? (
             <div className="flex flex-col items-center text-center py-8">
@@ -183,14 +210,14 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => router.push('/marketplace')}
-                  className="flex items-center gap-2 px-5 py-2.5 border border-[#E8E8E4] rounded text-[14px] font-medium text-[#444441] hover:bg-[#FAFAF8] transition-colors"
+                  className="flex items-center gap-2 px-5 min-h-[44px] border border-[#E8E8E4] rounded text-[14px] font-medium text-[#444441] hover:bg-[#FAFAF8] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Browse deals
                 </button>
                 <button
                   onClick={() => { router.push(`/buyer/inbox?conversation=${createdConversationId || ''}`); handleClose() }}
-                  className="px-5 py-2.5 bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white rounded text-[14px] font-semibold transition-colors"
+                  className="px-5 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white rounded text-[14px] font-semibold transition-colors"
                 >
                   View Messages
                 </button>
@@ -349,7 +376,7 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
                   <div className="flex gap-3">
                     <button
                       onClick={() => { setError(''); setStep(1) }}
-                      className="flex items-center gap-2 px-5 py-3 border border-[#E8E8E4] rounded text-[14px] font-medium text-[#737370] hover:bg-[#FAFAF8] transition-colors"
+                      className="flex items-center gap-2 px-5 min-h-[44px] border border-[#E8E8E4] rounded text-[14px] font-medium text-[#737370] hover:bg-[#FAFAF8] transition-colors"
                     >
                       <ArrowLeft className="w-4 h-4" /> Back
                     </button>
@@ -396,7 +423,7 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
                   <div className="flex gap-3">
                     <button
                       onClick={() => { setError(''); setStep(2) }}
-                      className="flex items-center gap-2 px-5 py-3 border border-[#E8E8E4] rounded text-[14px] font-medium text-[#737370] hover:bg-[#FAFAF8] transition-colors"
+                      className="flex items-center gap-2 px-5 min-h-[44px] border border-[#E8E8E4] rounded text-[14px] font-medium text-[#737370] hover:bg-[#FAFAF8] transition-colors"
                     >
                       <ArrowLeft className="w-4 h-4" /> Back
                     </button>

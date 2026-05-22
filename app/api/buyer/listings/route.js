@@ -1,0 +1,355 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
+import { moderateProperty } from '@/lib/moderateProperty'
+
+// Use service role key to bypass RLS in server-side routes
+const supabaseMarketplace = createClient(
+  process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+  process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
+)
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+
+// GET — fetch all listings posted by this buyer
+export async function GET(request) {
+  try {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { data, error } = await supabaseMarketplace
+      .from('properties')
+      .select('id, slug, seo_title, address, city, state, zipcode, latitude, longitude, price, property_type, bedrooms, bathrooms, floor_area, description, repairs, inspection_report_url, seller_type, contract_url, status, rejection_reason, is_highlighted, is_boosted, is_homepage_featured, highlight_ends_at, boost_ends_at, homepage_feature_ends_at, created_at, posted_by, property_images(image_url, image_key, sort_order)')
+      .eq('posted_by', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ success: true, listings: data || [] })
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// POST — create a new listing (called after successful Stripe payment)
+export async function POST(request) {
+  try {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const body = await request.json()
+
+    // Require a Stripe PaymentIntent — no payment, no listing
+    if (!body.stripe_payment_intent_id) {
+      return NextResponse.json({ error: 'Payment required to publish a listing.' }, { status: 402 })
+    }
+
+    // Verify the PaymentIntent succeeded via Stripe API
+    let paymentIntent
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(body.stripe_payment_intent_id)
+    } catch {
+      return NextResponse.json({ error: 'Could not verify payment. Please contact support.' }, { status: 402 })
+    }
+
+    if (paymentIntent.status !== 'succeeded') {
+      return NextResponse.json({ error: 'Payment has not been completed.' }, { status: 402 })
+    }
+
+    // Prevent the same PaymentIntent from creating a duplicate listing
+    const { data: existing } = await supabaseMarketplace
+      .from('payments')
+      .select('id')
+      .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
+      .maybeSingle()
+
+    if (existing) {
+      // Webhook already handled this payment — return the property it created
+      const { data: pmt } = await supabaseMarketplace
+        .from('payments')
+        .select('property_id')
+        .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
+        .single()
+
+      // Clean up orphaned draft if webhook created a separate new property
+      if (body.draft_id && pmt?.property_id && body.draft_id !== pmt.property_id) {
+        await supabaseMarketplace.from('property_images').delete().eq('property_id', body.draft_id)
+        await supabaseMarketplace.from('properties').delete().eq('id', body.draft_id).eq('posted_by', userId)
+        console.log(`[listings] Cleaned up orphaned draft ${body.draft_id} — replaced by ${pmt.property_id}`)
+      }
+
+      // Webhook doesn't apply add-on flags — ensure they are set now if any were purchased
+      const addOns = body.add_ons || []
+      if (addOns.length > 0 && pmt?.property_id) {
+        const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
+        const addonFlags = {}
+        if (addOns.includes('highlight') || addOns.includes('bundle')) { addonFlags.is_highlighted = true; addonFlags.highlight_ends_at = in30Days }
+        if (addOns.includes('boost') || addOns.includes('bundle')) { addonFlags.is_boosted = true; addonFlags.boost_ends_at = in7Days }
+        if (addOns.includes('homepage') || addOns.includes('bundle')) { addonFlags.is_homepage_featured = true; addonFlags.homepage_feature_ends_at = in7Days }
+        await supabaseMarketplace.from('properties').update(addonFlags).eq('id', pmt.property_id)
+      }
+
+      return NextResponse.json({ success: true, id: pmt?.property_id })
+    }
+
+    const addOns = body.add_ons || []
+    const isHomepageFeatured = addOns.includes('homepage') || addOns.includes('bundle')
+    const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
+
+    // Create/update property first so we have the id for the payment record
+    let data, error
+
+    if (body.draft_id) {
+      // Resume from draft — update existing record instead of inserting
+      ;({ data, error } = await supabaseMarketplace
+        .from('properties')
+        .update({
+          seo_title: body.title || null,
+          address: body.address,
+          city: body.city || null,
+          state: body.state,
+          zipcode: body.zipcode || null,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          price: body.price,
+          property_type: body.property_type,
+          bedrooms: body.bedrooms,
+          bathrooms: body.bathrooms,
+          floor_area: body.floor_area,
+          description: body.description,
+          repairs: body.repairs,
+          inspection_report_url: body.inspection_report_url || null,
+          seller_type: body.seller_type || null,
+          contract_url: body.contract_url || null,
+          status: 'under_review',
+          is_highlighted: addOns.includes('highlight') || addOns.includes('bundle') || undefined,
+          highlight_ends_at: (addOns.includes('highlight') || addOns.includes('bundle')) ? in30Days : undefined,
+          is_boosted: addOns.includes('boost') || addOns.includes('bundle') || undefined,
+          boost_ends_at: (addOns.includes('boost') || addOns.includes('bundle')) ? in7Days : undefined,
+          is_homepage_featured: isHomepageFeatured || undefined,
+          homepage_feature_ends_at: isHomepageFeatured ? in7Days : undefined,
+        })
+        .eq('id', body.draft_id)
+        .eq('posted_by', userId)
+        .select('id, slug')
+        .single())
+    } else {
+      const slug = generateSlug()
+      ;({ data, error } = await supabaseMarketplace
+        .from('properties')
+        .insert({
+          slug,
+          seo_title: body.title || null,
+          address: body.address,
+          city: body.city || null,
+          state: body.state,
+          zipcode: body.zipcode || null,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          price: body.price,
+          property_type: body.property_type,
+          bedrooms: body.bedrooms,
+          bathrooms: body.bathrooms,
+          floor_area: body.floor_area,
+          description: body.description,
+          repairs: body.repairs,
+          inspection_report_url: body.inspection_report_url || null,
+          seller_type: body.seller_type || null,
+          contract_url: body.contract_url || null,
+          status: 'under_review',
+          posted_by: userId,
+          is_highlighted: addOns.includes('highlight') || addOns.includes('bundle') || undefined,
+          highlight_ends_at: (addOns.includes('highlight') || addOns.includes('bundle')) ? in30Days : undefined,
+          is_boosted: addOns.includes('boost') || addOns.includes('bundle') || undefined,
+          boost_ends_at: (addOns.includes('boost') || addOns.includes('bundle')) ? in7Days : undefined,
+          is_homepage_featured: isHomepageFeatured || undefined,
+          homepage_feature_ends_at: isHomepageFeatured ? in7Days : undefined,
+        })
+        .select('id, slug')
+        .single())
+    }
+
+    if (error) {
+      console.error('[POST /api/buyer/listings] Property create/update failed:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Build itemized breakdown for billing display
+    const ADD_ON_PRICES = {
+      highlight: { label: 'Highlight Listing',     amount: 999  },
+      homepage:  { label: 'Feature on Homepage',   amount: 2900 },
+      boost:     { label: 'Boost Listing',         amount: 1499 },
+      bundle:    { label: 'Full Visibility Bundle (Highlight + Boost)', amount: 2200 },
+    }
+    const addOnItems = (addOns).map(id => ({
+      id,
+      label: ADD_ON_PRICES[id]?.label || id,
+      amount: ADD_ON_PRICES[id]?.amount || 0,
+    }))
+    const breakdown = JSON.stringify({
+      title: body.title || '',
+      address: body.address || '',
+      city: body.city || '',
+      state: body.state || '',
+      base: { label: 'Listing Fee', amount: 2900 },
+      addons: addOnItems,
+    })
+
+    // Record payment with property_id already known
+    const { error: paymentError } = await supabaseMarketplace.from('payments').insert({
+      user_id: userId,
+      user_type: 'buyer',
+      payment_type: 'listing_fee',
+      property_id: data.id,
+      stripe_payment_intent_id: body.stripe_payment_intent_id,
+      amount: body.amount || 2900,
+      currency: 'usd',
+      status: 'succeeded',
+      description: breakdown,
+    })
+
+    if (paymentError) {
+      if (paymentError.code === '23505') {
+        // Race condition: webhook inserted the payment record first.
+        // Clean up duplicate property if this was a new listing (not a draft update).
+        const { data: existingPmt } = await supabaseMarketplace
+          .from('payments')
+          .select('property_id')
+          .eq('stripe_payment_intent_id', body.stripe_payment_intent_id)
+          .single()
+        if (!body.draft_id && existingPmt?.property_id && existingPmt.property_id !== data.id) {
+          await supabaseMarketplace.from('property_images').delete().eq('property_id', data.id)
+          await supabaseMarketplace.from('properties').delete().eq('id', data.id)
+        }
+        const propertyId = existingPmt?.property_id || data.id
+        // Webhook already triggered moderation — don't fire it again
+        return NextResponse.json({ success: true, id: propertyId })
+      }
+      console.error('[POST /api/buyer/listings] Payment record failed:', paymentError)
+      return NextResponse.json({ error: paymentError.message }, { status: 500 })
+    }
+
+    // Kick off AI moderation in background — don't block the response
+    setTimeout(() => moderateProperty(data.id).catch(console.error), 0)
+
+    return NextResponse.json({ success: true, id: data.id, slug: data.slug })
+  } catch (err) {
+    console.error('[POST /api/buyer/listings] Unexpected error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PATCH — update an existing listing
+export async function PATCH(request) {
+  try {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const body = await request.json()
+    const { id, action, ...fields } = body
+
+    // Enhancement flag update (after successful add-on payment)
+    if (action === 'enhance') {
+      const addOns = fields.add_ons || []
+      const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
+      const flags = {}
+      if (addOns.includes('highlight') || addOns.includes('bundle')) { flags.is_highlighted = true; flags.highlight_ends_at = in30Days }
+      if (addOns.includes('boost') || addOns.includes('bundle')) { flags.is_boosted = true; flags.boost_ends_at = in7Days }
+      if (addOns.includes('homepage')) { flags.is_homepage_featured = true; flags.homepage_feature_ends_at = in7Days }
+      const { error: enhError } = await supabaseMarketplace
+        .from('properties')
+        .update(flags)
+        .eq('id', id)
+        .eq('posted_by', userId)
+      if (enhError) return NextResponse.json({ error: enhError.message }, { status: 500 })
+      return NextResponse.json({ success: true })
+    }
+
+    // Check current status before updating
+    const { data: current } = await supabaseMarketplace
+      .from('properties')
+      .select('status')
+      .eq('id', id)
+      .eq('posted_by', userId)
+      .single()
+
+    const resubmitting = current?.status === 'rejected' || current?.status === 'active'
+
+    // Ensure buyer can only edit their own listing
+    const { data, error } = await supabaseMarketplace
+      .from('properties')
+      .update({
+        seo_title: fields.title || null,
+        address: fields.address,
+        city: fields.city || null,
+        state: fields.state,
+        zipcode: fields.zipcode || null,
+        latitude: fields.latitude,
+        longitude: fields.longitude,
+        price: fields.price,
+        property_type: fields.property_type,
+        bedrooms: fields.bedrooms,
+        bathrooms: fields.bathrooms,
+        floor_area: fields.floor_area,
+        description: fields.description,
+        repairs: fields.repairs,
+        inspection_report_url: fields.inspection_report_url || null,
+        seller_type: fields.seller_type || null,
+        contract_url: fields.contract_url || null,
+        ...(resubmitting ? { status: 'under_review', rejection_reason: null } : {}),
+      })
+      .eq('id', id)
+      .eq('posted_by', userId)
+      .select('id')
+      .single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Re-run moderation if this was a rejected or active listing being edited
+    if (resubmitting) {
+      setTimeout(() => moderateProperty(id).catch(console.error), 0)
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// DELETE — delete a listing
+export async function DELETE(request) {
+  try {
+    const userId = request.headers.get('x-user-id')
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    // Delete images first (foreign key constraint)
+    await supabaseMarketplace.from('property_images').delete().eq('property_id', id)
+
+    const { error } = await supabaseMarketplace
+      .from('properties')
+      .delete()
+      .eq('id', id)
+      .eq('posted_by', userId)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+function generateSlug() {
+  const alpha = 'abcdefghjkmnpqrstuvwxyz'
+  const nums = '23456789'
+  const p1 = Array.from({ length: 7 }, () => alpha[Math.floor(Math.random() * alpha.length)]).join('')
+  const p2 = Array.from({ length: 2 }, () => nums[Math.floor(Math.random() * nums.length)]).join('')
+  return p1 + p2
+}

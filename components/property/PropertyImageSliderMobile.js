@@ -178,7 +178,7 @@ export function PropertyImageSliderMobile({
 
   if (images.length === 0) {
     return (
-      <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 shadow-lg" style={{ height: '250px' }}>
+      <div className="relative w-full rounded overflow-hidden bg-gray-100 shadow-lg" style={{ height: '250px' }}>
         <div className="flex items-center justify-center h-full">
           <span className="text-gray-400">No images available</span>
         </div>
@@ -188,7 +188,7 @@ export function PropertyImageSliderMobile({
 
   return (
     <>
-      <div className="relative w-full rounded-2xl overflow-hidden bg-gray-100 shadow-lg" style={{ height: '250px' }}>
+      <div className="relative w-full rounded overflow-hidden bg-gray-100 shadow-lg" style={{ height: '250px' }}>
         <div 
           className="relative w-full h-full bg-gray-200"
           onClick={() => setShowFullscreen(true)}
@@ -294,7 +294,7 @@ export function PropertyImageSliderMobile({
               <p className="text-white text-base font-semibold mb-2">
                 {allImages.length - images.length} More Photos Available
               </p>
-              <button className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-5 py-2 rounded-lg font-medium transition-colors text-sm">
+              <button className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-5 py-2 rounded font-medium transition-colors text-sm">
                 Join Ableman to View All
               </button>
             </div>
@@ -413,7 +413,7 @@ export function PropertyImageSliderMobile({
           onClick={() => setShowJoinPrompt(false)}
         >
           <div
-            className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl"
+            className="bg-white rounded p-6 max-w-sm w-full text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4">
@@ -436,7 +436,7 @@ export function PropertyImageSliderMobile({
                   window.location.href = window.location.pathname; // Fallback: reload without special link
                 }
               }}
-              className="w-full bg-[#b29578] hover:bg-[#9a7e61] text-white py-3 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 mb-2"
+              className="w-full bg-[#b29578] hover:bg-[#9a7e61] text-white py-3 text-base font-semibold rounded shadow-lg hover:shadow-xl transition-all duration-200 mb-2"
             >
               Join Ableman For Free
             </button>

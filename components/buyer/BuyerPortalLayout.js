@@ -19,10 +19,10 @@ export default function BuyerPortalLayout({ children, pageTitle = '' }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-200 border-t-slate-900 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#E8E8E4] border-t-[#1A1816] mx-auto mb-4"></div>
+          <p className="text-[#737370] text-[14px]">Loading...</p>
         </div>
       </div>
     );
@@ -33,27 +33,27 @@ export default function BuyerPortalLayout({ children, pageTitle = '' }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-[#FAFAF8]">
       <BuyerSidebar
         mobileOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
       />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Mobile only: hamburger + page title centered on full screen width */}
-        <header className="lg:hidden relative flex items-center justify-between px-3 py-2.5 border-b border-slate-200 bg-white/95 shrink-0">
-          <div className="w-10 shrink-0 flex items-center justify-start">
+        {/* Mobile only: hamburger + page title */}
+        <header className="lg:hidden relative flex items-center justify-between px-3 py-2.5 border-b border-[#E8E8E4] bg-white shrink-0">
+          <div className="w-11 shrink-0 flex items-center justify-start">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] text-[#444441] transition-colors"
               aria-label="Open menu"
             >
               <Menu className="w-5 h-5" />
             </button>
           </div>
-          <h1 className="absolute left-0 right-0 text-base font-semibold text-slate-900 text-center pointer-events-none">
+          <h1 className="absolute left-0 right-0 text-[15px] font-semibold text-[#1A1816] text-center pointer-events-none">
             {pageTitle || 'DeelMap'}
           </h1>
-          <div className="w-10 shrink-0" aria-hidden />
+          <div className="w-11 shrink-0" aria-hidden />
         </header>
         <main className="flex-1 overflow-auto min-h-0">
           {children}

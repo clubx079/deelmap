@@ -41,13 +41,19 @@ function getClientIP(request) {
 
 async function isSystemUser(email) {
   if (!email) return false
-  
-  const { data } = await supabase
+
+  const { createClient } = await import('@supabase/supabase-js')
+  const adminClient = createClient(
+    process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
+    process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
+  )
+
+  const { data } = await adminClient
     .from('system_users')
     .select('email')
     .eq('email', email.toLowerCase())
     .single()
-  
+
   return !!data
 }
 
@@ -206,19 +212,49 @@ export async function POST(request) {
 
       // AUTO-TRIGGER: Check analytics notification settings and send SMS if threshold reached
       try {
-        // Get analytics settings from database
-        const { data: settingsData, error: settingsError } = await supabase.rpc('get_analytics_settings')
+        // Read from the admin portal's settings table (single source of truth)
+        const { data: settingsRow, error: settingsError } = await supabase
+          .from('settings')
+          .select(`
+            analytics_notification_enabled,
+            analytics_notification_threshold,
+            analytics_message_template,
+            analytics_notification_from_phone,
+            analytics_cooldown_enabled,
+            analytics_cooldown_hours,
+            analytics_quiet_hours_enabled,
+            analytics_quiet_hours_start,
+            analytics_quiet_hours_end,
+            analytics_quiet_hours_timezone,
+            analytics_queue_outside_hours,
+            analytics_progressive_milestones
+          `)
+          .limit(1)
+          .maybeSingle()
 
         if (settingsError) {
-          console.error('Error fetching analytics settings:', settingsError)
+          console.error('[NOTIF] Error fetching settings row:', settingsError.message)
         }
 
-        // Default to disabled if settings not found
-        const settings = settingsData?.[0] || {
+        // Normalize column names to match the rest of the code
+        const settings = settingsRow ? {
+          enabled:               settingsRow.analytics_notification_enabled ?? false,
+          threshold:             settingsRow.analytics_notification_threshold ?? 2,
+          message_template:      settingsRow.analytics_message_template || 'Hey {seller_name}! Your property at {address} got {no_of_views} new views. Engage with them right now: {magic_link}',
+          from_phone:            settingsRow.analytics_notification_from_phone || '+13323333839',
+          progressive_milestones: settingsRow.analytics_progressive_milestones || null,
+          cooldown_enabled:      settingsRow.analytics_cooldown_enabled ?? false,
+          cooldown_hours:        settingsRow.analytics_cooldown_hours ?? 24,
+          quiet_hours_enabled:   settingsRow.analytics_quiet_hours_enabled ?? false,
+          quiet_hours_start:     settingsRow.analytics_quiet_hours_start ?? 22,
+          quiet_hours_end:       settingsRow.analytics_quiet_hours_end ?? 8,
+          quiet_hours_timezone:  settingsRow.analytics_quiet_hours_timezone || 'America/New_York',
+          queue_outside_hours:   settingsRow.analytics_queue_outside_hours ?? false,
+        } : {
           enabled: false,
           threshold: 2,
           message_template: 'Hey {seller_name}! Your property at {address} got {no_of_views} new views. Engage with them right now: {magic_link}',
-          from_phone: '(332) 333-3839',
+          from_phone: '+13323333839',
           progressive_milestones: null,
           cooldown_enabled: false,
           cooldown_hours: 24,
@@ -229,9 +265,17 @@ export async function POST(request) {
           queue_outside_hours: false
         }
 
+        console.log('[NOTIF] Settings loaded:', {
+          source: settingsRow ? 'settings table' : 'defaults (no settings row found)',
+          enabled: settings.enabled,
+          threshold: settings.threshold,
+          from_phone: settings.from_phone,
+          has_progressive_milestones: !!settings.progressive_milestones,
+        })
+
         // Only proceed if notifications are enabled
         if (!settings.enabled) {
-          console.log('Analytics notifications are disabled - skipping notification check')
+          console.log('[NOTIF] Notifications disabled in admin portal — skipping')
         } else {
           // Count unique viewers for this property
           const { data: uniqueViewers, error: viewerError } = await supabase
@@ -245,28 +289,25 @@ export async function POST(request) {
             const uniqueEmails = [...new Set(uniqueViewers.map(v => v.user_email))]
             const viewCount = uniqueEmails.length
 
-            console.log(`🔍 Property ${propertyId} has ${viewCount} unique viewers`)
+            console.log(`[NOTIF] Property ${propertyId} — ${viewCount} unique viewers (emails: ${uniqueEmails.join(', ')})`)
 
-            // FEATURE 1: Progressive Milestones Support
-            // Build array of thresholds to check (progressive milestones or single threshold)
+            // Build array of thresholds to check
             let thresholdsToCheck = []
 
             if (settings.progressive_milestones && Array.isArray(settings.progressive_milestones)) {
-              // Use progressive milestones
               thresholdsToCheck = settings.progressive_milestones
                 .filter(milestone => milestone.enabled === true)
                 .map(milestone => ({
                   threshold: milestone.threshold,
                   message: milestone.message || settings.message_template
                 }))
-              console.log(`🔍 Using progressive milestones:`, thresholdsToCheck.map(t => t.threshold))
+              console.log(`[NOTIF] Progressive milestones:`, thresholdsToCheck.map(t => t.threshold))
             } else {
-              // Fallback to single threshold
               thresholdsToCheck = [{
                 threshold: settings.threshold,
                 message: settings.message_template
               }]
-              console.log(`🔍 Using single threshold: ${settings.threshold}`)
+              console.log(`[NOTIF] Single threshold: ${settings.threshold}`)
             }
 
             // Loop through each threshold to check
@@ -274,9 +315,9 @@ export async function POST(request) {
               const currentThreshold = milestoneConfig.threshold
               const messageTemplate = milestoneConfig.message
 
-              // Check if current view count matches this threshold
-              if (viewCount === currentThreshold) {
-                console.log(`🔍 Property ${propertyId} reached threshold of ${currentThreshold} unique viewers - checking notification status`)
+              // Use >= so we don't miss the threshold if the view count is already past it
+              if (viewCount >= currentThreshold) {
+                console.log(`[NOTIF] viewCount(${viewCount}) >= threshold(${currentThreshold}) — checking if notification already sent`)
 
                 // Get property and temp seller info
                 const { data: property, error: propError } = await supabase
@@ -292,9 +333,13 @@ export async function POST(request) {
                   .eq('id', propertyId)
                   .single()
 
-                console.log('🔍 Property fetch result:', { found: !!property, hasTemp: !!property?.temp_seller_id, error: propError?.message })
+                console.log('[NOTIF] wholesale_deals fetch:', { found: !!property, temp_seller_id: property?.temp_seller_id || null, error: propError?.message || null })
 
-                if (!propError && property && property.temp_seller_id) {
+                if (propError || !property) {
+                  console.error('[NOTIF] SKIP — could not fetch property from wholesale_deals:', propError?.message)
+                } else if (!property.temp_seller_id) {
+                  console.warn('[NOTIF] SKIP — property has no temp_seller_id (not a scraped deal or not linked)')
+                } else if (property.temp_seller_id) {
                   // Get temp seller info
                   const { data: tempSeller, error: sellerError } = await supabase
                     .from('temp_seller_logins')
@@ -302,14 +347,19 @@ export async function POST(request) {
                     .eq('id', property.temp_seller_id)
                     .single()
 
-                  console.log('🔍 Temp seller fetch result:', {
+                  console.log('[NOTIF] temp_seller_logins fetch:', {
                     found: !!tempSeller,
-                    hasSMS: !!tempSeller?.seller_phone,
-                    smsNumber: tempSeller?.seller_phone,
-                    error: sellerError?.message
+                    seller_name: tempSeller?.seller_name || null,
+                    has_phone: !!tempSeller?.seller_phone,
+                    phone: tempSeller?.seller_phone || null,
+                    error: sellerError?.message || null,
                   })
 
-                  if (!sellerError && tempSeller && tempSeller.seller_phone) {
+                  if (sellerError || !tempSeller) {
+                    console.error('[NOTIF] SKIP — temp seller not found:', sellerError?.message)
+                  } else if (!tempSeller.seller_phone) {
+                    console.warn('[NOTIF] SKIP — temp seller has no phone number, cannot send SMS')
+                  } else if (tempSeller.seller_phone) {
                     // FEATURE 2: Cooldown Check
                     // Check if cooldown is enabled and if any notification was sent recently to this seller
                     let cooldownActive = false
@@ -353,17 +403,22 @@ export async function POST(request) {
 
                     const notificationAlreadySent = !notifCheckError && existingNotifications && existingNotifications.length > 0
 
-                    console.log('🔍 Notification status:', {
-                      alreadySent: notificationAlreadySent,
-                      existingCount: existingNotifications?.length || 0,
-                      threshold: currentThreshold
+                    console.log('[NOTIF] Duplicate check:', {
+                      already_sent: notificationAlreadySent,
+                      existing_records: existingNotifications?.length || 0,
+                      threshold: currentThreshold,
+                      existing_ids: existingNotifications?.map(n => n.id) || [],
+                      check_error: notifCheckError?.message || null,
                     })
 
+                    if (notificationAlreadySent) {
+                      console.log(`[NOTIF] SKIP — notification already sent for property ${propertyId} at threshold ${currentThreshold}`)
+                    }
+
                     if (!notificationAlreadySent) {
-                      // Build address string
                       const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`
 
-                      console.log('🔗 Generating magic link...')
+                      console.log('[NOTIF] Generating magic link for:', { fullAddress, seller: tempSeller.seller_name, phone: tempSeller.seller_phone })
 
                       // Generate unique short token
                       let token = generateShortToken()
@@ -410,15 +465,14 @@ export async function POST(request) {
                         }])
 
                       if (insertTokenError) {
-                        console.error('❌ Error inserting magic link token:', insertTokenError)
-                        continue // Skip this notification
+                        console.error('[NOTIF] SKIP — failed to insert magic_link_tokens:', insertTokenError.message)
+                        continue
                       }
 
-                      // Build magic link URL
                       const baseUrl = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'http://localhost:3004'
                       const magicLink = `${baseUrl}/register?token=${token}`
 
-                      console.log('✅ Magic link generated:', magicLink)
+                      console.log('[NOTIF] Magic link generated:', { token, magicLink, expires: expiresAt.toISOString() })
 
                       // Replace placeholders in message template
                       const smsMessage = messageTemplate
@@ -445,10 +499,9 @@ export async function POST(request) {
                         .select()
 
                       if (trackError) {
-                        console.error('⚠️ Notification record already exists or error inserting:', trackError.message)
-                        console.log('Skipping SMS send to prevent duplicate')
+                        console.error('[NOTIF] SKIP — failed to insert analytics_notifications_sent (race condition or duplicate):', trackError.message)
                       } else {
-                        console.log('✅ Notification record created, proceeding to send SMS')
+                        console.log('[NOTIF] Notification record created (id:', insertedNotification[0]?.id, ') — proceeding to send SMS')
 
                         // Update temp seller with magic link
                         await supabase
@@ -460,7 +513,10 @@ export async function POST(request) {
                           })
                           .eq('id', tempSeller.id)
 
-                        console.log(`📱 About to send SMS to ${tempSeller.seller_phone}...`)
+                        console.log(`[NOTIF] Sending SMS to ${tempSeller.seller_phone} from ${settings.from_phone}`)
+                        console.log(`[NOTIF] SMS message: "${smsMessage}"`)
+                        console.log(`[NOTIF] NEXT_PUBLIC_SELLER_PORTAL_URL=${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '(not set — will use localhost:3004)'}`)
+                        console.log(`[NOTIF] AIROSOFTS_SMS_API_KEY set: ${!!process.env.AIROSOFTS_SMS_API_KEY}`)
 
                         // FEATURE 3: Quiet Hours Check
                         let shouldQueueNotification = false
@@ -585,9 +641,8 @@ export async function POST(request) {
                             from: settings.from_phone
                           })
 
-                          console.log('📱 SMS Result:', smsResult)
+                          console.log('[NOTIF] SMS API result:', JSON.stringify(smsResult))
 
-                          // Update notification record with SMS result
                           await supabase
                             .from('analytics_notifications_sent')
                             .update({
@@ -597,24 +652,21 @@ export async function POST(request) {
                             .eq('id', insertedNotification[0].id)
 
                           if (smsResult.success) {
-                            console.log(`✅ SMS sent to ${tempSeller.seller_phone} for property ${propertyId} at threshold ${currentThreshold}`)
+                            console.log(`[NOTIF] ✅ SMS sent successfully to ${tempSeller.seller_phone} — property ${propertyId} threshold ${currentThreshold}`)
                           } else {
-                            console.error('❌ Failed to send SMS:', smsResult.error, smsResult.details)
+                            console.error(`[NOTIF] ❌ SMS FAILED to ${tempSeller.seller_phone}:`, smsResult.error, smsResult.details)
                           }
                         }
                       }
-                    } else {
-                      console.log(`Notification already sent for property ${propertyId} at threshold ${currentThreshold}`)
-                    }
                   }
                 }
               }
             }
           }
         }
+        }
       } catch (notificationError) {
-        // Don't fail the main request if notification fails
-        console.error('Error in automatic notification trigger:', notificationError)
+        console.error('[NOTIF] Unhandled error in notification trigger:', notificationError.message, notificationError.stack)
       }
 
       return NextResponse.json({

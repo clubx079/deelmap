@@ -58,14 +58,14 @@ export function Select({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md shadow-sm hover:border-[#b29578] focus:outline-none focus:ring-1 focus:ring-[#b29578] focus:border-[#b29578] flex items-center justify-between transition-colors"
+        className="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded shadow-sm hover:border-[#b29578] focus:outline-none focus:ring-1 focus:ring-[#b29578] focus:border-[#b29578] flex items-center justify-between transition-colors"
       >
         <span className="block truncate">{displayValue()}</span>
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto">
           {options.map((option) => (
             <div
               key={option.value}

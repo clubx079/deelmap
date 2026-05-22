@@ -8,6 +8,7 @@ export const useProperties = ({
   sortBy = 'newest',
   searchQuery = '',
   pageSize = DEFAULT_PAGE_SIZE,
+  bounds = null, // { swLat, swLng, neLat, neLng }
   authToken = null
 } = {}) => {
   const [properties, setProperties] = useState([])
@@ -27,7 +28,7 @@ export const useProperties = ({
     setPage(0)
     fetchProperties({ nextPage: 0, replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify({ filters, sortBy, searchQuery, pageSize }), authToken])
+  }, [JSON.stringify({ filters, sortBy, searchQuery, pageSize, bounds }), authToken])
 
   const buildQueryParams = (currentPage) => {
     const params = new URLSearchParams()
@@ -110,7 +111,21 @@ export const useProperties = ({
     if (filters.maxCapRate && filters.maxCapRate > 0) {
       params.append('maxCapRate', filters.maxCapRate.toString())
     }
-    
+
+    if (filters.isHighlighted) params.append('isHighlighted', 'true')
+    if (filters.isBoosted) params.append('isBoosted', 'true')
+    if (filters.isHomepageFeatured) params.append('isHomepageFeatured', 'true')
+
+    if (filters.listingType) params.append('listingType', filters.listingType)
+    if (filters.listingStatus) params.append('listingStatus', filters.listingStatus)
+
+    if (bounds?.swLat != null) {
+      params.append('swLat', bounds.swLat)
+      params.append('swLng', bounds.swLng)
+      params.append('neLat', bounds.neLat)
+      params.append('neLng', bounds.neLng)
+    }
+
     return params
   }
 
