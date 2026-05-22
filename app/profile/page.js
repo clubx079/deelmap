@@ -10,6 +10,36 @@ import {
   LogOut, ChevronDown, ShieldBan, RefreshCw, Loader2, Bell, MapPin, Search
 } from 'lucide-react'
 
+function BedBathSelect({ value, onChange, options, disabled }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+  const label = value === '' ? 'Any' : `${value}+`
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" disabled={disabled} onClick={() => !disabled && setOpen(o => !o)}
+        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] text-left transition-all flex items-center justify-between ${disabled ? 'border-[#E8E8E4] bg-[#FAFAF8] text-[#737370] cursor-not-allowed' : 'border-[#E8E8E4] bg-white text-[#1A1816] cursor-pointer hover:border-[#1A1816]'}`}>
+        <span>{label}</span>
+        <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${disabled ? 'text-[#A8A8A4]' : 'text-[#737370]'}`} />
+      </button>
+      {open && (
+        <div className="absolute z-30 top-full left-0 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg overflow-hidden">
+          {options.map(opt => (
+            <div key={opt.value} onClick={() => { onChange(opt.value); setOpen(false) }}
+              className={`px-3 py-2 text-[13px] cursor-pointer transition-colors ${value === opt.value ? 'bg-[#1A1816] text-white' : 'text-[#1A1816] hover:bg-[#FAFAF8]'}`}>
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const { user, signOut } = useAuth()
   const router = useRouter()
@@ -595,25 +625,21 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Beds</label>
-                    <div className="relative">
-                      <select value={buyBox.minBeds} onChange={(e) => setBuyBox(prev => ({ ...prev, minBeds: e.target.value }))} disabled={!isEditingBuyBox}
-                        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] outline-none transition-all appearance-none ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#1A1816] text-[#1A1816]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
-                        <option value="">Any</option>
-                        {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}+</option>)}
-                      </select>
-                      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isEditingBuyBox ? 'text-[#737370]' : 'text-[#A8A8A4]'}`} />
-                    </div>
+                    <BedBathSelect
+                      value={buyBox.minBeds}
+                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBeds: v }))}
+                      disabled={!isEditingBuyBox}
+                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4,5].map(n => ({ value: n, label: `${n}+` }))]}
+                    />
                   </div>
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Baths</label>
-                    <div className="relative">
-                      <select value={buyBox.minBaths} onChange={(e) => setBuyBox(prev => ({ ...prev, minBaths: e.target.value }))} disabled={!isEditingBuyBox}
-                        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] outline-none transition-all appearance-none ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#1A1816] text-[#1A1816]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
-                        <option value="">Any</option>
-                        {[1,2,3,4].map(n => <option key={n} value={n}>{n}+</option>)}
-                      </select>
-                      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isEditingBuyBox ? 'text-[#737370]' : 'text-[#A8A8A4]'}`} />
-                    </div>
+                    <BedBathSelect
+                      value={buyBox.minBaths}
+                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBaths: v }))}
+                      disabled={!isEditingBuyBox}
+                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4].map(n => ({ value: n, label: `${n}+` }))]}
+                    />
                   </div>
                 </div>
 
