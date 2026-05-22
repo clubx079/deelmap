@@ -39,7 +39,6 @@ export default function ThreadPage({ params }) {
   const [replyError, setReplyError] = useState('')
   const [voting, setVoting] = useState(false)
   const [lightboxImg, setLightboxImg] = useState(null)
-  const [showAuthModal, setShowAuthModal] = useState(false)
   const [sort, setSort] = useState('oldest')
   const [categoryName, setCategoryName] = useState('')
 
@@ -74,7 +73,7 @@ export default function ThreadPage({ params }) {
   }, [fetchThread, user])
 
   const handleVote = async () => {
-    if (!user) { setShowAuthModal(true); return }
+    if (!user) { window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } })); return }
     setVoting(true)
     try {
       const res = await fetch(`/api/forum/threads/${threadId}/vote`, {
@@ -92,7 +91,7 @@ export default function ThreadPage({ params }) {
   }
 
   const handleReply = async () => {
-    if (!user) { setShowAuthModal(true); return }
+    if (!user) { window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } })); return }
     if (!replyBody.trim()) return
     setSubmitting(true)
     setReplyError('')
@@ -263,7 +262,7 @@ export default function ThreadPage({ params }) {
                   <MessageSquare className="w-4 h-4 text-[#A8A8A4]" />
                 </div>
                 <button
-                  onClick={() => setShowAuthModal(true)}
+                  onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
                   className="flex-1 text-left px-3 py-2 text-[13px] text-[#A8A8A4] border border-[#E8E8E4] rounded-lg bg-[#FAFAF8] hover:border-[#D03839] hover:text-[#737370] transition-colors"
                 >
                   Sign in to comment...
@@ -300,8 +299,6 @@ export default function ThreadPage({ params }) {
           <button onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl leading-none">✕</button>
         </div>
       )}
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialStep="login" />
     </div>
   )
 }
