@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { use } from 'react'
 import { Plus, ThumbsUp, MessageSquare, Pin, X, ImagePlus, Loader2, Send } from 'lucide-react'
-import { AuthModal } from '@/components/AuthModal'
 
 function Avatar({ name, size = 8 }) {
   const initials = name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'M'
@@ -45,7 +44,6 @@ export default function CategoryPage({ params }) {
   const [uploadingImages, setUploadingImages] = useState(false)
   const [votedMap, setVotedMap] = useState({})
   const [votingId, setVotingId] = useState(null)
-  const [showAuthModal, setShowAuthModal] = useState(false)
   const [expandedId, setExpandedId] = useState(null)
   const [repliesCache, setRepliesCache] = useState({})
   const [fetchingReplies, setFetchingReplies] = useState(null)
@@ -74,7 +72,7 @@ export default function CategoryPage({ params }) {
 
   const toggleComments = async (e, threadId) => {
     e.preventDefault()
-    if (!user) { setShowAuthModal(true); return }
+    if (!user) { window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } })); return }
     if (expandedId === threadId) { setExpandedId(null); return }
     setExpandedId(threadId)
     if (!repliesCache[threadId]) {
@@ -117,7 +115,7 @@ export default function CategoryPage({ params }) {
 
   const handleVote = async (e, threadId) => {
     e.preventDefault()
-    if (!user) { setShowAuthModal(true); return }
+    if (!user) { window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } })); return }
     setVotingId(threadId)
     try {
       const res = await fetch(`/api/forum/threads/${threadId}/vote`, {
@@ -229,7 +227,7 @@ export default function CategoryPage({ params }) {
           </button>
         ) : (
           <button
-            onClick={() => setShowAuthModal(true)}
+            onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
             className="flex items-center gap-1.5 border border-[#D03839] text-[#D03839] hover:bg-[#FEF0EF] px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -326,7 +324,7 @@ export default function CategoryPage({ params }) {
       <div className="bg-white rounded-lg border border-[#E8E8E4] p-3 mb-4 flex items-center gap-3">
         <Avatar name={user ? [user.first_name, user.last_name].filter(Boolean).join(' ') : ''} size={9} />
         <button
-          onClick={() => user ? setShowNewThread(true) : setShowAuthModal(true)}
+          onClick={() => user ? setShowNewThread(true) : window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
           className="flex-1 text-left px-4 py-2.5 rounded-full border border-[#E8E8E4] text-[13px] text-[#A8A8A4] hover:bg-[#F5F5F3] hover:border-[#D4D4CF] transition-colors"
         >
           Start a post...
@@ -489,8 +487,6 @@ export default function CategoryPage({ params }) {
           )}
         </>
       )}
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialStep="login" />
     </div>
   )
 }

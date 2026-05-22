@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { AuthModal } from '@/components/AuthModal'
 import Link from 'next/link'
 import { use } from 'react'
 import { ChevronLeft, ThumbsUp, MessageSquare, Send, Pin } from 'lucide-react'
