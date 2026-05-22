@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useContext } from 'react'
-import { FileText, CheckCircle, ExternalLink, Plus, X, Download } from 'lucide-react'
+import { FileText, CheckCircle, ExternalLink, Plus, X, Download, Trash2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 
@@ -145,6 +145,14 @@ export default function BuyerContractsPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [downloadingId, setDownloadingId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
+
+  async function handleDelete(id) {
+    setDeletingId(id)
+    await fetch('/api/contracts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    setContracts(prev => prev.filter(c => c.id !== id))
+    setDeletingId(null)
+  }
 
   async function handleViewDocument(contractId) {
     setDownloadingId(contractId)
@@ -260,32 +268,43 @@ export default function BuyerContractsPage() {
                   </div>
                 </div>
 
-                {c.status === 'completed' ? (
-                  <div className="shrink-0 flex items-center gap-2">
-                    <span className="text-[12px] text-[#16A34A] font-medium flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Signed
-                    </span>
-                    <button
-                      onClick={() => handleViewDocument(c.id)}
-                      disabled={downloadingId === c.id}
-                      className="h-8 px-3 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] text-[12px] font-semibold rounded transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                <div className="shrink-0 flex items-center gap-2">
+                  {c.status === 'completed' ? (
+                    <>
+                      <span className="text-[12px] text-[#16A34A] font-medium flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" /> Signed
+                      </span>
+                      <button
+                        onClick={() => handleViewDocument(c.id)}
+                        disabled={downloadingId === c.id}
+                        className="h-8 px-3 border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] text-[12px] font-semibold rounded transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        {downloadingId === c.id
+                          ? <span className="w-3.5 h-3.5 border-2 border-[#A8A8A4] border-t-transparent rounded-full animate-spin" />
+                          : <Download className="w-3.5 h-3.5" />}
+                        Download
+                      </button>
+                    </>
+                  ) : url ? (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-8 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors flex items-center gap-1.5"
                     >
-                      {downloadingId === c.id
-                        ? <span className="w-3.5 h-3.5 border-2 border-[#A8A8A4] border-t-transparent rounded-full animate-spin" />
-                        : <Download className="w-3.5 h-3.5" />}
-                      Download
-                    </button>
-                  </div>
-                ) : url ? (
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 h-8 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors flex items-center gap-1.5"
+                      Sign Now <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : null}
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    disabled={deletingId === c.id}
+                    className="h-8 w-8 flex items-center justify-center border border-[#E8E8E4] hover:border-[#D03839] hover:text-[#D03839] text-[#A8A8A4] rounded transition-colors disabled:opacity-50"
                   >
-                    Sign Now <ExternalLink className="w-3 h-3" />
-                  </a>
-                ) : null}
+                    {deletingId === c.id
+                      ? <span className="w-3.5 h-3.5 border-2 border-[#A8A8A4] border-t-transparent rounded-full animate-spin" />
+                      : <Trash2 className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
             )
           })}

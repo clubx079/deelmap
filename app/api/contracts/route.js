@@ -117,3 +117,15 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Failed to create contract' }, { status: 500 })
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const { id } = await request.json()
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+    const res = await fetch(`${DOCUSEAL_BASE}/submissions/${id}`, { method: 'DELETE', headers: headers() })
+    if (!res.ok) return NextResponse.json({ error: 'Failed to delete' }, { status: res.status })
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+}
