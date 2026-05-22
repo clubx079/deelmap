@@ -212,9 +212,9 @@ export default function CategoryPage({ params }) {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-[20px] font-bold text-[#1A1816]">{categoryData?.name || category}</h1>
+          <h1 className="text-[22px] font-bold text-[#1A1816] leading-tight">{categoryData?.name || category}</h1>
           {categoryData?.description && (
             <p className="text-[13px] text-[#737370] mt-0.5">{categoryData.description}</p>
           )}
@@ -222,15 +222,19 @@ export default function CategoryPage({ params }) {
         {user ? (
           <button
             onClick={() => setShowNewThread(true)}
-            className="flex items-center gap-1.5 bg-[#D03839] hover:bg-[#E0493B] text-white px-3 py-2 rounded text-[13px] font-semibold transition-colors shrink-0"
+            className="flex items-center gap-1.5 bg-[#D03839] hover:bg-[#C02A2B] text-white px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shrink-0 shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             New Thread
           </button>
         ) : (
-          <Link href="/login" className="text-[13px] font-semibold text-[#D03839] hover:underline shrink-0">
-            Sign in to post
-          </Link>
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="flex items-center gap-1.5 border border-[#D03839] text-[#D03839] hover:bg-[#FEF0EF] px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Thread
+          </button>
         )}
       </div>
 
@@ -320,74 +324,90 @@ export default function CategoryPage({ params }) {
 
       {/* Thread List */}
       {loading ? (
-        <div className="space-y-2">
-          {[1, 2, 3, 4, 5].map(i => <div key={i} className="bg-white rounded border border-[#E8E8E4] h-20 animate-pulse" />)}
+        <div className="space-y-3 mt-1">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white rounded-lg border border-[#E8E8E4] p-4 space-y-3 animate-pulse">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#E8E8E4]" />
+                <div className="h-3 w-28 bg-[#E8E8E4] rounded" />
+              </div>
+              <div className="h-4 w-3/4 bg-[#E8E8E4] rounded" />
+              <div className="space-y-1.5">
+                <div className="h-3 bg-[#E8E8E4] rounded" />
+                <div className="h-3 w-5/6 bg-[#E8E8E4] rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : threads.length === 0 ? (
-        <div className="bg-white rounded border border-[#E8E8E4] px-6 py-12 text-center">
-          <MessageSquare className="w-8 h-8 text-[#D4D4CF] mx-auto mb-3" />
+        <div className="bg-white rounded-lg border border-[#E8E8E4] px-6 py-14 text-center mt-1">
+          <div className="w-12 h-12 rounded-full bg-[#F5F5F3] flex items-center justify-center mx-auto mb-3">
+            <MessageSquare className="w-5 h-5 text-[#D4D4CF]" />
+          </div>
           <p className="text-[14px] font-semibold text-[#1A1816] mb-1">No threads yet</p>
-          <p className="text-[13px] text-[#737370]">Be the first to start a discussion in this category.</p>
+          <p className="text-[13px] text-[#737370]">Be the first to start a discussion.</p>
         </div>
       ) : (
         <>
-          <div className="space-y-2">
+          <div className="space-y-3 mt-1">
             {threads.map(thread => {
               const voted = votedMap[thread.id] || false
               return (
-                <div key={thread.id} className="bg-white rounded border border-[#E8E8E4]">
-                  <Link href={`/community/${category}/${thread.id}`} className="block px-4 pt-4 pb-3 hover:bg-[#FAFAF8] transition-colors">
+                <div key={thread.id} className="bg-white rounded-lg border border-[#E8E8E4] overflow-hidden transition-shadow hover:shadow-sm">
+                  <Link href={`/community/${category}/${thread.id}`} className="block px-4 pt-4 pb-3">
                     {/* Author row */}
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <Avatar name={thread.user_name} size={7} />
-                      <div>
-                        <span className="text-[13px] font-semibold text-[#1A1816]">{thread.user_name}</span>
-                        <span className="text-[12px] text-[#A8A8A4] ml-2">{timeAgo(thread.created_at)}</span>
-                        {thread.is_pinned && (
-                          <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#0F6E56] bg-[#E4F5EC] px-1.5 py-0.5 rounded">
-                            <Pin className="w-2.5 h-2.5" /> Pinned
-                          </span>
-                        )}
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <Avatar name={thread.user_name} size={8} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13px] font-semibold text-[#1A1816]">{thread.user_name}</span>
+                          <span className="text-[12px] text-[#A8A8A4]">{timeAgo(thread.created_at)}</span>
+                          {thread.is_pinned && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#0F6E56] bg-[#E4F5EC] px-1.5 py-0.5 rounded-full">
+                              <Pin className="w-2.5 h-2.5" /> Pinned
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {/* Title */}
-                    <p className="text-[14px] font-semibold text-[#1A1816] mb-1.5 leading-snug">{thread.title}</p>
+                    <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">{thread.title}</p>
                     {/* Body preview */}
                     {thread.body && (
-                      <p className="text-[13px] text-[#444441] leading-relaxed line-clamp-3 mb-2">{thread.body}</p>
+                      <p className="text-[13px] text-[#555552] leading-[1.6] line-clamp-3">{thread.body}</p>
                     )}
                     {thread.images?.length > 0 && (
-                      <span className="text-[11px] text-[#A8A8A4]">📷 {thread.images.length} photo{thread.images.length > 1 ? 's' : ''}</span>
+                      <span className="inline-block mt-2 text-[11px] text-[#A8A8A4] bg-[#F5F5F3] px-2 py-0.5 rounded-full">📷 {thread.images.length} photo{thread.images.length > 1 ? 's' : ''}</span>
                     )}
                   </Link>
                   {/* Action bar */}
-                  <div className="px-4 py-2 border-t border-[#F0F0EC] flex items-center gap-1">
+                  <div className="px-3 py-2 border-t border-[#F0F0EC] bg-[#FAFAF8] flex items-center gap-0.5">
                     <button
                       onClick={(e) => handleVote(e, thread.id)}
                       disabled={votingId === thread.id}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
-                        voted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                        voted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-white hover:text-[#1A1816]'
                       } disabled:opacity-50`}
                     >
                       <ThumbsUp className="w-3.5 h-3.5" />
-                      {thread.vote_count || 0}
+                      {thread.vote_count || 0} Like{(thread.vote_count || 0) !== 1 ? 's' : ''}
                     </button>
                     <button
                       onClick={(e) => toggleComments(e, thread.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
-                        expandedId === thread.id ? 'text-[#D03839] bg-[#FEF0EF]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                        expandedId === thread.id ? 'text-[#D03839] bg-white' : 'text-[#737370] hover:bg-white hover:text-[#1A1816]'
                       }`}
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
-                      {thread.reply_count || 0} {(thread.reply_count || 0) === 1 ? 'Comment' : 'Comments'}
+                      {thread.reply_count || 0} Comment{(thread.reply_count || 0) !== 1 ? 's' : ''}
                     </button>
                   </div>
 
                   {/* Inline comments panel */}
                   {expandedId === thread.id && (
-                    <div className="border-t border-[#F0F0EC]">
+                    <div className="border-t-2 border-[#E8E8E4] bg-[#FAFAF8]">
                       {/* Reply input */}
-                      <div className="px-4 pt-3 pb-3 border-b border-[#F0F0EC]">
+                      <div className="px-4 pt-3 pb-3 border-b border-[#E8E8E4] bg-white">
                         <div className="flex gap-2.5">
                           <Avatar name={[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'M'} size={7} />
                           <div className="flex-1">
@@ -423,7 +443,7 @@ export default function CategoryPage({ params }) {
                         <p className="px-4 py-4 text-[12px] text-[#A8A8A4]">No comments yet.</p>
                       ) : (
                         (repliesCache[thread.id] || []).map((reply, idx, arr) => (
-                          <div key={reply.id} className={`px-4 py-3 flex gap-2.5 ${idx < arr.length - 1 ? 'border-b border-[#F0F0EC]' : ''}`}>
+                          <div key={reply.id} className={`px-4 py-3 flex gap-2.5 bg-white ${idx < arr.length - 1 ? 'border-b border-[#F0F0EC]' : ''}`}>
                             <Avatar name={reply.user_name} size={7} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline gap-2 mb-0.5">

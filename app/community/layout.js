@@ -159,7 +159,7 @@ export default function CommunityLayout({ children }) {
 
       <div className="pt-[124px] lg:pt-[80px]">
         {/* Two-column layout */}
-        <div className="max-w-6xl mx-auto px-4 pt-0 pb-5 lg:py-5 flex gap-5 items-start">
+        <div className="max-w-6xl mx-auto px-4 pt-3 pb-8 flex gap-5 items-start">
           <CommunitySidebar categories={categories} activeCategory={activeCategory} />
           <main className="flex-1 min-w-0">{children}</main>
         </div>

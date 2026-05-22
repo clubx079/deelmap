@@ -144,7 +144,7 @@ export default function ThreadPage({ params }) {
       </Link>
 
       {/* Single unified card */}
-      <div className="bg-white rounded border border-[#E8E8E4]">
+      <div className="bg-white rounded-lg border border-[#E8E8E4] overflow-hidden">
 
         {/* ── Original Post ── */}
         <div className="px-5 py-5">
@@ -174,12 +174,12 @@ export default function ThreadPage({ params }) {
         </div>
 
         {/* Post action bar */}
-        <div className="px-5 py-2.5 border-t border-[#F0F0EC] flex items-center gap-1">
+        <div className="px-4 py-2 border-t border-[#F0F0EC] bg-[#FAFAF8] flex items-center gap-0.5">
           <button
             onClick={handleVote}
             disabled={voting}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
-              userVoted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+              userVoted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-white hover:text-[#1A1816]'
             } disabled:opacity-50`}
           >
             <ThumbsUp className="w-3.5 h-3.5" />
