@@ -645,7 +645,7 @@ function DealCard({ deal, getFeatureImage, formatCurrency }) {
           </div>
 
           <p className="text-[14px] font-semibold text-[#1A1816] truncate mb-1">
-            {deal.bedrooms ? `${deal.bedrooms}BR` : ''} {deal.address || 'Property'}
+            {deal.address || 'Property'}
           </p>
 
           <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-2">
