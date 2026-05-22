@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { AuthModal } from '@/components/AuthModal'
 import Link from 'next/link'
 import { use } from 'react'
-import { ChevronLeft, ThumbsUp, MessageSquare, Send } from 'lucide-react'
+import { ChevronLeft, ThumbsUp, MessageSquare, Send, Pin } from 'lucide-react'
 
 function timeAgo(ts) {
   if (!ts) return ''
@@ -39,6 +40,7 @@ export default function ThreadPage({ params }) {
   const [replyError, setReplyError] = useState('')
   const [voting, setVoting] = useState(false)
   const [lightboxImg, setLightboxImg] = useState(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   const fetchThread = useCallback(async () => {
     try {
@@ -61,7 +63,7 @@ export default function ThreadPage({ params }) {
   }, [fetchThread, user])
 
   const handleVote = async () => {
-    if (!user) return
+    if (!user) { setShowAuthModal(true); return }
     setVoting(true)
     try {
       const res = await fetch(`/api/forum/threads/${threadId}/vote`, {
@@ -79,6 +81,7 @@ export default function ThreadPage({ params }) {
   }
 
   const handleReply = async () => {
+    if (!user) { setShowAuthModal(true); return }
     if (!replyBody.trim()) return
     setSubmitting(true)
     setReplyError('')
@@ -136,16 +139,26 @@ export default function ThreadPage({ params }) {
       </Link>
 
       {/* Original Post */}
-      <div className="bg-white rounded border border-[#E8E8E4] mb-3">
+      <div className="bg-white rounded border border-[#E8E8E4] mb-4">
         <div className="px-5 py-5">
-          <h1 className="text-[20px] font-bold text-[#1A1816] mb-3 leading-snug">{thread.title}</h1>
-          <div className="flex items-center gap-2 mb-4">
-            <Avatar name={thread.user_name} size={7} />
+          {/* Author */}
+          <div className="flex items-center gap-2.5 mb-3">
+            <Avatar name={thread.user_name} size={9} />
             <div>
-              <span className="text-[13px] font-semibold text-[#1A1816]">{thread.user_name}</span>
-              <span className="text-[12px] text-[#A8A8A4] ml-2">{timeAgo(thread.created_at)}</span>
+              <p className="text-[13px] font-semibold text-[#1A1816] leading-none mb-0.5">{thread.user_name}</p>
+              <p className="text-[11px] text-[#A8A8A4]">{timeAgo(thread.created_at)}</p>
             </div>
+            {thread.is_pinned && (
+              <span className="ml-auto flex items-center gap-0.5 text-[10px] font-semibold text-[#0F6E56] bg-[#E4F5EC] px-1.5 py-0.5 rounded">
+                <Pin className="w-2.5 h-2.5" /> Pinned
+              </span>
+            )}
           </div>
+
+          {/* Title */}
+          <h1 className="text-[18px] font-bold text-[#1A1816] mb-3 leading-snug">{thread.title}</h1>
+
+          {/* Body */}
           <div className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap mb-4">
             {thread.body}
           </div>
@@ -165,77 +178,99 @@ export default function ThreadPage({ params }) {
             </div>
           )}
         </div>
-        <div className="px-5 py-3 border-t border-[#E8E8E4] flex items-center gap-4">
+
+        {/* Action bar */}
+        <div className="px-5 py-3 border-t border-[#F0F0EC] flex items-center gap-1">
           <button
             onClick={handleVote}
-            disabled={!user || voting}
-            className={`flex items-center gap-1.5 text-[13px] font-medium px-3 py-1.5 rounded border transition-colors ${
-              userVoted ? 'bg-[#EBF3FC] border-[#BFDBFE] text-[#2563EB]' : 'border-[#E8E8E4] text-[#737370] hover:border-[#D4D4CF] hover:text-[#1A1816]'
-            } disabled:cursor-not-allowed`}
-            title={!user ? 'Sign in to vote' : undefined}
+            disabled={voting}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
+              userVoted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
+            } disabled:opacity-50`}
           >
             <ThumbsUp className="w-3.5 h-3.5" />
-            {thread.vote_count || 0} {thread.vote_count === 1 ? 'vote' : 'votes'}
+            {thread.vote_count || 0} {(thread.vote_count || 0) === 1 ? 'Like' : 'Likes'}
           </button>
-          <span className="flex items-center gap-1.5 text-[13px] text-[#737370]">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#737370]">
             <MessageSquare className="w-3.5 h-3.5" />
-            {thread.reply_count || 0} {thread.reply_count === 1 ? 'reply' : 'replies'}
+            {thread.reply_count || 0} {(thread.reply_count || 0) === 1 ? 'Comment' : 'Comments'}
           </span>
         </div>
       </div>
 
-      {/* Replies */}
-      {replies.length > 0 && (
-        <div className="space-y-2 mb-3">
-          <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-wide px-1">
-            {replies.length} {replies.length === 1 ? 'Reply' : 'Replies'}
-          </p>
-          {replies.map(reply => (
-            <div key={reply.id} className="bg-white rounded border border-[#E8E8E4] px-5 py-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Avatar name={reply.user_name} size={7} />
-                <div>
-                  <span className="text-[13px] font-semibold text-[#1A1816]">{reply.user_name}</span>
-                  <span className="text-[12px] text-[#A8A8A4] ml-2">{timeAgo(reply.created_at)}</span>
+      {/* Comments section — all in one card */}
+      <div className="bg-white rounded border border-[#E8E8E4]">
+        {/* Reply input at top */}
+        <div id="reply" className="px-5 pt-4 pb-4 border-b border-[#F0F0EC]">
+          {user ? (
+            <div className="flex gap-3">
+              <Avatar name={[user.first_name, user.last_name].filter(Boolean).join(' ') || 'M'} size={8} />
+              <div className="flex-1">
+                <textarea
+                  value={replyBody}
+                  onChange={e => setReplyBody(e.target.value)}
+                  placeholder="Write a comment..."
+                  rows={2}
+                  className="w-full px-3 py-2 text-[13px] border border-[#E8E8E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#D03839] focus:border-[#D03839] resize-none bg-[#FAFAF8]"
+                  onFocus={e => { e.target.rows = 3 }}
+                  onBlur={e => { if (!replyBody) e.target.rows = 2 }}
+                />
+                {replyError && <p className="text-[12px] text-[#D03839] mt-1">{replyError}</p>}
+                {replyBody.trim() && (
+                  <div className="flex justify-end mt-2">
+                    <button
+                      onClick={handleReply}
+                      disabled={submitting}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors disabled:opacity-50"
+                    >
+                      <Send className="w-3 h-3" />
+                      {submitting ? 'Posting...' : 'Post'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#F0F0EC] flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-4 h-4 text-[#A8A8A4]" />
+              </div>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="flex-1 text-left px-3 py-2 text-[13px] text-[#A8A8A4] border border-[#E8E8E4] rounded-lg bg-[#FAFAF8] hover:border-[#D03839] hover:text-[#737370] transition-colors cursor-pointer"
+              >
+                Sign in to comment...
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Replies list */}
+        {replies.length > 0 && (
+          <div>
+            {replies.map((reply, idx) => (
+              <div key={reply.id} className={`px-5 py-4 ${idx < replies.length - 1 ? 'border-b border-[#F0F0EC]' : ''}`}>
+                <div className="flex gap-3">
+                  <Avatar name={reply.user_name} size={8} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-[13px] font-semibold text-[#1A1816]">{reply.user_name}</span>
+                      <span className="text-[11px] text-[#A8A8A4]">{timeAgo(reply.created_at)}</span>
+                    </div>
+                    <p className="text-[13px] text-[#444441] leading-relaxed whitespace-pre-wrap">{reply.body}</p>
+                  </div>
                 </div>
               </div>
-              <p className="text-[14px] text-[#444441] leading-relaxed whitespace-pre-wrap">{reply.body}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Reply form */}
-      {user ? (
-        <div className="bg-white rounded border border-[#E8E8E4] px-5 py-5">
-          <p className="text-[13px] font-semibold text-[#1A1816] mb-3">Leave a reply</p>
-          <textarea
-            value={replyBody}
-            onChange={e => setReplyBody(e.target.value)}
-            placeholder="Share your thoughts..."
-            rows={4}
-            className="w-full px-3 py-2.5 text-[14px] border border-[#E8E8E4] rounded focus:outline-none focus:ring-1 focus:ring-[#D03839] focus:border-[#D03839] resize-none mb-3"
-          />
-          {replyError && <p className="text-[13px] text-[#D03839] mb-2">{replyError}</p>}
-          <div className="flex justify-end">
-            <button
-              onClick={handleReply}
-              disabled={submitting || !replyBody.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="w-3.5 h-3.5" />
-              {submitting ? 'Posting...' : 'Post Reply'}
-            </button>
+            ))}
           </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded border border-[#E8E8E4] px-5 py-6 text-center">
-          <p className="text-[14px] text-[#737370] mb-3">Sign in to join the conversation</p>
-          <Link href="/login" className="inline-block px-5 py-2 text-[13px] font-semibold bg-[#D03839] hover:bg-[#E0493B] text-white rounded transition-colors">
-            Sign in
-          </Link>
-        </div>
-      )}
+        )}
+
+        {replies.length === 0 && (
+          <div className="px-5 py-8 text-center">
+            <p className="text-[13px] text-[#A8A8A4]">No comments yet. Be the first to respond.</p>
+          </div>
+        )}
+      </div>
 
       {/* Lightbox */}
       {lightboxImg && (
@@ -244,6 +279,8 @@ export default function ThreadPage({ params }) {
           <button onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 text-white/80 hover:text-white text-2xl leading-none">✕</button>
         </div>
       )}
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialStep="login" />
     </div>
   )
 }

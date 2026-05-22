@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { use } from 'react'
 import { Plus, ThumbsUp, MessageSquare, Pin, X, ImagePlus, Loader2 } from 'lucide-react'
+import { AuthModal } from '@/components/AuthModal'
 
 function Avatar({ name, size = 8 }) {
   const initials = name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'M'
@@ -44,6 +45,7 @@ export default function CategoryPage({ params }) {
   const [uploadingImages, setUploadingImages] = useState(false)
   const [votedMap, setVotedMap] = useState({})
   const [votingId, setVotingId] = useState(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   const fetchThreads = useCallback(async (p = 1) => {
     setLoading(true)
@@ -67,7 +69,7 @@ export default function CategoryPage({ params }) {
 
   const handleVote = async (e, threadId) => {
     e.preventDefault()
-    if (!user) return
+    if (!user) { setShowAuthModal(true); return }
     setVotingId(threadId)
     try {
       const res = await fetch(`/api/forum/threads/${threadId}/vote`, {
@@ -314,22 +316,31 @@ export default function CategoryPage({ params }) {
                   <div className="px-4 py-2 border-t border-[#F0F0EC] flex items-center gap-1">
                     <button
                       onClick={(e) => handleVote(e, thread.id)}
-                      disabled={!user || votingId === thread.id}
+                      disabled={votingId === thread.id}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium transition-colors ${
                         voted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
-                      } disabled:cursor-not-allowed`}
-                      title={!user ? 'Sign in to like' : undefined}
+                      } disabled:opacity-50`}
                     >
                       <ThumbsUp className="w-3.5 h-3.5" />
                       {thread.vote_count || 0}
                     </button>
-                    <Link
-                      href={`/community/${category}/${thread.id}#reply`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816] transition-colors"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      {thread.reply_count || 0} {thread.reply_count === 1 ? 'Comment' : 'Comments'}
-                    </Link>
+                    {user ? (
+                      <Link
+                        href={`/community/${category}/${thread.id}#reply`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816] transition-colors"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        {thread.reply_count || 0} {thread.reply_count === 1 ? 'Comment' : 'Comments'}
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => setShowAuthModal(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816] transition-colors"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        {thread.reply_count || 0} {thread.reply_count === 1 ? 'Comment' : 'Comments'}
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -345,6 +356,8 @@ export default function CategoryPage({ params }) {
           )}
         </>
       )}
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialStep="login" />
     </div>
   )
 }
