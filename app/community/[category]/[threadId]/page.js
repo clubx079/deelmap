@@ -42,6 +42,17 @@ export default function ThreadPage({ params }) {
   const [lightboxImg, setLightboxImg] = useState(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [sort, setSort] = useState('oldest')
+  const [categoryName, setCategoryName] = useState('')
+
+  useEffect(() => {
+    fetch('/api/forum/categories')
+      .then(r => r.json())
+      .then(d => {
+        const cat = (d.categories || []).find(c => c.slug === category)
+        if (cat) setCategoryName(cat.name)
+      })
+      .catch(() => {})
+  }, [category])
 
   const fetchThread = useCallback(async () => {
     try {
@@ -138,9 +149,11 @@ export default function ThreadPage({ params }) {
 
   return (
     <div>
-      <Link href={`/community/${category}`} className="inline-flex items-center gap-1 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors mb-4">
-        <ChevronLeft className="w-3.5 h-3.5" />
-        Back
+      <Link href={`/community/${category}`} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#737370] hover:text-[#1A1816] transition-colors mb-4 group">
+        <div className="w-6 h-6 rounded-full bg-white border border-[#E8E8E4] flex items-center justify-center group-hover:border-[#D4D4CF] transition-colors">
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </div>
+        {categoryName || 'Back'}
       </Link>
 
       {/* Single unified card */}
@@ -174,21 +187,21 @@ export default function ThreadPage({ params }) {
         </div>
 
         {/* Post action bar */}
-        <div className="px-4 py-2 border-t border-[#F0F0EC] bg-[#FAFAF8] flex items-center gap-0.5">
+        <div className="flex border-t border-[#E8E8E4]">
           <button
             onClick={handleVote}
             disabled={voting}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-              userVoted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-white hover:text-[#1A1816]'
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-medium transition-colors border-r border-[#E8E8E4] ${
+              userVoted ? 'text-[#2563EB] bg-[#F0F6FF]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
             } disabled:opacity-50`}
           >
-            <ThumbsUp className="w-3.5 h-3.5" />
-            {thread.vote_count || 0} {(thread.vote_count || 0) === 1 ? 'Like' : 'Likes'}
+            <ThumbsUp className="w-4 h-4" />
+            Like{(thread.vote_count || 0) > 0 ? ` · ${thread.vote_count}` : ''}
           </button>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#737370]">
-            <MessageSquare className="w-3.5 h-3.5" />
+          <div className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-medium text-[#737370]">
+            <MessageSquare className="w-4 h-4" />
             {thread.reply_count || 0} {(thread.reply_count || 0) === 1 ? 'Comment' : 'Comments'}
-          </span>
+          </div>
         </div>
 
         {/* ── Comments Section ── */}

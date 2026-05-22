@@ -322,6 +322,17 @@ export default function CategoryPage({ params }) {
         </div>
       )}
 
+      {/* Start a post bar */}
+      <div className="bg-white rounded-lg border border-[#E8E8E4] p-3 mb-4 flex items-center gap-3">
+        <Avatar name={user ? [user.first_name, user.last_name].filter(Boolean).join(' ') : ''} size={9} />
+        <button
+          onClick={() => user ? setShowNewThread(true) : setShowAuthModal(true)}
+          className="flex-1 text-left px-4 py-2.5 rounded-full border border-[#E8E8E4] text-[13px] text-[#A8A8A4] hover:bg-[#F5F5F3] hover:border-[#D4D4CF] transition-colors"
+        >
+          Start a post...
+        </button>
+      </div>
+
       {/* Thread List */}
       {loading ? (
         <div className="space-y-3 mt-1">
@@ -370,36 +381,43 @@ export default function CategoryPage({ params }) {
                         </div>
                       </div>
                     </div>
-                    {/* Title */}
-                    <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">{thread.title}</p>
-                    {/* Body preview */}
-                    {thread.body && (
-                      <p className="text-[13px] text-[#555552] leading-[1.6] line-clamp-3">{thread.body}</p>
-                    )}
-                    {thread.images?.length > 0 && (
-                      <span className="inline-block mt-2 text-[11px] text-[#A8A8A4] bg-[#F5F5F3] px-2 py-0.5 rounded-full">📷 {thread.images.length} photo{thread.images.length > 1 ? 's' : ''}</span>
-                    )}
+                    {/* Content row — text + optional thumbnail */}
+                    <div className="flex gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-[#1A1816] mb-2 leading-snug">{thread.title}</p>
+                        {thread.body && (
+                          <p className={`text-[13px] text-[#555552] leading-[1.6] ${thread.images?.length > 0 ? 'line-clamp-2' : 'line-clamp-3'}`}>{thread.body}</p>
+                        )}
+                      </div>
+                      {thread.images?.length > 0 && (
+                        <img
+                          src={thread.images[0]}
+                          alt=""
+                          className="w-[88px] h-[72px] rounded-lg object-cover flex-shrink-0 border border-[#E8E8E4]"
+                        />
+                      )}
+                    </div>
                   </Link>
-                  {/* Action bar */}
-                  <div className="px-3 py-2 border-t border-[#F0F0EC] bg-[#FAFAF8] flex items-center gap-0.5">
+                  {/* Full-width action bar */}
+                  <div className="flex border-t border-[#E8E8E4]">
                     <button
                       onClick={(e) => handleVote(e, thread.id)}
                       disabled={votingId === thread.id}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-                        voted ? 'text-[#2563EB] bg-[#EBF3FC]' : 'text-[#737370] hover:bg-white hover:text-[#1A1816]'
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-medium transition-colors border-r border-[#E8E8E4] ${
+                        voted ? 'text-[#2563EB] bg-[#F0F6FF]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
                       } disabled:opacity-50`}
                     >
-                      <ThumbsUp className="w-3.5 h-3.5" />
-                      {thread.vote_count || 0} Like{(thread.vote_count || 0) !== 1 ? 's' : ''}
+                      <ThumbsUp className="w-4 h-4" />
+                      Like{(thread.vote_count || 0) > 0 ? ` · ${thread.vote_count}` : ''}
                     </button>
                     <button
                       onClick={(e) => toggleComments(e, thread.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-                        expandedId === thread.id ? 'text-[#D03839] bg-white' : 'text-[#737370] hover:bg-white hover:text-[#1A1816]'
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-medium transition-colors ${
+                        expandedId === thread.id ? 'text-[#D03839] bg-[#FEF0EF]' : 'text-[#737370] hover:bg-[#F5F5F3] hover:text-[#1A1816]'
                       }`}
                     >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      {thread.reply_count || 0} Comment{(thread.reply_count || 0) !== 1 ? 's' : ''}
+                      <MessageSquare className="w-4 h-4" />
+                      Comment{(thread.reply_count || 0) > 0 ? ` · ${thread.reply_count}` : ''}
                     </button>
                   </div>
 

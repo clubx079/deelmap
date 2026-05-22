@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import Link from 'next/link'
-import { ChevronDown, ChevronRight, ChevronUp, MessageSquare, Menu } from 'lucide-react'
+import { ChevronDown, ChevronRight, ChevronUp, MessageSquare, Menu, Users, FileText } from 'lucide-react'
 
 const SECTION_ORDER = ['Deals & Wholesaling', 'Market Talk', 'Getting Started', 'Classifieds']
 
@@ -17,12 +17,41 @@ function CommunitySidebar({ categories, activeCategory }) {
   }, {})
 
   const toggle = (section) => setCollapsed(prev => ({ ...prev, [section]: !prev[section] }))
+  const totalPosts = categories.reduce((sum, c) => sum + (c.thread_count || 0), 0)
 
   return (
     <aside className="w-[220px] shrink-0 hidden lg:block">
-      <div className="bg-white rounded border border-[#E8E8E4] overflow-hidden sticky top-[96px] max-h-[calc(100vh-112px)] overflow-y-auto">
+      {/* Stats card */}
+      <div className="bg-white rounded-lg border border-[#E8E8E4] overflow-hidden mb-3">
+        <div className="px-4 py-3 border-b border-[#E8E8E4]">
+          <p className="text-[13px] font-bold text-[#1A1816]">Community</p>
+        </div>
+        <div className="px-4 py-3 space-y-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-[#EBF3FC] flex items-center justify-center flex-shrink-0">
+              <FileText className="w-3.5 h-3.5 text-[#2563EB]" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-[#1A1816]">{totalPosts.toLocaleString()}</p>
+              <p className="text-[11px] text-[#A8A8A4]">Total posts</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-[#E4F5EC] flex items-center justify-center flex-shrink-0">
+              <Users className="w-3.5 h-3.5 text-[#0F6E56]" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-[#1A1816]">{categories.length}</p>
+              <p className="text-[11px] text-[#A8A8A4]">Categories</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Categories nav */}
+      <div className="bg-white rounded-lg border border-[#E8E8E4] overflow-hidden sticky top-[96px] max-h-[calc(100vh-220px)] overflow-y-auto">
         <div className="px-4 py-3 border-b border-[#E8E8E4] bg-[#FAFAF8]">
-          <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1px]">Forum Categories</p>
+          <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1px]">Categories</p>
         </div>
         <nav className="py-1.5">
           {SECTION_ORDER.map(sectionName => {
