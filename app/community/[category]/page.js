@@ -220,7 +220,7 @@ export default function CategoryPage({ params }) {
         {user ? (
           <button
             onClick={() => setShowNewThread(true)}
-            className="flex items-center gap-1.5 bg-[#D03839] hover:bg-[#C02A2B] text-white px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shrink-0 shadow-sm"
+            className="flex items-center gap-1.5 bg-[#D03839] hover:bg-[#C02A2B] text-white px-4 py-2 rounded text-[13px] font-semibold transition-colors shrink-0 shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             New Thread
@@ -228,7 +228,7 @@ export default function CategoryPage({ params }) {
         ) : (
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
-            className="flex items-center gap-1.5 border border-[#D03839] text-[#D03839] hover:bg-[#FEF0EF] px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shrink-0"
+            className="flex items-center gap-1.5 border border-[#D03839] text-[#D03839] hover:bg-[#FEF0EF] px-4 py-2 rounded text-[13px] font-semibold transition-colors shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             New Thread
