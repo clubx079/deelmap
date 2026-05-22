@@ -45,6 +45,7 @@ export async function GET(request) {
     // Combine: contracts where buyer is a submitter OR buyer created it
     const seen = new Set()
     const submissions = allSubmissions.filter(s => {
+      if (s.archived_at) return false
       const isBuyerSubmitter = s.submitters?.some(sub => sub.email?.toLowerCase() === email?.toLowerCase())
       const isBuyerCreated = buyerCreatedIds.has(s.id)
       if ((isBuyerSubmitter || isBuyerCreated) && !seen.has(s.id)) {
