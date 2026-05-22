@@ -103,9 +103,23 @@ export async function POST(request) {
     const suffix = Math.floor(1000 + Math.random() * 9000)
     const code = firstName ? `${firstName}${suffix}` : `DEEL${suffix}`
 
+    // Ensure the base coupon exists in Stripe, create it if not
+    let couponId = REFERRAL_COUPON_ID
+    try {
+      await stripe.coupons.retrieve(REFERRAL_COUPON_ID)
+    } catch {
+      const coupon = await stripe.coupons.create({
+        id: REFERRAL_COUPON_ID,
+        percent_off: 20,
+        duration: 'once',
+        name: 'DeelMap Referral — 20% off',
+      })
+      couponId = coupon.id
+    }
+
     // Create promotion code in Stripe under the referral coupon
     const promoCode = await stripe.promotionCodes.create({
-      promotion: { type: 'coupon', coupon: REFERRAL_COUPON_ID },
+      coupon: couponId,
       code,
       metadata: { user_id: userId, user_type },
     })

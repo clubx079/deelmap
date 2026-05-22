@@ -78,6 +78,9 @@ export function useGuestAccess(user, propertyId) {
         setIsLocked(true)
         setLockoutTimeLeft(Math.ceil(LOCKOUT_DURATION / 1000))
         setShowLockModal(true)
+        import('@/lib/analytics').then(({ trackEvent }) => {
+          trackEvent('guest_limit_reached', { properties_viewed: guestData.views.length })
+        })
       } else {
         saveGuestData(guestData)
       }
