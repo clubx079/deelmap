@@ -20,7 +20,6 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.png', type: 'image/png' },
       { url: '/favicon.ico' },
     ],
   },
