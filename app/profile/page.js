@@ -136,12 +136,13 @@ export default function ProfilePage() {
 
   const fetchLocationSuggestions = async () => {
     if (locationSuggestions.length > 0) return
+    const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
     const [{ data: wDeals }, { data: props }] = await Promise.all([
       supabase.from('wholesale_deals').select('city, state').not('city', 'is', null).not('state', 'is', null),
       supabase.from('properties').select('city, state').not('city', 'is', null).not('state', 'is', null),
     ])
-    const seen = new Set()
-    const all = []
+    const seen = new Set(US_STATES)
+    const all = [...US_STATES]
     for (const row of [...(wDeals || []), ...(props || [])]) {
       const city = (row.city || '').trim()
       const state = (row.state || '').trim()
@@ -560,7 +561,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Buy Box */}
-            <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+            <div className="bg-white border border-[#E8E8E4] rounded overflow-visible">
               <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center flex-shrink-0">
@@ -606,8 +607,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Locations</label>
                   {isEditingBuyBox && (
-                    <div className="space-y-2 mb-2">
-                      {/* Dropdown from DB */}
+                    <div className="mb-2">
                       <div className="relative" ref={locationDropdownRef}>
                         <div
                           className="flex items-center gap-2 px-3 py-2.5 border border-[#E8E8E4] rounded bg-white cursor-pointer focus-within:border-[#D03839] focus-within:ring-1 focus-within:ring-[#D03839]/20"
@@ -625,11 +625,11 @@ export default function ProfilePage() {
                           <ChevronDown className={`w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0 transition-transform ${locationDropdownOpen ? 'rotate-180' : ''}`} />
                         </div>
                         {locationDropdownOpen && (
-                          <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg max-h-48 overflow-y-auto">
+                          <div className="absolute z-50 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg max-h-48 overflow-y-auto">
                             {locationSuggestions
                               .filter(s => s.toLowerCase().includes(locationSearch.toLowerCase()))
                               .filter(s => !buyBox.locations.includes(s))
-                              .slice(0, 50)
+                              .slice(0, 80)
                               .map(s => (
                                 <button
                                   key={s}
@@ -646,22 +646,11 @@ export default function ProfilePage() {
                                 </button>
                               ))
                             }
-                            {locationSuggestions.filter(s => s.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
+                            {locationSuggestions.filter(s => s.toLowerCase().includes(locationSearch.toLowerCase())).filter(s => !buyBox.locations.includes(s)).length === 0 && (
                               <p className="px-3 py-2 text-[12px] text-[#A8A8A4]">No matches</p>
                             )}
                           </div>
                         )}
-                      </div>
-                      {/* Custom text input */}
-                      <div className="flex gap-2">
-                        <input type="text" value={locationInput} onChange={(e) => setLocationInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
-                          placeholder="Or type custom (e.g. Dallas, TX)"
-                          className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 outline-none" />
-                        <button type="button" onClick={addLocation}
-                          className="px-4 min-h-[44px] bg-[#1A1816] hover:bg-[#2D2B28] text-white text-[13px] font-semibold rounded transition-colors">
-                          Add
-                        </button>
                       </div>
                     </div>
                   )}
