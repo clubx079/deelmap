@@ -595,19 +595,25 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Beds</label>
-                    <select value={buyBox.minBeds} onChange={(e) => setBuyBox(prev => ({ ...prev, minBeds: e.target.value }))} disabled={!isEditingBuyBox}
-                      className={`w-full px-4 py-3 border rounded text-[13px] outline-none transition-all ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#D03839]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
-                      <option value="">Any</option>
-                      {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}+</option>)}
-                    </select>
+                    <div className="relative">
+                      <select value={buyBox.minBeds} onChange={(e) => setBuyBox(prev => ({ ...prev, minBeds: e.target.value }))} disabled={!isEditingBuyBox}
+                        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] outline-none transition-all appearance-none ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#1A1816] text-[#1A1816]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
+                        <option value="">Any</option>
+                        {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}+</option>)}
+                      </select>
+                      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isEditingBuyBox ? 'text-[#737370]' : 'text-[#A8A8A4]'}`} />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Baths</label>
-                    <select value={buyBox.minBaths} onChange={(e) => setBuyBox(prev => ({ ...prev, minBaths: e.target.value }))} disabled={!isEditingBuyBox}
-                      className={`w-full px-4 py-3 border rounded text-[13px] outline-none transition-all ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#D03839]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
-                      <option value="">Any</option>
-                      {[1,2,3,4].map(n => <option key={n} value={n}>{n}+</option>)}
-                    </select>
+                    <div className="relative">
+                      <select value={buyBox.minBaths} onChange={(e) => setBuyBox(prev => ({ ...prev, minBaths: e.target.value }))} disabled={!isEditingBuyBox}
+                        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] outline-none transition-all appearance-none ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#1A1816] text-[#1A1816]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
+                        <option value="">Any</option>
+                        {[1,2,3,4].map(n => <option key={n} value={n}>{n}+</option>)}
+                      </select>
+                      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isEditingBuyBox ? 'text-[#737370]' : 'text-[#A8A8A4]'}`} />
+                    </div>
                   </div>
                 </div>
 
