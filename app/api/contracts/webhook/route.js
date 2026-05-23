@@ -143,7 +143,7 @@ export async function POST(request) {
 
     const assignorName = data.name || data.email || 'The Buyer'
     const property = fullSubmission.name || ''
-    const signingUrl = `https://docuseal.com/s/${assigneeSubmitter.slug}`
+    const signingUrl = `https://deelmap.com/sign/${assigneeSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
     const emailResult = await resend.emails.send({
