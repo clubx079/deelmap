@@ -1,5 +1,6 @@
-import { redirect } from 'next/navigation'
+'use client'
+import CommunityFeed from './[channel]/page'
 
-export default function CommunityPage() {
-  redirect('/community/deal-analysis')
+export default function CommunityHomePage() {
+  return <CommunityFeed params={{}} channel={null} />
 }

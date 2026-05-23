@@ -3,90 +3,70 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import Link from 'next/link'
-import { ChevronDown, ChevronRight, ChevronUp, MessageSquare, Menu, Users, FileText } from 'lucide-react'
+import { MessageSquare, TrendingUp, HelpCircle, Trophy, BookOpen, Newspaper, Wrench, Users2 } from 'lucide-react'
 
-const SECTION_ORDER = ['Deals & Wholesaling', 'Market Talk', 'Getting Started', 'Classifieds']
+const CHANNEL_ICONS = {
+  deals: MessageSquare,
+  analysis: TrendingUp,
+  questions: HelpCircle,
+  wins: Trophy,
+  learn: BookOpen,
+  news: Newspaper,
+  tools: Wrench,
+  intros: Users2,
+}
 
-function CommunitySidebar({ categories, activeCategory }) {
-  const [collapsed, setCollapsed] = useState({})
-
-  const sections = categories.reduce((acc, cat) => {
-    if (!acc[cat.section]) acc[cat.section] = []
-    acc[cat.section].push(cat)
-    return acc
-  }, {})
-
-  const toggle = (section) => setCollapsed(prev => ({ ...prev, [section]: !prev[section] }))
-  const totalPosts = categories.reduce((sum, c) => sum + (c.thread_count || 0), 0)
+function ChannelSidebar({ channels, activeChannel }) {
+  const totalPosts = channels.reduce((s, c) => s + (c.post_count || 0), 0)
 
   return (
-    <aside className="w-[220px] shrink-0 hidden lg:block">
-      {/* Stats card */}
-      <div className="bg-white rounded-lg border border-[#E8E8E4] overflow-hidden mb-3">
+    <aside className="w-[220px] shrink-0 hidden lg:block sticky top-[92px] self-start">
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden mb-3">
         <div className="px-4 py-3 border-b border-[#E8E8E4]">
           <p className="text-[13px] font-bold text-[#1A1816]">Community</p>
+          <p className="text-[11px] text-[#A8A8A4] mt-0.5">Real estate investors</p>
         </div>
-        <div className="px-4 py-3 space-y-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-[#EBF3FC] flex items-center justify-center flex-shrink-0">
-              <FileText className="w-3.5 h-3.5 text-[#2563EB]" />
-            </div>
-            <div>
-              <p className="text-[13px] font-semibold text-[#1A1816]">{totalPosts.toLocaleString()}</p>
-              <p className="text-[11px] text-[#A8A8A4]">Total posts</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-[#E4F5EC] flex items-center justify-center flex-shrink-0">
-              <Users className="w-3.5 h-3.5 text-[#0F6E56]" />
-            </div>
-            <div>
-              <p className="text-[13px] font-semibold text-[#1A1816]">{categories.length}</p>
-              <p className="text-[11px] text-[#A8A8A4]">Categories</p>
-            </div>
-          </div>
+        <div className="px-4 py-3">
+          <p className="text-[13px] font-semibold text-[#1A1816]">{totalPosts.toLocaleString()} posts</p>
+          <p className="text-[11px] text-[#A8A8A4]">{channels.length} channels</p>
         </div>
       </div>
 
-      {/* Categories nav */}
-      <div className="bg-white rounded-lg border border-[#E8E8E4] overflow-hidden sticky top-[96px] max-h-[calc(100vh-220px)] overflow-y-auto">
-        <div className="px-4 py-3 border-b border-[#E8E8E4] bg-[#FAFAF8]">
-          <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1px]">Categories</p>
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-[#E8E8E4] bg-[#FAFAF8]">
+          <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1px]">Channels</p>
         </div>
-        <nav className="py-1.5">
-          {SECTION_ORDER.map(sectionName => {
-            const cats = sections[sectionName]
-            if (!cats?.length) return null
-            const isCollapsed = collapsed[sectionName]
+        <nav className="py-1">
+          <Link
+            href="/community"
+            className={`flex items-center gap-2.5 px-4 py-2 text-[13px] transition-colors border-l-2 ${
+              activeChannel === null
+                ? 'text-[#D03839] font-semibold bg-[#FEF0EF] border-l-[#D03839]'
+                : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816] border-l-transparent'
+            }`}
+          >
+            <TrendingUp className="w-3.5 h-3.5 shrink-0 text-[#A8A8A4]" />
+            <span>All Posts</span>
+          </Link>
+          {channels.map(ch => {
+            const Icon = CHANNEL_ICONS[ch.slug] || MessageSquare
+            const isActive = activeChannel === ch.slug
             return (
-              <div key={sectionName}>
-                <button
-                  onClick={() => toggle(sectionName)}
-                  className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[0.8px] hover:text-[#737370] transition-colors"
-                >
-                  {sectionName}
-                  {isCollapsed
-                    ? <ChevronRight className="w-3 h-3 flex-shrink-0" />
-                    : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
-                </button>
-                {!isCollapsed && cats.map(cat => {
-                  const isActive = activeCategory === cat.slug
-                  return (
-                    <Link
-                      key={cat.id}
-                      href={`/community/${cat.slug}`}
-                      className={`flex items-center gap-2 pl-4 pr-3 py-2 text-[13px] transition-colors border-r-2 ${
-                        isActive
-                          ? 'text-[#D03839] font-semibold bg-[#FEF0EF] border-r-[#D03839]'
-                          : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816] border-r-transparent'
-                      }`}
-                    >
-                      <MessageSquare className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-[#D03839]' : 'text-[#A8A8A4]'}`} />
-                      <span className="truncate">{cat.name}</span>
-                    </Link>
-                  )
-                })}
-              </div>
+              <Link
+                key={ch.id}
+                href={`/community/${ch.slug}`}
+                className={`flex items-center gap-2.5 px-4 py-2 text-[13px] transition-colors border-l-2 ${
+                  isActive
+                    ? 'text-[#D03839] font-semibold bg-[#FEF0EF] border-l-[#D03839]'
+                    : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816] border-l-transparent'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[#D03839]' : 'text-[#A8A8A4]'}`} />
+                <span className="truncate">{ch.name}</span>
+                {ch.post_count > 0 && (
+                  <span className="ml-auto text-[11px] text-[#A8A8A4] shrink-0">{ch.post_count}</span>
+                )}
+              </Link>
             )
           })}
         </nav>
@@ -95,105 +75,26 @@ function CommunitySidebar({ categories, activeCategory }) {
   )
 }
 
-function MobileCategoryNav({ categories, activeCategory }) {
-  const [open, setOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState({})
-
-  const sections = categories.reduce((acc, cat) => {
-    if (!acc[cat.section]) acc[cat.section] = []
-    acc[cat.section].push(cat)
-    return acc
-  }, {})
-
-  const activeCat = categories.find(c => c.slug === activeCategory)
-  const toggle = (section) => setCollapsed(prev => ({ ...prev, [section]: !prev[section] }))
-
-  return (
-    <div className="fixed top-[80px] left-0 right-0 z-[50] lg:hidden bg-white border-b border-[#E8E8E4]">
-      <button
-        onClick={() => setOpen(prev => !prev)}
-        className="w-full flex items-center justify-between px-4 py-3"
-      >
-        <div className="flex items-center gap-2">
-          <Menu className="w-4 h-4 text-[#A8A8A4]" />
-          <span className="text-[13px] font-semibold text-[#1A1816]">
-            {activeCat ? activeCat.name : 'Forum Categories'}
-          </span>
-        </div>
-        {open ? <ChevronUp className="w-4 h-4 text-[#737370]" /> : <ChevronDown className="w-4 h-4 text-[#737370]" />}
-      </button>
-
-      {open && (
-        <div className="border-t border-[#E8E8E4] pb-1.5">
-          {SECTION_ORDER.map(sectionName => {
-            const cats = sections[sectionName]
-            if (!cats?.length) return null
-            const isCollapsed = collapsed[sectionName]
-            return (
-              <div key={sectionName}>
-                <button
-                  onClick={() => toggle(sectionName)}
-                  className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[0.8px] hover:text-[#737370] transition-colors"
-                >
-                  {sectionName}
-                  {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
-                {!isCollapsed && cats.map(cat => {
-                  const isActive = activeCategory === cat.slug
-                  return (
-                    <Link
-                      key={cat.id}
-                      href={`/community/${cat.slug}`}
-                      onClick={() => setOpen(false)}
-                      className={`flex items-center gap-2 pl-6 pr-4 py-2 text-[13px] transition-colors ${
-                        isActive
-                          ? 'text-[#D03839] font-semibold bg-[#FEF0EF]'
-                          : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816]'
-                      }`}
-                    >
-                      <MessageSquare className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-[#D03839]' : 'text-[#A8A8A4]'}`} />
-                      <span className="truncate">{cat.name}</span>
-                    </Link>
-                  )
-                })}
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function CommunityLayout({ children }) {
   const pathname = usePathname()
-  const [categories, setCategories] = useState([])
+  const [channels, setChannels] = useState([])
 
   useEffect(() => {
-    fetch('/api/forum/categories')
-      .then(r => r.json())
-      .then(d => setCategories(d.categories || []))
-      .catch(() => {})
+    fetch('/api/community/channels').then(r => r.json()).then(setChannels).catch(() => {})
   }, [])
 
-  const activeCategory = pathname.startsWith('/community/')
-    ? pathname.split('/')[2] || null
-    : null
+  const parts = pathname.split('/').filter(Boolean)
+  const activeChannel = parts[0] === 'community' && parts[1] ? parts[1] : null
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8]" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+    <div className="min-h-screen bg-[#F5F5F3]">
       <Navbar />
-      {/* Mobile: fixed right below navbar */}
-      <MobileCategoryNav categories={categories} activeCategory={activeCategory} />
-
-      <div className="pt-[124px] lg:pt-[80px]">
-        {/* Two-column layout */}
-        <div className="max-w-6xl mx-auto px-4 pt-3 pb-8 flex gap-5 items-start">
-          <CommunitySidebar categories={categories} activeCategory={activeCategory} />
+      <div className="pt-[80px]">
+        <div className="max-w-5xl mx-auto px-4 py-6 flex gap-5 items-start">
+          <ChannelSidebar channels={channels} activeChannel={activeChannel} />
           <main className="flex-1 min-w-0">{children}</main>
         </div>
       </div>
     </div>
   )
 }
-
