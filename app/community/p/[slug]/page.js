@@ -18,6 +18,7 @@ import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { showToast, showPrompt, showReportDialog } from '@/components/community/Dialogs'
 import { ShareMenu } from '@/components/community/ShareMenu'
 import { PostDetailSkeleton } from '@/components/community/PostDetailSkeleton'
+import { renderRichBody } from '@/lib/community/markdown'
 
 // ── sessionStorage cache (stale-while-revalidate) ────────────────────────
 const CACHE_KEY = (slug) => `community-post-${slug}`
@@ -85,17 +86,10 @@ function formatCount(n) {
   return String(n)
 }
 
+// Render the post body or a comment using the shared markdown renderer.
+// Supports the full toolbar grammar (bold, italic, blockquote, link, image).
 function renderBody(text) {
-  if (!text) return null
-  return text.split(/\n\n+/).map((para, i) => (
-    <p key={i}>
-      {para.split(/(\*\*[^*]+\*\*)/g).map((p, j) =>
-        p.startsWith('**') && p.endsWith('**')
-          ? <strong key={j}>{p.slice(2, -2)}</strong>
-          : <span key={j}>{p}</span>
-      )}
-    </p>
-  ))
+  return renderRichBody(text)
 }
 
 function buildTree(flat) {

@@ -10,16 +10,7 @@ import { VerifyBadge } from './VerifyBadge'
 import { LotTag } from './LotTag'
 import { ShareMenu } from './ShareMenu'
 import { showToast } from './Dialogs'
-
-function renderInline(text) {
-  if (!text) return null
-  const parts = text.split(/(\*\*[^*]+\*\*)/g)
-  return parts.map((p, i) =>
-    p.startsWith('**') && p.endsWith('**')
-      ? <strong key={i} className="text-[#1A1816] font-semibold">{p.slice(2, -2)}</strong>
-      : <span key={i}>{p}</span>
-  )
-}
+import { renderInline } from '@/lib/community/markdown'
 
 function relativeTime(iso) {
   if (!iso) return ''

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ShieldCheck, X, Shuffle } from 'lucide-react'
+import { ShieldCheck, X, Shuffle, UserCircle } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { lockBodyScroll } from './Dialogs'
 
@@ -24,6 +24,17 @@ function suggestHandle() {
   const n = NOUN[Math.floor(Math.random() * NOUN.length)]
   // 25% of the time add a 2-digit suffix to reduce collision odds
   return Math.random() < 0.25 ? `${a}_${n}_${Math.floor(Math.random() * 89) + 10}` : `${a}_${n}`
+}
+
+// Derive a handle-safe slug from a real first/last name
+function handleFromName(first, last) {
+  const raw = `${first || ''}_${last || ''}`
+  return raw
+    .toLowerCase()
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')   // strip accents
+    .replace(/[^a-z0-9_]/g, '')                          // keep only handle-legal chars
+    .replace(/^_+|_+$/g, '')                             // trim leading/trailing _
+    .slice(0, 24)
 }
 
 export function HandlePickerModal({ open, onClose, onCreated }) {
@@ -57,6 +68,21 @@ export function HandlePickerModal({ open, onClose, onCreated }) {
   const shuffle = () => {
     setHandle(suggestHandle())
     setEdited(false)
+    setError(null)
+  }
+
+  // Available if the DeelMap account has a real first/last name on it
+  const hasAccountName = !!(user?.first_name || user?.last_name)
+  const useAccountName = () => {
+    const derived = handleFromName(user?.first_name, user?.last_name)
+    if (derived.length < 3) {
+      setError('Your account name is too short to make a handle. Type your own.')
+      return
+    }
+    setHandle(derived)
+    const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').slice(0, 60)
+    if (fullName) setDisplayName(fullName)
+    setEdited(true)
     setError(null)
   }
 
@@ -108,16 +134,29 @@ export function HandlePickerModal({ open, onClose, onCreated }) {
 
         <form onSubmit={submit} className="px-5 py-4 space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
               <label className="block text-[12px] font-bold uppercase tracking-wider text-[#737370]">Handle</label>
-              <button
-                type="button"
-                onClick={shuffle}
-                className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#D03839] hover:text-[#C73022]"
-              >
-                <Shuffle className="w-3 h-3" strokeWidth={2.5} />
-                Shuffle suggestion
-              </button>
+              <div className="flex items-center gap-3">
+                {hasAccountName && (
+                  <button
+                    type="button"
+                    onClick={useAccountName}
+                    className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#1A1816] hover:text-[#D03839]"
+                    title="Fill from your DeelMap account name"
+                  >
+                    <UserCircle className="w-3 h-3" strokeWidth={2.5} />
+                    Use my account name
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={shuffle}
+                  className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#D03839] hover:text-[#C73022]"
+                >
+                  <Shuffle className="w-3 h-3" strokeWidth={2.5} />
+                  Shuffle suggestion
+                </button>
+              </div>
             </div>
             <div className="flex items-center border border-[#D1D1CE] rounded focus-within:border-[#D03839]">
               <span className="pl-3 text-[15px] text-[#A8A8A4]">@</span>
