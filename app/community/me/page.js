@@ -26,7 +26,6 @@ const TABS = [
 
 export default function MyProfilePage() {
   const { user } = useAuth()
-  const router = useRouter()
 
   const [profile, setProfile] = useState(null)
   const [tier, setTier] = useState(null)
