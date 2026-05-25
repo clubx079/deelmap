@@ -20,8 +20,15 @@ export function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
 
+  // Community notifications (separate from buyer notifications)
+  const [communityNotifs, setCommunityNotifs] = useState([])
+  const [communityUnread, setCommunityUnread] = useState(0)
+  const [communityOpen, setCommunityOpen] = useState(false)
+  const [hasCommunityProfile, setHasCommunityProfile] = useState(false)
+
   const aboutButtonRef = useRef(null)
   const notifBellRef = useRef(null)
+  const communityBellRef = useRef(null)
   const [scrolled, setScrolled] = useState(false)
 
   const isHome = pathname === '/'
@@ -65,15 +72,37 @@ export function Navbar() {
     return () => clearInterval(interval)
   }, [user?.id])
 
-  // Close notif dropdown on outside click
+  // Fetch community notifications (only if user has a community profile)
   useEffect(() => {
-    if (!notifOpen) return
+    if (!user?.id) {
+      setCommunityUnread(0); setCommunityNotifs([]); setHasCommunityProfile(false); return
+    }
+    const fetchCommunityNotifs = async () => {
+      try {
+        const res = await fetch('/api/community/notifications?limit=10', { headers: { 'x-user-id': user.id } })
+        if (res.ok) {
+          const data = await res.json()
+          setCommunityNotifs(data.notifications || [])
+          setCommunityUnread(data.unread_count || 0)
+          setHasCommunityProfile(!!data.has_profile)
+        }
+      } catch {}
+    }
+    fetchCommunityNotifs()
+    const interval = setInterval(fetchCommunityNotifs, 30000)
+    return () => clearInterval(interval)
+  }, [user?.id])
+
+  // Close notif dropdowns on outside click
+  useEffect(() => {
+    if (!notifOpen && !communityOpen) return
     const handler = (e) => {
-      if (notifBellRef.current && !notifBellRef.current.contains(e.target)) setNotifOpen(false)
+      if (notifOpen && notifBellRef.current && !notifBellRef.current.contains(e.target)) setNotifOpen(false)
+      if (communityOpen && communityBellRef.current && !communityBellRef.current.contains(e.target)) setCommunityOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [notifOpen])
+  }, [notifOpen, communityOpen])
 
   // Body scroll lock when mobile menu is open
   useEffect(() => {
@@ -134,6 +163,7 @@ export function Navbar() {
     { label: 'Buy', href: '/marketplace' },
     { label: 'Sell', href: '/join-seller' },
     { label: 'Finance', href: '/financing' },
+    { label: 'Community', href: '/community' },
     { label: 'More', href: '/our-story', hasDropdown: true },
   ]
 
@@ -141,6 +171,7 @@ export function Navbar() {
     if (href === '/marketplace') return pathname === '/marketplace'
     if (href === '/join-seller') return pathname === '/join-seller'
     if (href === '/financing') return pathname === '/financing'
+    if (href === '/community') return pathname === '/community' || pathname.startsWith('/community/')
     if (href === '/our-story') return pathname === '/our-story' || pathname === '/contact' || pathname === '/resources' || pathname.startsWith('/resources/') || pathname === '/advertise'
     return false
   }
@@ -230,6 +261,87 @@ export function Navbar() {
                   >
                     + Post a Deal
                   </Link>
+                  {/* Community notifications — only shown when user has a community profile */}
+                  {hasCommunityProfile && (
+                    <div className="relative" ref={communityBellRef}>
+                      <button
+                        onClick={() => setCommunityOpen(prev => !prev)}
+                        className="relative p-2 text-[#737370] hover:text-[#1A1816] transition-colors"
+                        title="Community notifications"
+                      >
+                        {/* Speech-bubble icon to distinguish from the buyer bell */}
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+                        </svg>
+                        {communityUnread > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-[#D03839] rounded-full leading-none">
+                            {communityUnread > 99 ? '99+' : communityUnread}
+                          </span>
+                        )}
+                      </button>
+
+                      {communityOpen && (
+                        <div className="fixed top-[84px] left-3 right-3 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:mt-2 sm:w-[380px] bg-white border border-[#E8E8E4] rounded shadow-xl z-[99999] overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E8E4]">
+                            <span className="text-[14px] font-semibold text-[#1A1816]">Community</span>
+                            {communityUnread > 0 && (
+                              <button
+                                onClick={async () => {
+                                  await fetch('/api/community/notifications', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+                                    body: JSON.stringify({ action: 'mark_all_read' }),
+                                  })
+                                  setCommunityUnread(0)
+                                  setCommunityNotifs(prev => prev.map(n => ({ ...n, is_read: true })))
+                                }}
+                                className="text-[12px] text-[#D03839] font-medium hover:underline"
+                              >
+                                Mark all read
+                              </button>
+                            )}
+                          </div>
+                          <div className="max-h-[340px] overflow-y-auto">
+                            {communityNotifs.length === 0 ? (
+                              <div className="flex items-center justify-center h-16 text-[13px] text-[#737370]">No community notifications yet</div>
+                            ) : communityNotifs.map(n => (
+                              <Link
+                                key={n.id}
+                                href={n.href || '/community/notifications'}
+                                onClick={async () => {
+                                  setCommunityOpen(false)
+                                  if (!n.is_read) {
+                                    await fetch('/api/community/notifications', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+                                      body: JSON.stringify({ action: 'mark_read', notification_id: n.id }),
+                                    })
+                                    setCommunityNotifs(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x))
+                                    setCommunityUnread(prev => Math.max(0, prev - 1))
+                                  }
+                                }}
+                                className={`flex items-start gap-3 px-4 py-3 border-l-2 transition-colors hover:bg-[#FAFAF8] ${n.is_read ? 'border-l-transparent' : 'border-l-[#D03839] bg-[#FAFAF8]'}`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-[13px] truncate ${n.is_read ? 'text-[#444441]' : 'font-semibold text-[#1A1816]'}`}>{n.title}</p>
+                                  {n.body && <p className="text-[12px] text-[#737370] truncate mt-0.5">{n.body}</p>}
+                                  <p className="text-[11px] text-[#A8A8A4] mt-1">{n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                          <Link
+                            href="/community/notifications"
+                            onClick={() => setCommunityOpen(false)}
+                            className="block px-4 py-3 border-t border-[#E8E8E4] text-center text-[12.5px] font-semibold text-[#D03839] hover:bg-[#FAFAF8]"
+                          >
+                            View all notifications
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Notifications */}
                   <div className="relative" ref={notifBellRef}>
                     <button

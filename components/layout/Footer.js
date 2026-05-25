@@ -100,7 +100,7 @@ function AccordionSection({ title, links, isOpen, onToggle }) {
   )
 }
 
-export function Footer() {
+export function Footer({ hideCta = false } = {}) {
   const [openSection, setOpenSection] = useState(null)
 
   const toggle = (index) => {
@@ -109,7 +109,8 @@ export function Footer() {
 
   return (
     <footer>
-      {/* CTA Section */}
+      {/* CTA Section — hidden on community pages where it competes with the in-app CTAs */}
+      {!hideCta && (
       <div className="bg-[#1A1816] relative overflow-hidden">
         <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white/[0.04] pointer-events-none" />
 
@@ -147,6 +148,7 @@ export function Footer() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Links Section */}
       <div className="bg-[#111111]">
