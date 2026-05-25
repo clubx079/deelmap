@@ -137,7 +137,7 @@ export async function POST(request) {
     const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${assigneeSubmitter.id}`, {
       method: 'PATCH',
       headers: dsHeaders(),
-      body: JSON.stringify({ email: assigneeEmail, name: assigneeName }),
+      body: JSON.stringify({ email: assigneeEmail, name: assigneeName, send_email: false }),
     })
     console.log('[webhook] patch status:', patchRes.status)
 
