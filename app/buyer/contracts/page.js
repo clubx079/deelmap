@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useContext } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, CheckCircle, Plus, Download, Trash2, PenLine } from 'lucide-react'
+import { FileText, CheckCircle, Plus, Download, Trash2, PenLine, Pencil } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 import { DocusealForm } from '@docuseal/react'
@@ -29,6 +29,8 @@ export default function BuyerContractsPage() {
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
   const [downloadingId, setDownloadingId] = useState(null)
+  const [drafts, setDrafts] = useState([])
+  const [deletingDraftId, setDeletingDraftId] = useState(null)
 
   // Signing view
   const [signingEmbedSrc, setSigningEmbedSrc] = useState(null)
@@ -41,6 +43,7 @@ export default function BuyerContractsPage() {
   useEffect(() => {
     if (!user?.email) return
     fetchContracts()
+    fetchDrafts()
   }, [user?.email])
 
   function fetchContracts() {
@@ -50,6 +53,14 @@ export default function BuyerContractsPage() {
       .then(setContracts)
       .catch(() => {})
       .finally(() => setLoading(false))
+  }
+
+  function fetchDrafts() {
+    if (!user?.id) return
+    fetch(`/api/contracts/drafts?seller_id=${encodeURIComponent(user.id)}`)
+      .then(r => r.json())
+      .then(data => Array.isArray(data) ? setDrafts(data) : setDrafts([]))
+      .catch(() => setDrafts([]))
   }
 
   function handleSignInline(contract) {
@@ -70,6 +81,16 @@ export default function BuyerContractsPage() {
     await fetch('/api/contracts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
     setContracts(prev => prev.filter(c => c.id !== id))
     setDeletingId(null)
+  }
+
+  async function handleDeleteDraft(id) {
+    setDeletingDraftId(id)
+    try {
+      await fetch(`/api/contracts/drafts/${id}`, { method: 'DELETE' })
+      setDrafts(prev => prev.filter(d => d.id !== id))
+    } finally {
+      setDeletingDraftId(null)
+    }
   }
 
   async function handleViewDocument(contractId) {
@@ -148,7 +169,59 @@ export default function BuyerContractsPage() {
         </button>
       </div>
 
-      {contracts.length === 0 ? (
+      {drafts.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[13px] font-bold text-[#1A1816] uppercase tracking-wide">In Progress</h2>
+            <span className="text-[12px] text-[#A8A8A4]">{drafts.length} draft{drafts.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="space-y-2">
+            {drafts.map(d => {
+              const tplLabel = String(d.template_id) === '3801788' || String(d.template_id) === '3802527'
+                ? 'Purchase Contract'
+                : String(d.template_id) === '3706747' || String(d.template_id) === '3807291' || String(d.template_id) === '3807293'
+                ? 'Assignment Contract'
+                : 'Contract'
+              const address = d.field_values?.property_address || `Untitled ${tplLabel}`
+              const counterparty = d.buyer_name || d.buyer_email || 'Not set'
+              return (
+                <div key={d.id} className="bg-white border border-dashed border-[#E8E8E4] rounded p-4 flex items-center gap-4">
+                  <div className="w-9 h-9 bg-[#FAFAF8] border border-[#E8E8E4] rounded flex items-center justify-center shrink-0">
+                    <Pencil className="w-4 h-4 text-[#A8A8A4]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <span className="text-[14px] font-semibold text-[#1A1816] truncate">{address}</span>
+                      <span className="inline-flex h-5 px-2 rounded text-[11px] font-semibold shrink-0 items-center text-[#737370] bg-[#F5F5F3]">Draft</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[12px] text-[#737370] flex-wrap">
+                      <span>Last updated {fmtDate(d.updated_at)}</span>
+                      <span>Counterparty: {counterparty}</span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    <button
+                      onClick={() => router.push(`/buyer/contracts/new?draft_id=${d.id}`)}
+                      className="h-8 px-4 bg-[#1A1816] hover:bg-[#000] text-white text-[13px] font-semibold rounded transition-colors"
+                    >Resume</button>
+                    <button
+                      onClick={() => handleDeleteDraft(d.id)}
+                      disabled={deletingDraftId === d.id}
+                      className="h-8 w-8 flex items-center justify-center border border-[#E8E8E4] hover:border-[#D03839] hover:text-[#D03839] text-[#A8A8A4] rounded transition-colors disabled:opacity-50"
+                    >
+                      {deletingDraftId === d.id
+                        ? <span className="w-3.5 h-3.5 border-2 border-[#A8A8A4] border-t-transparent rounded-full animate-spin" />
+                        : <Trash2 className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {contracts.length === 0 && drafts.length === 0 ? (
         <div className="border border-[#E8E8E4] rounded bg-white p-12 text-center">
           <div className="w-12 h-12 bg-[#D03839]/10 rounded flex items-center justify-center mx-auto mb-4">
             <FileText className="w-6 h-6 text-[#D03839]" />
