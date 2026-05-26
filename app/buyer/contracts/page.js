@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useContext } from 'react'
+import { useRouter } from 'next/navigation'
 import { FileText, CheckCircle, Plus, X, Download, Trash2, ChevronLeft, PenLine } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
@@ -20,6 +21,7 @@ function fmtDate(d) {
 }
 
 export default function BuyerContractsPage() {
+  const router = useRouter()
   const { setPageTitle } = useContext(BuyerPageTitleContext)
   const { user } = useAuth()
 
@@ -32,12 +34,7 @@ export default function BuyerContractsPage() {
   const [signingEmbedSrc, setSigningEmbedSrc] = useState(null)
   const [signingTitle, setSigningTitle] = useState('')
 
-  // New contract form
-  const [showForm, setShowForm] = useState(false)
-  const [templates, setTemplates] = useState([])
-  const [form, setForm] = useState({ sellerName: '', sellerEmail: '', property: '', templateId: '' })
-  const [submitting, setSubmitting] = useState(false)
-  const [formError, setFormError] = useState('')
+  // (contract creation lives in /buyer/contracts/new — no inline modal)
 
   useEffect(() => { setPageTitle('Contracts') }, [])
 
@@ -46,17 +43,6 @@ export default function BuyerContractsPage() {
     fetchContracts()
   }, [user?.email])
 
-  useEffect(() => {
-    if (!showForm) return
-    fetch('/api/contracts?type=templates')
-      .then(r => r.json())
-      .then(data => {
-        setTemplates(data)
-        if (data.length > 0) setForm(f => ({ ...f, templateId: String(data[0].id) }))
-      })
-      .catch(() => {})
-  }, [showForm])
-
   function fetchContracts() {
     setLoading(true)
     fetch(`/api/contracts?email=${encodeURIComponent(user.email)}`)
@@ -64,40 +50,6 @@ export default function BuyerContractsPage() {
       .then(setContracts)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }
-
-  async function handleFormSubmit(e) {
-    e.preventDefault()
-    if (!form.sellerEmail || !form.templateId) return
-    setSubmitting(true)
-    setFormError('')
-    try {
-      const res = await fetch('/api/contracts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          buyerEmail: user.email,
-          buyerName: user?.name || user?.full_name || user?.first_name || '',
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok || data.error) { setFormError(data.error || 'Failed to create contract'); return }
-
-      setShowForm(false)
-      setForm({ sellerName: '', sellerEmail: '', property: '', templateId: '' })
-
-      if (data.embed_src) {
-        setSigningTitle(form.property || 'New Contract')
-        setSigningEmbedSrc(data.embed_src)
-      } else {
-        fetchContracts()
-      }
-    } catch {
-      setFormError('Something went wrong. Please try again.')
-    } finally {
-      setSubmitting(false)
-    }
   }
 
   function handleSignInline(contract) {
@@ -170,82 +122,6 @@ export default function BuyerContractsPage() {
     )
   }
 
-  // ── New contract form modal ─────────────────────────────────────
-  const formModal = showForm && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="bg-white rounded w-full max-w-[480px] shadow-xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E8E4]">
-          <h2 className="text-[16px] font-bold text-[#1A1816]">New Contract</h2>
-          <button onClick={() => setShowForm(false)} className="p-1.5 rounded hover:bg-[#FAFAF8] text-[#737370] transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleFormSubmit} className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Contract Template</label>
-            <select
-              value={form.templateId}
-              onChange={e => setForm(f => ({ ...f, templateId: e.target.value }))}
-              className="w-full h-9 px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#1A1816]"
-              required
-            >
-              {templates.length === 0 && <option value="">Loading templates...</option>}
-              {templates.map(t => <option key={t.id} value={String(t.id)}>{t.name}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Seller Full Name</label>
-            <input
-              type="text"
-              placeholder="John Smith"
-              value={form.sellerName}
-              onChange={e => setForm(f => ({ ...f, sellerName: e.target.value }))}
-              className="w-full h-9 px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Seller Email <span className="text-[#D03839]">*</span></label>
-            <input
-              type="email"
-              placeholder="seller@example.com"
-              value={form.sellerEmail}
-              onChange={e => setForm(f => ({ ...f, sellerEmail: e.target.value }))}
-              className="w-full h-9 px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816]"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Property Address <span className="text-[#A8A8A4] font-normal">(optional)</span></label>
-            <input
-              type="text"
-              placeholder="123 Main St, Dallas, TX"
-              value={form.property}
-              onChange={e => setForm(f => ({ ...f, property: e.target.value }))}
-              className="w-full h-9 px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816]"
-            />
-          </div>
-
-          {formError && <p className="text-[12px] text-[#D03839]">{formError}</p>}
-
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={() => setShowForm(false)}
-              className="flex-1 h-9 border border-[#E8E8E4] text-[#444441] text-[13px] font-medium rounded hover:border-[#1A1816] transition-colors">
-              Cancel
-            </button>
-            <button type="submit" disabled={submitting || !form.sellerEmail || !form.templateId}
-              className="flex-1 h-9 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-              {submitting ? 'Sending...' : 'Continue to Sign'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-
   // ── Main list view ──────────────────────────────────────────────
   if (loading) {
     return (
@@ -259,15 +135,13 @@ export default function BuyerContractsPage() {
 
   return (
     <div className="p-4 lg:p-6">
-      {formModal}
-
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">Contracts</h1>
           <p className="text-[14px] text-[#737370]">Send and manage e-signature contracts with sellers.</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => router.push('/buyer/contracts/new')}
           className="flex items-center gap-1.5 h-9 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" /> New Contract
@@ -283,7 +157,7 @@ export default function BuyerContractsPage() {
           <p className="text-[13px] text-[#737370] max-w-[300px] mx-auto leading-relaxed mb-4">
             Send a contract to a seller or wait for a seller to send one to you.
           </p>
-          <button onClick={() => setShowForm(true)}
+          <button onClick={() => router.push('/buyer/contracts/new')}
             className="inline-flex items-center gap-1.5 h-9 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors">
             <Plus className="w-4 h-4" /> New Contract
           </button>
