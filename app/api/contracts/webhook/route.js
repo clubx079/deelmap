@@ -167,7 +167,10 @@ export async function POST(request) {
 
     const assignorName = data.name || data.email || 'The Buyer'
     const property = fullSubmission.name || ''
-    const signingUrl = `https://deelmap.com/sign/${assigneeSubmitter.slug}`
+    // Use APP_URL env var so staging emails staging URLs, prod emails prod URLs.
+    // Falls back to production deelmap.com if unset.
+    const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
+    const signingUrl = `${APP_URL}/sign/${assigneeSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
     const emailResult = await resend.emails.send({
