@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useContext, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useContext, useMemo, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, FileText, Home, PenLine, Loader2 } from 'lucide-react'
 import { DocusealForm } from '@docuseal/react'
 import { useAuth } from '@/hooks/useAuth'
@@ -28,8 +28,19 @@ const LABEL_CLS = 'block text-[12px] font-semibold text-[#444441] mb-1.5'
 
 export default function BuyerNewContractWizardPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const resumeDraftId = searchParams.get('draft_id')
   const { setPageTitle } = useContext(BuyerPageTitleContext)
   const { user } = useAuth()
+
+  // Draft persistence — auto-save while editing, resume on reload
+  const [currentDraftId, setCurrentDraftId] = useState(null)
+  const [dirty, setDirty] = useState(false)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState(null)
+  const [autoSaveError, setAutoSaveError] = useState(null)
+  const [readyForAutoSave, setReadyForAutoSave] = useState(false)
+  const inFlightSaveRef = useRef(false)
 
   const [sellerName, setSellerName]   = useState('')
   const [sellerEmail, setSellerEmail] = useState('')
@@ -93,6 +104,93 @@ export default function BuyerNewContractWizardPage() {
     if (!templates.some(t => String(t.id) === String(templateId))) { setTemplateId(''); setStep(1) }
   }, [templates, templatesLoading, templateId])
 
+  // Resume an in-flight draft (?draft_id=...)
+  useEffect(() => {
+    if (!resumeDraftId) return
+    fetch(`/api/contracts/drafts/${resumeDraftId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d || d.error) return
+        setCurrentDraftId(d.id)
+        if (d.template_id) setTemplateId(String(d.template_id))
+        if (d.property_id) setPropertyId(d.property_id)
+        if (d.buyer_name) setBuyerName(d.buyer_name)
+        if (d.buyer_email) setBuyerEmail(d.buyer_email)
+        if (d.field_values && typeof d.field_values === 'object') {
+          setFieldValues(prev => ({ ...prev, ...d.field_values }))
+        }
+        // Jump past steps already filled in
+        if (!d.template_id) setStep(1)
+        else if (!d.property_id && !(d.field_values?.property_address)) setStep(2)
+        else if (!d.buyer_email) setStep(3)
+        else setStep(4)
+      })
+      .catch(() => {})
+  }, [resumeDraftId])
+
+  // Mark dirty whenever the user changes anything we care about
+  useEffect(() => { if (readyForAutoSave) setDirty(true) }, [templateId, propertyId, manualAddress, buyerName, buyerEmail, fieldValues, readyForAutoSave])
+
+  // Enable auto-save once user has picked an identity + a template
+  useEffect(() => {
+    if (user?.id && templateId && !readyForAutoSave) setReadyForAutoSave(true)
+  }, [user?.id, templateId, readyForAutoSave])
+
+  // Debounced auto-save: 2s after last edit
+  useEffect(() => {
+    if (!readyForAutoSave || !dirty) return
+    if (autoSaving || inFlightSaveRef.current) return
+    if (!user?.id || !templateId) return
+
+    const buildPayload = () => ({
+      seller_id: user.id,                                  // shared schema; buyer's user.id stored here
+      template_id: templateId || '',
+      property_id: propertyId === 'manual' ? null : (propertyId || null),
+      buyer_name: buyerName || null,
+      buyer_email: buyerEmail || null,
+      field_values: { ...fieldValues, property_address: fieldValues.property_address || manualAddress || '' },
+    })
+
+    const timer = setTimeout(async () => {
+      inFlightSaveRef.current = true
+      setAutoSaving(true); setAutoSaveError(null)
+      try {
+        const payload = buildPayload()
+        if (currentDraftId) {
+          const res = await fetch(`/api/contracts/drafts/${currentDraftId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          const json = await res.json()
+          if (!res.ok || json.error) throw new Error(json.error || 'Save failed')
+        } else {
+          // Don't create a new draft until the user has actually committed something
+          // beyond just picking a template, to avoid littering the list with empties.
+          const hasMeaning = !!payload.property_id || !!(payload.field_values && payload.field_values.property_address) || !!payload.buyer_name || !!payload.buyer_email
+          if (!hasMeaning) { setDirty(false); return }
+          const res = await fetch('/api/contracts/drafts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          const json = await res.json()
+          if (!res.ok || json.error || !json.id) throw new Error(json.error || 'Save failed')
+          setCurrentDraftId(json.id)
+        }
+        setLastSavedAt(new Date()); setDirty(false)
+      } catch (e) {
+        setAutoSaveError(e?.message || "Couldn't save")
+      } finally {
+        setAutoSaving(false)
+        inFlightSaveRef.current = false
+      }
+    }, 2000)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, readyForAutoSave, templateId, propertyId, manualAddress, buyerName, buyerEmail, fieldValues, currentDraftId, autoSaving])
+
   useEffect(() => {
     if (!user?.id) return
     setPropertiesLoading(true)
@@ -147,6 +245,21 @@ export default function BuyerNewContractWizardPage() {
       })
       const json = await res.json()
       if (!res.ok || json.error) throw new Error(json.error || 'Failed to send')
+
+      // Mark the draft as sent so it disappears from the buyer's drafts list
+      if (currentDraftId && json.submission_id) {
+        try {
+          await fetch(`/api/contracts/drafts/${currentDraftId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'sent',
+              docuseal_submission_id: String(json.submission_id),
+            }),
+          })
+        } catch {}
+      }
+
       setSigningTitle(property || 'New Contract')
       setSigningEmbedSrc(json.embed_src)
     } catch (e) {
@@ -191,6 +304,11 @@ export default function BuyerNewContractWizardPage() {
         <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">
           New Contract — <span className="text-[#737370] font-medium">Step {step} of 5 · {STEP_LABELS[step - 1]}</span>
         </h1>
+        {readyForAutoSave && (
+          <p className="text-[12px] text-[#A8A8A4] mt-1">
+            {autoSaving ? 'Saving…' : autoSaveError ? <span className="text-[#D03839]">{autoSaveError}</span> : lastSavedAt ? <><span className="text-[#0F6E56]">✓ Saved</span> {new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</> : null}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-5 gap-2 mb-6">
