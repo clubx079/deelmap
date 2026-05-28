@@ -4,11 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import Link from 'next/link';
 import { FileText, Loader2, MapPin, Calendar, ExternalLink, Home, MessageCircle } from 'lucide-react';
-
-function formatCurrency(amount) {
-  if (!amount) return '$0';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-}
+import { formatCurrency } from '@/lib/format';
 
 function formatDate(ts) {
   if (!ts) return '—';
@@ -27,7 +23,7 @@ const STATUS_STYLES = {
   pending:   { label: 'Pending',      bg: 'bg-[#FEF3E2]', text: 'text-[#B5620A]' },
   accepted:  { label: 'Accepted',     bg: 'bg-[#E4F5EC]', text: 'text-[#0F6E56]' },
   rejected:  { label: 'Rejected',     bg: 'bg-[#FEF0EF]', text: 'text-[#D03839]' },
-  countered: { label: 'Countered',    bg: 'bg-[#EBF3FC]', text: 'text-[#4A90E2]' },
+  countered: { label: 'Countered',    bg: 'bg-[#F3F3F0]', text: 'text-[#1A1816]' },
   withdrawn: { label: 'Withdrawn',    bg: 'bg-[#F3F3F1]', text: 'text-[#737370]' },
 };
 

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
+import { formatCurrency } from '@/lib/format';
 import { ShareModal } from '@/components/property/ShareModal';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -144,8 +145,8 @@ export default function BuyerDashboard() {
     { bg: '#FEF0EF', text: '#D03839' },
     { bg: '#E4F5EC', text: '#0F6E56' },
     { bg: '#FEF3E2', text: '#B5620A' },
-    { bg: '#EBF3FC', text: '#4A90E2' },
-    { bg: '#F3EEFF', text: '#7C3AED' },
+    { bg: '#F3F3F0', text: '#1A1816' },
+    { bg: '#F3F3F0', text: '#1A1816' },
   ];
   const getAvatarPair = (seed = '') => {
     const str = String(seed || 'u');
@@ -174,13 +175,6 @@ export default function BuyerDashboard() {
     return `${days}d ago`;
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount) return '$0';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: 'USD',
-      minimumFractionDigits: 0, maximumFractionDigits: 0
-    }).format(amount);
-  };
 
   const getCurrentDate = () => {
     return new Date().toLocaleDateString('en-US', {
@@ -345,8 +339,8 @@ export default function BuyerDashboard() {
             value={stats.activeConversations}
             subtitle={stats.unreadMessages > 0 ? `${stats.unreadMessages} unread` : null}
             subtitleColor="#444441"
-            icon={<MessageSquare className="w-4 h-4 text-[#4A90E2]" />}
-            iconBg="#EBF3FC"
+            icon={<MessageSquare className="w-4 h-4 text-[#1A1816]" />}
+            iconBg="#F3F3F0"
           />
           <StatCard
             title="Offers made"
@@ -503,7 +497,7 @@ export default function BuyerDashboard() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-between p-5 bg-[#FAFAF8] border border-[#E8E8E4] rounded-lg">
+            <div className="flex items-center justify-between p-5 bg-[#FAFAF8] border border-[#E8E8E4] rounded">
               <p className="text-[14px] text-[#737370]">Properties you view will appear here.</p>
               <Link href="/marketplace" className="text-[14px] font-semibold text-[#1A1816] hover:underline">Browse deals →</Link>
             </div>

@@ -2,139 +2,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
-import { withTimeout, fireAndForget } from '@/lib/timeout'
+import { verifyOtp } from '@/lib/otpStore'
 
-// Shared OTP storage - must match send-otp route
-let otpStore = new Map()
-if (typeof global !== 'undefined') {
-  if (!global.otpStore) global.otpStore = new Map()
-  otpStore = global.otpStore
-}
 
-// Cleanup expired OTPs periodically to prevent memory leaks
-function cleanupExpiredOTPs() {
-  const now = Date.now()
-  let cleanedCount = 0
-
-  for (const [email, data] of otpStore.entries()) {
-    if (data.expires < now) {
-      otpStore.delete(email)
-      cleanedCount++
-    }
-  }
-
-  if (cleanedCount > 0) {
-    console.log(`Cleaned up ${cleanedCount} expired OTPs. Current store size: ${otpStore.size}`)
-  }
-}
-
-// Run cleanup every 5 minutes
-if (typeof global !== 'undefined' && !global.otpCleanupInterval) {
-  global.otpCleanupInterval = setInterval(cleanupExpiredOTPs, 5 * 60 * 1000)
-}
-
-// Format phone number to American format
-function formatPhoneNumber(phone) {
-  if (!phone) return ''
-  
-  // Remove all non-digit characters
-  const digitsOnly = phone.replace(/\D/g, '')
-  
-  // If it's empty after removing non-digits, return as is
-  if (!digitsOnly) return phone
-  
-  // If it's 10 digits (missing country code), add +1
-  if (digitsOnly.length === 10) {
-    return `+1${digitsOnly}`
-  }
-  
-  // If it's 11 digits and starts with 1, add +
-  if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-    return `+${digitsOnly}`
-  }
-  
-  // If it already has correct length with country code, add + if missing
-  if (digitsOnly.length === 11) {
-    return `+${digitsOnly}`
-  }
-  
-  // For any other case, return the original (don't abort operation)
-  return phone
-}
-
-// Insert user to Monday.com
-async function insertToMonday(userData) {
-  const MONDAY_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQzMTQ5MDY2OCwiYWFpIjoxMSwidWlkIjo2NzgyNDc3MywiaWFkIjoiMjAyNC0xMS0wM1QxMDo0OToyMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTQ5NDQ5MTQsInJnbiI6InVzZTEifQ.M2y5qvKTBugSmKQLJnPFinl9o1h0H70yCAVnsM75p0M'
-  const BOARD_ID = '6039063783'
-  const GROUP_ID = 'group_mkwgts1s'
-
-  try {
-    const formattedPhone = formatPhoneNumber(userData.phone)
-
-    // Create full name for item_name
-    const fullName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
-    const itemName = fullName || userData.email // Fallback to email if no name provided
-
-    // Build column values object
-    const columnValues = {
-      text_mkvmfa36: userData.firstName || '',
-      text_mkvm3swk: userData.lastName || '',
-      text2: formattedPhone,
-      text0: userData.email
-    }
-
-    // Add states of interest if provided (dropdown_mky8cygf column)
-    if (userData.statesOfInterest && userData.statesOfInterest.length > 0) {
-      // Monday.com dropdown expects { ids: [index1, index2, ...] } format
-      // For multiple select with text labels, use { labels: ["label1", "label2"] }
-      columnValues.dropdown_mky8cygf = { labels: userData.statesOfInterest }
-    }
-
-    const mutation = `
-      mutation {
-        create_item (
-          board_id: ${BOARD_ID},
-          group_id: "${GROUP_ID}",
-          item_name: "${itemName}",
-          column_values: ${JSON.stringify(JSON.stringify(columnValues))}
-        ) {
-          id
-        }
-      }
-    `
-
-    console.log('Monday.com mutation:', mutation)
-
-    const response = await withTimeout(
-      fetch('https://api.monday.com/v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': MONDAY_API_KEY
-        },
-        body: JSON.stringify({
-          query: mutation
-        })
-      }),
-      10000, // 10 second timeout for Monday.com API
-      'Monday.com API request timed out'
-    )
-
-    const result = await response.json()
-
-    if (result.errors) {
-      console.error('Monday.com API errors:', result.errors)
-      return { success: false, error: result.errors }
-    }
-
-    console.log('User inserted to Monday.com successfully:', result.data)
-    return { success: true, data: result.data }
-
-  } catch (error) {
-    console.error('Error inserting to Monday.com:', error)
-    return { success: false, error: error.message }
-  }
-}
 
 function getClientIP(request) {
   const cf = request.headers.get('cf-connecting-ip')
@@ -174,29 +44,21 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Email and OTP are required' }, { status: 400 })
     }
 
-    console.log(`[VERIFY-OTP] Verifying OTP for ${email}: ${otp}`)
-    console.log('[VERIFY-OTP] Received userData:', userData)
+    console.log('[VERIFY-OTP] Verifying OTP for', email)
 
     // Extract client IP for registration tracking
     const clientIP = getClientIP(request)
 
-    // Check if OTP exists and is valid
-    const storedOtpData = otpStore.get(email)
-    
-    if (!storedOtpData) {
-      console.log('[VERIFY-OTP] OTP not found for email:', email)
-      return NextResponse.json({ message: 'OTP not found or expired' }, { status: 400 })
-    }
-
-    if (storedOtpData.expires < Date.now()) {
-      console.log('[VERIFY-OTP] OTP expired for email:', email)
-      otpStore.delete(email)
-      return NextResponse.json({ message: 'OTP has expired' }, { status: 400 })
-    }
-
-    if (storedOtpData.otp !== otp.toString()) {
-      console.log(`[VERIFY-OTP] OTP mismatch for ${email}. Expected: ${storedOtpData.otp}, Got: ${otp}`)
-      return NextResponse.json({ message: 'Invalid OTP' }, { status: 400 })
+    // Verify OTP against the database-backed store (rate-limited + attempt-capped)
+    const otpResult = await verifyOtp(email, 'signup', otp)
+    if (!otpResult.valid) {
+      const messages = {
+        not_found: 'OTP not found or expired',
+        expired: 'OTP has expired',
+        too_many_attempts: 'Too many incorrect attempts. Please request a new code.',
+        config: 'Verification is temporarily unavailable. Please try again.',
+      }
+      return NextResponse.json({ message: messages[otpResult.reason] || 'Invalid OTP' }, { status: 400 })
     }
 
     // Check if userData is provided (for new user registration)
@@ -431,26 +293,6 @@ export async function POST(request) {
     console.log('[VERIFY-OTP] User ID:', newUser.id)
     console.log('[VERIFY-OTP] States of interest:', userData.statesOfInterest)
 
-    // Insert to Monday.com (non-blocking - don't fail registration if Monday fails)
-    fireAndForget(
-      insertToMonday({
-        email: newUser.email,
-        firstName: newUser.first_name,
-        lastName: newUser.last_name,
-        phone: newUser.phone,
-        statesOfInterest: userData.statesOfInterest || []
-      }).then(result => {
-        if (result.success) {
-          console.log('[VERIFY-OTP] User synced to Monday.com')
-        } else {
-          console.error('[VERIFY-OTP] Failed to sync to Monday.com, but user registration succeeded')
-        }
-      }),
-      'Monday.com user sync'
-    )
-
-    // Clean up OTP
-    otpStore.delete(email)
 
     // Return user data in the format expected by useAuth
     return NextResponse.json({

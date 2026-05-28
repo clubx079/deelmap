@@ -11,11 +11,11 @@ import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
 
 const TESTIMONIALS = [
   { initials: 'MC', color: 'bg-[#D03839]', name: 'Michael Carter', role: 'Property Investor', metric: '23', metricLabel: 'deals closed', text: 'DeelMap helped me discover off-market deals I wouldn\'t have found anywhere else. The ARV data alone saves me a full underwriting session per deal. I open the platform and have real deals in under 5 minutes.' },
-  { initials: 'MH', color: 'bg-[#0E7490]', name: 'Marcus Hill', role: 'Real Estate Investor', metric: '$4.2M', metricLabel: 'portfolio', text: 'The deduplication is the killer feature. I was seeing the same property from three different wholesalers. DeelMap cleaned all of that up. Now the marketplace brings together opportunities from different sellers without the chaos.' },
+  { initials: 'MH', color: 'bg-[#B5620A]', name: 'Marcus Hill', role: 'Real Estate Investor', metric: '$4.2M', metricLabel: 'portfolio', text: 'The deduplication is the killer feature. I was seeing the same property from three different wholesalers. DeelMap cleaned all of that up. Now the marketplace brings together opportunities from different sellers without the chaos.' },
   { initials: 'SM', color: 'bg-[#0F6E56]', name: 'Sophia Martinez', role: 'Wholesale Investor', metric: '140+', metricLabel: 'deals assigned', text: 'Being able to connect with buyers and sellers directly inside the platform makes deals move much faster than traditional methods. As a wholesaler, deal velocity doubled. The verified buyer network is a game changer.' },
-  { initials: 'JR', color: 'bg-[#7C3AED]', name: 'James Rivera', role: 'Fix & Flip Investor', metric: '58', metricLabel: 'deals closed', text: 'I\'ve tried every wholesale marketplace out there. DeelMap is the first one where the data is actually reliable. The ARV estimates and spread calculations are accurate enough that I trust them in my first pass.' },
-  { initials: 'AL', color: 'bg-[#B45309]', name: 'Ashley Lee', role: 'Buy & Hold Investor', metric: '$2.8M', metricLabel: 'portfolio', text: 'Finding cash-flowing rentals used to take weeks of sorting through duplicate listings. Now I filter by cap rate, pick a state, and have a short list in minutes. My acquisition pace has completely changed.' },
-  { initials: 'DW', color: 'bg-[#0369A1]', name: 'Derek Wallace', role: 'Portfolio Builder', metric: '31', metricLabel: 'deals assigned', text: 'The messaging system keeps everything organized. I\'m not juggling emails and texts anymore — every conversation with a seller is in one place, tied to the exact deal. It\'s the workflow I always needed.' },
+  { initials: 'JR', color: 'bg-[#1A1816]', name: 'James Rivera', role: 'Fix & Flip Investor', metric: '58', metricLabel: 'deals closed', text: 'I\'ve tried every wholesale marketplace out there. DeelMap is the first one where the data is actually reliable. The ARV estimates and spread calculations are accurate enough that I trust them in my first pass.' },
+  { initials: 'AL', color: 'bg-[#1A1816]', name: 'Ashley Lee', role: 'Buy & Hold Investor', metric: '$2.8M', metricLabel: 'portfolio', text: 'Finding cash-flowing rentals used to take weeks of sorting through duplicate listings. Now I filter by cap rate, pick a state, and have a short list in minutes. My acquisition pace has completely changed.' },
+  { initials: 'DW', color: 'bg-[#D03839]', name: 'Derek Wallace', role: 'Portfolio Builder', metric: '31', metricLabel: 'deals assigned', text: 'The messaging system keeps everything organized. I\'m not juggling emails and texts anymore — every conversation with a seller is in one place, tied to the exact deal. It\'s the workflow I always needed.' },
 ]
 
 function InvestorTestimonials() {
@@ -302,7 +302,7 @@ export default function HomePage() {
                   'Contact info never publicly exposed',
                 ].map(item => (
                   <li key={item} className="flex items-center gap-3 text-[#444441] text-[15px]">
-                    <span className="w-5 h-5 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-[#E4F5EC] flex items-center justify-center flex-shrink-0">
                       <Check className="w-3 h-3 text-[#1A6B4A] stroke-[2.5]" />
                     </span>
                     {item}
@@ -442,7 +442,7 @@ export default function HomePage() {
                     'Deal sourcers — build credibility and close repeat deals faster',
                   ].map(item => (
                     <li key={item} className="flex items-start gap-3 text-[14px] text-[#444441]">
-                      <span className="w-5 h-5 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[#E4F5EC] flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Check className="w-3 h-3 text-[#1A6B4A] stroke-[2.5]" />
                       </span>
                       {item}

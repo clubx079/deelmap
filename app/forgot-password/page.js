@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { useAuth } from '@/hooks/useAuth'
-import { Lock, ArrowLeft, CheckCircle, X, Eye, EyeOff } from 'lucide-react'
+import { Lock, ArrowLeft, CheckCircle, X, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
@@ -219,7 +219,7 @@ export default function ForgotPasswordPage() {
                   disabled={loading}
                   className="w-full bg-[#D03839] text-white py-2.5 rounded font-medium hover:bg-[#C02830] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Sending Code...' : 'Send Verification Code'}
+                  {loading ? <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Sending Code...</span> : 'Send Verification Code'}
                 </button>
               </form>
             )}

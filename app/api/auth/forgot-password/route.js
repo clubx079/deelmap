@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase'
 import { withTimeout } from '@/lib/timeout'
+import { saveOtp } from '@/lib/otpStore'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -11,14 +12,6 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
   process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
 )
-
-// Shared storage - in production, use Redis or database
-let passwordResetStore = new Map()
-
-if (typeof global !== 'undefined') {
-  if (!global.passwordResetStore) global.passwordResetStore = new Map()
-  passwordResetStore = global.passwordResetStore
-}
 
 export async function POST(request) {
   try {
@@ -31,14 +24,15 @@ export async function POST(request) {
     // Generate 6-digit OTP for password reset
     const resetOtp = Math.floor(100000 + Math.random() * 900000).toString()
 
-    // Store password reset OTP with expiration (15 minutes for password reset)
-    passwordResetStore.set(email, {
-      otp: resetOtp,
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-      timestamp: Date.now()
-    })
-
-    console.log(`Generated password reset OTP for ${email}: ${resetOtp}`)
+    // Store the reset code in the database-backed store (rate-limited, 15-minute expiry)
+    const saved = await saveOtp(email, 'password_reset', resetOtp, 15)
+    if (!saved.ok) {
+      const limited = saved.error === 'cooldown' || saved.error === 'rate_limited'
+      return NextResponse.json(
+        { message: limited ? 'Too many requests — please wait a moment and try again.' : 'Could not generate a reset code. Please try again.' },
+        { status: limited ? 429 : 500 }
+      )
+    }
 
     // SMS delivery via AiroSofts
     if (method === 'sms') {

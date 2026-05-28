@@ -87,7 +87,7 @@ export function LandingHero() {
                 key={block.id}
                 type="button"
                 onClick={() => setActiveBlockId(block.id)}
-                className="absolute w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#4A90E2] text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#1A1816] focus:ring-offset-2"
+                className="absolute w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#D03839] text-white text-xs sm:text-sm font-bold flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#1A1816] focus:ring-offset-2"
                 style={{
                   left: block.id === 0 ? '18%' : block.id === 1 ? '42%' : '32%',
                   top: block.id === 0 ? '22%' : block.id === 1 ? '38%' : '62%',

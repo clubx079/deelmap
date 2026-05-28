@@ -102,6 +102,7 @@ export async function POST(request) {
     }
 
     const draftId = paymentIntent.metadata.draft_id || null
+    const addOns = paymentIntent.metadata.add_ons ? paymentIntent.metadata.add_ons.split(',').filter(Boolean) : []
 
     const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
@@ -172,7 +173,6 @@ export async function POST(request) {
       boost:     { label: 'Boost Listing',                          amount: 1499 },
       bundle:    { label: 'Full Visibility Bundle (Highlight + Boost)', amount: 2200 },
     }
-    const addOns = paymentIntent.metadata.add_ons ? paymentIntent.metadata.add_ons.split(',').filter(Boolean) : []
     const addOnItems = addOns.map(id => ({ id, label: ADD_ON_PRICES[id]?.label || id, amount: ADD_ON_PRICES[id]?.amount || 0 }))
     const breakdown = JSON.stringify({
       title: formData.title || '',

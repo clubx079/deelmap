@@ -7,8 +7,8 @@ import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 import { DocusealForm } from '@docuseal/react'
 
 const STATUS = {
-  completed: { label: 'Completed', cls: 'text-[#16A34A] bg-[#DCFCE7]' },
-  pending: { label: 'Pending Signature', cls: 'text-[#D97706] bg-[#FEF3C7]' },
+  completed: { label: 'Completed', cls: 'text-[#0F6E56] bg-[#E4F5EC]' },
+  pending: { label: 'Pending Signature', cls: 'text-[#B5620A] bg-[#FEF3E2]' },
   declined: { label: 'Declined', cls: 'text-[#D03839] bg-[#FEF0EF]' },
 }
 
@@ -270,7 +270,7 @@ export default function BuyerContractsPage() {
                 <div className="shrink-0 flex items-center gap-2">
                   {c.status === 'completed' ? (
                     <>
-                      <span className="text-[12px] text-[#16A34A] font-medium flex items-center gap-1">
+                      <span className="text-[12px] text-[#0F6E56] font-medium flex items-center gap-1">
                         <CheckCircle className="w-3.5 h-3.5" /> Signed
                       </span>
                       <button

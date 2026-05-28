@@ -2,18 +2,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
+import { verifyOtp } from '@/lib/otpStore'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Shared storage - in production, use Redis or database
-let passwordResetStore = new Map()
-
-if (typeof global !== 'undefined') {
-  if (!global.passwordResetStore) global.passwordResetStore = new Map()
-  passwordResetStore = global.passwordResetStore
-}
 
 export async function POST(request) {
   try {
@@ -43,39 +36,16 @@ export async function POST(request) {
       )
     }
 
-    // Check OTP from password reset store
-    const resetData = passwordResetStore.get(email)
-    
-    if (!resetData) {
-      return NextResponse.json(
-        { message: 'Invalid or expired reset session' },
-        { status: 400 }
-      )
-    }
-
-    // Check if OTP has expired (15 minutes from original creation)
-    if (Date.now() > resetData.expires) {
-      passwordResetStore.delete(email)
-      return NextResponse.json(
-        { message: 'Reset session has expired. Please request a new reset code.' },
-        { status: 400 }
-      )
-    }
-
-    // Check if OTP was previously verified
-    if (!resetData.verified) {
-      return NextResponse.json(
-        { message: 'Please verify your reset code first' },
-        { status: 400 }
-      )
-    }
-
-    // Verify OTP again for final confirmation
-    if (resetData.otp !== otp) {
-      return NextResponse.json(
-        { message: 'Invalid reset code' },
-        { status: 400 }
-      )
+    // Final validation of the reset code; consume it so it can't be reused
+    const result = await verifyOtp(email, 'password_reset', otp, { consume: true })
+    if (!result.valid) {
+      const messages = {
+        not_found: 'Invalid or expired reset session',
+        expired: 'Reset session has expired. Please request a new reset code.',
+        too_many_attempts: 'Too many incorrect attempts. Please request a new code.',
+        config: 'Verification is temporarily unavailable. Please try again.',
+      }
+      return NextResponse.json({ message: messages[result.reason] || 'Invalid reset code' }, { status: 400 })
     }
 
     // Create database connection
@@ -112,9 +82,6 @@ export async function POST(request) {
       }
 
       console.log(`Password reset successfully for user: ${email}`)
-
-      // Remove the used OTP from store
-      passwordResetStore.delete(email)
 
       return NextResponse.json({
         message: 'Password reset successfully',

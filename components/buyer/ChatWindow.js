@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -109,6 +110,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   };
 
   const handleWithdrawOffer = async (offerId) => {
+    if (typeof window !== 'undefined' && !window.confirm('Withdraw this offer? The seller will no longer be able to see or accept it.')) return;
     try {
       setWithdrawing(true);
       const res = await fetch('/api/buyer/offers', {
@@ -367,10 +369,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
     return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount) return '$0';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-  };
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '';
@@ -508,10 +506,10 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                       if (item._isOffer) {
                         const isCounter = !!item.parent_offer_id;
                         const statusColors = {
-                          pending: 'bg-[#EBF3FC] text-[#4A90E2]',
+                          pending: 'bg-[#FEF3E2] text-[#B5620A]',
                           accepted: 'bg-[#E6F4F1] text-[#0F6E56]',
                           rejected: 'bg-[#FEF0EF] text-[#D03839]',
-                          countered: 'bg-[#FFF7ED] text-[#C27A12]',
+                          countered: 'bg-[#F3F3F0] text-[#1A1816]',
                           withdrawn: 'bg-[#F3F3F1] text-[#737370]',
                         };
                         const statusLabel = { pending: 'Pending', accepted: 'Accepted', rejected: 'Rejected', countered: 'Countered', withdrawn: 'Withdrawn' };
@@ -524,7 +522,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                             <div className={`flex ${isCounter ? 'justify-start' : 'justify-end'}`}>
                             <div className="w-full max-w-[300px] bg-white border border-[#E8E8E4] rounded px-4 py-3 shadow-sm">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EBF3FC] text-[#4A90E2]">
+                                <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3E2] text-[#B5620A]">
                                   {isCounter ? 'Counter Offer' : 'Offer Submitted'}
                                 </span>
                                 <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusColors[item.status] || statusColors.pending}`}>
@@ -588,14 +586,14 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                               </div>
                               <div className={`flex items-center gap-1 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
                                 {message.is_from_email && (
-                                  <div className="flex items-center gap-1 text-[10px] text-[#4A90E2] bg-[#EBF3FC] px-1.5 py-0.5 rounded">
+                                  <div className="flex items-center gap-1 text-[10px] text-[#1A1816] bg-[#F3F3F0] px-1.5 py-0.5 rounded">
                                     <Mail className="w-3 h-3" /><span>Email</span>
                                   </div>
                                 )}
                                 <span className="text-[11px] text-[#A8A8A4]">{formatTime(message.created_at)}</span>
                                 {isUser && (
                                   message.is_read
-                                    ? <CheckCheck className="w-3.5 h-3.5 text-[#4A90E2]" />
+                                    ? <CheckCheck className="w-3.5 h-3.5 text-[#1A1816]" />
                                     : <Check className="w-3.5 h-3.5 text-[#A8A8A4]" />
                                 )}
                               </div>
@@ -744,7 +742,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         <div className="px-5 py-4 border-b border-[#E8E8E4]">
           <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1.1px] mb-3">Seller Info</p>
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-[#EBF3FC] flex items-center justify-center text-[13px] font-semibold text-[#4A90E2]">
+            <div className="w-10 h-10 rounded-full bg-[#F3F3F0] flex items-center justify-center text-[13px] font-semibold text-[#1A1816]">
               {getInitials(sellerName)}
             </div>
             <div>
@@ -1002,7 +1000,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             <div className="px-5 py-4 border-b border-[#E8E8E4]">
               <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1.1px] mb-3">Seller Info</p>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-[#EBF3FC] flex items-center justify-center text-[13px] font-semibold text-[#4A90E2]">
+                <div className="w-10 h-10 rounded-full bg-[#F3F3F0] flex items-center justify-center text-[13px] font-semibold text-[#1A1816]">
                   {getInitials(sellerName)}
                 </div>
                 <div>

@@ -86,7 +86,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
   const getDealBadge = () => {
     const raw = (deal_type || '').toLowerCase()
     if (raw.includes('quick')) return { label: 'Quick Sale', cls: 'bg-[#D03839] text-white' }
-    if (raw.includes('new')) return { label: 'New Deal', cls: 'bg-[#D97706] text-white' }
+    if (raw.includes('new')) return { label: 'New Deal', cls: 'bg-[#B5620A] text-white' }
     if (raw.includes('high') || raw.includes('roi')) return { label: 'High ROI', cls: 'bg-[#0F6E56] text-white' }
     if (raw.includes('just') || raw.includes('listed')) return { label: 'Just Listed', cls: 'bg-[#0F6E56] text-white' }
     return null
