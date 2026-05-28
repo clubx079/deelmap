@@ -13,7 +13,7 @@ const TABS = [
   { label: 'Buy & hold', value: 'hold', redirect: true },
 ]
 
-const AVATAR_COLORS = ['bg-orange-400', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-rose-500', 'bg-amber-500']
+const AVATAR_COLORS = ['bg-[#D03839]', 'bg-[#0F6E56]', 'bg-[#B5620A]', 'bg-[#1A1816]']
 
 const VISIBLE = 4
 
@@ -266,8 +266,8 @@ export function PropertiesSlider() {
               <div>
                 <p className="text-[12px] font-semibold text-[#1A1816] leading-none">{getSellerName(p)}</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                  <span className="text-[10px] text-[#16A34A] font-medium">Verified</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56]" />
+                  <span className="text-[10px] text-[#0F6E56] font-medium">Verified</span>
                 </div>
               </div>
             </div>

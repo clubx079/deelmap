@@ -17,7 +17,7 @@ function BarRow({ label, count, max, sub }) {
   return (
     <div className="flex items-center gap-3">
       <div className="w-20 sm:w-28 shrink-0 text-[12px] text-[#737370] truncate" title={label}>{label}</div>
-      <div className="flex-1 h-2 bg-[#F0F0EE] rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-[#E8E8E4] rounded-full overflow-hidden">
         <div className="h-full bg-[#D03839] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
       <div className="text-right shrink-0">
@@ -86,8 +86,8 @@ export default function MarketInsightsPage() {
       label: 'Avg cap rate',
       value: summary.avgCapRate ? `${summary.avgCapRate}%` : '—',
       sub: 'Net operating income / price',
-      icon: <BarChart2 className="w-4 h-4 text-[#4A90E2]" />,
-      iconBg: '#EBF3FC',
+      icon: <BarChart2 className="w-4 h-4 text-[#1A1816]" />,
+      iconBg: '#F3F3F0',
     },
   ];
 

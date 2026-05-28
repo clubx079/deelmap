@@ -58,20 +58,20 @@ export function Select({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded shadow-sm hover:border-[#b29578] focus:outline-none focus:ring-1 focus:ring-[#b29578] focus:border-[#b29578] flex items-center justify-between transition-colors"
+        className="w-full px-3 py-2 text-left bg-white border border-[#E8E8E4] rounded shadow-sm hover:border-[#D03839] focus:outline-none focus:ring-1 focus:ring-[rgba(208,56,57,0.12)] focus:border-[#D03839] flex items-center justify-between transition-colors"
       >
         <span className="block truncate">{displayValue()}</span>
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg max-h-60 overflow-auto">
           {options.map((option) => (
             <div
               key={option.value}
               onClick={() => handleSelect(option)}
-              className={`px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center transition-colors ${
-                multiple && value.includes(option.value) ? 'bg-blue-50' : ''
+              className={`px-3 py-2 cursor-pointer hover:bg-[#FAFAF8] flex items-center transition-colors ${
+                multiple && value.includes(option.value) ? 'bg-[#FEF0EF]' : ''
               }`}
             >
               {multiple && (
@@ -79,7 +79,7 @@ export function Select({
                   type="checkbox"
                   checked={value.includes(option.value)}
                   onChange={() => {}}
-                  className="mr-2 accent-[#b29578]"
+                  className="mr-2 accent-[#D03839]"
                 />
               )}
               <span>{option.label}</span>

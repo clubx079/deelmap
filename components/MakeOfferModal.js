@@ -74,6 +74,15 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
     }
   }, [isOpen])
 
+  // After a successful offer, briefly show confirmation then take the buyer to the inbox conversation
+  useEffect(() => {
+    if (!success) return
+    const t = setTimeout(() => {
+      router.push(`/buyer/inbox?conversation=${createdConversationId || ''}`)
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [success, createdConversationId, router])
+
   if (!mounted) return null
 
   const propertyTitle = property?.full_address || property?.display_address ||
@@ -185,7 +194,7 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
-        onClick={handleClose}
+        onClick={() => { if (success) handleClose() }}
       />
       <div
         className={`relative bg-white rounded-t sm:rounded w-full sm:max-w-[640px] max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto shadow-2xl transition-all duration-300 ease-out ${visible ? 'translate-y-0 sm:opacity-100 sm:scale-100' : 'translate-y-full sm:opacity-0 sm:scale-95'}`}
@@ -200,12 +209,12 @@ export default function MakeOfferModal({ isOpen, onClose, property, conversation
           {/* Success Screen */}
           {success ? (
             <div className="flex flex-col items-center text-center py-8">
-              <div className="w-14 h-14 rounded-full bg-[#E6F4F0] flex items-center justify-center mb-5">
-                <Check className="w-6 h-6 text-[#16A34A]" strokeWidth={2.5} />
+              <div className="w-14 h-14 rounded-full bg-[#E4F5EC] flex items-center justify-center mb-5">
+                <Check className="w-6 h-6 text-[#0F6E56]" strokeWidth={2.5} />
               </div>
               <h2 className="text-[22px] font-bold text-[#1A1816] mb-3">Offer submitted successfully</h2>
               <p className="text-[14px] text-[#737370] mb-8 max-w-[340px]">
-                The seller will review your offer and respond soon. You'll be notified when there's an update.
+                The seller will review your offer and respond soon. Taking you to your conversation…
               </p>
               <div className="flex items-center gap-3">
                 <button

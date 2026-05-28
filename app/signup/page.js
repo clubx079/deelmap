@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Navbar } from '@/components/layout/Navbar'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { Eye, EyeOff, ChevronDown, X, Check } from 'lucide-react'
+import { Eye, EyeOff, ChevronDown, X, Check, Loader2 } from 'lucide-react'
 import { US_STATES } from '@/utils/constants'
 
 export default function SignupPage() {
@@ -19,6 +19,7 @@ export default function SignupPage() {
     email: '',
     phone: '',
     password: '',
+    confirmPassword: '',
     otp: '',
     agreedToPrivacy: false,
     statesOfInterest: []
@@ -154,6 +155,13 @@ export default function SignupPage() {
     // Validate states of interest
     if (!formData.statesOfInterest || formData.statesOfInterest.length === 0) {
       setError('Please select at least one state you are interested in')
+      setLoading(false)
+      return
+    }
+
+    // Passwords must match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
       setLoading(false)
       return
     }
@@ -350,7 +358,7 @@ export default function SignupPage() {
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       required
-                      className="h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
+                      className="h-12 border-[#E8E8E4] focus:border-[#D03839]"
                     />
                   </div>
                   <div>
@@ -363,7 +371,7 @@ export default function SignupPage() {
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       required
-                      className="h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
+                      className="h-12 border-[#E8E8E4] focus:border-[#D03839]"
                     />
                   </div>
                 </div>
@@ -379,7 +387,7 @@ export default function SignupPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
-                    className="h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
+                    className="h-12 border-[#E8E8E4] focus:border-[#D03839]"
                   />
                 </div>
 
@@ -394,12 +402,12 @@ export default function SignupPage() {
                     value={formData.phone}
                     onChange={handlePhoneChange}
                     required
-                    className={`h-12 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0 ${
-                      phoneError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                    className={`h-12 border-[#E8E8E4] focus:border-[#D03839] ${
+                      phoneError ? 'border-[#D03839] focus:border-[#D03839] focus:ring-[#D03839]/20' : ''
                     }`}
                   />
                   {phoneError && (
-                    <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                    <p className="text-[#D03839] text-xs mt-1">{phoneError}</p>
                   )}
                 </div>
 
@@ -415,7 +423,7 @@ export default function SignupPage() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       required
-                      className="h-12 pr-10 border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
+                      className="h-12 pr-10 border-[#E8E8E4] focus:border-[#D03839]"
                     />
                     <button
                       type="button"
@@ -427,10 +435,28 @@ export default function SignupPage() {
                   </div>
                 </div>
 
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1816] mb-2">
+                    Confirm Password
+                  </label>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Re-enter your password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    required
+                    className="h-12 border-[#E8E8E4] focus:border-[#D03839]"
+                  />
+                  {formData.confirmPassword && formData.confirmPassword !== formData.password && (
+                    <p className="text-[#D03839] text-xs mt-1">Passwords do not match</p>
+                  )}
+                </div>
+
                 {/* States of Interest — single input: search and select */}
                 <div>
                   <label className="block text-sm font-medium text-[#1A1816] mb-2">
-                    States of Interest <span className="text-red-500">*</span>
+                    States of Interest <span className="text-[#D03839]">*</span>
                   </label>
                   <div className="relative" ref={statesDropdownRef}>
                     <div
@@ -476,7 +502,7 @@ export default function SignupPage() {
                         onChange={(e) => setStatesSearch(e.target.value)}
                         onFocus={() => setShowStatesDropdown(true)}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 min-w-[120px] py-1.5 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 placeholder:text-[#A8A8A4]"
+                        className="flex-1 min-w-[120px] py-1.5 text-sm bg-transparent border-0 focus:outline-none placeholder:text-[#A8A8A4]"
                       />
                       <ChevronDown
                         size={18}
@@ -559,7 +585,7 @@ export default function SignupPage() {
                   disabled={loading || validatingPhone}
                   className="w-full bg-[#D03839] hover:bg-[#C02830] text-white h-12 text-sm font-semibold disabled:opacity-50 rounded transition-all"
                 >
-                  {loading ? 'Sending Code...' : 'Continue'}
+                  {loading ? <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Sending Code...</span> : 'Continue'}
                 </Button>
               </form>
             ) : (
@@ -570,12 +596,13 @@ export default function SignupPage() {
                   </label>
                   <Input
                     type="text"
+                    autoFocus
                     placeholder="Enter 6-digit code"
                     value={formData.otp}
                     onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
                     required
                     maxLength={6}
-                    className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-[#A8A8A4] border-[#E8E8E4] focus:border-[#D03839] focus:ring-0"
+                    className="h-12 text-center text-lg tracking-widest font-sans placeholder:text-base placeholder:tracking-normal placeholder:text-[#A8A8A4] border-[#E8E8E4] focus:border-[#D03839]"
                   />
                   <p className="text-sm text-[#737370] mt-1.5">
                     {otpMethod === 'sms'

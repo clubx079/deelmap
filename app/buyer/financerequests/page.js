@@ -88,7 +88,7 @@ export default function FinanceRequestsPage() {
           <p className="text-[14px] text-[#737370] mt-1">
             {loading
               ? 'Loading...'
-              : `${requests.length} application${requests.length !== 1 ? 's' : ''} · ${pendingCount} pending`}
+              : `${requests.length} request${requests.length !== 1 ? 's' : ''} · ${pendingCount} pending`}
           </p>
         </div>
         <Link
@@ -132,9 +132,9 @@ export default function FinanceRequestsPage() {
       ) : requests.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-center">
           <FileText className="w-10 h-10 text-[#D4D4CF] mb-3" />
-          <p className="text-[15px] font-semibold text-[#444441]">No applications yet</p>
+          <p className="text-[15px] font-semibold text-[#444441]">No financing requests yet</p>
           <p className="text-[13px] text-[#737370] mt-1 mb-4">
-            Submit a financing application and it will appear here.
+            Submit a financing request and it will appear here.
           </p>
           <Link
             href="/financing"

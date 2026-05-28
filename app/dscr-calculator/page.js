@@ -10,12 +10,12 @@ import Link from 'next/link'
 function InputField({ label, hint, ...props }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
+      <label className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
       <input
         className="text-[13px] font-medium text-[#1A1816] bg-[#F3F3F0] border border-[#E8E8E4] rounded px-3 py-2 outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 w-full"
         {...props}
       />
-      {hint && <span className="text-[9.5px] text-[#A8A8A4] leading-tight">{hint}</span>}
+      {hint && <span className="text-[11px] text-[#A8A8A4] leading-tight">{hint}</span>}
     </div>
   )
 }
@@ -23,9 +23,9 @@ function InputField({ label, hint, ...props }) {
 function SelectField({ label, children, ...props }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
+      <label className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#737370]">{label}</label>
       <select
-        className="text-[13px] font-medium text-[#1A1816] bg-[#F3F3F0] border border-[#E8E8E4] rounded px-3 py-2 outline-none focus:border-[#D03839] w-full"
+        className="text-[13px] font-medium text-[#1A1816] bg-[#F3F3F0] border border-[#E8E8E4] rounded px-3 py-2 outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 w-full"
         {...props}
       >
         {children}
@@ -37,7 +37,7 @@ function SelectField({ label, children, ...props }) {
 function Card({ title, children }) {
   return (
     <div className="bg-white border border-[#E8E8E4] rounded p-5 mb-3">
-      <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-4 pb-2 border-b border-[#E8E8E4]">{title}</div>
+      <div className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-4 pb-2 border-b border-[#E8E8E4]">{title}</div>
       {children}
     </div>
   )
@@ -545,7 +545,7 @@ export default function DSCRCalculatorPage() {
           <div className="flex items-start sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#E8E8E4]">
             <div>
               <h1 className="text-[18px] font-bold text-[#1A1816]">Advanced REI Underwriting Tool</h1>
-              <div className="text-[10.5px] text-[#737370] uppercase tracking-[0.1em] mt-0.5">DeelMap | Investment Analysis</div>
+              <div className="text-[11px] text-[#737370] uppercase tracking-[0.1em] mt-0.5">DeelMap | Investment Analysis</div>
             </div>
             <button
               onClick={() => setInputs(DEFAULTS)}
@@ -575,7 +575,7 @@ export default function DSCRCalculatorPage() {
             ].map((s, idx) => (
               <div key={idx} className="p-4 border-b border-r border-[#E8E8E4] last:border-r-0 lg:[&:nth-child(6n)]:border-r-0">
                 <div className={`text-[17px] font-semibold leading-none mb-1.5 ${s.cls}`}>{s.value}</div>
-                <div className="text-[9.5px] font-medium text-[#737370] uppercase tracking-[0.06em] leading-tight">{s.label}</div>
+                <div className="text-[11px] font-medium text-[#737370] uppercase tracking-[0.06em] leading-tight">{s.label}</div>
               </div>
             ))}
           </div>
@@ -860,7 +860,7 @@ export default function DSCRCalculatorPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 {/* Phase 1 */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#EEF3FB] text-[#1B4F9B] mb-3">Phase 1 — All-In Entry Cost</span>
+                  <span className="inline-block text-[11px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#EEF3FB] text-[#1B4F9B] mb-3">Phase 1 — All-In Entry Cost</span>
                   <LineItem label="Purchase price" value={money(r.purchase)} />
                   <LineItem label="Down payment" value={'−' + money(r.downAmt)} valueClass="text-[#D03839]" />
                   <LineItem label="Hard money loan" value={money(r.hmlLoan)} valueClass="text-[#1B4F9B]" />
@@ -874,7 +874,7 @@ export default function DSCRCalculatorPage() {
 
                 {/* Phase 2 */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#E8F5EE] text-[#1A6B3C] mb-3">Phase 2 — DSCR Refi</span>
+                  <span className="inline-block text-[11px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#E8F5EE] text-[#1A6B3C] mb-3">Phase 2 — DSCR Refi</span>
                   <LineItem label="Appraised value" value={money(r.appraisal || inputs.appraisal)} />
                   <LineItem label={`New loan @ ${Math.round(r.dscrLtvPct * 100)}% LTV`} value={money(r.dscrLoan)} valueClass="text-[#1B4F9B]" />
                   <LineItem label="Pay off hard money" value={'−' + money(r.hmlLoan)} valueClass="text-[#D03839]" />
@@ -893,7 +893,7 @@ export default function DSCRCalculatorPage() {
 
                 {/* Phase 3 */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <span className="inline-block text-[9.5px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#FFF8E8] text-[#A06800] mb-3">Phase 3 — Monthly P&L</span>
+                  <span className="inline-block text-[11px] font-semibold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#FFF8E8] text-[#A06800] mb-3">Phase 3 — Monthly P&L</span>
                   <LineItem label="Gross rent + other" value={money(r.grossRentMo)} valueClass="text-[#1A6B3C]" />
                   <LineItem label="Vacancy + credit loss" value={'−' + money(r.vacancyMo)} valueClass="text-[#D03839]" />
                   <LineItem label="Effective gross income" value={money(r.egiMo)} />
@@ -915,7 +915,7 @@ export default function DSCRCalculatorPage() {
               {/* Annual + Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Annual Breakdown</div>
+                  <div className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Annual Breakdown</div>
                   <LineItem label="Effective gross income" value={money(r.annEGI)} />
                   <LineItem label="Annual debt service" value={'−' + money(r.annPI + r.pmiMo * 12)} valueClass="text-[#D03839]" />
                   <LineItem label="Taxes + insurance" value={'−' + money(r.annTaxIns)} valueClass="text-[#D03839]" />
@@ -932,7 +932,7 @@ export default function DSCRCalculatorPage() {
                 </div>
 
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Return & Lender Metrics</div>
+                  <div className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Return & Lender Metrics</div>
                   <LineItem label="DSCR loan amount" value={money(r.dscrLoan)} valueClass="text-[#1B4F9B]" />
                   <LineItem label="Rate / term / amort" value={`${r.dscrRateAnn}% / ${r.dscrTerm}yr / ${r.dscrAmort}yr amort`} />
                   <LineItem label="Monthly P&I" value={money(r.piMo) + '/mo'} />
@@ -962,8 +962,8 @@ export default function DSCRCalculatorPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* 5-Year Projection */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">5-Year Cash Flow Projection</div>
-                  <div className="flex justify-between text-[9px] font-semibold uppercase tracking-[0.06em] text-[#737370] pb-1 mb-1 border-b border-[#E8E8E4]">
+                  <div className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">5-Year Cash Flow Projection</div>
+                  <div className="flex justify-between text-[11px] font-semibold uppercase tracking-[0.06em] text-[#737370] pb-1 mb-1 border-b border-[#E8E8E4]">
                     <span>Year</span>
                     <span>EGI</span>
                     <span>Expenses</span>
@@ -983,7 +983,7 @@ export default function DSCRCalculatorPage() {
 
                 {/* Flip / Sale exit */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Flip / Sale & Exit Analysis</div>
+                  <div className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Flip / Sale & Exit Analysis</div>
                   <LineItem label="Sale / flip price" value={money(r.dispSale)} />
                   <LineItem label="Commission + closing" value={'−' + money(r.dispCosts)} valueClass="text-[#D03839]" />
                   <LineItem label="Remaining loan balance" value={'−' + money(r.dispBal)} valueClass="text-[#D03839]" />
@@ -1007,7 +1007,7 @@ export default function DSCRCalculatorPage() {
 
                 {/* Quick Benchmarks */}
                 <div className="bg-white border border-[#E8E8E4] rounded p-4">
-                  <div className="text-[10.5px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Quick Benchmarks</div>
+                  <div className="text-[11px] font-semibold text-[#D03839] uppercase tracking-[0.1em] mb-3 pb-2 border-b border-[#E8E8E4]">Quick Benchmarks</div>
                   <div className="flex justify-between items-baseline py-1 text-[11.5px] border-b border-[#F3F3F0]">
                     <span className="text-[#737370]">1% Rule</span>
                     <RuleBadge pass={r.rtv >= 0.01} warn={false} value={pctFmt(r.rtv)} />

@@ -82,6 +82,7 @@ export default function AdvertisePage() {
               <Mail className="w-4 h-4" />
               Get in touch
             </a>
+            <p className="text-[13px] text-[#A8A8A4] mt-3">We typically respond within 24 hours.</p>
           </div>
         </div>
 

@@ -52,6 +52,15 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  // Email change (re-verify new address)
+  const [emailChangeOpen, setEmailChangeOpen] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailOtp, setEmailOtp] = useState('')
+  const [emailStep, setEmailStep] = useState('idle') // 'idle' | 'code'
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [emailChangeError, setEmailChangeError] = useState('')
+  const [emailChangeSuccess, setEmailChangeSuccess] = useState('')
+
   // Blocked users
   const [showBlockedUsers, setShowBlockedUsers] = useState(false)
   const [blockedUsers, setBlockedUsers] = useState([])
@@ -177,6 +186,46 @@ export default function ProfilePage() {
   }
 
   const handleCancel = () => { fetchUserData(); setIsEditing(false); setError(''); setSuccess('') }
+
+  const resetEmailChange = () => {
+    setEmailChangeOpen(false); setNewEmail(''); setEmailOtp(''); setEmailStep('idle')
+    setEmailChangeError(''); setEmailChangeSuccess(''); setEmailBusy(false)
+  }
+
+  const handleSendEmailCode = async () => {
+    const target = newEmail.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) { setEmailChangeError('Enter a valid email address'); return }
+    if (target === (formData.email || '').toLowerCase()) { setEmailChangeError('That is already your email'); return }
+    setEmailBusy(true); setEmailChangeError(''); setEmailChangeSuccess('')
+    try {
+      const res = await fetch('/api/auth/change-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', userId: user.id, newEmail: target }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Could not send the code')
+      setEmailStep('code')
+      setEmailChangeSuccess(`We sent a 6-digit code to ${target}.`)
+    } catch (e) { setEmailChangeError(e.message) } finally { setEmailBusy(false) }
+  }
+
+  const handleVerifyEmailCode = async () => {
+    if (!emailOtp.trim()) { setEmailChangeError('Enter the 6-digit code'); return }
+    setEmailBusy(true); setEmailChangeError(''); setEmailChangeSuccess('')
+    try {
+      const target = newEmail.trim().toLowerCase()
+      const res = await fetch('/api/auth/change-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', userId: user.id, newEmail: target, otp: emailOtp.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Could not verify the code')
+      setFormData(prev => ({ ...prev, email: target }))
+      try { localStorage.setItem('ableman_user', JSON.stringify({ ...user, email: target })) } catch {}
+      setSuccess('Email updated successfully!')
+      resetEmailChange()
+    } catch (e) { setEmailChangeError(e.message) } finally { setEmailBusy(false) }
+  }
 
   const handleProfileSave = async () => {
     setIsSavingProfile(true); setProfileError(''); setProfileSuccess('')
@@ -383,7 +432,13 @@ export default function ProfilePage() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
                       <input type="email" name="email" value={formData.email} disabled className={`${inputBase} ${inputDisabled}`} />
                     </div>
-                    <p className="text-[11px] text-[#A8A8A4] mt-1">Email cannot be changed</p>
+                    <button
+                      type="button"
+                      onClick={() => emailChangeOpen ? resetEmailChange() : setEmailChangeOpen(true)}
+                      className="text-[11px] font-semibold text-[#D03839] mt-1 hover:underline"
+                    >
+                      {emailChangeOpen ? 'Cancel email change' : 'Change email'}
+                    </button>
                   </div>
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Phone Number</label>
@@ -405,6 +460,44 @@ export default function ProfilePage() {
                   </div>
                 )}
               </form>
+
+              {emailChangeOpen && (
+                <div className="border-t border-[#E8E8E4] px-5 py-4 bg-[#FAFAF8] space-y-3">
+                  <p className="text-[12px] font-semibold text-[#444441]">Change email address</p>
+                  {emailChangeError && <p className="text-[12px] text-[#D03839]">{emailChangeError}</p>}
+                  {emailChangeSuccess && <p className="text-[12px] text-[#0F6E56]">{emailChangeSuccess}</p>}
+                  {emailStep === 'idle' ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                        placeholder="New email address"
+                        className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20"
+                      />
+                      <button type="button" onClick={handleSendEmailCode} disabled={emailBusy}
+                        className="px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+                        {emailBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Send code
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        inputMode="numeric" maxLength={6} value={emailOtp}
+                        onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}
+                        placeholder="6-digit code"
+                        className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 tracking-[0.3em]"
+                      />
+                      <button type="button" onClick={handleVerifyEmailCode} disabled={emailBusy}
+                        className="px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+                        {emailBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Verify & update
+                      </button>
+                      <button type="button" onClick={handleSendEmailCode} disabled={emailBusy}
+                        className="px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-white text-[#444441] rounded text-[12px] font-semibold transition-colors disabled:opacity-50">
+                        Resend
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Security */}
@@ -449,7 +542,7 @@ export default function ProfilePage() {
                 <div className="border-t border-[#E8E8E4] px-5 py-4 bg-[#FAFAF8]">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[0.8px]">Blocked contacts</p>
-                    <button type="button" onClick={fetchBlockedUsers} disabled={blockedLoading} className="flex items-center gap-1.5 px-2.5 min-h-[44px] text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#F0F0EE] rounded transition-colors disabled:opacity-50">
+                    <button type="button" onClick={fetchBlockedUsers} disabled={blockedLoading} className="flex items-center gap-1.5 px-2.5 min-h-[44px] text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#FAFAF8] rounded transition-colors disabled:opacity-50">
                       <RefreshCw className={`w-3 h-3 ${blockedLoading ? 'animate-spin' : ''}`} /> Refresh
                     </button>
                   </div>

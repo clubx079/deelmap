@@ -23,7 +23,7 @@ function acceptanceDefault() {
   const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().slice(0, 10)
 }
 
-const INPUT_CLS = 'w-full h-10 px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816]'
+const INPUT_CLS = 'w-full h-10 px-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20'
 const LABEL_CLS = 'block text-[12px] font-semibold text-[#444441] mb-1.5'
 
 export default function BuyerNewContractWizardPage() {
@@ -306,7 +306,7 @@ export default function BuyerNewContractWizardPage() {
         </h1>
         {readyForAutoSave && (
           <p className="text-[12px] text-[#A8A8A4] mt-1">
-            {autoSaving ? 'Saving…' : autoSaveError ? <span className="text-[#D03839]">{autoSaveError}</span> : lastSavedAt ? <><span className="text-[#0F6E56]">✓ Saved</span> {new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</> : null}
+            {autoSaving ? <span className="inline-flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving…</span> : autoSaveError ? <span className="text-[#D03839]">{autoSaveError}</span> : lastSavedAt ? <><span className="text-[#0F6E56]">✓ Saved</span> {new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</> : null}
           </p>
         )}
       </div>
@@ -526,7 +526,7 @@ function Step4Terms({ values, onChange, template }) {
       )}
       <div className="mt-6">
         <FieldRow label="Additional Terms" hint={isAssignment ? 'one per line (up to 6 lines)' : 'optional'}>
-          <textarea value={values.special_terms || ''} onChange={e => onChange('special_terms', e.target.value)} rows={isAssignment ? 6 : 4} placeholder={isAssignment ? 'Each line becomes one of the 6 numbered lines on the contract.' : 'Any other deal-specific terms…'} className="w-full p-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#1A1816] resize-none" />
+          <textarea value={values.special_terms || ''} onChange={e => onChange('special_terms', e.target.value)} rows={isAssignment ? 6 : 4} placeholder={isAssignment ? 'Each line becomes one of the 6 numbered lines on the contract.' : 'Any other deal-specific terms…'} className="w-full p-3 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 resize-none" />
         </FieldRow>
       </div>
     </div>

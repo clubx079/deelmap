@@ -1,13 +1,6 @@
 // /app/api/auth/verify-reset-otp/route.js
 import { NextResponse } from 'next/server'
-
-// Shared storage - in production, use Redis or database
-let passwordResetStore = new Map()
-
-if (typeof global !== 'undefined') {
-  if (!global.passwordResetStore) global.passwordResetStore = new Map()
-  passwordResetStore = global.passwordResetStore
-}
+import { verifyOtp } from '@/lib/otpStore'
 
 export async function POST(request) {
   try {
@@ -21,41 +14,17 @@ export async function POST(request) {
       )
     }
 
-    // Check OTP from password reset store
-    const resetData = passwordResetStore.get(email)
-    
-    if (!resetData) {
-      return NextResponse.json(
-        { message: 'Invalid or expired reset code' },
-        { status: 400 }
-      )
+    // Validate the reset code without consuming it (the password-reset step re-checks it)
+    const result = await verifyOtp(email, 'password_reset', otp, { consume: false })
+    if (!result.valid) {
+      const messages = {
+        not_found: 'Invalid or expired reset code',
+        expired: 'Reset code has expired. Please request a new one.',
+        too_many_attempts: 'Too many incorrect attempts. Please request a new code.',
+        config: 'Verification is temporarily unavailable. Please try again.',
+      }
+      return NextResponse.json({ message: messages[result.reason] || 'Invalid reset code' }, { status: 400 })
     }
-
-    // Check if OTP has expired (15 minutes)
-    if (Date.now() > resetData.expires) {
-      passwordResetStore.delete(email)
-      return NextResponse.json(
-        { message: 'Reset code has expired. Please request a new one.' },
-        { status: 400 }
-      )
-    }
-
-    // Verify OTP
-    if (resetData.otp !== otp) {
-      return NextResponse.json(
-        { message: 'Invalid reset code' },
-        { status: 400 }
-      )
-    }
-
-    console.log(`Reset OTP verified successfully for: ${email}`)
-
-    // Mark OTP as verified but keep it in store for the password reset step
-    passwordResetStore.set(email, {
-      ...resetData,
-      verified: true,
-      verifiedAt: Date.now()
-    })
 
     return NextResponse.json({
       message: 'OTP verified successfully',

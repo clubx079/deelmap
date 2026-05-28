@@ -203,8 +203,8 @@ function MakeOfferContent() {
         {success ? (
           /* Success screen */
           <div className="bg-white border border-[#E8E8E4] rounded p-10 flex flex-col items-center text-center">
-            <div className="w-14 h-14 rounded-full bg-[#E6F4F0] flex items-center justify-center mb-5">
-              <Check className="w-6 h-6 text-[#16A34A]" strokeWidth={2.5} />
+            <div className="w-14 h-14 rounded-full bg-[#E4F5EC] flex items-center justify-center mb-5">
+              <Check className="w-6 h-6 text-[#0F6E56]" strokeWidth={2.5} />
             </div>
             <h2 className="text-[22px] font-bold text-[#1A1816] mb-3">Offer submitted successfully</h2>
             <p className="text-[14px] text-[#737370] mb-8 max-w-[340px]">

@@ -15,7 +15,6 @@ export default function robots() {
           '/wholesale-real-estate',
           '/vs/',
           '/about',
-          '/pricing',
           '/faq',
           '/reviews',
         ],

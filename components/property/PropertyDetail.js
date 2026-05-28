@@ -239,7 +239,7 @@ export function PropertyDetail({ property }) {
     if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
       console.warn('Invalid map coordinates:', { lat, lng })
       if (mapRef.current) {
-        mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Map location not available</div>'
+        mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-[#737370]">Map location not available</div>'
       }
       return
     }
@@ -247,7 +247,7 @@ export function PropertyDetail({ property }) {
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       console.warn('Map coordinates out of valid range:', { lat, lng })
       if (mapRef.current) {
-        mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Map location not available</div>'
+        mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-[#737370]">Map location not available</div>'
       }
       return
     }
@@ -277,7 +277,7 @@ export function PropertyDetail({ property }) {
       } catch (error) {
         console.error('Error initializing Google Map:', error)
         if (mapRef.current) {
-          mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Error loading map</div>'
+          mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-[#737370]">Error loading map</div>'
         }
       }
     }
@@ -288,7 +288,7 @@ export function PropertyDetail({ property }) {
         .catch((error) => {
           console.error('Failed to load Google Maps API:', error)
           if (mapRef.current) {
-            mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Failed to load map</div>'
+            mapRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-[#737370]">Failed to load map</div>'
           }
         })
     }, 100)
@@ -796,7 +796,7 @@ export function PropertyDetail({ property }) {
                     <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
                   </button>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[12px] font-semibold rounded border border-[#9FDBB8]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] inline-block"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F6E56] inline-block"></span>
                     {property.status || 'Active'}
                   </span>
                 </div>
@@ -808,7 +808,7 @@ export function PropertyDetail({ property }) {
                   {!user && !isPreview ? (property.city && property.state ? `${property.city}, ${property.state}` : 'Address hidden') : fullAddress}
                 </h1>
                 <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-[#E4F5EC] text-[#0F6E56] text-[13px] font-semibold rounded border border-[#9FDBB8] flex-shrink-0 mt-1">
-                  <span className="w-2 h-2 rounded-full bg-[#16A34A] inline-block"></span>
+                  <span className="w-2 h-2 rounded-full bg-[#0F6E56] inline-block"></span>
                   {property.status || 'Active Deal'}
                 </span>
               </div>

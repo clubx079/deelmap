@@ -41,7 +41,7 @@ export function Modal({ isOpen, onClose, children, className = '', hideClose = f
           {!hideClose && (
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 text-[#A8A8A4] hover:text-[#444441] z-10 p-1 rounded-full hover:bg-[#FAFAF8] transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
