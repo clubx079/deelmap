@@ -35,9 +35,13 @@ h1, h2, h3, h4, h5, h6 {
   50%       { opacity: 0.1; transform: scale(0.7); }
 }
 
+/* Hide scrollbar utility (used by horizontal chip rows) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* Smooth scrollbars */
-::-webkit-scrollbar { 
-  width: 6px; 
+::-webkit-scrollbar {
+  width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track { 
