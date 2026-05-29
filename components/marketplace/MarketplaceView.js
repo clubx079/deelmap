@@ -289,17 +289,9 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     const rest = list.filter(p => !p.is_boosted)
 
     if (sortBy === 'recommended') {
-      const wholesale = rest.filter(p => p.listing_type !== 'auction')
-      const auction = rest.filter(p => p.listing_type === 'auction')
-      // Pattern: W, W, A, W, W, A, ...
-      const interleaved = []
-      let wi = 0, ai = 0
-      while (wi < wholesale.length || ai < auction.length) {
-        if (wi < wholesale.length) interleaved.push(wholesale[wi++])
-        if (wi < wholesale.length) interleaved.push(wholesale[wi++])
-        if (ai < auction.length) interleaved.push(auction[ai++])
-      }
-      return [...boosted, ...interleaved]
+      // The API (/api/deals) now interleaves wholesale/auction server-side and
+      // paginates that sequence, so preserve the order it returned (boosted on top).
+      return [...boosted, ...rest]
     }
     if (sortBy === 'price-low') return [...boosted, ...[...rest].sort((a, b) => (a.price || 0) - (b.price || 0))]
     if (sortBy === 'price-high') return [...boosted, ...[...rest].sort((a, b) => (b.price || 0) - (a.price || 0))]

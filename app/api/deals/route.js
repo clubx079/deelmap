@@ -7,6 +7,62 @@ const supabaseMarketplace = createClient(
   process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
 );
 
+const DEAL_COLS = [
+  'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
+  'address_google_lat', 'address_google_lng',
+  'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
+  'listing_type', 'auction_date', 'auction_time', 'auction_location',
+  'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
+  'year_built', 'lot_size',
+  'created_at', 'updated_at', 'temp_seller_id',
+  'estimated_rent', 'purchase_price'
+].join(',');
+const DEAL_SELECT = `${DEAL_COLS}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`;
+const MANUAL_SELECT = `
+  id, slug, address, city, state, zipcode, latitude, longitude,
+  price, bedrooms, bathrooms, floor_area, property_type, status,
+  is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
+  property_images!left (image_url, image_key, sort_order)
+`;
+
+const STATE_NAME_TO_ABBR = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+};
+
+// Fallback featured photo + format a single card photo. Mutates the deal rows in place.
+async function processDealPhotos(deals) {
+  const needFallback = (deals || []).filter(d => !d.property_photos?.length).map(d => d.id);
+  if (needFallback.length > 0) {
+    const { data: fallbackPhotos } = await supabaseMarketplace
+      .from('property_photos')
+      .select('deal_id, photo_url, optimized_url')
+      .in('deal_id', needFallback)
+      .order('display_order', { ascending: true });
+    const map = {};
+    for (const p of (fallbackPhotos || [])) if (!map[p.deal_id]) map[p.deal_id] = p;
+    (deals || []).forEach(d => {
+      if (!d.property_photos?.length && map[d.id]) d.property_photos = [{ ...map[d.id], is_featured: false }];
+    });
+  }
+  (deals || []).forEach(d => {
+    const photo = d.property_photos?.[0];
+    d.property_photos = photo ? [{
+      photo_url: photo.optimized_url || photo.photo_url,
+      optimized_url: photo.optimized_url || null,
+      is_featured: true,
+    }] : [];
+  });
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -14,7 +70,6 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '30');
 
-    // Viewport bounds for list (from map idle event, debounced)
     const swLat = parseFloat(searchParams.get('swLat'));
     const swLng = parseFloat(searchParams.get('swLng'));
     const neLat = parseFloat(searchParams.get('neLat'));
@@ -25,14 +80,13 @@ export async function GET(request) {
     const searchQuery = searchParams.get('searchQuery') || '';
 
     const rawPropertyTypes = searchParams.get('propertyTypes')?.split(',').filter(Boolean) || [];
-    // Expand each type to cover both hyphenated and spaced variants (e.g. "Multi-Family" ↔ "Multi Family")
     const propertyTypes = rawPropertyTypes.length > 0
       ? [...new Set(rawPropertyTypes.flatMap(t => {
-          const variants = [t]
-          if (/multi.?family/i.test(t)) variants.push('Multi Family', 'Multi-Family', 'Multifamily')
-          if (/single.?family/i.test(t)) variants.push('Single Family', 'Single-Family')
-          if (/mobile.?home/i.test(t)) variants.push('Mobile Home', 'Mobile-Home', 'Manufactured Home')
-          return variants
+          const variants = [t];
+          if (/multi.?family/i.test(t)) variants.push('Multi Family', 'Multi-Family', 'Multifamily');
+          if (/single.?family/i.test(t)) variants.push('Single Family', 'Single-Family');
+          if (/mobile.?home/i.test(t)) variants.push('Mobile Home', 'Mobile-Home', 'Manufactured Home');
+          return variants;
         }))]
       : [];
     const minPrice = parseFloat(searchParams.get('minPrice')) || null;
@@ -47,195 +101,248 @@ export async function GET(request) {
     const maxYield = parseFloat(searchParams.get('maxYield')) || null;
     const minCapRate = parseFloat(searchParams.get('minCapRate')) || null;
     const maxCapRate = parseFloat(searchParams.get('maxCapRate')) || null;
+    const minCashOnCash = parseFloat(searchParams.get('minCashOnCash')) || null;
+    const maxCashOnCash = parseFloat(searchParams.get('maxCashOnCash')) || null;
     const cities = searchParams.get('cities')?.split(',').filter(Boolean) || [];
     const states = searchParams.get('states')?.split(',').filter(Boolean) || [];
     const isHighlighted = searchParams.get('isHighlighted') === 'true';
     const isBoosted = searchParams.get('isBoosted') === 'true';
     const isHomepageFeatured = searchParams.get('isHomepageFeatured') === 'true';
     const listingType = searchParams.get('listingType') || null; // 'wholesale' | 'auction' | null=all
-    const listingStatus = searchParams.get('listingStatus') || 'active'; // 'active' | 'pending' | 'sold'
-
-    // Query 1: Get deals with ONLY featured photo (using Supabase transform for speed)
-    const dealCols = [
-      'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
-      'address_google_lat', 'address_google_lng',
-      'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
-      'listing_type', 'auction_date', 'auction_time', 'auction_location',
-      'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
-      'year_built', 'lot_size',
-      'created_at', 'updated_at', 'temp_seller_id',
-      'estimated_rent', 'purchase_price'
-    ].join(',');
+    const listingStatus = searchParams.get('listingStatus') || 'active';
 
     const validStatuses = ['active', 'pending', 'sold'];
     const statusToFilter = validStatuses.includes(listingStatus) ? listingStatus : 'active';
 
-    let query = supabaseMarketplace
+    // ---- shared filter application (wholesale_deals) ----
+    const applyDealFilters = (q) => {
+      if (propertyTypes.length > 0) q = q.in('property_type', propertyTypes);
+      if (minPrice !== null) q = q.gte('price', minPrice);
+      if (maxPrice !== null) q = q.lte('price', maxPrice);
+      if (minBedrooms !== null) q = q.gte('bedrooms', minBedrooms);
+      if (maxBedrooms !== null) q = q.lte('bedrooms', maxBedrooms);
+      if (minBathrooms !== null) q = q.gte('bathrooms', minBathrooms);
+      if (maxBathrooms !== null) q = q.lte('bathrooms', maxBathrooms);
+      if (minSqft !== null) q = q.gte('sqft', minSqft);
+      if (maxSqft !== null) q = q.lte('sqft', maxSqft);
+      if (minYield !== null) q = q.gte('gross_yield', minYield);
+      if (maxYield !== null) q = q.lte('gross_yield', maxYield);
+      if (minCapRate !== null) q = q.gte('cap_rate', minCapRate);
+      if (maxCapRate !== null) q = q.lte('cap_rate', maxCapRate);
+      if (minCashOnCash !== null) q = q.gte('cash_on_cash', minCashOnCash);
+      if (maxCashOnCash !== null) q = q.lte('cash_on_cash', maxCashOnCash);
+      if (cities.length > 0) q = q.in('city', cities);
+      if (states.length > 0) q = q.in('state', states);
+      if (hasBounds) {
+        q = q.gte('address_google_lat', swLat).lte('address_google_lat', neLat)
+             .gte('address_google_lng', swLng).lte('address_google_lng', neLng);
+      }
+      if (searchQuery) {
+        const rawTerm = searchQuery.trim();
+        const commaIdx = rawTerm.indexOf(',');
+        if (commaIdx > 0) {
+          const cityPart = rawTerm.substring(0, commaIdx).trim();
+          const statePart = rawTerm.substring(commaIdx + 1).trim();
+          const stateAbbrFromName = STATE_NAME_TO_ABBR[statePart.toLowerCase()];
+          const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
+          const cq = `%${cityPart}%`;
+          if (stateAbbrFinal) q = q.ilike('city', cq).eq('state', stateAbbrFinal);
+          else q = q.or(`address.ilike.${cq},full_address.ilike.${cq},city.ilike.${cq}`);
+        } else {
+          let searchTerm = rawTerm.replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
+          if (!searchTerm) searchTerm = rawTerm;
+          const stateAbbr = STATE_NAME_TO_ABBR[searchTerm.toLowerCase()];
+          const qq = `%${searchTerm}%`;
+          if (stateAbbr) q = q.or(`address.ilike.${qq},full_address.ilike.${qq},city.ilike.${qq},state.eq.${stateAbbr},zip_code.ilike.${qq}`);
+          else q = q.or(`address.ilike.${qq},full_address.ilike.${qq},city.ilike.${qq},state.ilike.${qq},zip_code.ilike.${qq}`);
+        }
+      }
+      return q;
+    };
+
+    const applyManualFilters = (q) => {
+      if (minPrice !== null) q = q.gte('price', minPrice);
+      if (maxPrice !== null) q = q.lte('price', maxPrice);
+      if (minBedrooms !== null) q = q.gte('bedrooms', minBedrooms);
+      if (maxBedrooms !== null) q = q.lte('bedrooms', maxBedrooms);
+      if (minBathrooms !== null) q = q.gte('bathrooms', minBathrooms);
+      if (maxBathrooms !== null) q = q.lte('bathrooms', maxBathrooms);
+      if (minSqft !== null) q = q.gte('floor_area', minSqft);
+      if (maxSqft !== null) q = q.lte('floor_area', maxSqft);
+      if (propertyTypes.length > 0) q = q.in('property_type', propertyTypes);
+      if (states.length > 0) q = q.in('state', states);
+      if (isHighlighted) q = q.eq('is_highlighted', true);
+      if (isBoosted) q = q.eq('is_boosted', true);
+      if (isHomepageFeatured) q = q.eq('is_homepage_featured', true);
+      if (hasBounds) {
+        q = q.gte('latitude', swLat).lte('latitude', neLat)
+             .gte('longitude', swLng).lte('longitude', neLng);
+      }
+      if (searchQuery) {
+        const rawTerm = searchQuery.trim();
+        const commaIdx = rawTerm.indexOf(',');
+        if (commaIdx > 0) {
+          const cityPart = rawTerm.substring(0, commaIdx).trim();
+          const remainder = rawTerm.substring(commaIdx + 1);
+          let stateAbbrFinal = null;
+          for (const seg of remainder.split(',')) {
+            const s = seg.trim();
+            const fromName = STATE_NAME_TO_ABBR[s.toLowerCase()];
+            if (fromName) { stateAbbrFinal = fromName; break; }
+            if (s.length === 2 && /^[A-Za-z]{2}$/.test(s)) { stateAbbrFinal = s.toUpperCase(); break; }
+          }
+          const cq = `%${cityPart}%`;
+          if (stateAbbrFinal) q = q.ilike('city', cq).eq('state', stateAbbrFinal);
+          else q = q.or(`city.ilike.${cq},address.ilike.${cq}`);
+        } else {
+          const qq = `%${rawTerm}%`;
+          q = q.or(`city.ilike.${qq},address.ilike.${qq},state.ilike.${qq}`);
+        }
+      }
+      return q;
+    };
+
+    const baseDeal = () => supabaseMarketplace
       .from('wholesale_deals')
-      .select(`${dealCols}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`, { count: 'exact' })
+      .select(DEAL_SELECT, { count: 'exact' })
       .eq('status', statusToFilter)
       .eq('is_incomplete', false)
       .neq('state', 'HI')
       .eq('property_photos.is_featured', true);
 
-    // Sorting
-    if (sortBy === 'price-low') {
-      query = query.order('price', { ascending: true, nullsFirst: false });
-    } else if (sortBy === 'price-high') {
-      query = query.order('price', { ascending: false, nullsFirst: false });
-    } else if (sortBy === 'roi') {
-      query = query.order('cash_on_cash', { ascending: false, nullsFirst: false });
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-
-    // Filters
-    if (propertyTypes.length > 0) query = query.in('property_type', propertyTypes);
-    if (minPrice !== null) query = query.gte('price', minPrice);
-    if (maxPrice !== null) query = query.lte('price', maxPrice);
-    if (minBedrooms !== null) query = query.gte('bedrooms', minBedrooms);
-    if (maxBedrooms !== null) query = query.lte('bedrooms', maxBedrooms);
-    if (minBathrooms !== null) query = query.gte('bathrooms', minBathrooms);
-    if (maxBathrooms !== null) query = query.lte('bathrooms', maxBathrooms);
-    if (minSqft !== null) query = query.gte('sqft', minSqft);
-    if (maxSqft !== null) query = query.lte('sqft', maxSqft);
-    if (minYield !== null) query = query.gte('gross_yield', minYield);
-    if (maxYield !== null) query = query.lte('gross_yield', maxYield);
-    if (minCapRate !== null) query = query.gte('cap_rate', minCapRate);
-    if (maxCapRate !== null) query = query.lte('cap_rate', maxCapRate);
-    const minCashOnCash = parseFloat(searchParams.get('minCashOnCash')) || null;
-    const maxCashOnCash = parseFloat(searchParams.get('maxCashOnCash')) || null;
-    if (minCashOnCash !== null) query = query.gte('cash_on_cash', minCashOnCash);
-    if (maxCashOnCash !== null) query = query.lte('cash_on_cash', maxCashOnCash);
-    if (cities.length > 0) query = query.in('city', cities);
-    if (states.length > 0) query = query.in('state', states);
-    if (listingType === 'auction') {
-      query = query.eq('listing_type', 'auction');
-    } else if (listingType === 'wholesale') {
-      query = query.or('listing_type.is.null,listing_type.neq.auction');
-    }
-
-    if (hasBounds) {
-      query = query
-        .gte('address_google_lat', swLat).lte('address_google_lat', neLat)
-        .gte('address_google_lng', swLng).lte('address_google_lng', neLng);
-    }
-
-    const stateNameToAbbr = {
-      'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
-      'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
-      'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
-      'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-      'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
-      'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-      'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
-      'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-      'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
-      'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+    const dealSort = (q) => {
+      if (sortBy === 'price-low') return q.order('price', { ascending: true, nullsFirst: false });
+      if (sortBy === 'price-high') return q.order('price', { ascending: false, nullsFirst: false });
+      if (sortBy === 'roi') return q.order('cash_on_cash', { ascending: false, nullsFirst: false });
+      return q.order('created_at', { ascending: false });
     };
 
-    if (searchQuery) {
-      const rawTerm = searchQuery.trim();
-
-      // Handle "City, State" format from Google Places autocomplete (e.g. "Lexington, Kentucky")
-      const commaIdx = rawTerm.indexOf(',');
-      if (commaIdx > 0) {
-        const cityPart = rawTerm.substring(0, commaIdx).trim();
-        const statePart = rawTerm.substring(commaIdx + 1).trim();
-        const stateAbbrFromName = stateNameToAbbr[statePart.toLowerCase()];
-        // State could be full name ("Kentucky") or abbreviation ("KY")
-        const stateAbbrFinal = stateAbbrFromName || (statePart.length === 2 ? statePart.toUpperCase() : null);
-        const cq = `%${cityPart}%`;
-        if (stateAbbrFinal) {
-          query = query.ilike('city', cq).eq('state', stateAbbrFinal);
-        } else {
-          query = query.or(`address.ilike.${cq},full_address.ilike.${cq},city.ilike.${cq}`);
-        }
-      } else {
-        let searchTerm = rawTerm.replace(/[(),%]/g, ' ').replace(/\s+/g, ' ').trim();
-        if (!searchTerm) searchTerm = rawTerm;
-        const stateAbbr = stateNameToAbbr[searchTerm.toLowerCase()];
-        const q = `%${searchTerm}%`;
-        if (stateAbbr) {
-          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.eq.${stateAbbr},zip_code.ilike.${q}`);
-        } else {
-          query = query.or(`address.ilike.${q},full_address.ilike.${q},city.ilike.${q},state.ilike.${q},zip_code.ilike.${q}`);
-        }
-      }
-    }
-
-    query = query.range(offset, offset + limit - 1);
-
-    // Build manual properties query
-    let manualQuery = supabaseMarketplace
+    const baseManual = () => supabaseMarketplace
       .from('properties')
-      .select(`
-        id, slug, address, city, state, zipcode, latitude, longitude,
-        price, bedrooms, bathrooms, floor_area, property_type, status,
-        is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
-        property_images!left (image_url, image_key, sort_order)
-      `, { count: 'exact' })
+      .select(MANUAL_SELECT, { count: 'exact' })
       .in('status', ['active', 'published'])
       .eq('property_images.sort_order', 0);
 
-    if (sortBy === 'price-low') {
-      manualQuery = manualQuery.order('price', { ascending: true, nullsFirst: false });
-    } else if (sortBy === 'price-high') {
-      manualQuery = manualQuery.order('price', { ascending: false, nullsFirst: false });
-    } else {
-      manualQuery = manualQuery.order('created_at', { ascending: false });
-    }
-    if (minPrice !== null) manualQuery = manualQuery.gte('price', minPrice);
-    if (maxPrice !== null) manualQuery = manualQuery.lte('price', maxPrice);
-    if (minBedrooms !== null) manualQuery = manualQuery.gte('bedrooms', minBedrooms);
-    if (maxBedrooms !== null) manualQuery = manualQuery.lte('bedrooms', maxBedrooms);
-    if (minBathrooms !== null) manualQuery = manualQuery.gte('bathrooms', minBathrooms);
-    if (maxBathrooms !== null) manualQuery = manualQuery.lte('bathrooms', maxBathrooms);
-    if (minSqft !== null) manualQuery = manualQuery.gte('floor_area', minSqft);
-    if (maxSqft !== null) manualQuery = manualQuery.lte('floor_area', maxSqft);
-    if (propertyTypes.length > 0) manualQuery = manualQuery.in('property_type', propertyTypes);
-    if (states.length > 0) manualQuery = manualQuery.in('state', states);
-    if (searchQuery) {
-      const rawTerm = searchQuery.trim();
-      const commaIdx = rawTerm.indexOf(',');
-      if (commaIdx > 0) {
-        const cityPart = rawTerm.substring(0, commaIdx).trim();
-        const remainder = rawTerm.substring(commaIdx + 1);
-        // Scan each segment after the city for a recognisable state name or 2-letter abbreviation
-        // Google Places returns formats like "O'Fallon, St. Clair County, IL, USA"
-        let stateAbbrFinal = null;
-        for (const seg of remainder.split(',')) {
-          const s = seg.trim();
-          const fromName = stateNameToAbbr[s.toLowerCase()];
-          if (fromName) { stateAbbrFinal = fromName; break; }
-          if (s.length === 2 && /^[A-Za-z]{2}$/.test(s)) { stateAbbrFinal = s.toUpperCase(); break; }
-        }
-        const cq = `%${cityPart}%`;
-        if (stateAbbrFinal) {
-          manualQuery = manualQuery.ilike('city', cq).eq('state', stateAbbrFinal);
-        } else {
-          manualQuery = manualQuery.or(`city.ilike.${cq},address.ilike.${cq}`);
-        }
+    const manualSort = (q) => {
+      if (sortBy === 'price-low') return q.order('price', { ascending: true, nullsFirst: false });
+      if (sortBy === 'price-high') return q.order('price', { ascending: false, nullsFirst: false });
+      return q.order('created_at', { ascending: false });
+    };
+
+    // count helper (no photo join — counts the deals themselves).
+    // Auctions use an estimated count (thousands of rows; exact is slow and
+    // hasMore/total only need a ballpark). Wholesale is small, so exact is fine.
+    const dealCount = (which, mode = 'exact') => {
+      let q = supabaseMarketplace.from('wholesale_deals')
+        .select('id', { count: mode, head: true })
+        .eq('status', statusToFilter).eq('is_incomplete', false).neq('state', 'HI');
+      q = applyDealFilters(q);
+      if (which === 'auction') q = q.eq('listing_type', 'auction');
+      else if (which === 'wholesale') q = q.or('listing_type.is.null,listing_type.neq.auction');
+      return q;
+    };
+
+    // =========================================================================
+    // RECOMMENDED: server-side W,W,A interleave (wholesale+manual : auction)
+    // The W stream (wholesale_deals non-auction + manual properties) is a small
+    // minority, so all of it is loaded for the interleave "head"; auctions stay
+    // paginated. Deep pages (past the head) are pure-auction and as fast as before.
+    // =========================================================================
+    if (sortBy === 'recommended' && !listingType) {
+      const [acR, whR, mcR] = await Promise.all([
+        dealCount('auction', 'estimated'),
+        dealCount('wholesale'),
+        applyManualFilters(supabaseMarketplace.from('properties').select('id', { count: 'exact', head: true }).in('status', ['active', 'published'])),
+      ]);
+      const An = acR.count || 0;
+      const wholesaleCount = whR.count || 0;
+      const manualCount = mcR.count || 0;
+      const Wn = wholesaleCount + manualCount;
+      const headA = Math.min(Math.ceil(Wn / 2), An);
+      const headLen = Wn + headA;
+      const total = Wn + An;
+
+      let pageItems = [];
+
+      if (offset >= headLen) {
+        // Pure-auction tail (fast path — same shape as a normal auction page)
+        const aStart = headA + (offset - headLen);
+        const { data: aRows } = await dealSort(applyDealFilters(baseDeal().eq('listing_type', 'auction'))).range(aStart, aStart + limit - 1);
+        await processDealPhotos(aRows || []);
+        pageItems = (aRows || []).map(normalizeWholesaleDeal).filter(Boolean);
       } else {
-        const q = `%${rawTerm}%`;
-        manualQuery = manualQuery.or(`city.ilike.${q},address.ilike.${q},state.ilike.${q}`);
+        // Build the interleave head: all wholesale + manual, plus the first headA auctions
+        const [whRows, mRows, haRows] = await Promise.all([
+          wholesaleCount > 0
+            ? dealSort(applyDealFilters(baseDeal().or('listing_type.is.null,listing_type.neq.auction'))).range(0, wholesaleCount - 1)
+            : Promise.resolve({ data: [] }),
+          manualCount > 0
+            ? manualSort(applyManualFilters(baseManual())).range(0, manualCount - 1)
+            : Promise.resolve({ data: [] }),
+          headA > 0
+            ? dealSort(applyDealFilters(baseDeal().eq('listing_type', 'auction'))).range(0, headA - 1)
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        const whData = whRows.data || [];
+        const haData = haRows.data || [];
+        await processDealPhotos(whData);
+        await processDealPhotos(haData);
+
+        const wNorm = whData.map(normalizeWholesaleDeal).filter(Boolean);
+        const mNorm = (mRows.data || []).map(p => normalizeManualProperty(p, p.property_images || [])).filter(Boolean);
+        const W = [...wNorm, ...mNorm].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        const headAuctions = haData.map(normalizeWholesaleDeal).filter(Boolean);
+
+        // Interleave: W, W, A, W, W, A, ...  (matches the prior client-side pattern)
+        const head = [];
+        let wi = 0, ai = 0;
+        while (wi < W.length || ai < headAuctions.length) {
+          if (wi < W.length) head.push(W[wi++]);
+          if (wi < W.length) head.push(W[wi++]);
+          if (ai < headAuctions.length) head.push(headAuctions[ai++]);
+        }
+
+        pageItems = head.slice(offset, Math.min(offset + limit, head.length));
+
+        // If the page extends past the mixed head, append pure-auction tail
+        if (offset + limit > head.length) {
+          const need = (offset + limit) - head.length;
+          const tailStart = headA; // head consumed auctions [0, headA)
+          const { data: tRows } = await dealSort(applyDealFilters(baseDeal().eq('listing_type', 'auction'))).range(tailStart, tailStart + need - 1);
+          await processDealPhotos(tRows || []);
+          pageItems.push(...(tRows || []).map(normalizeWholesaleDeal).filter(Boolean));
+        }
       }
+
+      return NextResponse.json({
+        success: true,
+        properties: pageItems,
+        totalCount: total,
+        page,
+        limit,
+        hasMore: offset + limit < total,
+        metadata: { interleaved: true, auctionCount: An, wholesaleCount, manualCount, sortBy },
+      });
     }
-    if (isHighlighted) manualQuery = manualQuery.eq('is_highlighted', true);
-    if (isBoosted) manualQuery = manualQuery.eq('is_boosted', true);
-    if (isHomepageFeatured) manualQuery = manualQuery.eq('is_homepage_featured', true);
-    if (hasBounds) {
-      manualQuery = manualQuery
-        .gte('latitude', swLat).lte('latitude', neLat)
-        .gte('longitude', swLng).lte('longitude', neLng);
-    }
-    manualQuery = manualQuery.range(offset, offset + limit - 1);
+
+    // =========================================================================
+    // All other sorts / filtered views — single-stream behavior (unchanged)
+    // =========================================================================
+    let query = dealSort(applyDealFilters(baseDeal()));
+    if (listingType === 'auction') query = query.eq('listing_type', 'auction');
+    else if (listingType === 'wholesale') query = query.or('listing_type.is.null,listing_type.neq.auction');
+    query = query.range(offset, offset + limit - 1);
+
+    let manualQuery = manualSort(applyManualFilters(baseManual())).range(offset, offset + limit - 1);
 
     // Skip manual properties when a listing type filter is active — that table has no listing_type
     const runManualQuery = !listingType;
 
-    // Run both queries in parallel — each fails independently
-    const [dealsResult, manualResult] = await Promise.allSettled([query, runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 })]);
+    const [dealsResult, manualResult] = await Promise.allSettled([
+      query,
+      runManualQuery ? manualQuery : Promise.resolve({ data: [], count: 0 }),
+    ]);
 
     if (dealsResult.status === 'rejected' || dealsResult.value?.error) {
       const err = dealsResult.value?.error || dealsResult.reason;
@@ -244,39 +351,9 @@ export async function GET(request) {
     }
 
     const { data: deals, count: totalCount } = dealsResult.value;
+    await processDealPhotos(deals || []);
+    const properties = (deals || []).map(normalizeWholesaleDeal).filter(Boolean);
 
-    // Fallback: for deals with no featured photo, fetch their first photo by display_order
-    const dealsNeedingFallback = (deals || []).filter(d => !d.property_photos?.length).map(d => d.id);
-    if (dealsNeedingFallback.length > 0) {
-      const { data: fallbackPhotos } = await supabaseMarketplace
-        .from('property_photos')
-        .select('deal_id, photo_url, optimized_url')
-        .in('deal_id', dealsNeedingFallback)
-        .order('display_order', { ascending: true });
-
-      const fallbackMap = {};
-      for (const p of (fallbackPhotos || [])) {
-        if (!fallbackMap[p.deal_id]) fallbackMap[p.deal_id] = p;
-      }
-      (deals || []).forEach(deal => {
-        if (!deal.property_photos?.length && fallbackMap[deal.id]) {
-          deal.property_photos = [{ ...fallbackMap[deal.id], is_featured: false }];
-        }
-      });
-    }
-
-    // Process: format featured photo for card
-    const properties = (deals || []).map(deal => {
-      const photo = deal.property_photos?.[0];
-      deal.property_photos = photo ? [{
-        photo_url: photo.optimized_url || photo.photo_url,
-        optimized_url: photo.optimized_url || null,
-        is_featured: true
-      }] : [];
-      return normalizeWholesaleDeal(deal);
-    }).filter(Boolean);
-
-    // Process manual properties result — if it failed, silently skip (same as before)
     let manualProperties = [];
     let manualCount = 0;
     try {
@@ -306,8 +383,8 @@ export async function GET(request) {
         wholesaleCount: totalCount || 0,
         manualCount,
         searchApplied: !!searchQuery,
-        sortBy
-      }
+        sortBy,
+      },
     });
 
   } catch (error) {
@@ -317,7 +394,7 @@ export async function GET(request) {
       error: error.message || 'Failed to fetch properties',
       properties: [],
       totalCount: 0,
-      hasMore: false
+      hasMore: false,
     }, { status: 500 });
   }
 }
