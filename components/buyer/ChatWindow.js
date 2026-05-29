@@ -712,9 +712,11 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               <span>{propertyAddress}</span>
             </div>
           )}
-          <p className="text-[14px] font-semibold text-[#1A1816] mb-2">
-            {conversation?.property_bedrooms ? `${conversation.property_bedrooms}BR` : ''} {conversation?.property_title || propertyAddress || 'Property'}
-          </p>
+          {conversation?.property_title && conversation.property_title !== propertyAddress && (
+            <p className="text-[14px] font-semibold text-[#1A1816] mb-2">
+              {conversation.property_title}
+            </p>
+          )}
 
           {(conversation?.property_sqft || conversation?.property_bedrooms || conversation?.property_bathrooms) && (
             <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
@@ -768,123 +770,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           )}
         </div>
 
-        {/* Action Buttons / Inline Offer Form */}
-        {showOfferForm ? (
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            {offerSuccess ? (
-              <div className="flex flex-col items-center text-center py-6">
-                <div className="w-12 h-12 rounded-full bg-[#E4F5EC] flex items-center justify-center mb-4">
-                  <Calendar className="w-5 h-5 text-[#0F6E56]" />
-                </div>
-                <p className="text-[15px] font-bold text-[#1A1816] mb-1">Offer submitted!</p>
-                <p className="text-[12px] text-[#737370] mb-5">The seller will review and respond soon.</p>
-                <button
-                  onClick={() => setShowOfferForm(false)}
-                  className="w-full py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
-                >
-                  Back to Deal Overview
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-[14px] font-bold text-[#1A1816]">Make an Offer</p>
-                  <button onClick={() => setShowOfferForm(false)} className="p-1 rounded hover:bg-[#FAFAF8] transition-colors">
-                    <X className="w-4 h-4 text-[#737370]" />
-                  </button>
-                </div>
-
-                {offerError && (
-                  <div className="mb-3 p-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded text-[12px] text-[#D03839]">{offerError}</div>
-                )}
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Offer Price <span className="text-[#D03839]">*</span></label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-[13px]">$</span>
-                      <input
-                        type="text"
-                        value={offerAmount}
-                        onChange={e => { const r = e.target.value.replace(/[^0-9]/g, ''); setOfferAmount(r ? Number(r).toLocaleString() : ''); }}
-                        placeholder="135,000"
-                        className="w-full pl-6 pr-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Financing</label>
-                    <select value={offerFinancing} onChange={e => setOfferFinancing(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
-                      style={selectStyle}>
-                      {FINANCING_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Closing Timeline</label>
-                    <select value={offerClosing} onChange={e => setOfferClosing(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
-                      style={selectStyle}>
-                      {CLOSING_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Earnest Money <span className="text-[#D03839]">*</span></label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-[13px]">$</span>
-                      <input
-                        type="text"
-                        value={offerEarnest}
-                        onChange={e => { const r = e.target.value.replace(/[^0-9]/g, ''); setOfferEarnest(r ? Number(r).toLocaleString() : ''); }}
-                        placeholder="1,000"
-                        className="w-full pl-6 pr-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Inspection Period</label>
-                    <select value={offerInspection} onChange={e => setOfferInspection(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
-                      style={selectStyle}>
-                      {INSPECTION_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Notes</label>
-                    <textarea
-                      value={offerNotes}
-                      onChange={e => setOfferNotes(e.target.value)}
-                      placeholder="Any additional terms..."
-                      rows={3}
-                      className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)] resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => setShowOfferForm(false)}
-                    className="flex-1 py-2.5 border border-[#E8E8E4] text-[#737370] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSubmitInlineOffer}
-                    disabled={submittingOffer}
-                    className="flex-1 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors disabled:opacity-50"
-                  >
-                    {submittingOffer ? 'Submitting…' : 'Submit Offer'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
+        {/* Action Buttons */}
         <div className="px-5 py-4">
           {latestOffer?.status === 'accepted' ? (
             <div className="bg-[#E4F5EC] border border-[#A8DFBA] rounded px-4 py-3 mb-3">
@@ -938,7 +824,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             </button>
           )}
         </div>
-        )}
       </div>
 
       {/* Mobile Property Details Panel */}
@@ -974,9 +859,11 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                   <span>{propertyAddress}</span>
                 </div>
               )}
-              <p className="text-[14px] font-semibold text-[#1A1816] mb-2">
-                {conversation?.property_bedrooms ? `${conversation.property_bedrooms}BR` : ''} {conversation?.property_title || propertyAddress || 'Property'}
-              </p>
+              {conversation?.property_title && conversation.property_title !== propertyAddress && (
+                <p className="text-[14px] font-semibold text-[#1A1816] mb-2">
+                  {conversation.property_title}
+                </p>
+              )}
               {(conversation?.property_sqft || conversation?.property_bedrooms || conversation?.property_bathrooms) && (
                 <div className="flex items-center gap-2 text-[12px] text-[#737370] mb-3">
                   {conversation.property_sqft && <span>{Number(conversation.property_sqft).toLocaleString()} sq ft</span>}
@@ -1042,6 +929,131 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                 </Link>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Make Offer Modal */}
+      {showOfferForm && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 sm:p-4">
+          <div className="w-full sm:max-w-[520px] bg-white rounded-t-2xl sm:rounded-lg shadow-2xl max-h-[92vh] overflow-y-auto">
+            {offerSuccess ? (
+              <div className="flex flex-col items-center text-center px-6 py-10">
+                <div className="w-12 h-12 rounded-full bg-[#E4F5EC] flex items-center justify-center mb-4">
+                  <Calendar className="w-5 h-5 text-[#0F6E56]" />
+                </div>
+                <p className="text-[16px] font-bold text-[#1A1816] mb-1">Offer submitted!</p>
+                <p className="text-[13px] text-[#737370] mb-6">The seller will review and respond soon.</p>
+                <button
+                  onClick={() => setShowOfferForm(false)}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors"
+                >
+                  Back to Deal Overview
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E8E4] sticky top-0 bg-white z-10">
+                  <div className="min-w-0">
+                    <p className="text-[16px] font-bold text-[#1A1816]">Make an Offer</p>
+                    {propertyAddress && <p className="text-[12px] text-[#737370] mt-0.5 truncate">{propertyAddress}</p>}
+                  </div>
+                  <button onClick={() => setShowOfferForm(false)} className="p-1.5 rounded hover:bg-[#FAFAF8] transition-colors flex-shrink-0 ml-3">
+                    <X className="w-5 h-5 text-[#737370]" />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5">
+                  {offerError && (
+                    <div className="mb-4 p-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded text-[12px] text-[#D03839]">{offerError}</div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Offer Price <span className="text-[#D03839]">*</span></label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-[13px]">$</span>
+                        <input
+                          type="text"
+                          value={offerAmount}
+                          onChange={e => { const r = e.target.value.replace(/[^0-9]/g, ''); setOfferAmount(r ? Number(r).toLocaleString() : ''); }}
+                          placeholder="135,000"
+                          className="w-full pl-6 pr-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Earnest Money <span className="text-[#D03839]">*</span></label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737370] text-[13px]">$</span>
+                        <input
+                          type="text"
+                          value={offerEarnest}
+                          onChange={e => { const r = e.target.value.replace(/[^0-9]/g, ''); setOfferEarnest(r ? Number(r).toLocaleString() : ''); }}
+                          placeholder="1,000"
+                          className="w-full pl-6 pr-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Financing</label>
+                      <select value={offerFinancing} onChange={e => setOfferFinancing(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
+                        style={selectStyle}>
+                        {FINANCING_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Closing Timeline</label>
+                      <select value={offerClosing} onChange={e => setOfferClosing(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
+                        style={selectStyle}>
+                        {CLOSING_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Inspection Period</label>
+                      <select value={offerInspection} onChange={e => setOfferInspection(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white focus:outline-none focus:border-[#D03839] appearance-none"
+                        style={selectStyle}>
+                        {INSPECTION_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[12px] font-medium text-[#1A1816] mb-1">Notes</label>
+                      <textarea
+                        value={offerNotes}
+                        onChange={e => setOfferNotes(e.target.value)}
+                        placeholder="Any additional terms..."
+                        rows={3}
+                        className="w-full px-3 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[rgba(208,56,57,.12)] resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setShowOfferForm(false)}
+                      className="flex-1 py-2.5 border border-[#E8E8E4] text-[#737370] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSubmitInlineOffer}
+                      disabled={submittingOffer}
+                      className="flex-1 py-2.5 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors disabled:opacity-50"
+                    >
+                      {submittingOffer ? 'Submitting…' : 'Submit Offer'}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
