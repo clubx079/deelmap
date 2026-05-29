@@ -299,12 +299,12 @@ function StepPhotos({ photos, onPhotosChange, userId, rejectionError }) {
 
       {/* Rejection error for photos */}
       {rejectionError && (
-        <div className="flex items-start gap-3 bg-[#FEF3F2] border border-[#FECDCA] rounded px-4 py-3">
-          <AlertTriangle className="w-4 h-4 text-[#B42318] flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded px-4 py-3">
+          <AlertTriangle className="w-4 h-4 text-[#D03839] flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] font-semibold text-[#B42318] mb-0.5">Photo issue from last review</p>
-            <p className="text-[12px] text-[#B42318]">{rejectionError}</p>
-            <p className="text-[11px] text-[#B42318]/70 mt-1">Remove the flagged photo(s) and re-upload genuine property photos to resubmit.</p>
+            <p className="text-[13px] font-semibold text-[#D03839] mb-0.5">Photo issue from last review</p>
+            <p className="text-[12px] text-[#D03839]">{rejectionError}</p>
+            <p className="text-[11px] text-[#D03839]/70 mt-1">Remove the flagged photo(s) and re-upload genuine property photos to resubmit.</p>
           </div>
         </div>
       )}
@@ -532,9 +532,9 @@ function StepDetails({ data, onChange, rejectionErrors }) {
       <div>
         <label className={labelCls}>Property Description</label>
         {err.description && (
-          <div className="flex items-start gap-2.5 bg-[#FEF3F2] border border-[#FECDCA] rounded px-3 py-2.5 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-[#B42318] flex-shrink-0 mt-0.5" />
-            <p className="text-[12px] text-[#B42318]"><span className="font-semibold">Issue:</span> {err.description}</p>
+          <div className="flex items-start gap-2.5 bg-[#FEF0EF] border border-[#F5C4C0] rounded px-3 py-2.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#D03839] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[#D03839]"><span className="font-semibold">Issue:</span> {err.description}</p>
           </div>
         )}
         <textarea
@@ -542,15 +542,15 @@ function StepDetails({ data, onChange, rejectionErrors }) {
           onChange={e => onChange({ description: e.target.value })}
           placeholder="Describe the property, its features, condition, and unique selling points..."
           rows={5}
-          className={`w-full px-3 py-2.5 border rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none ${err.description ? 'border-[#F97066]' : 'border-[#E8E8E4]'}`}
+          className={`w-full px-3 py-2.5 border rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none ${err.description ? 'border-[#F5C4C0]' : 'border-[#E8E8E4]'}`}
         />
       </div>
       <div>
         <label className={labelCls}>Repairs & Renovation Notes</label>
         {err.repairs && (
-          <div className="flex items-start gap-2.5 bg-[#FEF3F2] border border-[#FECDCA] rounded px-3 py-2.5 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-[#B42318] flex-shrink-0 mt-0.5" />
-            <p className="text-[12px] text-[#B42318]"><span className="font-semibold">Issue:</span> {err.repairs}</p>
+          <div className="flex items-start gap-2.5 bg-[#FEF0EF] border border-[#F5C4C0] rounded px-3 py-2.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#D03839] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[#D03839]"><span className="font-semibold">Issue:</span> {err.repairs}</p>
           </div>
         )}
         <textarea
@@ -558,7 +558,7 @@ function StepDetails({ data, onChange, rejectionErrors }) {
           onChange={e => onChange({ repairs: e.target.value })}
           placeholder="Detail repairs needed, recent renovations, or planned improvements..."
           rows={4}
-          className={`w-full px-3 py-2.5 border rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none ${err.repairs ? 'border-[#F97066]' : 'border-[#E8E8E4]'}`}
+          className={`w-full px-3 py-2.5 border rounded text-[14px] text-[#1A1816] placeholder:text-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors resize-none ${err.repairs ? 'border-[#F5C4C0]' : 'border-[#E8E8E4]'}`}
         />
       </div>
       <div>
@@ -566,9 +566,9 @@ function StepDetails({ data, onChange, rejectionErrors }) {
           Inspection Report <span className="text-[#A8A8A4] font-normal ml-1">(optional)</span>
         </label>
         {err.inspection && (
-          <div className="flex items-start gap-2.5 bg-[#FEF3F2] border border-[#FECDCA] rounded px-3 py-2.5 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-[#B42318] flex-shrink-0 mt-0.5" />
-            <p className="text-[12px] text-[#B42318]"><span className="font-semibold">Issue:</span> {err.inspection}</p>
+          <div className="flex items-start gap-2.5 bg-[#FEF0EF] border border-[#F5C4C0] rounded px-3 py-2.5 mb-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#D03839] flex-shrink-0 mt-0.5" />
+            <p className="text-[12px] text-[#D03839]"><span className="font-semibold">Issue:</span> {err.inspection}</p>
           </div>
         )}
 
@@ -838,7 +838,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
         {/* Left column — base card + add-ons */}
         <div>
           <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">What you&apos;re paying for</p>
-          <div className="relative bg-gradient-to-b from-[#FAFAF6] to-[#F5F3EE] border border-[#E8E8E4] rounded-lg p-5 mb-6 overflow-hidden">
+          <div className="relative bg-gradient-to-b from-[#FAFAF6] to-[#F5F3EE] border border-[#E8E8E4] rounded p-5 mb-6 overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#D03839]" />
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2 flex-wrap">
@@ -870,13 +870,13 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
                   type="button"
                   onClick={() => !disabled && toggleAddOn(id)}
                   disabled={disabled}
-                  className={`w-full grid grid-cols-[44px_1fr_auto_22px] gap-4 items-center p-4 border rounded-lg text-left transition-all ${
+                  className={`w-full grid grid-cols-[44px_1fr_auto_22px] gap-4 items-center p-4 border rounded text-left transition-all ${
                     disabled ? 'opacity-45 cursor-not-allowed' :
                     selected ? 'border-[#D03839] bg-gradient-to-b from-[#FEF8F9] to-white shadow-[0_0_0_1px_#D03839]' :
                     'border-[#E8E8E4] hover:border-[#C8C8C2] hover:shadow-sm bg-white'
                   }`}
                 >
-                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#FEF0EF] text-[#D03839]' : 'bg-[#F5F3EE] text-[#444441]'}`}>
+                  <div className={`w-11 h-11 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#FEF0EF] text-[#D03839]' : 'bg-[#F5F3EE] text-[#444441]'}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
@@ -901,16 +901,16 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
         </div>
 
         {/* Right column — order summary */}
-        <div className="border border-[#E8E8E4] rounded-lg overflow-hidden bg-white">
+        <div className="border border-[#E8E8E4] rounded overflow-hidden bg-white">
 
           {/* Listing preview */}
           <div className="p-4 bg-[#FAFAF8] border-b border-[#E8E8E4]">
             <p className="text-[10px] font-semibold text-[#A8A8A4] uppercase tracking-widest mb-3">Your Listing</p>
             <div className="flex items-center gap-3">
               {featuredPhoto ? (
-                <img src={featuredPhoto.image_url || featuredPhoto.preview_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-[#E8E8E4]" />
+                <img src={featuredPhoto.image_url || featuredPhoto.preview_url} alt="" className="w-16 h-16 rounded object-cover flex-shrink-0 border border-[#E8E8E4]" />
               ) : (
-                <div className="w-16 h-16 rounded-lg bg-[#F3F3F0] flex-shrink-0 flex items-center justify-center border border-[#E8E8E4]">
+                <div className="w-16 h-16 rounded bg-[#F3F3F0] flex-shrink-0 flex items-center justify-center border border-[#E8E8E4]">
                   <Home className="w-6 h-6 text-[#A8A8A4]" />
                 </div>
               )}
@@ -1032,7 +1032,7 @@ function StepPayment({ formData, photos, user, draftId, onSuccess }) {
 
       {/* Full-width payment form — shown below grid after "Proceed to Payment" */}
       {showPaymentForm && clientSecret && (
-        <div className="border border-[#E8E8E4] rounded-lg overflow-hidden bg-white p-6">
+        <div className="border border-[#E8E8E4] rounded overflow-hidden bg-white p-6">
           {stripePromise ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <CheckoutForm
@@ -1235,19 +1235,19 @@ export default function PostDealForm({ user, existing, onClose, onSuccess }) {
 
         {/* Rejection summary banner */}
         {isRejected && existing.rejection_reason && (
-          <div className="mb-6 bg-[#FEF3F2] border border-[#FECDCA] rounded p-4">
+          <div className="mb-6 bg-[#FEF0EF] border border-[#F5C4C0] rounded p-4">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded bg-[#FEE4E2] flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-4 h-4 text-[#B42318]" />
+                <AlertTriangle className="w-4 h-4 text-[#D03839]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-[#B42318] mb-1">Your listing wasn&apos;t approved</p>
-                <p className="text-[13px] text-[#B42318]/80 mb-3">Fix the issues below and save — your listing will go back under review automatically.</p>
+                <p className="text-[14px] font-semibold text-[#D03839] mb-1">Your listing wasn&apos;t approved</p>
+                <p className="text-[13px] text-[#D03839]/80 mb-3">Fix the issues below and save — your listing will go back under review automatically.</p>
                 <div className="space-y-1.5">
                   {Object.entries(rejectionMap).map(([key, reason]) => (
                     <div key={key} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B42318] flex-shrink-0 mt-1.5" />
-                      <p className="text-[12px] text-[#B42318]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#D03839] flex-shrink-0 mt-1.5" />
+                      <p className="text-[12px] text-[#D03839]">
                         <span className="font-semibold capitalize">{key === 'inspection' ? 'Inspection Report' : key}:</span> {reason}
                       </p>
                     </div>

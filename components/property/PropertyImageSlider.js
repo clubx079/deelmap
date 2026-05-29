@@ -162,18 +162,18 @@ export function PropertyImageSlider({
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'sold': return 'bg-red-500';
-      case 'pending': return 'bg-emerald-500';
+      case 'sold': return 'bg-[#D03839]';
+      case 'pending': return 'bg-[#0F6E56]';
       case 'available':
-      default: return 'bg-[#b29578]';
+      default: return 'bg-[#737370]';
     }
   };
 
   if (images.length === 0) {
     return (
-      <div className="relative w-full rounded overflow-hidden bg-gray-100 shadow-lg" style={{ height: '420px' }}>
+      <div className="relative w-full rounded overflow-hidden bg-[#FAFAF8] shadow-lg" style={{ height: '420px' }}>
         <div className="flex items-center justify-center h-full">
-          <span className="text-gray-400 text-lg">No images available</span>
+          <span className="text-[#A8A8A4] text-lg">No images available</span>
         </div>
       </div>
     );
@@ -181,9 +181,9 @@ export function PropertyImageSlider({
 
   return (
     <>
-      <div className="relative w-full rounded overflow-hidden bg-gray-100 shadow-lg group" style={{ height: '420px' }}>
+      <div className="relative w-full rounded overflow-hidden bg-[#FAFAF8] shadow-lg group" style={{ height: '420px' }}>
         <div 
-          className="relative w-full h-full cursor-pointer bg-gray-200"
+          className="relative w-full h-full cursor-pointer bg-[#E8E8E4]"
           onClick={() => openLightbox(currentIndex)}
         >
           {images.map((image, index) => (
@@ -213,18 +213,18 @@ export function PropertyImageSlider({
                   }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                <div className="w-full h-full flex items-center justify-center bg-[#E8E8E4]">
                   <div className="text-center">
-                    <svg className="w-16 h-16 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-16 h-16 text-[#A8A8A4] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-gray-500 text-sm">Failed to load image</p>
+                    <p className="text-[#737370] text-sm">Failed to load image</p>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         setImageError(false);
                       }}
-                      className="mt-2 text-[#b29578] text-sm underline"
+                      className="mt-2 text-[#737370] text-sm underline"
                     >
                       Retry
                     </button>
@@ -236,7 +236,7 @@ export function PropertyImageSlider({
           
           {!imageError && (
             <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-200 flex items-center justify-center pointer-events-none">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 px-4 py-2 rounded-full text-sm font-medium text-gray-700">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 px-4 py-2 rounded-full text-sm font-medium text-[#444441]">
                 Click to view full size
               </div>
             </div>
@@ -254,7 +254,7 @@ export function PropertyImageSlider({
           className="absolute top-6 right-6 bg-white/95 hover:bg-white p-3 rounded-full shadow-lg transition-all duration-200 z-20"
           style={{ backdropFilter: 'blur(4px)' }}
         >
-          <svg className="h-5 w-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 text-[#444441]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
         </button>
@@ -263,7 +263,7 @@ export function PropertyImageSlider({
           <>
             <button
               onClick={(e) => { e.stopPropagation(); prevImage(); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition-all duration-200 z-20"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#1A1816] p-3 rounded-full shadow-lg transition-all duration-200 z-20"
               aria-label="Previous image"
               disabled={transitioning}
             >
@@ -271,7 +271,7 @@ export function PropertyImageSlider({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); nextImage(); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition-all duration-200 z-20"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#1A1816] p-3 rounded-full shadow-lg transition-all duration-200 z-20"
               aria-label="Next image"
               disabled={transitioning}
             >
@@ -302,7 +302,7 @@ export function PropertyImageSlider({
               <p className="text-white text-lg font-semibold mb-2">
                 {allImages.length - images.length} More Photos Available
               </p>
-              <button className="bg-[#b29578] hover:bg-[#9a7e61] text-white px-6 py-3 rounded font-medium transition-colors">
+              <button className="bg-[#737370] hover:bg-[#9a7e61] text-white px-6 py-3 rounded font-medium transition-colors">
                 Join Ableman to View All
               </button>
             </div>
@@ -427,13 +427,13 @@ export function PropertyImageSlider({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6">
-              <div className="w-16 h-16 bg-[#b29578] rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-[#737370] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Join Ableman to View All Photos</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-bold text-[#1A1816] mb-2">Join Ableman to View All Photos</h2>
+              <p className="text-[#444441]">
                 Sign up for free to access the complete photo gallery with {allImages.length} total images and unlock all property features.
               </p>
             </div>
@@ -446,7 +446,7 @@ export function PropertyImageSlider({
                   window.location.href = window.location.pathname; // Fallback: reload without special link
                 }
               }}
-              className="w-full bg-[#b29578] hover:bg-[#9a7e61] text-white py-4 text-lg font-semibold rounded shadow-lg hover:shadow-xl transition-all duration-200 mb-3"
+              className="w-full bg-[#737370] hover:bg-[#9a7e61] text-white py-4 text-lg font-semibold rounded shadow-lg hover:shadow-xl transition-all duration-200 mb-3"
             >
               Join Ableman For Free
             </button>
@@ -457,7 +457,7 @@ export function PropertyImageSlider({
                   onMaybeLater();
                 }
               }}
-              className="text-gray-500 hover:text-gray-700 font-medium"
+              className="text-[#737370] hover:text-[#444441] font-medium"
             >
               Maybe Later
             </button>

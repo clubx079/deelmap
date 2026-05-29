@@ -12,7 +12,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 function dealMatchesBuyBox(deal, box) {
   if (box.min_price && deal.price < box.min_price) return false
   if (box.max_price && deal.price > box.max_price) return false
-  if (box.property_types?.length && !box.property_types.includes(deal.property_type)) return false
+  // property_types check intentionally omitted — scraper data is not reliable enough
   if (box.min_beds && (deal.bedrooms || 0) < box.min_beds) return false
   if (box.min_baths && (deal.bathrooms || 0) < box.min_baths) return false
   if (box.deal_types?.length) {
@@ -95,25 +95,47 @@ export async function POST(req) {
           to: user.email,
           subject: `New deal matching your buy box — ${address}`,
           html: `
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#fff;">
-              <div style="background:#1A1816;padding:24px 32px;">
-                <span style="color:#D03839;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Deel</span><span style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Map</span>
-              </div>
-              <div style="padding:32px;">
-                <p style="margin:0 0 8px;font-size:14px;color:#737370;">New deal alert</p>
-                <h1 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#1A1816;line-height:1.3;">${address}</h1>
-                <div style="border:1px solid #E8E8E4;border-radius:8px;padding:20px;margin-bottom:24px;">
-                  <p style="margin:0 0 4px;font-size:28px;font-weight:800;color:#D03839;">${price}</p>
-                  ${deal.bedrooms ? `<p style="margin:8px 0 0;font-size:14px;color:#737370;">${deal.bedrooms} bed${deal.bedrooms !== 1 ? 's' : ''} &middot; ${deal.bathrooms || 0} bath${deal.bathrooms !== 1 ? 's' : ''}</p>` : ''}
-                  ${deal.city ? `<p style="margin:4px 0 0;font-size:14px;color:#737370;">${deal.city}, ${deal.state}</p>` : ''}
-                  ${deal.property_type ? `<p style="margin:4px 0 0;font-size:14px;color:#737370;">${deal.property_type}</p>` : ''}
-                </div>
-                <a href="${dealUrl}" style="display:inline-block;background:#D03839;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:700;font-size:15px;">View Deal</a>
-              </div>
-              <div style="padding:16px 32px;border-top:1px solid #E8E8E4;">
-                <p style="margin:0;font-size:12px;color:#A8A8A4;">You're receiving this because you have buy box alerts on. <a href="https://deelmap.com/profile/settings" style="color:#737370;text-decoration:underline;">Manage notifications</a></p>
-              </div>
-            </div>
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5F5F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;">
+      <tr>
+        <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839;">
+          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0;" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:36px 40px 32px;background:#ffffff;">
+          <p style="margin:0 0 6px;font-size:14px;color:#737370;">Hi${user.first_name ? ` ${user.first_name}` : ' there'},</p>
+          <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#1A1816;letter-spacing:-0.4px;line-height:1.25;">A new deal matches your buy box</h1>
+          <p style="margin:0 0 28px;font-size:14px;line-height:1.65;color:#737370;">We found a listing that fits your preferred buying criteria.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:20px;">
+              <p style="margin:0 0 4px;font-size:24px;font-weight:800;color:#D03839;">${price}</p>
+              <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#1A1816;">${address}</p>
+              ${deal.bedrooms || deal.bathrooms ? `<p style="margin:0 0 4px;font-size:13px;color:#737370;">${[deal.bedrooms ? `${deal.bedrooms} bed${deal.bedrooms !== 1 ? 's' : ''}` : null, deal.bathrooms ? `${deal.bathrooms} bath${deal.bathrooms !== 1 ? 's' : ''}` : null].filter(Boolean).join(' &middot; ')}</p>` : ''}
+              ${deal.city ? `<p style="margin:0;font-size:13px;color:#737370;">${deal.city}, ${deal.state}</p>` : ''}
+            </td></tr>
+          </table>
+          <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td style="background:#D03839;border-radius:4px;">
+              <a href="${dealUrl}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">View Deal →</a>
+            </td></tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#ffffff;border-top:1px solid #E8E8E4;padding:20px 40px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#A8A8A4;">You're receiving this because you have buy box alerts enabled. <a href="https://deelmap.com/profile" style="color:#737370;text-decoration:underline;">Manage notifications</a></p>
+          <p style="margin:4px 0 0;font-size:12px;color:#A8A8A4;">© 2026 DeelMap. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr></table>
+</body>
+</html>
           `
         })
         sent++

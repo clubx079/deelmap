@@ -10,8 +10,8 @@ const AVATAR_PAIRS = [
   { bg: '#FEF0EF', text: '#D03839' },
   { bg: '#E4F5EC', text: '#0F6E56' },
   { bg: '#FEF3E2', text: '#B5620A' },
-  { bg: '#EBF3FC', text: '#4A90E2' },
-  { bg: '#F3EEFF', text: '#7C3AED' },
+  { bg: '#F3F3F0', text: '#1A1816' },
+  { bg: '#F3F3F0', text: '#1A1816' },
 ];
 
 function getAvatarPair(seed = '') {
@@ -71,7 +71,7 @@ export default function InboxPage() {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         sendHeartbeat();
-        intervalId = setInterval(sendHeartbeat, 25000);
+        intervalId = setInterval(sendHeartbeat, 30000);
       } else {
         if (intervalId) clearInterval(intervalId);
         intervalId = null;
@@ -79,7 +79,7 @@ export default function InboxPage() {
     };
     if (document.visibilityState === 'visible') {
       sendHeartbeat();
-      intervalId = setInterval(sendHeartbeat, 25000);
+      intervalId = setInterval(sendHeartbeat, 30000);
     }
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {

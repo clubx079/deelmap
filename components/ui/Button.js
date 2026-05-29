@@ -8,9 +8,9 @@ export function Button({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
   
   const variants = {
-    primary: 'bg-[#0EA5E9] hover:bg-[#0284C7] text-white focus:ring-[#0EA5E9]',
-    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 focus:ring-gray-500',
-    outline: 'border border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-white focus:ring-[#0EA5E9]'
+    primary: 'bg-[#D03839] hover:bg-[#E0493B] active:bg-[#C73022] text-white focus:ring-[#D03839]',
+    secondary: 'bg-[#F3F3F0] hover:bg-[#E8E8E4] text-[#1A1816] focus:ring-[#D4D4CF]',
+    outline: 'border border-[#D03839] text-[#D03839] hover:bg-[#FEF0EF] focus:ring-[#D03839]'
   }
   
   const sizes = {

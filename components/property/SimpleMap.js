@@ -202,8 +202,8 @@ export function SimpleMap({ properties, onMarkerClick, className = '' }) {
 
   if (!isLoaded) {
     return (
-      <div className={`${className} bg-gray-200 animate-pulse flex items-center justify-center`}>
-        <span className="text-gray-500">Loading map...</span>
+      <div className={`${className} bg-[#E8E8E4] animate-pulse flex items-center justify-center`}>
+        <span className="text-[#737370]">Loading map...</span>
       </div>
     )
   }

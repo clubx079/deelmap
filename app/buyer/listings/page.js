@@ -337,7 +337,7 @@ function EnhancePage({ listing, user, onBack, onSuccess }) {
                       }`}
                       style={{ display: 'grid', gridTemplateColumns: '44px 1fr auto 22px', gap: '14px', alignItems: 'center' }}
                     >
-                      <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#FEF0EF]' : 'bg-[#F3F3F0]'}`}>
+                      <div className={`w-11 h-11 rounded flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#FEF0EF]' : 'bg-[#F3F3F0]'}`}>
                         <Icon className={`w-5 h-5 ${selected ? 'text-[#D03839]' : 'text-[#444441]'}`} />
                       </div>
                       <div className="min-w-0">

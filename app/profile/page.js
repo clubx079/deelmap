@@ -10,6 +10,36 @@ import {
   LogOut, ChevronDown, ShieldBan, RefreshCw, Loader2, Bell, MapPin, Search
 } from 'lucide-react'
 
+function BedBathSelect({ value, onChange, options, disabled }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+  const label = value === '' ? 'Any' : `${value}+`
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" disabled={disabled} onClick={() => !disabled && setOpen(o => !o)}
+        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] text-left transition-all flex items-center justify-between ${disabled ? 'border-[#E8E8E4] bg-[#FAFAF8] text-[#737370] cursor-not-allowed' : 'border-[#E8E8E4] bg-white text-[#1A1816] cursor-pointer hover:border-[#1A1816]'}`}>
+        <span>{label}</span>
+        <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none transition-transform ${open ? 'rotate-180' : ''} ${disabled ? 'text-[#A8A8A4]' : 'text-[#737370]'}`} />
+      </button>
+      {open && (
+        <div className="absolute z-30 top-full left-0 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg overflow-hidden">
+          {options.map(opt => (
+            <div key={opt.value} onClick={() => { onChange(opt.value); setOpen(false) }}
+              className={`px-3 py-2 text-[13px] cursor-pointer transition-colors ${value === opt.value ? 'bg-[#1A1816] text-white' : 'text-[#1A1816] hover:bg-[#FAFAF8]'}`}>
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const { user, signOut } = useAuth()
   const router = useRouter()
@@ -21,6 +51,15 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Email change (re-verify new address)
+  const [emailChangeOpen, setEmailChangeOpen] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailOtp, setEmailOtp] = useState('')
+  const [emailStep, setEmailStep] = useState('idle') // 'idle' | 'code'
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [emailChangeError, setEmailChangeError] = useState('')
+  const [emailChangeSuccess, setEmailChangeSuccess] = useState('')
 
   // Blocked users
   const [showBlockedUsers, setShowBlockedUsers] = useState(false)
@@ -106,12 +145,13 @@ export default function ProfilePage() {
 
   const fetchLocationSuggestions = async () => {
     if (locationSuggestions.length > 0) return
+    const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
     const [{ data: wDeals }, { data: props }] = await Promise.all([
       supabase.from('wholesale_deals').select('city, state').not('city', 'is', null).not('state', 'is', null),
       supabase.from('properties').select('city, state').not('city', 'is', null).not('state', 'is', null),
     ])
-    const seen = new Set()
-    const all = []
+    const seen = new Set(US_STATES)
+    const all = [...US_STATES]
     for (const row of [...(wDeals || []), ...(props || [])]) {
       const city = (row.city || '').trim()
       const state = (row.state || '').trim()
@@ -146,6 +186,46 @@ export default function ProfilePage() {
   }
 
   const handleCancel = () => { fetchUserData(); setIsEditing(false); setError(''); setSuccess('') }
+
+  const resetEmailChange = () => {
+    setEmailChangeOpen(false); setNewEmail(''); setEmailOtp(''); setEmailStep('idle')
+    setEmailChangeError(''); setEmailChangeSuccess(''); setEmailBusy(false)
+  }
+
+  const handleSendEmailCode = async () => {
+    const target = newEmail.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) { setEmailChangeError('Enter a valid email address'); return }
+    if (target === (formData.email || '').toLowerCase()) { setEmailChangeError('That is already your email'); return }
+    setEmailBusy(true); setEmailChangeError(''); setEmailChangeSuccess('')
+    try {
+      const res = await fetch('/api/auth/change-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', userId: user.id, newEmail: target }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Could not send the code')
+      setEmailStep('code')
+      setEmailChangeSuccess(`We sent a 6-digit code to ${target}.`)
+    } catch (e) { setEmailChangeError(e.message) } finally { setEmailBusy(false) }
+  }
+
+  const handleVerifyEmailCode = async () => {
+    if (!emailOtp.trim()) { setEmailChangeError('Enter the 6-digit code'); return }
+    setEmailBusy(true); setEmailChangeError(''); setEmailChangeSuccess('')
+    try {
+      const target = newEmail.trim().toLowerCase()
+      const res = await fetch('/api/auth/change-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', userId: user.id, newEmail: target, otp: emailOtp.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Could not verify the code')
+      setFormData(prev => ({ ...prev, email: target }))
+      try { localStorage.setItem('ableman_user', JSON.stringify({ ...user, email: target })) } catch {}
+      setSuccess('Email updated successfully!')
+      resetEmailChange()
+    } catch (e) { setEmailChangeError(e.message) } finally { setEmailBusy(false) }
+  }
 
   const handleProfileSave = async () => {
     setIsSavingProfile(true); setProfileError(''); setProfileSuccess('')
@@ -352,7 +432,13 @@ export default function ProfilePage() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
                       <input type="email" name="email" value={formData.email} disabled className={`${inputBase} ${inputDisabled}`} />
                     </div>
-                    <p className="text-[11px] text-[#A8A8A4] mt-1">Email cannot be changed</p>
+                    <button
+                      type="button"
+                      onClick={() => emailChangeOpen ? resetEmailChange() : setEmailChangeOpen(true)}
+                      className="text-[11px] font-semibold text-[#D03839] mt-1 hover:underline"
+                    >
+                      {emailChangeOpen ? 'Cancel email change' : 'Change email'}
+                    </button>
                   </div>
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Phone Number</label>
@@ -374,6 +460,44 @@ export default function ProfilePage() {
                   </div>
                 )}
               </form>
+
+              {emailChangeOpen && (
+                <div className="border-t border-[#E8E8E4] px-5 py-4 bg-[#FAFAF8] space-y-3">
+                  <p className="text-[12px] font-semibold text-[#444441]">Change email address</p>
+                  {emailChangeError && <p className="text-[12px] text-[#D03839]">{emailChangeError}</p>}
+                  {emailChangeSuccess && <p className="text-[12px] text-[#0F6E56]">{emailChangeSuccess}</p>}
+                  {emailStep === 'idle' ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                        placeholder="New email address"
+                        className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20"
+                      />
+                      <button type="button" onClick={handleSendEmailCode} disabled={emailBusy}
+                        className="px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+                        {emailBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Send code
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        inputMode="numeric" maxLength={6} value={emailOtp}
+                        onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))}
+                        placeholder="6-digit code"
+                        className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] bg-white outline-none focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 tracking-[0.3em]"
+                      />
+                      <button type="button" onClick={handleVerifyEmailCode} disabled={emailBusy}
+                        className="px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+                        {emailBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Verify & update
+                      </button>
+                      <button type="button" onClick={handleSendEmailCode} disabled={emailBusy}
+                        className="px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-white text-[#444441] rounded text-[12px] font-semibold transition-colors disabled:opacity-50">
+                        Resend
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Security */}
@@ -418,7 +542,7 @@ export default function ProfilePage() {
                 <div className="border-t border-[#E8E8E4] px-5 py-4 bg-[#FAFAF8]">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[0.8px]">Blocked contacts</p>
-                    <button type="button" onClick={fetchBlockedUsers} disabled={blockedLoading} className="flex items-center gap-1.5 px-2.5 min-h-[44px] text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#F0F0EE] rounded transition-colors disabled:opacity-50">
+                    <button type="button" onClick={fetchBlockedUsers} disabled={blockedLoading} className="flex items-center gap-1.5 px-2.5 min-h-[44px] text-[11px] font-medium text-[#737370] hover:text-[#1A1816] hover:bg-[#FAFAF8] rounded transition-colors disabled:opacity-50">
                       <RefreshCw className={`w-3 h-3 ${blockedLoading ? 'animate-spin' : ''}`} /> Refresh
                     </button>
                   </div>
@@ -530,7 +654,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Buy Box */}
-            <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+            <div className="bg-white border border-[#E8E8E4] rounded overflow-visible">
               <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#FEF0EF] flex items-center justify-center flex-shrink-0">
@@ -572,6 +696,75 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                {/* Locations */}
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Locations</label>
+                  {isEditingBuyBox && (
+                    <div className="mb-2">
+                      <div className="relative" ref={locationDropdownRef}>
+                        <div
+                          className="flex items-center gap-2 px-3 py-2.5 border border-[#E8E8E4] rounded bg-white cursor-pointer focus-within:border-[#D03839] focus-within:ring-1 focus-within:ring-[#D03839]/20"
+                          onClick={() => setLocationDropdownOpen(prev => !prev)}
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={locationSearch}
+                            onChange={(e) => { setLocationSearch(e.target.value); setLocationDropdownOpen(true) }}
+                            onFocus={() => setLocationDropdownOpen(true)}
+                            placeholder="Search city or state…"
+                            className="flex-1 text-[13px] text-[#1A1816] bg-transparent outline-none placeholder-[#A8A8A4]"
+                          />
+                          <ChevronDown className={`w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0 transition-transform ${locationDropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                        {locationDropdownOpen && (
+                          <div className="absolute z-50 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg max-h-48 overflow-y-auto">
+                            {locationSuggestions
+                              .filter(s => s.toLowerCase().includes(locationSearch.toLowerCase()))
+                              .filter(s => !buyBox.locations.includes(s))
+                              .slice(0, 80)
+                              .map(s => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault()
+                                    if (!buyBox.locations.includes(s)) setBuyBox(prev => ({ ...prev, locations: [...prev.locations, s] }))
+                                    setLocationSearch('')
+                                    setLocationDropdownOpen(false)
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] text-[#1A1816] hover:bg-[#FAFAF8] transition-colors"
+                                >
+                                  {s}
+                                </button>
+                              ))
+                            }
+                            {locationSuggestions.filter(s => s.toLowerCase().includes(locationSearch.toLowerCase())).filter(s => !buyBox.locations.includes(s)).length === 0 && (
+                              <p className="px-3 py-2 text-[12px] text-[#A8A8A4]">No matches</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {buyBox.locations.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {buyBox.locations.map(loc => (
+                        <span key={loc} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F3F3F1] text-[#444441] text-[12px] font-medium rounded-full">
+                          {loc}
+                          {isEditingBuyBox && (
+                            <button type="button" onClick={() => setBuyBox(prev => ({ ...prev, locations: prev.locations.filter(l => l !== loc) }))} className="text-[#A8A8A4] hover:text-[#1A1816]">
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-[#A8A8A4]">No locations added yet.</p>
+                  )}
+                </div>
+
                 {/* Property types */}
                 <div>
                   <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Property Types</label>
@@ -595,25 +788,21 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Beds</label>
-                    <div className="relative">
-                      <select value={buyBox.minBeds} onChange={(e) => setBuyBox(prev => ({ ...prev, minBeds: e.target.value }))} disabled={!isEditingBuyBox}
-                        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] outline-none transition-all appearance-none ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#1A1816] text-[#1A1816]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
-                        <option value="">Any</option>
-                        {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}+</option>)}
-                      </select>
-                      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isEditingBuyBox ? 'text-[#737370]' : 'text-[#A8A8A4]'}`} />
-                    </div>
+                    <BedBathSelect
+                      value={buyBox.minBeds}
+                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBeds: v }))}
+                      disabled={!isEditingBuyBox}
+                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4,5].map(n => ({ value: n, label: `${n}+` }))]}
+                    />
                   </div>
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Min Baths</label>
-                    <div className="relative">
-                      <select value={buyBox.minBaths} onChange={(e) => setBuyBox(prev => ({ ...prev, minBaths: e.target.value }))} disabled={!isEditingBuyBox}
-                        className={`w-full px-3 py-2.5 pr-8 border rounded text-[13px] outline-none transition-all appearance-none ${isEditingBuyBox ? 'border-[#E8E8E4] bg-white focus:border-[#1A1816] text-[#1A1816]' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`}>
-                        <option value="">Any</option>
-                        {[1,2,3,4].map(n => <option key={n} value={n}>{n}+</option>)}
-                      </select>
-                      <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isEditingBuyBox ? 'text-[#737370]' : 'text-[#A8A8A4]'}`} />
-                    </div>
+                    <BedBathSelect
+                      value={buyBox.minBaths}
+                      onChange={(v) => setBuyBox(prev => ({ ...prev, minBaths: v }))}
+                      disabled={!isEditingBuyBox}
+                      options={[{ value: '', label: 'Any' }, ...[1,2,3,4].map(n => ({ value: n, label: `${n}+` }))]}
+                    />
                   </div>
                 </div>
 
@@ -629,87 +818,6 @@ export default function ProfilePage() {
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* Locations */}
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Locations</label>
-                  {isEditingBuyBox && (
-                    <div className="space-y-2 mb-2">
-                      {/* Dropdown from DB */}
-                      <div className="relative" ref={locationDropdownRef}>
-                        <div
-                          className="flex items-center gap-2 px-3 py-2.5 border border-[#E8E8E4] rounded bg-white cursor-pointer focus-within:border-[#D03839] focus-within:ring-1 focus-within:ring-[#D03839]/20"
-                          onClick={() => setLocationDropdownOpen(prev => !prev)}
-                        >
-                          <MapPin className="w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0" />
-                          <input
-                            type="text"
-                            value={locationSearch}
-                            onChange={(e) => { setLocationSearch(e.target.value); setLocationDropdownOpen(true) }}
-                            onFocus={() => setLocationDropdownOpen(true)}
-                            placeholder="Search city or state…"
-                            className="flex-1 text-[13px] text-[#1A1816] bg-transparent outline-none placeholder-[#A8A8A4]"
-                          />
-                          <ChevronDown className={`w-3.5 h-3.5 text-[#A8A8A4] flex-shrink-0 transition-transform ${locationDropdownOpen ? 'rotate-180' : ''}`} />
-                        </div>
-                        {locationDropdownOpen && (
-                          <div className="absolute z-20 mt-1 w-full bg-white border border-[#E8E8E4] rounded shadow-lg max-h-48 overflow-y-auto">
-                            {locationSuggestions
-                              .filter(s => s.toLowerCase().includes(locationSearch.toLowerCase()))
-                              .filter(s => !buyBox.locations.includes(s))
-                              .slice(0, 50)
-                              .map(s => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault()
-                                    if (!buyBox.locations.includes(s)) setBuyBox(prev => ({ ...prev, locations: [...prev.locations, s] }))
-                                    setLocationSearch('')
-                                    setLocationDropdownOpen(false)
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[13px] text-[#1A1816] hover:bg-[#FAFAF8] transition-colors"
-                                >
-                                  {s}
-                                </button>
-                              ))
-                            }
-                            {locationSuggestions.filter(s => s.toLowerCase().includes(locationSearch.toLowerCase())).length === 0 && (
-                              <p className="px-3 py-2 text-[12px] text-[#A8A8A4]">No matches</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {/* Custom text input */}
-                      <div className="flex gap-2">
-                        <input type="text" value={locationInput} onChange={(e) => setLocationInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
-                          placeholder="Or type custom (e.g. Dallas, TX)"
-                          className="flex-1 px-4 py-2.5 border border-[#E8E8E4] rounded text-[13px] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20 outline-none" />
-                        <button type="button" onClick={addLocation}
-                          className="px-4 min-h-[44px] bg-[#1A1816] hover:bg-[#2D2B28] text-white text-[13px] font-semibold rounded transition-colors">
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {buyBox.locations.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {buyBox.locations.map(loc => (
-                        <span key={loc} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F3F3F1] text-[#444441] text-[12px] font-medium rounded-full">
-                          {loc}
-                          {isEditingBuyBox && (
-                            <button type="button" onClick={() => setBuyBox(prev => ({ ...prev, locations: prev.locations.filter(l => l !== loc) }))} className="text-[#A8A8A4] hover:text-[#1A1816]">
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[13px] text-[#A8A8A4]">No locations added yet.</p>
-                  )}
                 </div>
 
                 {isEditingBuyBox && (

@@ -4,40 +4,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import { Resend } from 'resend'
 import { withTimeout } from '@/lib/timeout'
+import { saveOtp } from '@/lib/otpStore'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseKey = process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null
-
-let otpStore = new Map()
-if (typeof global !== 'undefined') {
-  if (!global.otpStore) global.otpStore = new Map()
-  otpStore = global.otpStore
-}
-
-// Cleanup expired OTPs periodically to prevent memory leaks
-function cleanupExpiredOTPs() {
-  const now = Date.now()
-  let cleanedCount = 0
-
-  for (const [email, data] of otpStore.entries()) {
-    if (data.expires < now) {
-      otpStore.delete(email)
-      cleanedCount++
-    }
-  }
-
-  if (cleanedCount > 0) {
-    console.log(`Cleaned up ${cleanedCount} expired OTPs. Current store size: ${otpStore.size}`)
-  }
-}
-
-// Run cleanup every 5 minutes
-if (typeof global !== 'undefined' && !global.otpCleanupInterval) {
-  global.otpCleanupInterval = setInterval(cleanupExpiredOTPs, 5 * 60 * 1000)
-}
 
 export async function POST(request) {
   try {
@@ -67,15 +40,15 @@ export async function POST(request) {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    
-    otpStore.set(email, {
-      otp,
-      expires: Date.now() + 10 * 60 * 1000,
-      firstName,
-      lastName
-    })
 
-    console.log(`Generated OTP for ${email}: ${otp}`)
+    const saved = await saveOtp(email, 'signup', otp, 10, { firstName, lastName })
+    if (!saved.ok) {
+      const limited = saved.error === 'cooldown' || saved.error === 'rate_limited'
+      return NextResponse.json(
+        { message: limited ? 'Too many requests — please wait a moment and try again.' : 'Could not generate a verification code. Please try again.' },
+        { status: limited ? 429 : 500 }
+      )
+    }
 
     // SMS delivery path
     if (method === 'sms') {

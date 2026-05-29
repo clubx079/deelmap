@@ -82,13 +82,13 @@ export default function SavedPropertiesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="bg-white rounded border border-[#E8E8E4] animate-pulse overflow-hidden flex min-h-[230px]">
-                  <div className="w-[280px] flex-shrink-0 bg-[#F0F0EE]" />
+                  <div className="w-[280px] flex-shrink-0 bg-[#E8E8E4]" />
                   <div className="flex-1 p-5 space-y-3">
-                    <div className="h-3 bg-[#F0F0EE] rounded w-1/4" />
-                    <div className="h-5 bg-[#F0F0EE] rounded w-3/4" />
-                    <div className="h-4 bg-[#F0F0EE] rounded w-1/2" />
-                    <div className="h-4 bg-[#F0F0EE] rounded w-1/3" />
-                    <div className="mt-auto h-8 bg-[#F0F0EE] rounded w-28" />
+                    <div className="h-3 bg-[#E8E8E4] rounded w-1/4" />
+                    <div className="h-5 bg-[#E8E8E4] rounded w-3/4" />
+                    <div className="h-4 bg-[#E8E8E4] rounded w-1/2" />
+                    <div className="h-4 bg-[#E8E8E4] rounded w-1/3" />
+                    <div className="mt-auto h-8 bg-[#E8E8E4] rounded w-28" />
                   </div>
                 </div>
               ))}

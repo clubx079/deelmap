@@ -27,8 +27,31 @@ export async function POST(request) {
 
       const property = full.name || data.name || ''
       const documents = full.documents || []
-      const docUrl = documents[0]?.url || null
+      // Prefer the combined signed document (one PDF with both signatures) over the per-document copies.
+      const docUrl = full.combined_document_url || documents[0]?.url || null
       const submitters = full.submitters || []
+
+      // DocuSeal generates the combined signed PDF asynchronously right after the last
+      // signature. Poll for ~12s to give it time to finalize, then attach to the email.
+      let pdfBuffer = null
+      if (docUrl) {
+        for (let attempt = 0; attempt < 6; attempt++) {
+          try {
+            const pdfRes = await fetch(docUrl)
+            if (pdfRes.ok) {
+              const arr = await pdfRes.arrayBuffer()
+              pdfBuffer = Buffer.from(arr)
+              if (pdfBuffer.length > 1000) break  // sanity-check it's not a stub
+            }
+          } catch {}
+          await new Promise(r => setTimeout(r, 2000))
+        }
+        console.log('[webhook] PDF buffer size:', pdfBuffer?.length || 'NONE')
+      }
+
+      const attachmentFilename = property
+        ? `Contract — ${property.replace(/[^A-Za-z0-9 .,-]/g, '').slice(0, 80)}.pdf`
+        : 'Signed Contract.pdf'
 
       await Promise.all(
         submitters
@@ -89,6 +112,7 @@ export async function POST(request) {
                 </html>
               `,
               text: `Hi${s.name ? ` ${s.name}` : ''},\n\nAll parties have signed the contract${property ? ` for ${property}` : ''}.\n\n${docUrl ? `Download: ${docUrl}` : 'Log in to DeelMap to view your signed contract.'}\n\n— DeelMap`,
+              ...(pdfBuffer ? { attachments: [{ filename: attachmentFilename, content: pdfBuffer }] } : {}),
             })
           )
       )
@@ -137,13 +161,16 @@ export async function POST(request) {
     const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${assigneeSubmitter.id}`, {
       method: 'PATCH',
       headers: dsHeaders(),
-      body: JSON.stringify({ email: assigneeEmail, name: assigneeName }),
+      body: JSON.stringify({ email: assigneeEmail, name: assigneeName, send_email: false }),
     })
     console.log('[webhook] patch status:', patchRes.status)
 
     const assignorName = data.name || data.email || 'The Buyer'
     const property = fullSubmission.name || ''
-    const signingUrl = `https://docuseal.com/s/${assigneeSubmitter.slug}`
+    // Use APP_URL env var so staging emails staging URLs, prod emails prod URLs.
+    // Falls back to production deelmap.com if unset.
+    const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
+    const signingUrl = `${APP_URL}/sign/${assigneeSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
     const emailResult = await resend.emails.send({
