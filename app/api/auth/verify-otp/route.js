@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { verifyOtp } from '@/lib/otpStore'
+import { sendBuyerWelcomeEmail } from '@/lib/welcomeEmail'
 
 
 
@@ -293,6 +294,11 @@ export async function POST(request) {
     console.log('[VERIFY-OTP] User ID:', newUser.id)
     console.log('[VERIFY-OTP] States of interest:', userData.statesOfInterest)
 
+    // Welcome email — fire and forget so a Resend hiccup never blocks signup
+    sendBuyerWelcomeEmail({
+      to: newUser.email,
+      name: `${newUser.first_name || ''} ${newUser.last_name || ''}`.trim(),
+    }).catch(() => {})
 
     // Return user data in the format expected by useAuth
     return NextResponse.json({
