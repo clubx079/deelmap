@@ -109,7 +109,6 @@ export default function MyOffersPage() {
         <div className="grid gap-3">
           {filtered.map((offer) => {
             const status = STATUS_STYLES[offer.status] || STATUS_STYLES.pending;
-            const convNumeric = uuidToNumeric(offer.conversation_id);
             const listingHref = offer.property_slug ? `/${offer.property_slug}` : (offer.property_id ? `/${offer.property_id}` : null);
             const priceDiff = offer.property_price && offer.offer_price
               ? offer.offer_price - offer.property_price : null;
@@ -179,8 +178,8 @@ export default function MyOffersPage() {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      {convNumeric && (
-                        <Link href={`/buyer/inbox?conversation=${convNumeric}`}
+                      {offer.conversation_id && (
+                        <Link href={`/buyer/inbox?conversation=${offer.conversation_id}`}
                           className="flex items-center gap-1.5 px-3 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[12px] font-semibold rounded transition-colors whitespace-nowrap">
                           <MessageCircle className="w-3.5 h-3.5" />
                           View chat

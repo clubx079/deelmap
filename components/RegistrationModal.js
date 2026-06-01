@@ -56,9 +56,9 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
     e.preventDefault()
     setError('')
     const contact = authData.contact.trim()
-    if (!contact) { setError('Please enter your phone or email'); return }
+    if (!contact) { setError('Please enter your email'); return }
     if (!contact.includes('@')) {
-      setError('Phone login coming soon. Please enter your email address.')
+      setError('Please enter a valid email address')
       return
     }
     setLoading(true)
@@ -294,11 +294,11 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
               <form onSubmit={handleLoginContinue} className="space-y-5">
                 <div>
                   <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
-                    Phone / Email <span className="text-[#D03839]">*</span>
+                    Email <span className="text-[#D03839]">*</span>
                   </label>
                   <input
-                    type="text"
-                    placeholder="Enter phone or email"
+                    type="email"
+                    placeholder="Enter your email"
                     value={authData.contact}
                     onChange={(e) => setAuthData(prev => ({ ...prev, contact: e.target.value }))}
                     required

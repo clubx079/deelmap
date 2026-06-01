@@ -10,6 +10,7 @@ import {
   ArrowLeft, Home, Mail, MoreVertical, ExternalLink,
   Smile, MapPin, Phone, Shield, Calendar
 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL;
@@ -33,6 +34,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewFiles, setPreviewFiles] = useState([]);
+  const [counterConfirm, setCounterConfirm] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loadedImages, setLoadedImages] = useState(new Set());
   const [offers, setOffers] = useState([]);
@@ -538,14 +540,14 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                               {isCounter && item.status === 'pending' && (
                                 <div className="flex gap-2 mt-3">
                                   <button
-                                    onClick={() => handleAcceptCounter(item.id)}
+                                    onClick={() => setCounterConfirm({ kind: 'accept', offerId: item.id, amount: item.offer_price })}
                                     disabled={acceptingCounter || rejectingCounter}
                                     className="flex-1 py-2 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors disabled:opacity-50"
                                   >
                                     {acceptingCounter ? 'Accepting…' : 'Accept'}
                                   </button>
                                   <button
-                                    onClick={() => handleRejectCounter(item.id)}
+                                    onClick={() => setCounterConfirm({ kind: 'reject', offerId: item.id, amount: item.offer_price })}
                                     disabled={acceptingCounter || rejectingCounter}
                                     className="flex-1 py-2 border border-[#E8E8E4] text-[#737370] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] hover:text-[#D03839] transition-colors disabled:opacity-50"
                                   >
@@ -1067,6 +1069,25 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           <img src={selectedImage} alt="Preview" className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
+      <ConfirmDialog
+        open={!!counterConfirm}
+        busy={counterConfirm?.kind === 'accept' ? acceptingCounter : rejectingCounter}
+        onClose={() => setCounterConfirm(null)}
+        onConfirm={() => {
+          if (!counterConfirm) return;
+          if (counterConfirm.kind === 'accept') handleAcceptCounter(counterConfirm.offerId);
+          else handleRejectCounter(counterConfirm.offerId);
+          setCounterConfirm(null);
+        }}
+        title={counterConfirm?.kind === 'accept' ? 'Accept counter offer?' : 'Decline counter offer?'}
+        message={counterConfirm
+          ? (counterConfirm.kind === 'accept'
+              ? `You're about to accept the seller's counter offer of ${formatCurrency(counterConfirm.amount)}. This is binding once accepted.`
+              : `Decline the seller's counter offer of ${formatCurrency(counterConfirm.amount)}? You can still send a new offer afterward.`)
+          : ''}
+        confirmText={counterConfirm?.kind === 'accept' ? 'Yes, accept' : 'Yes, decline'}
+        danger={counterConfirm?.kind === 'reject'}
+      />
     </div>
   );
 }

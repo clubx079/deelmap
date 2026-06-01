@@ -5,6 +5,7 @@ import { FileText, CheckCircle, Plus, Download, Trash2, PenLine, Pencil } from '
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 import { DocusealForm } from '@docuseal/react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const STATUS = {
   completed: { label: 'Completed', cls: 'text-[#0F6E56] bg-[#E4F5EC]' },
@@ -28,6 +29,7 @@ export default function BuyerContractsPage() {
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [downloadingId, setDownloadingId] = useState(null)
   const [drafts, setDrafts] = useState([])
   const [deletingDraftId, setDeletingDraftId] = useState(null)
@@ -205,7 +207,7 @@ export default function BuyerContractsPage() {
                       className="h-8 px-4 bg-[#1A1816] hover:bg-[#000] text-white text-[13px] font-semibold rounded transition-colors"
                     >Resume</button>
                     <button
-                      onClick={() => handleDeleteDraft(d.id)}
+                      onClick={() => setDeleteConfirm({ kind: 'draft', id: d.id, label: d.title || 'this draft' })}
                       disabled={deletingDraftId === d.id}
                       className="h-8 w-8 flex items-center justify-center border border-[#E8E8E4] hover:border-[#D03839] hover:text-[#D03839] text-[#A8A8A4] rounded transition-colors disabled:opacity-50"
                     >
@@ -295,7 +297,7 @@ export default function BuyerContractsPage() {
                     <span className="text-[12px] text-[#737370]">Awaiting other party</span>
                   )}
                   <button
-                    onClick={() => handleDelete(c.id)}
+                    onClick={() => setDeleteConfirm({ kind: 'contract', id: c.id, label: c.title || 'this contract' })}
                     disabled={deletingId === c.id}
                     className="h-8 w-8 flex items-center justify-center border border-[#E8E8E4] hover:border-[#D03839] hover:text-[#D03839] text-[#A8A8A4] rounded transition-colors disabled:opacity-50"
                   >
@@ -309,6 +311,25 @@ export default function BuyerContractsPage() {
           })}
         </div>
       )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        busy={(deleteConfirm?.kind === 'contract' && deletingId === deleteConfirm?.id) || (deleteConfirm?.kind === 'draft' && deletingDraftId === deleteConfirm?.id)}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (!deleteConfirm) return
+          if (deleteConfirm.kind === 'contract') handleDelete(deleteConfirm.id)
+          else handleDeleteDraft(deleteConfirm.id)
+          setDeleteConfirm(null)
+        }}
+        title={deleteConfirm?.kind === 'draft' ? 'Delete this draft?' : 'Delete this contract?'}
+        message={deleteConfirm
+          ? (deleteConfirm.kind === 'draft'
+              ? `“${deleteConfirm.label}” will be removed. You can’t undo this.`
+              : `“${deleteConfirm.label}” will be permanently removed from your contracts.`)
+          : ''}
+        confirmText={deleteConfirm?.kind === 'draft' ? 'Delete draft' : 'Delete contract'}
+        danger
+      />
     </div>
   )
 }

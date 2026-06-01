@@ -377,7 +377,7 @@ export default function BuyerDashboard() {
                 </div>
               ) : (
                 recentMessages.map((msg) => (
-                  <Link key={msg.id} href="/buyer/inbox" className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition-colors duration-200">
+                  <Link key={msg.id} href={msg.conversation_id ? `/buyer/inbox?conversation=${msg.conversation_id}` : '/buyer/inbox'} className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition-colors duration-200">
                     <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: getAvatarPair(msg.name).bg }}>
                       <span className="text-[12px] font-semibold" style={{ color: getAvatarPair(msg.name).text }}>{msg.initials}</span>
                     </div>
@@ -440,8 +440,8 @@ export default function BuyerDashboard() {
               <QuickAction
                 href="/marketplace"
                 icon={<Search className="w-4 h-4 text-[#737370]" />}
-                title="Continue browse deals"
-                subtitle="148 new since last visit"
+                title="Browse deals"
+                subtitle="Find your next deal"
               />
               <QuickAction
                 href="/financing"
@@ -458,7 +458,7 @@ export default function BuyerDashboard() {
               <QuickAction
                 href="/buyer/offers"
                 icon={<FileText className="w-4 h-4 text-[#737370]" />}
-                title="Submit an offer"
+                title="View offers"
                 subtitle={`${stats.pendingResponses} offers pending now`}
               />
             </div>

@@ -381,13 +381,15 @@ export function Navbar() {
                           ) : notifications.map(n => (
                             <Link
                               key={n.id}
-                              href={
-                                n.related_conversation_id
-                                  ? `/buyer/inbox?conversation=${n.related_conversation_id}`
-                                  : (n.type === 'listing_approved' || n.type === 'listing_rejected')
-                                    ? '/buyer/listings'
-                                    : '/buyer/inbox'
-                              }
+                              href={(() => {
+                                const t = n.type || ''
+                                if (n.related_conversation_id) return `/buyer/inbox?conversation=${n.related_conversation_id}`
+                                if (t === 'listing_approved' || t === 'listing_rejected') return '/buyer/listings'
+                                if (t.startsWith('offer_') || t === 'counter_received') return '/buyer/offers'
+                                if (t.startsWith('contract_')) return '/buyer/contracts'
+                                if (t.startsWith('payment_') || t === 'subscription_created' || t === 'subscription_cancelled') return '/buyer/billing'
+                                return '/buyer/inbox'
+                              })()}
                               onClick={async () => {
                                 setNotifOpen(false)
                                 if (!n.is_read) {

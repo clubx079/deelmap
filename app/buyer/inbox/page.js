@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { MessageSquare, Search, DollarSign, Home, Pin } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const AVATAR_PAIRS = [
   { bg: '#FEF0EF', text: '#D03839' },
@@ -37,6 +38,7 @@ export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [contextMenu, setContextMenu] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
   const searchParams = useSearchParams();
 
   const sellerIdFromUrl = searchParams.get('seller_id');
@@ -350,14 +352,28 @@ export default function InboxPage() {
             Mark as unread
           </button>
           <div className="my-1 border-t border-[#E8E8E4]" />
-          <button className="w-full text-left text-[13px] px-3 py-2 rounded text-[#D03839] hover:bg-[#FEF0EF] transition-colors duration-200" onClick={() => { deleteConversation(contextMenu.conversation.id); setContextMenu(null); }}>
+          <button className="w-full text-left text-[13px] px-3 py-2 rounded text-[#D03839] hover:bg-[#FEF0EF] transition-colors duration-200" onClick={() => { setConfirmAction({ kind: 'delete', conversationId: contextMenu.conversation.id }); setContextMenu(null); }}>
             Delete chat
           </button>
-          <button className="w-full text-left text-[13px] px-3 py-2 rounded text-[#D03839] hover:bg-[#FEF0EF] transition-colors duration-200" onClick={() => { updateConversationPref(contextMenu.conversation.id, { is_blocked: true }); setContextMenu(null); }}>
+          <button className="w-full text-left text-[13px] px-3 py-2 rounded text-[#D03839] hover:bg-[#FEF0EF] transition-colors duration-200" onClick={() => { setConfirmAction({ kind: 'block', conversationId: contextMenu.conversation.id }); setContextMenu(null); }}>
             Block user
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (!confirmAction) { setConfirmAction(null); return; }
+          if (confirmAction.kind === 'delete') deleteConversation(confirmAction.conversationId);
+          else if (confirmAction.kind === 'block') updateConversationPref(confirmAction.conversationId, { is_blocked: true });
+          setConfirmAction(null);
+        }}
+        title={confirmAction?.kind === 'delete' ? 'Delete this chat?' : 'Block this user?'}
+        message={confirmAction?.kind === 'delete' ? 'This will remove the conversation from your inbox. You can’t undo this.' : 'You won’t receive new messages from this user until you unblock them.'}
+        confirmText={confirmAction?.kind === 'delete' ? 'Delete chat' : 'Block user'}
+        danger
+      />
     </div>
   );
 }

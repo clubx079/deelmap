@@ -5,9 +5,29 @@ import { RegistrationModal } from '@/components/RegistrationModal'
 import { PropertiesSlider } from '@/components/home/PropertiesSlider'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Search, Star, CheckCircle2, Lock, Check, BadgeCheck, SlidersHorizontal, Rocket, MessageSquare } from 'lucide-react'
 import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
+
+// Opens the auth modal when home receives ?auth=login or ?auth=signup
+// (used by /login and /signup pages so external links land on a real auth UI).
+function AuthLinkOpener() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  useEffect(() => {
+    const v = searchParams?.get('auth')
+    if (v !== 'login' && v !== 'signup') return
+    window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: v } }))
+    // Clean the query off the URL so a refresh doesn't re-open the modal
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('auth')
+    const next = params.toString()
+    router.replace(pathname + (next ? `?${next}` : ''), { scroll: false })
+  }, [searchParams, router, pathname])
+  return null
+}
 
 const TESTIMONIALS = [
   { initials: 'MC', color: 'bg-[#D03839]', name: 'Michael Carter', role: 'Property Investor', metric: '23', metricLabel: 'deals closed', text: 'DeelMap helped me discover off-market deals I wouldn\'t have found anywhere else. The ARV data alone saves me a full underwriting session per deal. I open the platform and have real deals in under 5 minutes.' },
@@ -141,6 +161,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Suspense fallback={null}><AuthLinkOpener /></Suspense>
       <Navbar />
 
       {/* Hero Section — pulls up behind transparent navbar */}
