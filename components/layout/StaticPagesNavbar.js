@@ -10,7 +10,6 @@ export function StaticPagesNavbar({ currentPage = 'home' }) {
   const menuItems = [
     { label: 'Home', href: '/', page: 'home' },
     { label: 'About Us', href: '/our-story', page: 'about' },
-    { label: 'Cash Offer', href: '/cashoffer', page: 'cashoffer' },
     { label: 'MarketPlace', href: '/marketplace', page: 'marketplace' },
     { label: 'Finance', href: '/financing', page: 'financing', hasNew: true},
     { label: 'Contact Us', href: '/contact', page: 'contact' }

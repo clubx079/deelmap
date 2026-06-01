@@ -377,7 +377,7 @@ export default function BuyerDashboard() {
                 </div>
               ) : (
                 recentMessages.map((msg) => (
-                  <Link key={msg.id} href={msg.conversation_id ? `/buyer/inbox?conversation=${msg.conversation_id}` : '/buyer/inbox'} className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition-colors duration-200">
+                  <Link key={msg.id} href={msg.id ? `/buyer/inbox?conversation=${msg.id}` : '/buyer/inbox'} className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition-colors duration-200">
                     <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: getAvatarPair(msg.name).bg }}>
                       <span className="text-[12px] font-semibold" style={{ color: getAvatarPair(msg.name).text }}>{msg.initials}</span>
                     </div>
