@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { resolveInboxConversationId } from '@/lib/conversationId'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
 export function Navbar() {
@@ -383,7 +384,8 @@ export function Navbar() {
                               key={n.id}
                               href={(() => {
                                 const t = n.type || ''
-                                if (n.related_conversation_id) return `/buyer/inbox?conversation=${n.related_conversation_id}`
+                                const convId = resolveInboxConversationId(n.related_conversation_id)
+                                if (convId) return `/buyer/inbox?conversation=${convId}`
                                 if (t === 'listing_approved' || t === 'listing_rejected') return '/buyer/listings'
                                 if (t.startsWith('offer_') || t === 'counter_received') return '/buyer/offers'
                                 if (t.startsWith('contract_')) return '/buyer/contracts'
