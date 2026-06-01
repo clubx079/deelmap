@@ -44,6 +44,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       label: 'MAIN',
       items: [
         { href: '/buyer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { href: '/buyer/profile', icon: UserCircle, label: 'Profile' },
         { href: '/marketplace', icon: Search, label: 'Browse deals' },
         { href: '/buyer/inbox', icon: MessageSquare, label: 'Messages', badge: unreadCount },
         { href: '/saved-properties', icon: Star, label: 'Saved deals', badge: savedCount || null },
@@ -63,7 +64,6 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
     {
       label: 'ACCOUNT',
       items: [
-        { href: '/buyer/profile', icon: UserCircle, label: 'Profile & Buy Box' },
         { href: '/buyer/referral', icon: Gift, label: 'Referral' },
         { href: '/buyer/billing', icon: CreditCard, label: 'Billing' },
         { href: '/profile', icon: Settings, label: 'Settings' },

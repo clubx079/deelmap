@@ -175,11 +175,11 @@ export default function ProfilePage() {
     try {
       const { error: updateError } = await supabase
         .from('users')
-        .update({ first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone, updated_at: new Date().toISOString() })
+        .update({ phone: formData.phone, updated_at: new Date().toISOString() })
         .eq('id', user.id)
       if (updateError) throw updateError
-      localStorage.setItem('ableman_user', JSON.stringify({ ...user, first_name: formData.firstName, last_name: formData.lastName, phone: formData.phone }))
-      setSuccess('Profile updated successfully!')
+      localStorage.setItem('ableman_user', JSON.stringify({ ...user, phone: formData.phone }))
+      setSuccess('Contact details updated successfully!')
       setIsEditing(false)
     } catch { setError('Failed to update profile. Please try again.') }
     finally { setIsSubmitting(false) }
@@ -410,20 +410,6 @@ export default function ProfilePage() {
               </div>
               <form onSubmit={handleSubmit} className="p-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">First Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
-                      <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} disabled={!isEditing} required className={`${inputBase} ${isEditing ? inputActive : inputDisabled}`} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Last Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A8A4]" />
-                      <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} disabled={!isEditing} required className={`${inputBase} ${isEditing ? inputActive : inputDisabled}`} />
-                    </div>
-                  </div>
                   <div>
                     <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Email Address</label>
                     <div className="relative">

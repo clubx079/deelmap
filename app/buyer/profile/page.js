@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import BuyerPortalLayout from '@/components/buyer/BuyerPortalLayout'
+import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext'
 import {
-  User, Edit2, X, CheckCircle, ChevronDown, MapPin, Loader2, Bell, BellOff,
+  User, Edit2, X, CheckCircle, ChevronDown, MapPin, Loader2, Bell, BellOff, Save,
 } from 'lucide-react'
 
 const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming']
@@ -47,8 +47,20 @@ function BedBathSelect({ value, onChange, options, disabled }) {
 export default function BuyerProfilePage() {
   const { user } = useAuth()
 
+  const { setPageTitle } = useBuyerPageTitle()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState({ firstName: '', lastName: '', email: '', nickname: '', isAnonymous: false })
+
+  useEffect(() => {
+    setPageTitle('Profile')
+    return () => setPageTitle('')
+  }, [setPageTitle])
+
+  // Name
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState({ firstName: '', lastName: '' })
+  const [savingName, setSavingName] = useState(false)
+  const [nameMsg, setNameMsg] = useState('')
 
   // Handle (community identity)
   const [isEditingHandle, setIsEditingHandle] = useState(false)
@@ -98,11 +110,32 @@ export default function BuyerProfilePage() {
           nickname: data.nickname || '',
           isAnonymous: data.is_anonymous || false,
         })
+        setNameDraft({ firstName: data.first_name || '', lastName: data.last_name || '' })
         setHandleDraft({ nickname: data.nickname || '', isAnonymous: data.is_anonymous || false })
         setAlertsOn((data.notification_preferences || {}).buyBoxMatch || false)
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleSaveName() {
+    if (!nameDraft.firstName.trim() || !nameDraft.lastName.trim()) {
+      setNameMsg('First and last name are required.')
+      return
+    }
+    setSavingName(true)
+    setNameMsg('')
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ first_name: nameDraft.firstName.trim(), last_name: nameDraft.lastName.trim(), updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+      if (error) { setNameMsg('Could not save. Please try again.'); return }
+      setProfile(prev => ({ ...prev, firstName: nameDraft.firstName.trim(), lastName: nameDraft.lastName.trim() }))
+      setIsEditingName(false)
+    } finally {
+      setSavingName(false)
     }
   }
 
@@ -207,18 +240,15 @@ export default function BuyerProfilePage() {
 
   if (loading) {
     return (
-      <BuyerPortalLayout pageTitle="Profile">
-        <div className="min-h-full bg-[#FAFAF8] flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 text-[#D03839] animate-spin" />
-        </div>
-      </BuyerPortalLayout>
+      <div className="flex items-center justify-center py-20" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        <Loader2 className="w-6 h-6 text-[#D03839] animate-spin" />
+      </div>
     )
   }
 
   return (
-    <BuyerPortalLayout pageTitle="Profile">
-      <div className="min-h-full bg-[#FAFAF8]" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
-        <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-5">
+    <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+      <div className="p-4 lg:p-6 space-y-5">
 
           {/* Identity header */}
           <div className="bg-white border border-[#E8E8E4] rounded p-5 flex items-center gap-4">
@@ -228,6 +258,55 @@ export default function BuyerProfilePage() {
             <div className="min-w-0">
               <h1 className="text-[20px] font-bold text-[#1A1816] truncate">{displayName}</h1>
               <p className="text-[13px] text-[#737370] truncate">{handleLabel}{profile.email ? ` · ${profile.email}` : ''}</p>
+            </div>
+          </div>
+
+          {/* Your name */}
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#F3F3F1] flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-[#444441]" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-semibold text-[#1A1816]">Your name</p>
+                  <p className="text-[12px] text-[#737370]">The name shown on your account</p>
+                </div>
+              </div>
+              {!isEditingName && (
+                <button onClick={() => { setNameDraft({ firstName: profile.firstName, lastName: profile.lastName }); setIsEditingName(true); setNameMsg('') }}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-semibold transition-colors">
+                  <Edit2 className="w-3.5 h-3.5" /> Edit
+                </button>
+              )}
+            </div>
+            <div className="p-5">
+              {nameMsg && <p className="text-[13px] text-[#D03839] mb-3">{nameMsg}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">First name</label>
+                  <input type="text" value={isEditingName ? nameDraft.firstName : profile.firstName} disabled={!isEditingName}
+                    onChange={(e) => setNameDraft(prev => ({ ...prev, firstName: e.target.value }))}
+                    className={`w-full px-4 py-3 border rounded text-[13px] outline-none transition-all ${isEditingName ? 'border-[#E8E8E4] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`} />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Last name</label>
+                  <input type="text" value={isEditingName ? nameDraft.lastName : profile.lastName} disabled={!isEditingName}
+                    onChange={(e) => setNameDraft(prev => ({ ...prev, lastName: e.target.value }))}
+                    className={`w-full px-4 py-3 border rounded text-[13px] outline-none transition-all ${isEditingName ? 'border-[#E8E8E4] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`} />
+                </div>
+              </div>
+              {isEditingName && (
+                <div className="flex gap-2 justify-end mt-4">
+                  <button onClick={() => { setIsEditingName(false); setNameMsg('') }} disabled={savingName}
+                    className="px-4 py-2 text-[13px] font-medium text-[#444441] border border-[#E8E8E4] rounded hover:bg-[#FAFAF8] transition-colors disabled:opacity-50">Cancel</button>
+                  <button onClick={handleSaveName} disabled={savingName}
+                    className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-white bg-[#D03839] hover:bg-[#E0493B] rounded transition-colors disabled:opacity-50">
+                    {savingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    {savingName ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -450,8 +529,7 @@ export default function BuyerProfilePage() {
             </div>
           </div>
 
-        </div>
       </div>
-    </BuyerPortalLayout>
+    </div>
   )
 }
