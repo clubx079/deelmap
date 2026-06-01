@@ -76,7 +76,7 @@ export default function AdvertisePage() {
               DeelMap connects wholesale sellers with active buyers across the US. Reach a highly targeted audience that's ready to make deals.
             </p>
             <a
-              href="mailto:office@deelmap.co"
+              href="mailto:support@deelmap.com"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#D03839] hover:bg-[#E0493B] text-white text-sm font-semibold rounded transition-colors"
             >
               <Mail className="w-4 h-4" />
@@ -150,11 +150,11 @@ export default function AdvertisePage() {
                 Reach out to us and we'll put together a package that works for your budget and goals.
               </p>
               <a
-                href="mailto:office@deelmap.co"
+                href="mailto:support@deelmap.com"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] hover:bg-[#E0493B] text-white text-sm font-semibold rounded transition-colors"
               >
                 <Mail className="w-4 h-4" />
-                office@deelmap.co
+                support@deelmap.com
               </a>
             </div>
           </div>

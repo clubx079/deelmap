@@ -4,7 +4,7 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 // TODO: Update CONTACT_RECIPIENT_EMAIL with the actual recipient email
-const CONTACT_RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || 'office@deelmap.co'
+const CONTACT_RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || 'support@deelmap.com'
 
 export async function POST(request) {
   try {

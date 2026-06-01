@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server'
+import { Resend } from 'resend'
 
-const MONDAY_API_URL = 'https://api.monday.com/v2'
-const BOARD_ID = '7789594745'
-const GROUP_ID = 'topics'
+const RECIPIENT = process.env.CASHOFFER_RECIPIENT_EMAIL || 'support@deelmap.com'
+const FROM = process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>'
+
+function field(label, value) {
+  if (value == null || value === '') return ''
+  const safe = String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return `<tr><td style="padding:6px 12px 6px 0;font-size:13px;color:#737370;vertical-align:top;white-space:nowrap"><strong>${label}</strong></td><td style="padding:6px 0;font-size:14px;color:#1A1816">${safe}</td></tr>`
+}
 
 export async function POST(request) {
-  const token = process.env.MONDAY_API_KEY
-  if (!token) {
-    return NextResponse.json(
-      { error: 'Cash-offer intake is not configured. Please contact support.' },
-      { status: 500 }
-    )
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    return NextResponse.json({ error: 'Cash-offer intake is not configured.' }, { status: 500 })
   }
 
   let body
@@ -39,59 +42,49 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const mutation = `
-    mutation ($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
-      create_item (
-        board_id: $boardId,
-        group_id: $groupId,
-        item_name: $itemName,
-        column_values: $columnValues
-      ) { id }
-    }
-  `
-
-  const variables = {
-    boardId: BOARD_ID,
-    groupId: GROUP_ID,
-    itemName: `Cash Offer - ${firstName} ${lastName}`,
-    columnValues: JSON.stringify({
-      short_text8: firstName,
-      short_textcp5kwc0i: lastName,
-      email: { email, text: email },
-      number: phoneNumber,
-      short_text__1: propertyType,
-      short_text: fullAddress,
-      state__1: state,
-      number9: parseInt(closingTime, 10) || 0,
-      number0: parseFloat(String(askingPrice).replace(/[^0-9.-]+/g, '')) || 0,
-      single_select7: negotiable,
-      date: contactDate,
-      long_text: condition,
-    }),
-  }
+  const subject = `New Cash Offer Request — ${firstName} ${lastName}`
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F5F5F3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff">
+        <tr><td style="background:#fff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
+          <img src="https://deelmap.com/deelmap.png" alt="Deelmap" height="56" style="display:inline-block;height:56px;width:auto;border:0" />
+        </td></tr>
+        <tr><td style="padding:32px 40px 24px;background:#fff">
+          <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#A8A8A4">New Lead</p>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1A1816">Cash Offer Request</h1>
+          <table cellpadding="0" cellspacing="0" style="width:100%">
+            ${field('Name', `${firstName} ${lastName}`)}
+            ${field('Email', email)}
+            ${field('Phone', phoneNumber)}
+            ${field('Property Type', propertyType)}
+            ${field('Address', fullAddress)}
+            ${field('State', state)}
+            ${field('Closing (days)', closingTime)}
+            ${field('Asking Price', askingPrice)}
+            ${field('Negotiable', negotiable)}
+            ${field('Best Contact Date', contactDate)}
+            ${field('Notes', condition)}
+          </table>
+        </td></tr>
+        <tr><td style="background:#fff;border-top:1px solid #E8E8E4;padding:18px 40px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#A8A8A4">Submitted via deelmap.com/cashoffer</p>
+        </td></tr>
+      </table>
+    </td></tr></table>
+  </body></html>`
 
   try {
-    const res = await fetch(MONDAY_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: mutation, variables }),
+    const resend = new Resend(key)
+    await resend.emails.send({
+      from: FROM,
+      to: RECIPIENT,
+      reply_to: email,
+      subject,
+      html,
     })
-    if (!res.ok) {
-      const detail = await res.text()
-      console.error('Monday API non-OK:', res.status, detail)
-      return NextResponse.json({ error: 'Could not submit your request. Please try again.' }, { status: 502 })
-    }
-    const json = await res.json()
-    if (json?.errors?.length) {
-      console.error('Monday API errors:', json.errors)
-      return NextResponse.json({ error: 'Could not submit your request. Please try again.' }, { status: 502 })
-    }
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('Cash-offer submission failed:', err)
+    console.error('Cash-offer email failed:', err)
     return NextResponse.json({ error: 'Could not submit your request. Please try again.' }, { status: 500 })
   }
 }

@@ -36,9 +36,9 @@ async function getNotificationEmails() {
       .single()
 
     if (data?.recipient_emails?.length) return data.recipient_emails
-    return ['hamza@airosofts.com']
+    return ['support@deelmap.com']
   } catch {
-    return ['hamza@airosofts.com']
+    return ['support@deelmap.com']
   }
 }
 
