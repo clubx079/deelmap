@@ -295,7 +295,7 @@ export function PropertyImageSliderMobile({
                 {allImages.length - images.length} More Photos Available
               </p>
               <button className="bg-[#737370] hover:bg-[#9a7e61] text-white px-5 py-2 rounded font-medium transition-colors text-sm">
-                Join Ableman to View All
+                Join Deelmap to View All
               </button>
             </div>
           </div>
@@ -406,7 +406,7 @@ export function PropertyImageSliderMobile({
         </div>
       )}
 
-      {/* Join Ableman Modal for Special Link Users */}
+      {/* Join Deelmap Modal for Special Link Users */}
       {showJoinPrompt && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4"
@@ -422,7 +422,7 @@ export function PropertyImageSliderMobile({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-[#1A1816] mb-2">Join Ableman to View All Photos</h2>
+              <h2 className="text-xl font-bold text-[#1A1816] mb-2">Join Deelmap to View All Photos</h2>
               <p className="text-[#444441] text-sm">
                 Sign up for free to access the complete photo gallery with {allImages.length} total images and unlock all property features.
               </p>
@@ -438,7 +438,7 @@ export function PropertyImageSliderMobile({
               }}
               className="w-full bg-[#737370] hover:bg-[#9a7e61] text-white py-3 text-base font-semibold rounded shadow-lg hover:shadow-xl transition-all duration-200 mb-2"
             >
-              Join Ableman For Free
+              Join Deelmap For Free
             </button>
             <button
               onClick={() => {

@@ -81,7 +81,7 @@ const PricingCheckIcon = ({ filled }) => (
   </span>
 )
 
-const SELLER_PORTAL_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'
+const SELLER_PORTAL_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sell.deelmap.com'
 
 function DealCard({ deal }) {
   return (

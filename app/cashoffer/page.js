@@ -70,67 +70,19 @@ export default function CashOfferPage() {
     }))
   }
 
-  const submitToMonday = async (data) => {
-    const mutation = `
-      mutation ($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
-        create_item (
-          board_id: $boardId,
-          group_id: $groupId,
-          item_name: $itemName,
-          column_values: $columnValues
-        ) {
-          id
-        }
-      }
-    `
-
-    const variables = {
-      boardId: "7789594745",
-      groupId: "topics",
-      itemName: `Cash Offer - ${data.firstName} ${data.lastName}`,
-      columnValues: JSON.stringify({
-        short_text8: data.firstName,
-        short_textcp5kwc0i: data.lastName,
-        email: { email: data.email, text: data.email },
-        number: data.phoneNumber,
-        short_text__1: data.propertyType,
-        short_text: data.fullAddress,
-        state__1: data.state,
-        number9: parseInt(data.closingTime) || 0,
-        number0: parseFloat(data.askingPrice.replace(/[^0-9.-]+/g, "")) || 0,
-        single_select7: data.negotiable,
-        date: data.contactDate,
-        long_text: data.condition
-      })
-    }
-
-    try {
-      const response = await fetch('https://api.monday.com/v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjQzMTQ5MDY2OCwiYWFpIjoxMSwidWlkIjo2NzgyNDc3MywiaWFkIjoiMjAyNC0xMS0wM1QxMDo0OToyMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MTQ5NDQ5MTQsInJnbiI6InVzZTEifQ.M2y5qvKTBugSmKQLJnPFinl9o1h0H70yCAVnsM75p0M'
-        },
-        body: JSON.stringify({ query: mutation, variables })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to submit to Monday.com')
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error('Error submitting to Monday.com:', error)
-      throw error
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      await submitToMonday(formData)
+      const response = await fetch('/api/cashoffer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      if (!response.ok) {
+        throw new Error('Submission failed')
+      }
       setSubmitted(true)
     } catch (error) {
       alert('There was an error submitting your information. Please try again.')

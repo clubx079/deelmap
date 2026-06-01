@@ -477,7 +477,7 @@ export function PropertyDetail({ property }) {
         <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
           {/* Left: Back link */}
           <Link
-            href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/listings` : '/marketplace'}
+            href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sell.deelmap.com'}/listings` : '/marketplace'}
             className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors relative z-[50]"
           >
             <ArrowLeft className="h-4 w-4 flex-shrink-0" />

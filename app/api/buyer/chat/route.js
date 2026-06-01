@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
-import { generateReplyToAddress } from '@/lib/emailReplyUtils';
-import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
 import { withTimeout, fireAndForget } from '@/lib/timeout';
 
 // Marketplace (DeelMap) Supabase: conversations & messages – same DB as rest of site
@@ -52,60 +50,6 @@ async function isRecipientActiveOnMessages(supabase, recipientUserId, recipientT
     return (Date.now() - lastSeen) < PRESENCE_TTL_MS;
   } catch {
     return false;
-  }
-}
-
-// Helper function to send email notification to lender
-async function sendEmailToLender(lenderEmail, lenderName, buyerName, messageText, conversationId, propertyType, loanAmount) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('[Buyer chat] RESEND_API_KEY not set; cannot send email to lender');
-    return;
-  }
-  try {
-    const chatLink = `${process.env.NEXT_PUBLIC_LENDER_URL || 'https://admin.ableman.co'}/lender/conversations/${conversationId}`;
-    const formattedLoanAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(loanAmount || 0);
-
-    // Generate unique reply-to address for this conversation
-    const replyToAddress = generateReplyToAddress(conversationId);
-
-    // Generate AMP email with inline reply box
-    const ampHtml = generateAMPEmail({
-      conversationId,
-      senderName: buyerName,
-      messageText: messageText || '[Attachment sent]',
-      propertyType,
-      loanAmount: formattedLoanAmount,
-      recipientType: 'lender',
-      conversationUrl: chatLink
-    });
-
-    // Generate HTML fallback for non-AMP clients
-    const htmlFallback = generateHTMLFallback({
-      conversationId,
-      senderName: buyerName,
-      messageText: messageText || '[Attachment sent]',
-      propertyType,
-      loanAmount: formattedLoanAmount,
-      conversationUrl: chatLink
-    });
-
-    await withTimeout(
-      resend.emails.send({
-        from: 'Ableman Rei <notifications@ableman.co>',
-        to: lenderEmail,
-        reply_to: replyToAddress,
-        subject: `New message from ${buyerName} - Ableman`,
-        html: htmlFallback,
-        amp: ampHtml
-      }),
-      15000, // 15 second timeout for email send
-      'Email send timed out'
-    );
-
-    console.log('Email sent to lender with AMP:', lenderEmail);
-  } catch (error) {
-    console.error('Failed to send email to lender:', error);
   }
 }
 
@@ -265,7 +209,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     return;
   }
   try {
-    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sellerportaldeelmap-production-bea8.up.railway.app';
+    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sell.deelmap.com';
     const messagesUrl = `${sellerBase}/messages?conversation=${conversationId}`;
     const preview = (messageText || '[Attachment]').slice(0, 200);
     const propertyText = String(propertyAddress || '').trim();
@@ -276,7 +220,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://deelmap.com/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -302,7 +246,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
 </body></html>`;
     await withTimeout(
       resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
         to: sellerEmail,
         subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - DeelMap`,
         html
@@ -918,7 +862,6 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
       }
 
-      const replyToAddress = generateReplyToAddress(conversationId);
       const senderIdForDb = conversation.seller_id != null ? String(authCheck.userUuid) : String(conversation.user_id);
 
       const { data: message, error } = await supabase
@@ -933,7 +876,6 @@ export async function POST(request) {
           attachment_name: attachmentName,
           attachment_type: attachmentType,
           attachment_size: attachmentSize,
-          reply_to_email: replyToAddress,
           is_from_email: false
         })
         .select()
@@ -957,19 +899,6 @@ export async function POST(request) {
         last_outbound_at: new Date().toISOString(),
         mark_unread: false
       });
-
-      if (conversation.lender_id && financingRequest) {
-        const { data: lender } = await supabase.from('lenders').select('business_name, email').eq('id', conversation.lender_id).single();
-        const { data: financingRequestDetails } = await supabase.from('financing_requests').select('property_type, loan_amount').eq('id', conversation.financing_request_id).single();
-        if (lender?.email) {
-          const buyerName = `${financingRequest.first_name || ''} ${financingRequest.last_name || ''}`.trim() || 'Buyer';
-          // Lender presence is not tracked in this app; send email (or add lender heartbeat in admin portal later)
-          fireAndForget(
-            sendEmailToLender(lender.email, lender.business_name, buyerName, messageText, conversationId, financingRequestDetails?.property_type, financingRequestDetails?.loan_amount),
-            'Lender email notification'
-          );
-        }
-      }
 
       // Insert notification for seller (new message)
       if (conversation.seller_id) {
