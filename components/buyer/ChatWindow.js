@@ -64,6 +64,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [submittingReport, setSubmittingReport] = useState(false);
   const [deletingMsg, setDeletingMsg] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [toast, setToast] = useState(null); // { text, kind: 'success'|'error' }
   const [offers, setOffers] = useState([]);
   const [withdrawing, setWithdrawing] = useState(false);
   const [acceptingCounter, setAcceptingCounter] = useState(false);
@@ -349,6 +350,11 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   };
 
   // ── Message actions ──────────────────────────────────────────────
+  const showToast = (text, kind = 'success') => {
+    setToast({ text, kind });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleCopyMessage = (msg) => {
     const text = msg?.message_text || '';
     if (!text || !navigator?.clipboard) return;
@@ -370,8 +376,8 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       if (data.success) {
         setMessages((prev) => prev.map((m) => String(m.id) === String(messageId)
           ? { ...m, is_deleted: true, message_text: null, has_attachment: false } : m));
-      } else { alert(data.error || 'Failed to delete message.'); }
-    } catch { alert('Failed to delete message.'); }
+      } else { showToast(data.error || 'Could not delete message.', 'error'); }
+    } catch { showToast('Could not delete message.', 'error'); }
   };
 
   const handleSubmitReport = async () => {
@@ -386,9 +392,9 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const data = await res.json();
       if (data.success) {
         setReportingMsg(null); setReportDetails(''); setReportReason('spam');
-        alert('Thanks — this has been reported to our team for review.');
-      } else { alert(data.error || 'Failed to submit report.'); }
-    } catch { alert('Failed to submit report.'); }
+        showToast('Reported — our team will review it.');
+      } else { showToast(data.error || 'Could not submit report.', 'error'); }
+    } catch { showToast('Could not submit report.', 'error'); }
     finally { setSubmittingReport(false); }
   };
 
@@ -1207,6 +1213,15 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         confirmText="Delete"
         danger
       />
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded shadow-lg text-[13px] font-medium text-white flex items-center gap-2"
+          style={{ background: toast.kind === 'error' ? '#D03839' : '#1A1816' }}>
+          {toast.kind === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          {toast.text}
+        </div>
+      )}
 
       {/* Report-message dialog */}
       {reportingMsg && (

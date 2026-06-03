@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { contractDownloadUrl } from '@/lib/contractDownload'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'Deelmap <notifications@deelmap.com>'
 const DOCUSEAL_BASE = 'https://api.docuseal.com'
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
 
 function dsHeaders() {
   return { 'X-Auth-Token': process.env.DOCUSEAL_API_KEY, 'Content-Type': 'application/json' }
@@ -20,6 +22,9 @@ export async function POST(request) {
     if (event_type === 'submission.completed') {
       const submissionId = data.submission_id || data.id
       if (!submissionId) { console.log('[webhook] submission.completed — no id'); return NextResponse.json({ ok: true }) }
+
+      // DeelMap-branded download link (streams the PDF via our own domain).
+      const downloadLink = contractDownloadUrl(APP_URL, submissionId)
 
       // Always fetch the full submission — webhook payload may have stale placeholder email for the Assignee
       const fullRes = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, { headers: dsHeaders() })
@@ -89,16 +94,14 @@ export async function POST(request) {
                               <p style="margin:0;font-size:14px;font-weight:600;color:#1A1816;">${property}</p>
                             </td></tr>
                           </table>` : ''}
-                          ${docUrl ? `
                           <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                             <tr><td style="background:#D03839;border-radius:4px;">
-                              <a href="${docUrl}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Download Signed Contract →</a>
+                              <a href="${downloadLink}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Download Signed Contract →</a>
                             </td></tr>
                           </table>
                           <p style="margin:0;font-size:12px;color:#A8A8A4;line-height:1.6;">
-                            Or copy this link:<br>
-                            <span style="color:#737370;word-break:break-all;">${docUrl}</span>
-                          </p>` : '<p style="margin:0;font-size:13px;color:#737370;">You can log in to DeelMap to view and download your signed contract.</p>'}
+                            Your signed copy is also attached to this email.
+                          </p>
                         </td>
                       </tr>
                       <tr>
@@ -111,7 +114,7 @@ export async function POST(request) {
                 </body>
                 </html>
               `,
-              text: `Hi${s.name ? ` ${s.name}` : ''},\n\nAll parties have signed the contract${property ? ` for ${property}` : ''}.\n\n${docUrl ? `Download: ${docUrl}` : 'Log in to DeelMap to view your signed contract.'}\n\n— DeelMap`,
+              text: `Hi${s.name ? ` ${s.name}` : ''},\n\nAll parties have signed the contract${property ? ` for ${property}` : ''}.\n\nDownload: ${downloadLink}\n(Your signed copy is also attached.)\n\n— DeelMap`,
               ...(pdfBuffer ? { attachments: [{ filename: attachmentFilename, content: pdfBuffer }] } : {}),
             })
           )
@@ -167,9 +170,6 @@ export async function POST(request) {
 
     const assignorName = data.name || data.email || 'The Buyer'
     const property = fullSubmission.name || ''
-    // Use APP_URL env var so staging emails staging URLs, prod emails prod URLs.
-    // Falls back to production deelmap.com if unset.
-    const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
     const signingUrl = `${APP_URL}/sign/${assigneeSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
