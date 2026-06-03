@@ -1062,7 +1062,7 @@ export async function POST(request) {
         .select('id, sender_type, sender_id, message_text').eq('id', messageId).eq('conversation_id', conversationId).single();
       if (!msg) return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
 
-      const { error } = await supabase.from('message_reports').insert({
+      const { data: report, error } = await supabase.from('message_reports').insert({
         message_id: messageId,
         conversation_id: conversationId,
         reporter_id: String(authCheck.userUuid),
@@ -1070,32 +1070,25 @@ export async function POST(request) {
         reason,
         details,
         status: 'open',
-      });
+      }).select('id').single();
       if (error) return NextResponse.json({ success: false, error: 'Failed to submit report' }, { status: 500 });
 
-      // Alert admins for review (fire-and-forget — never blocks the reporter).
+      // Notify admins through the standard pipeline: an activity_log row shows in
+      // the admin notifications feed AND triggers the admin email-hook (sent to the
+      // configured NOTIFICATIONS_EMAIL). Full detail lives in the admin Message
+      // Reports review page (backed by message_reports).
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        const ADMIN_EMAIL = process.env.REPORTS_ADMIN_EMAIL || 'support@deelmap.com';
-        const esc = (s) => String(s || '').replace(/</g, '&lt;');
-        fireAndForget(resend.emails.send({
-          from: 'Deelmap <notifications@deelmap.com>',
-          to: ADMIN_EMAIL,
-          subject: `Message reported for review${reason ? ` — ${reason}` : ''}`,
-          html: `<div style="font-family:-apple-system,'Segoe UI',Arial,sans-serif;max-width:560px">
-            <h2 style="font-size:17px;color:#1A1816">A message was reported for review</h2>
-            <table style="font-size:14px;color:#444441;border-collapse:collapse">
-              <tr><td style="padding:4px 12px 4px 0;color:#737370">Reason</td><td>${esc(reason) || '—'}</td></tr>
-              <tr><td style="padding:4px 12px 4px 0;color:#737370">Details</td><td>${esc(details) || '—'}</td></tr>
-              <tr><td style="padding:4px 12px 4px 0;color:#737370">Conversation</td><td>#${conversationId}${conversation.property_address ? ` · ${esc(conversation.property_address)}` : ''}</td></tr>
-              <tr><td style="padding:4px 12px 4px 0;color:#737370">Reported sender</td><td>${esc(msg.sender_type)} (${esc(msg.sender_id) || '—'})</td></tr>
-              <tr><td style="padding:4px 12px 4px 0;color:#737370;vertical-align:top">Message</td><td style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:8px 10px">${esc((msg.message_text || '[no text / attachment]').slice(0, 500))}</td></tr>
-            </table>
-            <p style="font-size:12px;color:#A8A8A4;margin-top:16px">Reported by user ${esc(authCheck.userUuid)}. Review in the message_reports table.</p>
-          </div>`,
-          text: `A message was reported.\nReason: ${reason || '—'}\nDetails: ${details || '—'}\nConversation: #${conversationId}\nSender: ${msg.sender_type} (${msg.sender_id || '—'})\nMessage: ${(msg.message_text || '[no text]').slice(0, 500)}`,
-        }), 'Message report admin alert');
-      } catch (e) { console.error('report email failed:', e?.message); }
+        const { data: reporter } = await supabase.from('users').select('email').eq('id', authCheck.userUuid).maybeSingle();
+        const snippet = (msg.message_text || '[no text / attachment]').slice(0, 140);
+        await supabase.from('activity_log').insert({
+          event_type: 'message_reported',
+          title: `Message reported${reason ? ` — ${reason}` : ''}`,
+          detail: `"${snippet}"${conversation.property_address ? ` · ${conversation.property_address}` : ''} (conversation #${conversationId})`,
+          actor_email: reporter?.email || null,
+          entity_type: 'message_report',
+          entity_id: report?.id != null ? String(report.id) : null,
+        });
+      } catch (e) { console.error('report notification failed:', e?.message); }
 
       return NextResponse.json({ success: true });
     }
