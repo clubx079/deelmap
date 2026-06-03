@@ -1063,10 +1063,11 @@ export async function POST(request) {
         : (conversation.lender_id != null ? String(conversation.lender_id) : null);
       if (!reportedId) return NextResponse.json({ success: false, error: 'Nothing to report here' }, { status: 400 });
 
-      // Dedup: one OPEN report per reporter -> reported user.
+      // Dedup: one OPEN report per reporter -> reported user. Use limit(1) (not
+      // maybeSingle) so it never errors when duplicates already exist.
       const { data: existing } = await supabase.from('message_reports')
-        .select('id').eq('reporter_id', String(authCheck.userUuid)).eq('reported_sender', reportedId).eq('status', 'open').maybeSingle();
-      if (existing) return NextResponse.json({ success: true, already: true });
+        .select('id').eq('reporter_id', String(authCheck.userUuid)).eq('reported_sender', reportedId).eq('status', 'open').limit(1);
+      if (existing && existing.length > 0) return NextResponse.json({ success: true, already: true });
 
       const { data: report, error } = await supabase.from('message_reports').insert({
         message_id: null,
