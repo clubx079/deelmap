@@ -76,13 +76,13 @@ export default function AdvertisePage() {
             <p className="text-[#A8A8A4] text-base sm:text-lg max-w-2xl mx-auto mb-8">
               DeelMap connects wholesale sellers with active buyers across the US. Reach a highly targeted audience that's ready to make deals.
             </p>
-            <a
-              href="mailto:support@deelmap.com"
+            <Link
+              href="/contact?topic=advertise"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#D03839] hover:bg-[#E0493B] text-white text-sm font-semibold rounded transition-colors"
             >
               <Mail className="w-4 h-4" />
               Get in touch
-            </a>
+            </Link>
             <p className="text-[13px] text-[#A8A8A4] mt-3">We typically respond within 24 hours.</p>
           </div>
         </div>
