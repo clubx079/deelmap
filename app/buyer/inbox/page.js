@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
-import { MessageSquare, Search, DollarSign, Home, Pin } from 'lucide-react';
+import { MessageSquare, Search, DollarSign, Home, Pin, Flag, X, Check, Loader2 } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
@@ -39,6 +39,11 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [contextMenu, setContextMenu] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [reportConv, setReportConv] = useState(null);
+  const [reportReason, setReportReason] = useState('spam');
+  const [reportDetails, setReportDetails] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [toast, setToast] = useState(null);
   const searchParams = useSearchParams();
 
   const sellerIdFromUrl = searchParams.get('seller_id');
@@ -148,6 +153,24 @@ export default function InboxPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const showToast = (text, kind = 'success') => { setToast({ text, kind }); setTimeout(() => setToast(null), 3000); };
+
+  const submitReport = async () => {
+    if (!reportConv) return;
+    setSubmittingReport(true);
+    try {
+      const res = await fetch('/api/buyer/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
+        body: JSON.stringify({ action: 'report_user', conversationId: reportConv.id, reason: reportReason, details: reportDetails.trim() || null }),
+      });
+      const data = await res.json();
+      if (data.success) { setReportConv(null); setReportDetails(''); setReportReason('spam'); showToast(data.already ? 'You already reported this person — our team is reviewing it.' : 'Reported — our team will review it.'); }
+      else showToast(data.error || 'Could not submit report.', 'error');
+    } catch { showToast('Could not submit report.', 'error'); }
+    finally { setSubmittingReport(false); }
   };
 
   const updateConversationPref = async (conversationId, patch) => {
@@ -358,6 +381,9 @@ export default function InboxPage() {
           <button className="w-full text-left text-[13px] px-3 py-2 rounded text-[#D03839] hover:bg-[#FEF0EF] transition-colors duration-200" onClick={() => { setConfirmAction({ kind: 'block', conversationId: contextMenu.conversation.id }); setContextMenu(null); }}>
             Block user
           </button>
+          <button className="w-full text-left text-[13px] px-3 py-2 rounded text-[#D03839] hover:bg-[#FEF0EF] transition-colors duration-200" onClick={() => { setReportConv(contextMenu.conversation); setContextMenu(null); }}>
+            Report user
+          </button>
         </div>
       )}
       <ConfirmDialog
@@ -374,6 +400,48 @@ export default function InboxPage() {
         confirmText={confirmAction?.kind === 'delete' ? 'Delete chat' : 'Block user'}
         danger
       />
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded shadow-lg text-[13px] font-medium text-white flex items-center gap-2"
+          style={{ background: toast.kind === 'error' ? '#D03839' : '#1A1816' }}>
+          {toast.kind === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          {toast.text}
+        </div>
+      )}
+
+      {/* Report-user dialog */}
+      {reportConv && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4" onClick={() => !submittingReport && setReportConv(null)}>
+          <div className="bg-white rounded w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center gap-2">
+              <Flag className="w-4 h-4 text-[#D03839]" />
+              <h3 className="text-[16px] font-bold text-[#1A1816]">Report this person</h3>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <p className="text-[13px] text-[#737370]">Our team will review this conversation. Reports help us keep DeelMap safe from scams and abuse.</p>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Reason</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[['spam', 'Spam'], ['scam', 'Scam / fraud'], ['abuse', 'Abusive'], ['other', 'Other']].map(([val, lbl]) => (
+                    <button key={val} type="button" onClick={() => setReportReason(val)}
+                      className={`h-9 px-3 rounded border text-[13px] font-medium transition-colors ${reportReason === val ? 'border-[#D03839] bg-[#FEF0EF] text-[#D03839]' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>{lbl}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Details <span className="font-normal text-[#A8A8A4]">(optional)</span></label>
+                <textarea value={reportDetails} onChange={e => setReportDetails(e.target.value)} rows={3} placeholder="Add anything that helps us review this…"
+                  className="w-full px-3 py-2 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] resize-none" />
+              </div>
+            </div>
+            <div className="px-5 py-3.5 border-t border-[#E8E8E4] flex justify-end gap-2">
+              <button type="button" onClick={() => setReportConv(null)} disabled={submittingReport} className="h-9 px-4 border border-[#E8E8E4] text-[#444441] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] transition-colors disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={submitReport} disabled={submittingReport} className="h-9 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-50 flex items-center gap-1.5">{submittingReport && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Submit report</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

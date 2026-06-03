@@ -698,7 +698,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                               </div>
                             </div>
                             {!isUser && !message.is_deleted && (
-                              <MessageActions onReply={() => setReplyingTo(message)} onCopy={() => handleCopyMessage(message)} onReport={() => setReportingMsg(message)} copied={copiedKey === message.id} />
+                              <MessageActions onReply={() => setReplyingTo(message)} onCopy={() => handleCopyMessage(message)} copied={copiedKey === message.id} />
                             )}
                           </div>
                         </div>

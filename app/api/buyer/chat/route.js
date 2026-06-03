@@ -1037,14 +1037,15 @@ export async function POST(request) {
     }
 
     // Report a message — store a review record and alert admins
-    if (action === 'report_message') {
-      const { conversationId, messageId, reason = null, details = null } = body;
-      if (!conversationId || !messageId) {
-        return NextResponse.json({ success: false, error: 'Missing conversation or message ID' }, { status: 400 });
-      }
+    // Report the OTHER party in a conversation (user-level). Deduped per
+    // reporter -> reported user so one person can't spam the same target.
+    if (action === 'report_user') {
+      const { conversationId, reason = null, details = null } = body;
+      if (!conversationId) return NextResponse.json({ success: false, error: 'Missing conversation ID' }, { status: 400 });
+
       const { data: conversation } = await supabase
         .from('conversations')
-        .select('id, financing_request_id, seller_id, buyer_uuid, user_id, property_address')
+        .select('id, financing_request_id, seller_id, lender_id, buyer_uuid, user_id, property_address')
         .eq('id', conversationId).single();
       if (!conversation) return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
 
@@ -1058,32 +1059,35 @@ export async function POST(request) {
       }
       if (!allowed) return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
 
-      const { data: msg } = await supabase.from('messages')
-        .select('id, sender_type, sender_id, message_text').eq('id', messageId).eq('conversation_id', conversationId).single();
-      if (!msg) return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
+      const reportedId = conversation.seller_id != null ? String(conversation.seller_id)
+        : (conversation.lender_id != null ? String(conversation.lender_id) : null);
+      if (!reportedId) return NextResponse.json({ success: false, error: 'Nothing to report here' }, { status: 400 });
+
+      // Dedup: one OPEN report per reporter -> reported user.
+      const { data: existing } = await supabase.from('message_reports')
+        .select('id').eq('reporter_id', String(authCheck.userUuid)).eq('reported_sender', reportedId).eq('status', 'open').maybeSingle();
+      if (existing) return NextResponse.json({ success: true, already: true });
 
       const { data: report, error } = await supabase.from('message_reports').insert({
-        message_id: messageId,
+        message_id: null,
         conversation_id: conversationId,
         reporter_id: String(authCheck.userUuid),
-        reported_sender: msg.sender_id != null ? String(msg.sender_id) : null,
+        reported_sender: reportedId,
         reason,
         details,
         status: 'open',
       }).select('id').single();
       if (error) return NextResponse.json({ success: false, error: 'Failed to submit report' }, { status: 500 });
 
-      // Notify admins through the standard pipeline: an activity_log row shows in
-      // the admin notifications feed AND triggers the admin email-hook (sent to the
-      // configured NOTIFICATIONS_EMAIL). Full detail lives in the admin Message
-      // Reports review page (backed by message_reports).
+      // Admin notification — friendly copy (name + property, no raw IDs).
       try {
+        const { data: sellerApp } = await supabase.from('seller_applications').select('contact_person_name, business_name').eq('id', reportedId).maybeSingle();
+        const reportedName = sellerApp ? (sellerApp.contact_person_name || sellerApp.business_name || 'a seller') : 'a user';
         const { data: reporter } = await supabase.from('users').select('email').eq('id', authCheck.userUuid).maybeSingle();
-        const snippet = (msg.message_text || '[no text / attachment]').slice(0, 140);
         await supabase.from('activity_log').insert({
           event_type: 'message_reported',
-          title: `Message reported${reason ? ` — ${reason}` : ''}`,
-          detail: `"${snippet}"${conversation.property_address ? ` · ${conversation.property_address}` : ''} (conversation #${conversationId})`,
+          title: `User reported${reason ? ` — ${reason}` : ''}`,
+          detail: `${reportedName} was reported by a buyer${conversation.property_address ? ` (re: ${conversation.property_address})` : ''}.`,
           actor_email: reporter?.email || null,
           entity_type: 'message_report',
           entity_id: report?.id != null ? String(report.id) : null,

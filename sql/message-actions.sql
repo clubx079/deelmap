@@ -22,3 +22,6 @@ create table if not exists public.message_reports (
 );
 create index if not exists message_reports_status_idx
   on public.message_reports (status, created_at desc);
+
+-- 2026-06-03: report is now per-USER, message no longer required
+alter table public.message_reports alter column message_id drop not null;
