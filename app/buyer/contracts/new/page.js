@@ -353,7 +353,7 @@ export default function BuyerNewContractWizardPage() {
             <div className="px-5 py-4 border-b border-[#E8E8E4]">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[14px] font-semibold text-[#1A1816]">Contract — 1 envelope</p>
+                  <p className="text-[14px] font-semibold text-[#1A1816]">Contract</p>
                   {fieldValues.property_address ? <p className="text-[12px] text-[#737370] mt-0.5">{fieldValues.property_address}</p> : null}
                 </div>
                 <p className="text-[14px] font-bold text-[#1A1816] whitespace-nowrap">{fmtFee(payAmount)}</p>
@@ -452,7 +452,7 @@ export default function BuyerNewContractWizardPage() {
 
 function Step1ContractType({ templates, templatesLoading, templateId, onSelect }) {
   if (templatesLoading) return <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-20 bg-[#FAFAF8] border border-[#E8E8E4] rounded animate-pulse" />)}</div>
-  if (!templates.length) return <div className="text-center py-10 text-[13px] text-[#737370]"><p className="text-[14px] font-semibold text-[#1A1816] mb-1">No contract templates available</p><p>Set up templates in DocuSeal to enable contracts.</p></div>
+  if (!templates.length) return <div className="text-center py-10 text-[13px] text-[#737370]"><p className="text-[14px] font-semibold text-[#1A1816] mb-1">No contract templates available</p><p>Contracts aren't available right now. Please try again later or contact support.</p></div>
   return (
     <div>
       <h2 className="text-[16px] font-bold text-[#1A1816] mb-1">Pick a contract type</h2>
