@@ -69,7 +69,7 @@ export default function AdvertisePage() {
             no light strip above it */}
         <div className="bg-[#1A1816] text-white pt-[80px]">
           <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <p className="text-[12px] font-semibold uppercase tracking-[2px] text-[#D03839] mb-4">Advertise with us</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[2px] text-[#D03839] mb-3">Advertise with us</p>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight">
               Put Your Brand in Front of<br className="hidden sm:block" /> Serious Real Estate Investors
             </h1>

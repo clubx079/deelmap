@@ -42,19 +42,20 @@ export default function ResourcesPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      {/* Hero */}
-      <div className="bg-[#1A1816] pt-[80px]">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-14 md:py-20">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#D03839] mb-3">Resources</p>
-          <h1 className="text-[32px] md:text-[44px] font-bold text-white leading-tight mb-4">Investment Tools</h1>
-          <p className="text-[15px] text-white/60 max-w-xl leading-relaxed">
+      {/* Hero — dark background extends up under the fixed navbar so there's
+          no light strip above it */}
+      <div className="bg-[#1A1816] text-white pt-[80px]">
+        <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 sm:py-20 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[2px] text-[#D03839] mb-3">Resources</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-5">Investment Tools</h1>
+          <p className="text-[#A8A8A4] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Free calculators and underwriting tools built for real estate investors. No signup required.
           </p>
         </div>
       </div>
 
       {/* Tools */}
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-12 md:py-16">
+      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-14 sm:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {TOOLS.map((tool, idx) => {
             const Icon = tool.icon
