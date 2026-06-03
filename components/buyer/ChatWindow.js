@@ -8,9 +8,28 @@ import Image from 'next/image';
 import {
   X, Send, Paperclip, File, Download, Loader2, CheckCheck, Check,
   ArrowLeft, Home, Mail, MoreVertical, ExternalLink,
-  Smile, MapPin, Phone, Shield, Calendar
+  Smile, MapPin, Phone, Shield, Calendar,
+  CornerUpLeft, Copy, Trash2, Flag
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+
+// Hover-revealed action bar on a message (Reply/Copy always; Delete on your
+// own, Report on the other party's). Shown inline — no three-dot menu.
+function MessageActions({ isUser, onReply, onCopy, onDelete, onReport, copied }) {
+  const btn = 'p-1.5 rounded text-[#737370] transition-colors';
+  return (
+    <div className="flex items-center gap-0.5 self-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      <button type="button" onClick={onReply} title="Reply" className={`${btn} hover:bg-[#FAFAF8] hover:text-[#1A1816]`}><CornerUpLeft className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onCopy} title={copied ? 'Copied' : 'Copy'} className={`${btn} hover:bg-[#FAFAF8] hover:text-[#1A1816]`}>{copied ? <Check className="w-3.5 h-3.5 text-[#0F6E56]" /> : <Copy className="w-3.5 h-3.5" />}</button>
+      {isUser && onDelete && (
+        <button type="button" onClick={onDelete} title="Delete" className={`${btn} hover:bg-[#FEF0EF] hover:text-[#D03839]`}><Trash2 className="w-3.5 h-3.5" /></button>
+      )}
+      {!isUser && onReport && (
+        <button type="button" onClick={onReport} title="Report" className={`${btn} hover:bg-[#FEF0EF] hover:text-[#D03839]`}><Flag className="w-3.5 h-3.5" /></button>
+      )}
+    </div>
+  );
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL;
@@ -37,6 +56,14 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [counterConfirm, setCounterConfirm] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loadedImages, setLoadedImages] = useState(new Set());
+  // Message actions: reply / report / delete
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [reportingMsg, setReportingMsg] = useState(null);
+  const [reportReason, setReportReason] = useState('spam');
+  const [reportDetails, setReportDetails] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [deletingMsg, setDeletingMsg] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
   const [offers, setOffers] = useState([]);
   const [withdrawing, setWithdrawing] = useState(false);
   const [acceptingCounter, setAcceptingCounter] = useState(false);
@@ -295,12 +322,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const response = await fetch('/api/buyer/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
-        body: JSON.stringify({ action: 'send_message', conversationId: conversation.id, messageText: newMessage.trim() })
+        body: JSON.stringify({ action: 'send_message', conversationId: conversation.id, messageText: newMessage.trim(), replyToId: replyingTo?.id || null })
       });
       const data = await response.json();
       if (data.success && data.message) {
-        setMessages((prev) => prev.some((m) => m.id === data.message.id) ? prev : [...prev, data.message]);
+        const sent = replyingTo
+          ? { ...data.message, reply_preview: { id: replyingTo.id, sender_type: replyingTo.sender_type, text: (replyingTo.message_text || '[Attachment]').slice(0, 140) } }
+          : data.message;
+        setMessages((prev) => prev.some((m) => m.id === sent.id) ? prev : [...prev, sent]);
         setNewMessage('');
+        setReplyingTo(null);
         scrollToBottom();
         setTimeout(() => textareaRef.current?.focus(), 0);
         import('@/lib/analytics').then(({ trackEvent }) => {
@@ -315,6 +346,50 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
     } finally {
       setSending(false);
     }
+  };
+
+  // ── Message actions ──────────────────────────────────────────────
+  const handleCopyMessage = (msg) => {
+    const text = msg?.message_text || '';
+    if (!text || !navigator?.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(msg.id);
+      setTimeout(() => setCopiedKey((k) => (k === msg.id ? null : k)), 1500);
+    }).catch(() => {});
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    setDeletingMsg(null);
+    try {
+      const res = await fetch('/api/buyer/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
+        body: JSON.stringify({ action: 'delete_message', conversationId: conversation.id, messageId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages((prev) => prev.map((m) => String(m.id) === String(messageId)
+          ? { ...m, is_deleted: true, message_text: null, has_attachment: false } : m));
+      } else { alert(data.error || 'Failed to delete message.'); }
+    } catch { alert('Failed to delete message.'); }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportingMsg) return;
+    setSubmittingReport(true);
+    try {
+      const res = await fetch('/api/buyer/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
+        body: JSON.stringify({ action: 'report_message', conversationId: conversation.id, messageId: reportingMsg.id, reason: reportReason, details: reportDetails.trim() || null }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReportingMsg(null); setReportDetails(''); setReportReason('spam');
+        alert('Thanks — this has been reported to our team for review.');
+      } else { alert(data.error || 'Failed to submit report.'); }
+    } catch { alert('Failed to submit report.'); }
+    finally { setSubmittingReport(false); }
   };
 
   const handleFileSelect = (e) => {
@@ -574,18 +649,34 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                           {isUser && (
                             <p className="text-[12px] font-medium text-[#444441] mb-1 text-right">You</p>
                           )}
-                          <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`group flex items-center gap-1.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            {isUser && !message.is_deleted && (
+                              <MessageActions isUser onReply={() => setReplyingTo(message)} onCopy={() => handleCopyMessage(message)} onDelete={() => setDeletingMsg(message)} copied={copiedKey === message.id} />
+                            )}
                             <div className="max-w-[70%]">
-                              <div className={`rounded px-4 py-3 ${
-                                isUser
-                                  ? 'bg-[#FEF0EF] text-[#1A1816] border border-[#F5C4C0]'
-                                  : 'bg-[#FAFAF8] text-[#1A1816] border border-[#E8E8E4]'
-                              }`}>
-                                {message.message_text && (
-                                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{message.message_text}</p>
-                                )}
-                                {renderAttachment(message)}
-                              </div>
+                              {/* Quoted (replied-to) message */}
+                              {message.reply_preview && (
+                                <div className="mb-1 px-3 py-1.5 rounded bg-[#FAFAF8] border-l-2 border-[#D03839]">
+                                  <p className="text-[10px] font-semibold text-[#737370]">{message.reply_preview.sender_type === 'user' ? 'You' : sellerName}</p>
+                                  <p className="text-[12px] text-[#737370] truncate">{message.reply_preview.text}</p>
+                                </div>
+                              )}
+                              {message.is_deleted ? (
+                                <div className="rounded px-4 py-3 border border-dashed border-[#E8E8E4]">
+                                  <p className="text-[13px] italic text-[#A8A8A4]">This message was deleted</p>
+                                </div>
+                              ) : (
+                                <div className={`rounded px-4 py-3 ${
+                                  isUser
+                                    ? 'bg-[#FEF0EF] text-[#1A1816] border border-[#F5C4C0]'
+                                    : 'bg-[#FAFAF8] text-[#1A1816] border border-[#E8E8E4]'
+                                }`}>
+                                  {message.message_text && (
+                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{message.message_text}</p>
+                                  )}
+                                  {renderAttachment(message)}
+                                </div>
+                              )}
                               <div className={`flex items-center gap-1 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
                                 {message.is_from_email && (
                                   <div className="flex items-center gap-1 text-[10px] text-[#1A1816] bg-[#F3F3F0] px-1.5 py-0.5 rounded">
@@ -593,13 +684,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                                   </div>
                                 )}
                                 <span className="text-[11px] text-[#A8A8A4]">{formatTime(message.created_at)}</span>
-                                {isUser && (
+                                {isUser && !message.is_deleted && (
                                   message.is_read
                                     ? <CheckCheck className="w-3.5 h-3.5 text-[#1A1816]" />
                                     : <Check className="w-3.5 h-3.5 text-[#A8A8A4]" />
                                 )}
                               </div>
                             </div>
+                            {!isUser && !message.is_deleted && (
+                              <MessageActions onReply={() => setReplyingTo(message)} onCopy={() => handleCopyMessage(message)} onReport={() => setReportingMsg(message)} copied={copiedKey === message.id} />
+                            )}
                           </div>
                         </div>
                       );
@@ -650,6 +744,20 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                 {suggestion}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Replying-to banner */}
+        {replyingTo && (
+          <div className="flex-shrink-0 px-6 pt-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#FAFAF8] border-l-2 border-[#D03839] rounded">
+              <CornerUpLeft className="w-3.5 h-3.5 text-[#D03839] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-[#737370]">Replying to {replyingTo.sender_type === 'user' ? 'yourself' : sellerName}</p>
+                <p className="text-[12px] text-[#737370] truncate">{replyingTo.message_text || '[Attachment]'}</p>
+              </div>
+              <button type="button" onClick={() => setReplyingTo(null)} className="p-1 rounded hover:bg-white text-[#737370]"><X className="w-3.5 h-3.5" /></button>
+            </div>
           </div>
         )}
 
@@ -1088,6 +1196,57 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         confirmText={counterConfirm?.kind === 'accept' ? 'Yes, accept' : 'Yes, decline'}
         danger={counterConfirm?.kind === 'reject'}
       />
+
+      {/* Delete-message confirm */}
+      <ConfirmDialog
+        open={!!deletingMsg}
+        onClose={() => setDeletingMsg(null)}
+        onConfirm={() => deletingMsg && handleDeleteMessage(deletingMsg.id)}
+        title="Delete this message?"
+        message="It will be removed for everyone in this chat and replaced with “This message was deleted.”"
+        confirmText="Delete"
+        danger
+      />
+
+      {/* Report-message dialog */}
+      {reportingMsg && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !submittingReport && setReportingMsg(null)}>
+          <div className="bg-white rounded-lg w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center gap-2">
+              <Flag className="w-4 h-4 text-[#D03839]" />
+              <h3 className="text-[16px] font-bold text-[#1A1816]">Report message</h3>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <p className="text-[13px] text-[#737370]">Our team will review this. Reports help us keep DeelMap safe from scams and abuse.</p>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Reason</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[['spam', 'Spam'], ['scam', 'Scam / fraud'], ['abuse', 'Abusive'], ['other', 'Other']].map(([val, lbl]) => (
+                    <button key={val} type="button" onClick={() => setReportReason(val)}
+                      className={`h-9 px-3 rounded border text-[13px] font-medium transition-colors ${reportReason === val ? 'border-[#D03839] bg-[#FEF0EF] text-[#D03839]' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Details <span className="font-normal text-[#A8A8A4]">(optional)</span></label>
+                <textarea value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} rows={3}
+                  placeholder="Add anything that helps us review this…"
+                  className="w-full px-3 py-2 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] resize-none" />
+              </div>
+            </div>
+            <div className="px-5 py-3.5 border-t border-[#E8E8E4] flex justify-end gap-2">
+              <button type="button" onClick={() => setReportingMsg(null)} disabled={submittingReport}
+                className="h-9 px-4 border border-[#E8E8E4] text-[#444441] text-[13px] font-semibold rounded hover:border-[#1A1816] transition-colors disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={handleSubmitReport} disabled={submittingReport}
+                className="h-9 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                {submittingReport && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Submit report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -733,7 +733,7 @@ export async function GET(request) {
         return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
       }
 
-      const { data: messages, error } = await supabase
+      const { data: rawMessages, error } = await supabase
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
@@ -746,6 +746,34 @@ export async function GET(request) {
           error: 'Failed to fetch messages'
         }, { status: 500 });
       }
+
+      // Attach a small preview of any quoted (replied-to) message, and never send
+      // the content of soft-deleted messages to the client.
+      const replyIds = [...new Set((rawMessages || []).map(m => m.reply_to_id).filter(Boolean))];
+      const replyMap = {};
+      if (replyIds.length) {
+        const { data: replied } = await supabase
+          .from('messages')
+          .select('id, sender_type, message_text, is_deleted, has_attachment')
+          .in('id', replyIds);
+        for (const r of replied || []) {
+          replyMap[r.id] = {
+            id: r.id,
+            sender_type: r.sender_type,
+            text: r.is_deleted ? 'Deleted message' : (r.message_text || (r.has_attachment ? '[Attachment]' : '')).slice(0, 140),
+          };
+        }
+      }
+      const messages = (rawMessages || []).map(m => {
+        const out = { ...m, reply_preview: m.reply_to_id ? (replyMap[m.reply_to_id] || null) : null };
+        if (m.is_deleted) {
+          out.message_text = null;
+          out.has_attachment = false;
+          out.attachment_url = null;
+          out.attachment_name = null;
+        }
+        return out;
+      });
 
       // Mark conversation as read when buyer opens it: clear mark_unread and set messages is_read
       const senderTypesToMark = conversation.seller_id != null ? ['seller'] : ['lender'];
@@ -819,7 +847,8 @@ export async function POST(request) {
         attachmentUrl = null,
         attachmentName = null,
         attachmentType = null,
-        attachmentSize = null
+        attachmentSize = null,
+        replyToId = null
       } = body;
 
       if (!conversationId) {
@@ -876,7 +905,8 @@ export async function POST(request) {
           attachment_name: attachmentName,
           attachment_type: attachmentType,
           attachment_size: attachmentSize,
-          is_from_email: false
+          is_from_email: false,
+          reply_to_id: replyToId
         })
         .select()
         .single();
@@ -968,6 +998,106 @@ export async function POST(request) {
       }
 
       return NextResponse.json({ success: true, message });
+    }
+
+    // Soft-delete the user's OWN message
+    if (action === 'delete_message') {
+      const { conversationId, messageId } = body;
+      if (!conversationId || !messageId) {
+        return NextResponse.json({ success: false, error: 'Missing conversation or message ID' }, { status: 400 });
+      }
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('id, financing_request_id, seller_id, buyer_uuid, user_id')
+        .eq('id', conversationId).single();
+      if (!conversation) return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
+
+      let allowed = false;
+      if (conversation.seller_id != null) {
+        allowed = conversation.buyer_uuid === authCheck.userUuid || Number(conversation.user_id) === Number(authCheck.userId);
+      } else if (conversation.financing_request_id) {
+        const { data: fr } = await supabase.from('financing_requests').select('id')
+          .eq('id', conversation.financing_request_id).eq('user_id', authCheck.userUuid).single();
+        allowed = !!fr;
+      }
+      if (!allowed) return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
+
+      const { data: msg } = await supabase.from('messages')
+        .select('id, sender_type, sender_id').eq('id', messageId).eq('conversation_id', conversationId).single();
+      if (!msg) return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
+      const senderIdForDb = conversation.seller_id != null ? String(authCheck.userUuid) : String(conversation.user_id);
+      const isOwn = msg.sender_type === 'user' && String(msg.sender_id) === senderIdForDb;
+      if (!isOwn) return NextResponse.json({ success: false, error: 'You can only delete your own messages' }, { status: 403 });
+
+      const { error } = await supabase.from('messages')
+        .update({ is_deleted: true, deleted_at: new Date().toISOString(), message_text: null, has_attachment: false, attachment_url: null, attachment_name: null })
+        .eq('id', messageId);
+      if (error) return NextResponse.json({ success: false, error: 'Failed to delete message' }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    // Report a message — store a review record and alert admins
+    if (action === 'report_message') {
+      const { conversationId, messageId, reason = null, details = null } = body;
+      if (!conversationId || !messageId) {
+        return NextResponse.json({ success: false, error: 'Missing conversation or message ID' }, { status: 400 });
+      }
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('id, financing_request_id, seller_id, buyer_uuid, user_id, property_address')
+        .eq('id', conversationId).single();
+      if (!conversation) return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
+
+      let allowed = false;
+      if (conversation.seller_id != null) {
+        allowed = conversation.buyer_uuid === authCheck.userUuid || Number(conversation.user_id) === Number(authCheck.userId);
+      } else if (conversation.financing_request_id) {
+        const { data: fr } = await supabase.from('financing_requests').select('id')
+          .eq('id', conversation.financing_request_id).eq('user_id', authCheck.userUuid).single();
+        allowed = !!fr;
+      }
+      if (!allowed) return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
+
+      const { data: msg } = await supabase.from('messages')
+        .select('id, sender_type, sender_id, message_text').eq('id', messageId).eq('conversation_id', conversationId).single();
+      if (!msg) return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
+
+      const { error } = await supabase.from('message_reports').insert({
+        message_id: messageId,
+        conversation_id: conversationId,
+        reporter_id: String(authCheck.userUuid),
+        reported_sender: msg.sender_id != null ? String(msg.sender_id) : null,
+        reason,
+        details,
+        status: 'open',
+      });
+      if (error) return NextResponse.json({ success: false, error: 'Failed to submit report' }, { status: 500 });
+
+      // Alert admins for review (fire-and-forget — never blocks the reporter).
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const ADMIN_EMAIL = process.env.REPORTS_ADMIN_EMAIL || 'support@deelmap.com';
+        const esc = (s) => String(s || '').replace(/</g, '&lt;');
+        fireAndForget(resend.emails.send({
+          from: 'Deelmap <notifications@deelmap.com>',
+          to: ADMIN_EMAIL,
+          subject: `Message reported for review${reason ? ` — ${reason}` : ''}`,
+          html: `<div style="font-family:-apple-system,'Segoe UI',Arial,sans-serif;max-width:560px">
+            <h2 style="font-size:17px;color:#1A1816">A message was reported for review</h2>
+            <table style="font-size:14px;color:#444441;border-collapse:collapse">
+              <tr><td style="padding:4px 12px 4px 0;color:#737370">Reason</td><td>${esc(reason) || '—'}</td></tr>
+              <tr><td style="padding:4px 12px 4px 0;color:#737370">Details</td><td>${esc(details) || '—'}</td></tr>
+              <tr><td style="padding:4px 12px 4px 0;color:#737370">Conversation</td><td>#${conversationId}${conversation.property_address ? ` · ${esc(conversation.property_address)}` : ''}</td></tr>
+              <tr><td style="padding:4px 12px 4px 0;color:#737370">Reported sender</td><td>${esc(msg.sender_type)} (${esc(msg.sender_id) || '—'})</td></tr>
+              <tr><td style="padding:4px 12px 4px 0;color:#737370;vertical-align:top">Message</td><td style="background:#FAFAF8;border:1px solid #E8E8E4;border-radius:4px;padding:8px 10px">${esc((msg.message_text || '[no text / attachment]').slice(0, 500))}</td></tr>
+            </table>
+            <p style="font-size:12px;color:#A8A8A4;margin-top:16px">Reported by user ${esc(authCheck.userUuid)}. Review in the message_reports table.</p>
+          </div>`,
+          text: `A message was reported.\nReason: ${reason || '—'}\nDetails: ${details || '—'}\nConversation: #${conversationId}\nSender: ${msg.sender_type} (${msg.sender_id || '—'})\nMessage: ${(msg.message_text || '[no text]').slice(0, 500)}`,
+        }), 'Message report admin alert');
+      } catch (e) { console.error('report email failed:', e?.message); }
+
+      return NextResponse.json({ success: true });
     }
 
     // Mark messages as read
