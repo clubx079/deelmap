@@ -4,10 +4,46 @@ import { useState, useEffect, useContext, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight, FileText, Home, PenLine, Loader2 } from 'lucide-react'
 import { DocusealForm } from '@docuseal/react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 import { supabase } from '@/lib/supabase'
 import { decorateTemplates } from '@/lib/contract-templates'
+
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
+
+function fmtFee(cents) { return `$${((cents || 0) / 100).toFixed(2)}` }
+
+// Stripe card form shown when the contract fee needs paying.
+function ContractPayForm({ amount, onSuccess }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [processing, setProcessing] = useState(false)
+  const [err, setErr] = useState(null)
+  async function handlePay(e) {
+    e.preventDefault()
+    if (!stripe || !elements) return
+    setProcessing(true); setErr(null)
+    const { error: submitErr } = await elements.submit()
+    if (submitErr) { setErr(submitErr.message); setProcessing(false); return }
+    const { error: confirmErr } = await stripe.confirmPayment({ elements, redirect: 'if_required' })
+    if (confirmErr) { setErr(confirmErr.message || 'Payment failed. Please try another card.'); setProcessing(false); return }
+    onSuccess()
+  }
+  return (
+    <form onSubmit={handlePay} className="space-y-4">
+      <PaymentElement />
+      {err && <div className="p-3 bg-[#FEF0EF] border border-[#F5C4C0] rounded text-[13px] text-[#D03839]">{err}</div>}
+      <button type="submit" disabled={!stripe || processing}
+        className="w-full h-[48px] bg-[#D03839] hover:bg-[#B8102A] active:scale-[0.98] text-white text-[14px] font-semibold rounded transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+        {processing ? 'Processing…' : `Pay ${fmtFee(amount)} & send contract`}
+      </button>
+    </form>
+  )
+}
 
 function fmtPrice(v) {
   if (v === '' || v == null) return '—'
@@ -81,6 +117,8 @@ export default function BuyerNewContractWizardPage() {
   const [sending, setSending]                 = useState(false)
   const [sendError, setSendError]             = useState(null)
   const [signingEmbedSrc, setSigningEmbedSrc] = useState(null)
+  const [payClientSecret, setPayClientSecret] = useState(null)
+  const [payAmount, setPayAmount]             = useState(299)
   const [signingTitle, setSigningTitle]       = useState('')
 
   useEffect(() => { setPageTitle('New Contract') }, [])
@@ -229,7 +267,33 @@ export default function BuyerNewContractWizardPage() {
     return true
   }
 
+  // Buyers always pay the per-contract fee — collect it before creating/sending.
   async function handleSend() {
+    if (!user?.id) { setSendError('Please sign in again.'); return }
+    setSending(true); setSendError(null)
+    try {
+      const payRes = await fetch('/api/contracts/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, draft_id: currentDraftId || null }),
+      })
+      const payData = await payRes.json().catch(() => ({}))
+      if (!payRes.ok) { setSendError(payData.error || 'Payment could not be started.'); setSending(false); return }
+      if (payData.paid) { await doSend(); return }
+      if (payData.clientSecret) {
+        setPayAmount(payData.amount || 299)
+        setPayClientSecret(payData.clientSecret)
+        setSending(false)
+        return
+      }
+      setSendError('Payment could not be started. Please try again.'); setSending(false)
+    } catch {
+      setSendError('Payment could not be started. Please try again.'); setSending(false)
+    }
+  }
+
+  // Create the DocuSeal submission + show the inline signing view. Runs once paid.
+  async function doSend() {
     setSending(true); setSendError(null)
     try {
       const property = fieldValues.property_address || manualAddress || ''
@@ -267,6 +331,50 @@ export default function BuyerNewContractWizardPage() {
     } finally {
       setSending(false)
     }
+  }
+
+  if (payClientSecret && stripePromise) {
+    return (
+      <div className="p-4 lg:p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => { setPayClientSecret(null); setSending(false) }} className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back to contract
+          </button>
+        </div>
+        <div className="max-w-[460px] mx-auto">
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center gap-3">
+              <div className="w-9 h-9 bg-[#D03839]/10 rounded flex items-center justify-center shrink-0"><FileText className="w-4 h-4 text-[#D03839]" /></div>
+              <div>
+                <h1 className="text-[16px] font-bold text-[#1A1816] leading-tight">Send contract</h1>
+                <p className="text-[12px] text-[#737370]">Pay the one-time fee to send it for signature</p>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-b border-[#E8E8E4]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[14px] font-semibold text-[#1A1816]">Contract — 1 envelope</p>
+                  {fieldValues.property_address ? <p className="text-[12px] text-[#737370] mt-0.5">{fieldValues.property_address}</p> : null}
+                </div>
+                <p className="text-[14px] font-bold text-[#1A1816] whitespace-nowrap">{fmtFee(payAmount)}</p>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E8E8E4]">
+                <span className="text-[13px] font-semibold text-[#1A1816]">Total due</span>
+                <span className="text-[16px] font-bold text-[#1A1816]">{fmtFee(payAmount)}</span>
+              </div>
+            </div>
+            <div className="p-5">
+              <Elements stripe={stripePromise} options={{ clientSecret: payClientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#D03839' } } }}>
+                <ContractPayForm amount={payAmount} onSuccess={() => { setPayClientSecret(null); doSend() }} />
+              </Elements>
+            </div>
+            <div className="px-5 py-3.5 bg-[#FAFAF8] border-t border-[#E8E8E4] text-center">
+              <span className="text-[12px] text-[#737370]">Secured by Stripe · One-time charge, no subscription</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (signingEmbedSrc) {
