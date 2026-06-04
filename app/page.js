@@ -190,8 +190,8 @@ export default function HomePage() {
         {/* Animated pin elements — desktop only */}
         <div className="absolute inset-0 hidden lg:block pointer-events-none" style={{ zIndex: 5 }}>
 
-          {/* Large pin — upper left of right section */}
-          <div className="absolute" style={{ right: '36%', top: '20%' }}>
+          {/* Large pin — upper left of right section (dropped down so the radar ring clears the navbar) */}
+          <div className="absolute" style={{ right: '36%', top: '28%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 8s ease-in-out infinite' }}>
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0s', animationFillMode: 'backwards' }} />
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s', animationFillMode: 'backwards' }} />
@@ -202,8 +202,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Group pin — upper right */}
-          <div className="absolute" style={{ right: '6%', top: '22%' }}>
+          {/* Group pin — upper right (dropped down so the radar ring clears the navbar) */}
+          <div className="absolute" style={{ right: '6%', top: '30%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 9s ease-in-out infinite', animationDelay: '0.6s' }}>
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0.65s', animationFillMode: 'backwards' }} />
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.95s', animationFillMode: 'backwards' }} />

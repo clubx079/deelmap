@@ -465,7 +465,7 @@ export default function BuyerNewContractWizardPage() {
   const NUM_STEPS = STEP_LABELS.length
 
   return (
-    <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-6">
       <div className="mb-6">
         <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">
           New Contract — <span className="text-[#737370] font-medium">Step {step} of {NUM_STEPS} · {STEP_LABELS[step - 1]}</span>
