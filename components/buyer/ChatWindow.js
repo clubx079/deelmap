@@ -9,13 +9,13 @@ import {
   X, Send, Paperclip, File, Download, Loader2, CheckCheck, Check,
   ArrowLeft, Home, Mail, MoreVertical, ExternalLink,
   Smile, MapPin, Phone, Shield, Calendar,
-  CornerUpLeft, Copy, Trash2, Flag
+  CornerUpLeft, Copy, Trash2
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // Hover-revealed action bar on a message (Reply/Copy always; Delete on your
 // own, Report on the other party's). Shown inline — no three-dot menu.
-function MessageActions({ isUser, onReply, onCopy, onDelete, onReport, copied }) {
+function MessageActions({ isUser, onReply, onCopy, onDelete, copied }) {
   const btn = 'p-1.5 rounded text-[#737370] transition-colors';
   return (
     <div className="flex items-center gap-0.5 self-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
@@ -23,9 +23,6 @@ function MessageActions({ isUser, onReply, onCopy, onDelete, onReport, copied })
       <button type="button" onClick={onCopy} title={copied ? 'Copied' : 'Copy'} className={`${btn} hover:bg-[#FAFAF8] hover:text-[#1A1816]`}>{copied ? <Check className="w-3.5 h-3.5 text-[#0F6E56]" /> : <Copy className="w-3.5 h-3.5" />}</button>
       {isUser && onDelete && (
         <button type="button" onClick={onDelete} title="Delete" className={`${btn} hover:bg-[#FEF0EF] hover:text-[#D03839]`}><Trash2 className="w-3.5 h-3.5" /></button>
-      )}
-      {!isUser && onReport && (
-        <button type="button" onClick={onReport} title="Report" className={`${btn} hover:bg-[#FEF0EF] hover:text-[#D03839]`}><Flag className="w-3.5 h-3.5" /></button>
       )}
     </div>
   );
@@ -58,10 +55,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [loadedImages, setLoadedImages] = useState(new Set());
   // Message actions: reply / report / delete
   const [replyingTo, setReplyingTo] = useState(null);
-  const [reportingMsg, setReportingMsg] = useState(null);
-  const [reportReason, setReportReason] = useState('spam');
-  const [reportDetails, setReportDetails] = useState('');
-  const [submittingReport, setSubmittingReport] = useState(false);
   const [deletingMsg, setDeletingMsg] = useState(null);
   const [copiedKey, setCopiedKey] = useState(null);
   const [toast, setToast] = useState(null); // { text, kind: 'success'|'error' }
@@ -378,24 +371,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           ? { ...m, is_deleted: true, message_text: null, has_attachment: false } : m));
       } else { showToast(data.error || 'Could not delete message.', 'error'); }
     } catch { showToast('Could not delete message.', 'error'); }
-  };
-
-  const handleSubmitReport = async () => {
-    if (!reportingMsg) return;
-    setSubmittingReport(true);
-    try {
-      const res = await fetch('/api/buyer/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
-        body: JSON.stringify({ action: 'report_message', conversationId: conversation.id, messageId: reportingMsg.id, reason: reportReason, details: reportDetails.trim() || null }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setReportingMsg(null); setReportDetails(''); setReportReason('spam');
-        showToast('Reported — our team will review it.');
-      } else { showToast(data.error || 'Could not submit report.', 'error'); }
-    } catch { showToast('Could not submit report.', 'error'); }
-    finally { setSubmittingReport(false); }
   };
 
   const handleFileSelect = (e) => {
@@ -1223,45 +1198,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         </div>
       )}
 
-      {/* Report-message dialog */}
-      {reportingMsg && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !submittingReport && setReportingMsg(null)}>
-          <div className="bg-white rounded-lg w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-[#E8E8E4] flex items-center gap-2">
-              <Flag className="w-4 h-4 text-[#D03839]" />
-              <h3 className="text-[16px] font-bold text-[#1A1816]">Report message</h3>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-              <p className="text-[13px] text-[#737370]">Our team will review this. Reports help us keep DeelMap safe from scams and abuse.</p>
-              <div>
-                <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Reason</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[['spam', 'Spam'], ['scam', 'Scam / fraud'], ['abuse', 'Abusive'], ['other', 'Other']].map(([val, lbl]) => (
-                    <button key={val} type="button" onClick={() => setReportReason(val)}
-                      className={`h-9 px-3 rounded border text-[13px] font-medium transition-colors ${reportReason === val ? 'border-[#D03839] bg-[#FEF0EF] text-[#D03839]' : 'border-[#E8E8E4] text-[#444441] hover:border-[#1A1816]'}`}>
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Details <span className="font-normal text-[#A8A8A4]">(optional)</span></label>
-                <textarea value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} rows={3}
-                  placeholder="Add anything that helps us review this…"
-                  className="w-full px-3 py-2 border border-[#E8E8E4] rounded text-[13px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] resize-none" />
-              </div>
-            </div>
-            <div className="px-5 py-3.5 border-t border-[#E8E8E4] flex justify-end gap-2">
-              <button type="button" onClick={() => setReportingMsg(null)} disabled={submittingReport}
-                className="h-9 px-4 border border-[#E8E8E4] text-[#444441] text-[13px] font-semibold rounded hover:border-[#1A1816] transition-colors disabled:opacity-50">Cancel</button>
-              <button type="button" onClick={handleSubmitReport} disabled={submittingReport}
-                className="h-9 px-4 bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors disabled:opacity-50 flex items-center gap-1.5">
-                {submittingReport && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Submit report
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

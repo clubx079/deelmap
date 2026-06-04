@@ -891,6 +891,23 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
       }
 
+      // True block: reject the send if the *recipient* has blocked this buyer.
+      let rcptType = null, rcptId = null;
+      if (conversation.seller_id != null) { rcptType = 'seller'; rcptId = conversation.seller_id; }
+      else if (conversation.lender_id != null) { rcptType = 'lender'; rcptId = conversation.lender_id; }
+      if (rcptType) {
+        const { data: rPref } = await supabase
+          .from('chat_user_preferences')
+          .select('is_blocked')
+          .eq('conversation_id', conversationId)
+          .eq('actor_type', rcptType)
+          .eq('actor_id', rcptId)
+          .maybeSingle();
+        if (rPref?.is_blocked) {
+          return NextResponse.json({ success: false, error: 'You can no longer send messages in this conversation.' }, { status: 403 });
+        }
+      }
+
       const senderIdForDb = conversation.seller_id != null ? String(authCheck.userUuid) : String(conversation.user_id);
 
       const { data: message, error } = await supabase
