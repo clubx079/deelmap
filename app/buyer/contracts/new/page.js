@@ -262,7 +262,12 @@ export default function BuyerNewContractWizardPage() {
     if (s === 4) {
       const required = ['purchase_price', 'emd', 'closing_date']
       if (isAssignment) required.push('original_seller_name', 'original_psa_date')
-      return required.every(k => fieldValues[k] && String(fieldValues[k]).trim() !== '')
+      if (!required.every(k => fieldValues[k] && String(fieldValues[k]).trim() !== '')) return false
+      // Dates can't be in the past
+      const todayISO = new Date().toISOString().slice(0, 10)
+      if (fieldValues.closing_date && fieldValues.closing_date < todayISO) return false
+      if (fieldValues.acceptance_deadline && fieldValues.acceptance_deadline < todayISO) return false
+      return true
     }
     return true
   }
@@ -406,9 +411,6 @@ export default function BuyerNewContractWizardPage() {
   return (
     <div className="p-4 lg:p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <button onClick={() => router.push('/buyer/contracts')} className="flex items-center gap-1.5 text-[13px] text-[#737370] hover:text-[#1A1816] transition-colors mb-3">
-          <ChevronLeft className="w-4 h-4" /> Back to Contracts
-        </button>
         <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">
           New Contract — <span className="text-[#737370] font-medium">Step {step} of 5 · {STEP_LABELS[step - 1]}</span>
         </h1>
@@ -569,6 +571,7 @@ function FieldRow({ label, hint, children, span }) {
 
 function Step4Terms({ values, onChange, template }) {
   const isAssignment = template?.slug === 'assignment'
+  const todayISO = new Date().toISOString().slice(0, 10)
   return (
     <div>
       <h2 className="text-[16px] font-bold text-[#1A1816] mb-1">Deal terms</h2>
@@ -581,7 +584,7 @@ function Step4Terms({ values, onChange, template }) {
           <input type="number" value={values.emd || ''} onChange={e => onChange('emd', e.target.value)} placeholder={isAssignment ? '1000' : '5000'} className={INPUT_CLS} />
         </FieldRow>
         <FieldRow label="Closing Date" hint="*">
-          <input type="date" value={values.closing_date || ''} onChange={e => onChange('closing_date', e.target.value)} className={INPUT_CLS} />
+          <input type="date" min={todayISO} value={values.closing_date || ''} onChange={e => onChange('closing_date', e.target.value)} className={INPUT_CLS} />
         </FieldRow>
         {!isAssignment && (
           <FieldRow label="Buyer's Source of Funds" hint="cash or financing">
@@ -618,7 +621,7 @@ function Step4Terms({ values, onChange, template }) {
           <p className="text-[11px] font-bold text-[#A8A8A4] uppercase tracking-wide mb-3">Timeline</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FieldRow label="Due Diligence Period (days)" hint="default 14"><input type="number" value={values.due_diligence_days || ''} onChange={e => onChange('due_diligence_days', e.target.value)} placeholder="14" className={INPUT_CLS} /></FieldRow>
-            <FieldRow label="Seller's Acceptance Deadline" hint="default 3 days from today"><input type="date" value={values.acceptance_deadline || ''} onChange={e => onChange('acceptance_deadline', e.target.value)} className={INPUT_CLS} /></FieldRow>
+            <FieldRow label="Seller's Acceptance Deadline" hint="default 3 days from today"><input type="date" min={todayISO} value={values.acceptance_deadline || ''} onChange={e => onChange('acceptance_deadline', e.target.value)} className={INPUT_CLS} /></FieldRow>
           </div>
         </div>
       )}
