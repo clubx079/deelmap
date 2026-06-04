@@ -164,8 +164,8 @@ export default function HomePage() {
       <Suspense fallback={null}><AuthLinkOpener /></Suspense>
       <Navbar />
 
-      {/* Hero Section — pulls up behind transparent navbar */}
-      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh', marginTop: '-80px', paddingTop: '80px' }}>
+      {/* Hero Section — starts below the fixed navbar */}
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh', marginTop: '80px' }}>
         {/* Background map */}
         <Image
           src="/assets/hero-map-bg.png"
@@ -239,23 +239,23 @@ export default function HomePage() {
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: '88vh' }}>
-          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-24 xl:px-24 pt-6 pb-16 lg:py-0">
+          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-24 xl:px-24 pt-6 pb-16 lg:py-12">
             <div className="w-full max-w-[700px]">
 
               {/* Heading */}
-              <h1 className="text-[38px] sm:text-[44px] lg:text-[48px] xl:text-[52px] font-black text-[#1A1816] leading-[1.1] mb-5 text-left" style={{ letterSpacing: '-0.03em' }}>
+              <h1 className="text-[40px] sm:text-[48px] lg:text-[54px] xl:text-[58px] font-black text-[#1A1816] leading-[1.05] mb-6 text-left" style={{ letterSpacing: '-0.03em' }}>
                 Discover off-market real estate deals —{' '}
                 <span className="text-[#D03839]">with confidence and privacy.</span>
               </h1>
 
               {/* Subtext */}
-              <p className="text-[16px] sm:text-[17px] text-[#444441] leading-relaxed mb-8 w-full text-left">
+              <p className="text-[17px] sm:text-[18px] text-[#444441] leading-relaxed mb-9 max-w-[520px] text-left">
                 One trusted marketplace for wholesaler and seller inventory nationwide, where your contact info is never sold, shared, or added to anyone&apos;s list. Ever.
               </p>
 
               {/* Search bar */}
               <div
-                className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[700px] transition-all duration-200"
+                className="flex items-center h-[58px] bg-white rounded mb-7 max-w-[640px] transition-all duration-200"
                 style={{
                   border: heroFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
                   boxShadow: heroFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',
