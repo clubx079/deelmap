@@ -409,6 +409,10 @@ export function PropertyDetail({ property }) {
 
   const hasRehabData = property.rehab_cost || property.rehab_description || property.condition
 
+  // Sold/expired deals are shown as "Sold" (marketing/social proof) and are not
+  // contactable. `property_status` (manual) / `status` (scraped) hold the truth.
+  const isSold = ['sold', 'expired'].includes(String(property.property_status || property.status || '').toLowerCase())
+
   // Helper: intercept action clicks in preview mode
   const handlePreviewAction = (e) => {
     if (isPreview) { e.preventDefault(); setShowPreviewModal(true) }
@@ -477,7 +481,7 @@ export function PropertyDetail({ property }) {
         <div className="flex items-center justify-between w-full max-w-7xl mx-auto">
           {/* Left: Back link */}
           <Link
-            href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'}/listings` : '/marketplace'}
+            href={isPreview ? `${process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sell.deelmap.com'}/listings` : '/marketplace'}
             className="flex items-center gap-1.5 text-[#737370] hover:text-[#1A1816] text-sm transition-colors relative z-[50]"
           >
             <ArrowLeft className="h-4 w-4 flex-shrink-0" />
@@ -560,13 +564,13 @@ export function PropertyDetail({ property }) {
         </div>
       )}
 
-      {/* Expired banner */}
-      {(property.status === 'expired' || (property.created_at && (Date.now() - new Date(property.created_at).getTime()) > 30 * 24 * 60 * 60 * 1000)) && (
-        <div className="bg-[#FEF0EF] border-b border-[#F5C4C0] px-4 sm:px-6 py-4">
+      {/* Sold / no-longer-available banner */}
+      {(isSold || property.status === 'expired' || (property.created_at && (Date.now() - new Date(property.created_at).getTime()) > 30 * 24 * 60 * 60 * 1000)) && (
+        <div className="bg-[#F5F5F3] border-b border-[#E8E8E4] px-4 sm:px-6 py-4">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <p className="text-[15px] font-semibold text-[#D03839]">This listing is no longer available</p>
-              <p className="text-[13px] text-[#737370] mt-0.5">The deal has expired or been removed by the seller.</p>
+              <p className="text-[15px] font-semibold text-[#444441]">This deal is no longer available</p>
+              <p className="text-[13px] text-[#737370] mt-0.5">It has been sold or is no longer on the market. Browse current deals below.</p>
             </div>
             <Link
               href="/marketplace"
@@ -1273,6 +1277,11 @@ export function PropertyDetail({ property }) {
 
                     {/* Buyer-posted: only show Call Seller, hide Message Seller + Make Offer */}
                     {!property.posted_by && (
+                      isSold ? (
+                        <div className="w-full bg-[#F5F5F3] text-[#737370] font-semibold py-2.5 px-4 rounded text-center text-sm">
+                          Sold — no longer available
+                        </div>
+                      ) : (
                       <>
                         <Link
                           href={user && (property.temp_seller_id || property.seller_id)
@@ -1300,6 +1309,7 @@ export function PropertyDetail({ property }) {
                           </button>
                         )}
                       </>
+                      )
                     )}
                   </>
                 )}

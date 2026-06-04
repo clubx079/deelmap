@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { formatCurrency } from '@/lib/format';
+import { resolveInboxConversationId } from '@/lib/conversationId';
 import { ShareModal } from '@/components/property/ShareModal';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -274,13 +275,12 @@ export default function BuyerDashboard() {
                     ) : notifications.map(n => (
                       <Link
                         key={n.id}
-                        href={
-                          n.related_conversation_id
-                            ? `/buyer/inbox?conversation=${n.related_conversation_id}`
-                            : (n.type === 'listing_approved' || n.type === 'listing_rejected' || n.type?.startsWith('listing_'))
-                              ? '/buyer/listings'
-                              : '/buyer/inbox'
-                        }
+                        href={(() => {
+                          const convId = resolveInboxConversationId(n.related_conversation_id)
+                          if (convId) return `/buyer/inbox?conversation=${convId}`
+                          if (n.type === 'listing_approved' || n.type === 'listing_rejected' || n.type?.startsWith('listing_')) return '/buyer/listings'
+                          return '/buyer/inbox'
+                        })()}
                         onClick={async () => {
                           setNotifOpen(false);
                           if (!n.is_read) {
@@ -377,7 +377,7 @@ export default function BuyerDashboard() {
                 </div>
               ) : (
                 recentMessages.map((msg) => (
-                  <Link key={msg.id} href="/buyer/inbox" className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition-colors duration-200">
+                  <Link key={msg.id} href={msg.id ? `/buyer/inbox?conversation=${msg.id}` : '/buyer/inbox'} className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition-colors duration-200">
                     <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: getAvatarPair(msg.name).bg }}>
                       <span className="text-[12px] font-semibold" style={{ color: getAvatarPair(msg.name).text }}>{msg.initials}</span>
                     </div>
@@ -440,8 +440,8 @@ export default function BuyerDashboard() {
               <QuickAction
                 href="/marketplace"
                 icon={<Search className="w-4 h-4 text-[#737370]" />}
-                title="Continue browse deals"
-                subtitle="148 new since last visit"
+                title="Browse deals"
+                subtitle="Find your next deal"
               />
               <QuickAction
                 href="/financing"
@@ -458,7 +458,7 @@ export default function BuyerDashboard() {
               <QuickAction
                 href="/buyer/offers"
                 icon={<FileText className="w-4 h-4 text-[#737370]" />}
-                title="Submit an offer"
+                title="View offers"
                 subtitle={`${stats.pendingResponses} offers pending now`}
               />
             </div>

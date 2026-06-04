@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { contractDownloadUrl } from '@/lib/contractDownload'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = 'DeelMap Contracts <noreply@deelmap.com>'
+const FROM = 'Deelmap <notifications@deelmap.com>'
 const DOCUSEAL_BASE = 'https://api.docuseal.com'
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
 
 function dsHeaders() {
   return { 'X-Auth-Token': process.env.DOCUSEAL_API_KEY, 'Content-Type': 'application/json' }
@@ -20,6 +22,9 @@ export async function POST(request) {
     if (event_type === 'submission.completed') {
       const submissionId = data.submission_id || data.id
       if (!submissionId) { console.log('[webhook] submission.completed — no id'); return NextResponse.json({ ok: true }) }
+
+      // DeelMap-branded download link (streams the PDF via our own domain).
+      const downloadLink = contractDownloadUrl(APP_URL, submissionId)
 
       // Always fetch the full submission — webhook payload may have stale placeholder email for the Assignee
       const fullRes = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, { headers: dsHeaders() })
@@ -72,7 +77,7 @@ export async function POST(request) {
                     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;">
                       <tr>
                         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839;">
-                          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0;" />
+                          <img src="https://deelmap.com/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0;" />
                         </td>
                       </tr>
                       <tr>
@@ -89,16 +94,14 @@ export async function POST(request) {
                               <p style="margin:0;font-size:14px;font-weight:600;color:#1A1816;">${property}</p>
                             </td></tr>
                           </table>` : ''}
-                          ${docUrl ? `
                           <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                             <tr><td style="background:#D03839;border-radius:4px;">
-                              <a href="${docUrl}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Download Signed Contract →</a>
+                              <a href="${downloadLink}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">Download Signed Contract →</a>
                             </td></tr>
                           </table>
                           <p style="margin:0;font-size:12px;color:#A8A8A4;line-height:1.6;">
-                            Or copy this link:<br>
-                            <span style="color:#737370;word-break:break-all;">${docUrl}</span>
-                          </p>` : '<p style="margin:0;font-size:13px;color:#737370;">You can log in to DeelMap to view and download your signed contract.</p>'}
+                            Your signed copy is also attached to this email.
+                          </p>
                         </td>
                       </tr>
                       <tr>
@@ -111,7 +114,7 @@ export async function POST(request) {
                 </body>
                 </html>
               `,
-              text: `Hi${s.name ? ` ${s.name}` : ''},\n\nAll parties have signed the contract${property ? ` for ${property}` : ''}.\n\n${docUrl ? `Download: ${docUrl}` : 'Log in to DeelMap to view your signed contract.'}\n\n— DeelMap`,
+              text: `Hi${s.name ? ` ${s.name}` : ''},\n\nAll parties have signed the contract${property ? ` for ${property}` : ''}.\n\nDownload: ${downloadLink}\n(Your signed copy is also attached.)\n\n— DeelMap`,
               ...(pdfBuffer ? { attachments: [{ filename: attachmentFilename, content: pdfBuffer }] } : {}),
             })
           )
@@ -122,8 +125,10 @@ export async function POST(request) {
     }
 
     if (event_type !== 'form.completed') return NextResponse.json({ ok: true })
-    if (data?.role !== 'First Party') {
-      console.log('[webhook] skipping — role is not First Party, got:', data?.role)
+    // The signing chain is First Party (seller) → Co-Seller (optional) → Second
+    // Party (buyer). Only the sell-side completions advance the chain.
+    if (data?.role !== 'First Party' && data?.role !== 'Co-Seller') {
+      console.log('[webhook] skipping — role not in sign chain, got:', data?.role)
       return NextResponse.json({ ok: true })
     }
     const submissionId = data.submission_id || data.submission?.id
@@ -141,36 +146,44 @@ export async function POST(request) {
     console.log('[webhook] full submission submitters:', JSON.stringify(fullSubmission.submitters?.map(s => ({ id: s.id, role: s.role, slug: s.slug, email: s.email }))))
 
     const metadata = data.metadata || {}
-    const assigneeEmail = metadata.assigneeEmail
-    const assigneeName = metadata.assigneeName
+    const coSellerSubmitter = fullSubmission.submitters?.find(s => s.role === 'Co-Seller')
 
-    console.log('[webhook] assigneeEmail from metadata:', assigneeEmail)
+    // Pick the next party to activate. After the seller (First Party) signs, the
+    // co-seller goes next when present; otherwise the buyer. After the co-seller
+    // signs, the buyer goes next.
+    let nextSubmitter, assigneeEmail, assigneeName
+    if (data.role === 'First Party' && metadata.coSellerEmail && coSellerSubmitter?.id) {
+      nextSubmitter = coSellerSubmitter
+      assigneeEmail = metadata.coSellerEmail
+      assigneeName = metadata.coSellerName
+    } else {
+      nextSubmitter = fullSubmission.submitters?.find(s => s.role === 'Second Party')
+      assigneeEmail = metadata.assigneeEmail
+      assigneeName = metadata.assigneeName
+    }
+
+    console.log('[webhook] next party:', nextSubmitter?.role, 'email:', assigneeEmail)
 
     if (!assigneeEmail) {
-      console.log('[webhook] no assigneeEmail in metadata — aborting')
+      console.log('[webhook] no next email in metadata — aborting')
+      return NextResponse.json({ ok: true })
+    }
+    if (!nextSubmitter?.id) {
+      console.log('[webhook] no next submitter found — aborting')
       return NextResponse.json({ ok: true })
     }
 
-    const assigneeSubmitter = fullSubmission.submitters?.find(s => s.role === 'Second Party')
-    if (!assigneeSubmitter?.id) {
-      console.log('[webhook] no Second Party submitter found')
-      return NextResponse.json({ ok: true })
-    }
-
-    console.log('[webhook] patching assignee submitter id:', assigneeSubmitter.id, 'with email:', assigneeEmail)
-    const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${assigneeSubmitter.id}`, {
+    console.log('[webhook] patching next submitter id:', nextSubmitter.id, 'with email:', assigneeEmail)
+    const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${nextSubmitter.id}`, {
       method: 'PATCH',
       headers: dsHeaders(),
       body: JSON.stringify({ email: assigneeEmail, name: assigneeName, send_email: false }),
     })
     console.log('[webhook] patch status:', patchRes.status)
 
-    const assignorName = data.name || data.email || 'The Buyer'
+    const assignorName = data.name || data.email || 'The other party'
     const property = fullSubmission.name || ''
-    // Use APP_URL env var so staging emails staging URLs, prod emails prod URLs.
-    // Falls back to production deelmap.com if unset.
-    const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
-    const signingUrl = `${APP_URL}/sign/${assigneeSubmitter.slug}`
+    const signingUrl = `${APP_URL}/sign/${nextSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
     const emailResult = await resend.emails.send({
@@ -188,7 +201,7 @@ export async function POST(request) {
             <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;">
               <tr>
                 <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839;">
-                  <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0;" />
+                  <img src="https://deelmap.com/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0;" />
                 </td>
               </tr>
               <tr>

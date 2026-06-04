@@ -8,8 +8,25 @@ import Image from 'next/image';
 import {
   X, Send, Paperclip, File, Download, Loader2, CheckCheck, Check,
   ArrowLeft, Home, Mail, MoreVertical, ExternalLink,
-  Smile, MapPin, Phone, Shield, Calendar
+  Smile, MapPin, Phone, Shield, Calendar,
+  CornerUpLeft, Copy, Trash2
 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+
+// Hover-revealed action bar on a message (Reply/Copy always; Delete on your
+// own, Report on the other party's). Shown inline — no three-dot menu.
+function MessageActions({ isUser, onReply, onCopy, onDelete, copied }) {
+  const btn = 'p-1.5 rounded text-[#737370] transition-colors';
+  return (
+    <div className="flex items-center gap-0.5 self-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+      <button type="button" onClick={onReply} title="Reply" className={`${btn} hover:bg-[#FAFAF8] hover:text-[#1A1816]`}><CornerUpLeft className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onCopy} title={copied ? 'Copied' : 'Copy'} className={`${btn} hover:bg-[#FAFAF8] hover:text-[#1A1816]`}>{copied ? <Check className="w-3.5 h-3.5 text-[#0F6E56]" /> : <Copy className="w-3.5 h-3.5" />}</button>
+      {isUser && onDelete && (
+        <button type="button" onClick={onDelete} title="Delete" className={`${btn} hover:bg-[#FEF0EF] hover:text-[#D03839]`}><Trash2 className="w-3.5 h-3.5" /></button>
+      )}
+    </div>
+  );
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL;
@@ -33,8 +50,14 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewFiles, setPreviewFiles] = useState([]);
+  const [counterConfirm, setCounterConfirm] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [loadedImages, setLoadedImages] = useState(new Set());
+  // Message actions: reply / report / delete
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [deletingMsg, setDeletingMsg] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(null);
+  const [toast, setToast] = useState(null); // { text, kind: 'success'|'error' }
   const [offers, setOffers] = useState([]);
   const [withdrawing, setWithdrawing] = useState(false);
   const [acceptingCounter, setAcceptingCounter] = useState(false);
@@ -293,12 +316,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const response = await fetch('/api/buyer/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
-        body: JSON.stringify({ action: 'send_message', conversationId: conversation.id, messageText: newMessage.trim() })
+        body: JSON.stringify({ action: 'send_message', conversationId: conversation.id, messageText: newMessage.trim(), replyToId: replyingTo?.id || null })
       });
       const data = await response.json();
       if (data.success && data.message) {
-        setMessages((prev) => prev.some((m) => m.id === data.message.id) ? prev : [...prev, data.message]);
+        const sent = replyingTo
+          ? { ...data.message, reply_preview: { id: replyingTo.id, sender_type: replyingTo.sender_type, text: (replyingTo.message_text || '[Attachment]').slice(0, 140) } }
+          : data.message;
+        setMessages((prev) => prev.some((m) => m.id === sent.id) ? prev : [...prev, sent]);
         setNewMessage('');
+        setReplyingTo(null);
         scrollToBottom();
         setTimeout(() => textareaRef.current?.focus(), 0);
         import('@/lib/analytics').then(({ trackEvent }) => {
@@ -313,6 +340,37 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
     } finally {
       setSending(false);
     }
+  };
+
+  // ── Message actions ──────────────────────────────────────────────
+  const showToast = (text, kind = 'success') => {
+    setToast({ text, kind });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCopyMessage = (msg) => {
+    const text = msg?.message_text || '';
+    if (!text || !navigator?.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(msg.id);
+      setTimeout(() => setCopiedKey((k) => (k === msg.id ? null : k)), 1500);
+    }).catch(() => {});
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    setDeletingMsg(null);
+    try {
+      const res = await fetch('/api/buyer/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.id}` },
+        body: JSON.stringify({ action: 'delete_message', conversationId: conversation.id, messageId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages((prev) => prev.map((m) => String(m.id) === String(messageId)
+          ? { ...m, is_deleted: true, message_text: null, has_attachment: false } : m));
+      } else { showToast(data.error || 'Could not delete message.', 'error'); }
+    } catch { showToast('Could not delete message.', 'error'); }
   };
 
   const handleFileSelect = (e) => {
@@ -538,14 +596,14 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                               {isCounter && item.status === 'pending' && (
                                 <div className="flex gap-2 mt-3">
                                   <button
-                                    onClick={() => handleAcceptCounter(item.id)}
+                                    onClick={() => setCounterConfirm({ kind: 'accept', offerId: item.id, amount: item.offer_price })}
                                     disabled={acceptingCounter || rejectingCounter}
                                     className="flex-1 py-2 bg-[#D03839] text-white text-[13px] font-semibold rounded hover:bg-[#E0493B] transition-colors disabled:opacity-50"
                                   >
                                     {acceptingCounter ? 'Accepting…' : 'Accept'}
                                   </button>
                                   <button
-                                    onClick={() => handleRejectCounter(item.id)}
+                                    onClick={() => setCounterConfirm({ kind: 'reject', offerId: item.id, amount: item.offer_price })}
                                     disabled={acceptingCounter || rejectingCounter}
                                     className="flex-1 py-2 border border-[#E8E8E4] text-[#737370] text-[13px] font-semibold rounded hover:bg-[#FAFAF8] hover:text-[#D03839] transition-colors disabled:opacity-50"
                                   >
@@ -572,18 +630,34 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                           {isUser && (
                             <p className="text-[12px] font-medium text-[#444441] mb-1 text-right">You</p>
                           )}
-                          <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`group flex items-center gap-1.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            {isUser && !message.is_deleted && (
+                              <MessageActions isUser onReply={() => setReplyingTo(message)} onCopy={() => handleCopyMessage(message)} onDelete={() => setDeletingMsg(message)} copied={copiedKey === message.id} />
+                            )}
                             <div className="max-w-[70%]">
-                              <div className={`rounded px-4 py-3 ${
-                                isUser
-                                  ? 'bg-[#FEF0EF] text-[#1A1816] border border-[#F5C4C0]'
-                                  : 'bg-[#FAFAF8] text-[#1A1816] border border-[#E8E8E4]'
-                              }`}>
-                                {message.message_text && (
-                                  <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{message.message_text}</p>
-                                )}
-                                {renderAttachment(message)}
-                              </div>
+                              {/* Quoted (replied-to) message */}
+                              {message.reply_preview && (
+                                <div className="mb-1 px-3 py-1.5 rounded bg-[#FAFAF8] border-l-2 border-[#D03839]">
+                                  <p className="text-[10px] font-semibold text-[#737370]">{message.reply_preview.sender_type === 'user' ? 'You' : sellerName}</p>
+                                  <p className="text-[12px] text-[#737370] truncate">{message.reply_preview.text}</p>
+                                </div>
+                              )}
+                              {message.is_deleted ? (
+                                <div className="rounded px-4 py-3 border border-dashed border-[#E8E8E4]">
+                                  <p className="text-[13px] italic text-[#A8A8A4]">This message was deleted</p>
+                                </div>
+                              ) : (
+                                <div className={`rounded px-4 py-3 ${
+                                  isUser
+                                    ? 'bg-[#FEF0EF] text-[#1A1816] border border-[#F5C4C0]'
+                                    : 'bg-[#FAFAF8] text-[#1A1816] border border-[#E8E8E4]'
+                                }`}>
+                                  {message.message_text && (
+                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{message.message_text}</p>
+                                  )}
+                                  {renderAttachment(message)}
+                                </div>
+                              )}
                               <div className={`flex items-center gap-1 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
                                 {message.is_from_email && (
                                   <div className="flex items-center gap-1 text-[10px] text-[#1A1816] bg-[#F3F3F0] px-1.5 py-0.5 rounded">
@@ -591,13 +665,16 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                                   </div>
                                 )}
                                 <span className="text-[11px] text-[#A8A8A4]">{formatTime(message.created_at)}</span>
-                                {isUser && (
+                                {isUser && !message.is_deleted && (
                                   message.is_read
                                     ? <CheckCheck className="w-3.5 h-3.5 text-[#1A1816]" />
                                     : <Check className="w-3.5 h-3.5 text-[#A8A8A4]" />
                                 )}
                               </div>
                             </div>
+                            {!isUser && !message.is_deleted && (
+                              <MessageActions onReply={() => setReplyingTo(message)} onCopy={() => handleCopyMessage(message)} copied={copiedKey === message.id} />
+                            )}
                           </div>
                         </div>
                       );
@@ -648,6 +725,20 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
                 {suggestion}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Replying-to banner */}
+        {replyingTo && (
+          <div className="flex-shrink-0 px-6 pt-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#FAFAF8] border-l-2 border-[#D03839] rounded">
+              <CornerUpLeft className="w-3.5 h-3.5 text-[#D03839] shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-[#737370]">Replying to {replyingTo.sender_type === 'user' ? 'yourself' : sellerName}</p>
+                <p className="text-[12px] text-[#737370] truncate">{replyingTo.message_text || '[Attachment]'}</p>
+              </div>
+              <button type="button" onClick={() => setReplyingTo(null)} className="p-1 rounded hover:bg-white text-[#737370]"><X className="w-3.5 h-3.5" /></button>
+            </div>
           </div>
         )}
 
@@ -1067,6 +1158,46 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           <img src={selectedImage} alt="Preview" className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
+      <ConfirmDialog
+        open={!!counterConfirm}
+        busy={counterConfirm?.kind === 'accept' ? acceptingCounter : rejectingCounter}
+        onClose={() => setCounterConfirm(null)}
+        onConfirm={() => {
+          if (!counterConfirm) return;
+          if (counterConfirm.kind === 'accept') handleAcceptCounter(counterConfirm.offerId);
+          else handleRejectCounter(counterConfirm.offerId);
+          setCounterConfirm(null);
+        }}
+        title={counterConfirm?.kind === 'accept' ? 'Accept counter offer?' : 'Decline counter offer?'}
+        message={counterConfirm
+          ? (counterConfirm.kind === 'accept'
+              ? `You're about to accept the seller's counter offer of ${formatCurrency(counterConfirm.amount)}. This is binding once accepted.`
+              : `Decline the seller's counter offer of ${formatCurrency(counterConfirm.amount)}? You can still send a new offer afterward.`)
+          : ''}
+        confirmText={counterConfirm?.kind === 'accept' ? 'Yes, accept' : 'Yes, decline'}
+        danger={counterConfirm?.kind === 'reject'}
+      />
+
+      {/* Delete-message confirm */}
+      <ConfirmDialog
+        open={!!deletingMsg}
+        onClose={() => setDeletingMsg(null)}
+        onConfirm={() => deletingMsg && handleDeleteMessage(deletingMsg.id)}
+        title="Delete this message?"
+        message="It will be removed for everyone in this chat and replaced with “This message was deleted.”"
+        confirmText="Delete"
+        danger
+      />
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded shadow-lg text-[13px] font-medium text-white flex items-center gap-2"
+          style={{ background: toast.kind === 'error' ? '#D03839' : '#1A1816' }}>
+          {toast.kind === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+          {toast.text}
+        </div>
+      )}
+
     </div>
   );
 }

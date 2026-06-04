@@ -5,9 +5,29 @@ import { RegistrationModal } from '@/components/RegistrationModal'
 import { PropertiesSlider } from '@/components/home/PropertiesSlider'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Search, Star, CheckCircle2, Lock, Check, BadgeCheck, SlidersHorizontal, Rocket, MessageSquare } from 'lucide-react'
 import LocationAutocomplete from '@/components/ui/LocationAutocomplete'
+
+// Opens the auth modal when home receives ?auth=login or ?auth=signup
+// (used by /login and /signup pages so external links land on a real auth UI).
+function AuthLinkOpener() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  useEffect(() => {
+    const v = searchParams?.get('auth')
+    if (v !== 'login' && v !== 'signup') return
+    window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: v } }))
+    // Clean the query off the URL so a refresh doesn't re-open the modal
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('auth')
+    const next = params.toString()
+    router.replace(pathname + (next ? `?${next}` : ''), { scroll: false })
+  }, [searchParams, router, pathname])
+  return null
+}
 
 const TESTIMONIALS = [
   { initials: 'MC', color: 'bg-[#D03839]', name: 'Michael Carter', role: 'Property Investor', metric: '23', metricLabel: 'deals closed', text: 'DeelMap helped me discover off-market deals I wouldn\'t have found anywhere else. The ARV data alone saves me a full underwriting session per deal. I open the platform and have real deals in under 5 minutes.' },
@@ -141,10 +161,11 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Suspense fallback={null}><AuthLinkOpener /></Suspense>
       <Navbar />
 
-      {/* Hero Section — pulls up behind transparent navbar */}
-      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh', marginTop: '-80px', paddingTop: '80px' }}>
+      {/* Hero Section — starts below the fixed navbar */}
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh', marginTop: '80px' }}>
         {/* Background map */}
         <Image
           src="/assets/hero-map-bg.png"
@@ -169,8 +190,8 @@ export default function HomePage() {
         {/* Animated pin elements — desktop only */}
         <div className="absolute inset-0 hidden lg:block pointer-events-none" style={{ zIndex: 5 }}>
 
-          {/* Large pin — upper left of right section */}
-          <div className="absolute" style={{ right: '36%', top: '20%' }}>
+          {/* Large pin — upper left of right section (dropped down so the radar ring clears the navbar) */}
+          <div className="absolute" style={{ right: '36%', top: '28%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 8s ease-in-out infinite' }}>
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0s', animationFillMode: 'backwards' }} />
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '72px', height: '72px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.3s', animationFillMode: 'backwards' }} />
@@ -181,8 +202,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Group pin — upper right */}
-          <div className="absolute" style={{ right: '6%', top: '22%' }}>
+          {/* Group pin — upper right (dropped down so the radar ring clears the navbar) */}
+          <div className="absolute" style={{ right: '6%', top: '30%' }}>
             <div style={{ position: 'relative', display: 'inline-block', animation: 'heroPinFloat 9s ease-in-out infinite', animationDelay: '0.6s' }}>
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '0.65s', animationFillMode: 'backwards' }} />
               <div style={{ position: 'absolute', left: '50%', top: '45%', width: '76px', height: '76px', borderRadius: '50%', border: '1.5px solid rgba(208,56,57,0.5)', animation: 'heroPinRadar 2.6s ease-out infinite', animationDelay: '1.95s', animationFillMode: 'backwards' }} />
@@ -218,23 +239,23 @@ export default function HomePage() {
 
         {/* Left: Text (overlaid) */}
         <div className="relative z-10 flex items-center h-full" style={{ minHeight: '88vh' }}>
-          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-24 xl:px-24 pt-6 pb-16 lg:py-0">
+          <div className="lg:w-[62%] xl:w-[58%] px-6 lg:px-24 xl:px-24 pt-6 pb-16 lg:py-12">
             <div className="w-full max-w-[700px]">
 
               {/* Heading */}
-              <h1 className="text-[38px] sm:text-[44px] lg:text-[48px] xl:text-[52px] font-black text-[#1A1816] leading-[1.1] mb-5 text-left" style={{ letterSpacing: '-0.03em' }}>
+              <h1 className="text-[40px] sm:text-[48px] lg:text-[54px] xl:text-[58px] font-black text-[#1A1816] leading-[1.05] mb-6 text-left" style={{ letterSpacing: '-0.03em' }}>
                 Discover off-market real estate deals —{' '}
                 <span className="text-[#D03839]">with confidence and privacy.</span>
               </h1>
 
               {/* Subtext */}
-              <p className="text-[16px] sm:text-[17px] text-[#444441] leading-relaxed mb-8 w-full text-left">
+              <p className="text-[17px] sm:text-[18px] text-[#444441] leading-relaxed mb-9 max-w-[520px] text-left">
                 One trusted marketplace for wholesaler and seller inventory nationwide, where your contact info is never sold, shared, or added to anyone&apos;s list. Ever.
               </p>
 
               {/* Search bar */}
               <div
-                className="flex items-center h-[56px] bg-white rounded mb-5 max-w-[700px] transition-all duration-200"
+                className="flex items-center h-[58px] bg-white rounded mb-7 max-w-[640px] transition-all duration-200"
                 style={{
                   border: heroFocused ? '1px solid #D03839' : '1px solid #E8E8E4',
                   boxShadow: heroFocused ? '0 0 0 3px rgba(208,56,57,0.12)' : 'none',

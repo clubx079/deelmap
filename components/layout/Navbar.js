@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { resolveInboxConversationId } from '@/lib/conversationId'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
 export function Navbar() {
@@ -178,7 +179,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${isHome && !scrolled ? 'bg-transparent' : 'bg-white border-b border-[#E8E8E4]'}`}>
+      <nav className="fixed top-0 left-0 right-0 z-[60] transition-all duration-300 bg-white border-b border-[#E8E8E4]">
         <div className="w-full pl-2 pr-4 md:pl-[45px] md:pr-[85px]">
           <div className="flex items-center justify-between h-[80px]">
 
@@ -381,13 +382,16 @@ export function Navbar() {
                           ) : notifications.map(n => (
                             <Link
                               key={n.id}
-                              href={
-                                n.related_conversation_id
-                                  ? `/buyer/inbox?conversation=${n.related_conversation_id}`
-                                  : (n.type === 'listing_approved' || n.type === 'listing_rejected')
-                                    ? '/buyer/listings'
-                                    : '/buyer/inbox'
-                              }
+                              href={(() => {
+                                const t = n.type || ''
+                                const convId = resolveInboxConversationId(n.related_conversation_id)
+                                if (convId) return `/buyer/inbox?conversation=${convId}`
+                                if (t === 'listing_approved' || t === 'listing_rejected') return '/buyer/listings'
+                                if (t.startsWith('offer_') || t === 'counter_received') return '/buyer/offers'
+                                if (t.startsWith('contract_')) return '/buyer/contracts'
+                                if (t.startsWith('payment_') || t === 'subscription_created' || t === 'subscription_cancelled') return '/buyer/billing'
+                                return '/buyer/inbox'
+                              })()}
                               onClick={async () => {
                                 setNotifOpen(false)
                                 if (!n.is_read) {

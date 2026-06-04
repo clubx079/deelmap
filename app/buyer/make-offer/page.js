@@ -68,6 +68,15 @@ function MakeOfferContent() {
   const [inspectionPeriod, setInspectionPeriod] = useState('10 days')
   const [notes, setNotes] = useState('')
 
+  // Auto-redirect to inbox 1.5s after success (matches the modal flow)
+  useEffect(() => {
+    if (!success) return
+    const t = setTimeout(() => {
+      router.push(`/buyer/inbox${createdConversationId ? `?conversation=${createdConversationId}` : ''}`)
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [success, createdConversationId, router])
+
   useEffect(() => {
     if (!propertyId) { setLoading(false); return }
     Promise.all([
@@ -201,14 +210,14 @@ function MakeOfferContent() {
     <div className="min-h-full bg-[#FAFAF8] flex items-center justify-center py-8">
       <div className="w-full max-w-2xl px-4 sm:px-6">
         {success ? (
-          /* Success screen */
+          /* Success screen — auto-redirects to inbox after 1.5s (matches modal flow) */
           <div className="bg-white border border-[#E8E8E4] rounded p-10 flex flex-col items-center text-center">
             <div className="w-14 h-14 rounded-full bg-[#E4F5EC] flex items-center justify-center mb-5">
               <Check className="w-6 h-6 text-[#0F6E56]" strokeWidth={2.5} />
             </div>
             <h2 className="text-[22px] font-bold text-[#1A1816] mb-3">Offer submitted successfully</h2>
             <p className="text-[14px] text-[#737370] mb-8 max-w-[340px]">
-              The seller will review your offer and respond soon. You&apos;ll be notified when there&apos;s an update.
+              Taking you to your messages…
             </p>
             <div className="flex items-center gap-3">
               <Link

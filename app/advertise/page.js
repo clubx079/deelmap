@@ -63,25 +63,26 @@ export default function AdvertisePage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
-      <div className="pt-[80px]">
+      <div>
 
-        {/* Hero */}
-        <div className="bg-[#1A1816] text-white">
+        {/* Hero — black background extends up under the fixed navbar so there's
+            no light strip above it */}
+        <div className="bg-[#1A1816] text-white pt-[80px]">
           <div className="max-w-5xl mx-auto px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <p className="text-[12px] font-semibold uppercase tracking-[2px] text-[#D03839] mb-4">Advertise with us</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[2px] text-[#D03839] mb-3">Advertise with us</p>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 leading-tight">
               Put Your Brand in Front of<br className="hidden sm:block" /> Serious Real Estate Investors
             </h1>
             <p className="text-[#A8A8A4] text-base sm:text-lg max-w-2xl mx-auto mb-8">
               DeelMap connects wholesale sellers with active buyers across the US. Reach a highly targeted audience that's ready to make deals.
             </p>
-            <a
-              href="mailto:office@deelmap.co"
+            <Link
+              href="/contact?topic=advertise"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#D03839] hover:bg-[#E0493B] text-white text-sm font-semibold rounded transition-colors"
             >
               <Mail className="w-4 h-4" />
               Get in touch
-            </a>
+            </Link>
             <p className="text-[13px] text-[#A8A8A4] mt-3">We typically respond within 24 hours.</p>
           </div>
         </div>
@@ -150,11 +151,11 @@ export default function AdvertisePage() {
                 Reach out to us and we'll put together a package that works for your budget and goals.
               </p>
               <a
-                href="mailto:office@deelmap.co"
+                href="mailto:support@deelmap.com"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] hover:bg-[#E0493B] text-white text-sm font-semibold rounded transition-colors"
               >
                 <Mail className="w-4 h-4" />
-                office@deelmap.co
+                support@deelmap.com
               </a>
             </div>
           </div>

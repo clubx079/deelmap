@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Search, MessageSquare, Star, FileText,
-  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users
+  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users, UserCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -44,6 +44,7 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       label: 'MAIN',
       items: [
         { href: '/buyer/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { href: '/buyer/profile', icon: UserCircle, label: 'Profile' },
         { href: '/marketplace', icon: Search, label: 'Browse deals' },
         { href: '/buyer/inbox', icon: MessageSquare, label: 'Messages', badge: unreadCount },
         { href: '/saved-properties', icon: Star, label: 'Saved deals', badge: savedCount || null },
@@ -56,8 +57,8 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
       items: [
         { href: '/buyer/financerequests', icon: DollarSign, label: 'Financing' },
         { href: '/buyer/insights', icon: TrendingUp, label: 'Market Insights' },
-        { href: '/buyer/contracts', icon: ScrollText, label: 'Contracts' },
-        { href: '/community', icon: Users, label: 'Contribute to Community' },
+        { href: '/buyer/contracts', icon: ScrollText, label: 'Contracts', beta: true },
+        { href: '/community', icon: Users, label: 'Community' },
       ]
     },
     {
@@ -134,7 +135,12 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
                       `}
                     >
                       <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-[#1A1816]' : 'text-[#737370]'}`} />
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1 flex items-center gap-2">
+                        {item.label}
+                        {item.beta && (
+                          <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[#FEF3E2] text-[#B5620A]">Beta</span>
+                        )}
+                      </span>
                       {item.badge > 0 && (
                         <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-semibold rounded-full bg-[#1A1816] text-white">
                           {item.badge > 99 ? '99+' : item.badge}

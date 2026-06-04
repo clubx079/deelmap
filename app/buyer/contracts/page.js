@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect, useContext } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, CheckCircle, Plus, Download, Trash2, PenLine, Pencil } from 'lucide-react'
+import { FileText, CheckCircle, Plus, Download, Trash2, PenLine, Pencil, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { BuyerPageTitleContext } from '@/context/BuyerPageTitleContext'
 import { DocusealForm } from '@docuseal/react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const STATUS = {
   completed: { label: 'Completed', cls: 'text-[#0F6E56] bg-[#E4F5EC]' },
@@ -28,6 +29,7 @@ export default function BuyerContractsPage() {
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [downloadingId, setDownloadingId] = useState(null)
   const [drafts, setDrafts] = useState([])
   const [deletingDraftId, setDeletingDraftId] = useState(null)
@@ -36,9 +38,18 @@ export default function BuyerContractsPage() {
   const [signingEmbedSrc, setSigningEmbedSrc] = useState(null)
   const [signingTitle, setSigningTitle] = useState('')
 
+  // Beta intro popup — shown once per browser
+  const [showBetaPopup, setShowBetaPopup] = useState(false)
+
   // (contract creation lives in /buyer/contracts/new — no inline modal)
 
   useEffect(() => { setPageTitle('Contracts') }, [])
+
+  useEffect(() => {
+    try { if (!localStorage.getItem('deelmap_contracts_beta_seen')) setShowBetaPopup(true) } catch {}
+  }, [])
+
+  const dismissBeta = () => { setShowBetaPopup(false); try { localStorage.setItem('deelmap_contracts_beta_seen', '1') } catch {} }
 
   useEffect(() => {
     if (!user?.email) return
@@ -156,9 +167,35 @@ export default function BuyerContractsPage() {
 
   return (
     <div className="p-4 lg:p-6">
+      {showBetaPopup && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={dismissBeta}>
+          <div className="bg-white rounded-lg w-full max-w-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 pt-6 pb-2 flex items-start gap-3">
+              <div className="w-10 h-10 bg-[#FEF3E2] rounded-full flex items-center justify-center shrink-0"><FileText className="w-5 h-5 text-[#B5620A]" /></div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-[17px] font-bold text-[#1A1816]">Contracts is in beta</h2>
+                  <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[#FEF3E2] text-[#B5620A]">Beta</span>
+                </div>
+                <p className="text-[13px] text-[#737370] leading-relaxed">We're beta-testing contract sharing. Try it out and let us know what you think — your feedback shapes it.</p>
+              </div>
+            </div>
+            <div className="px-4 py-3 mx-6 my-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded flex items-center justify-between">
+              <span className="text-[13px] text-[#444441]">Cost per contract</span>
+              <span className="text-[15px] font-bold text-[#1A1816]">$2.99</span>
+            </div>
+            <div className="px-6 pb-6 pt-2">
+              <button onClick={dismissBeta} className="w-full h-10 bg-[#D03839] hover:bg-[#E0493B] text-white text-[14px] font-semibold rounded transition-colors">Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">Contracts</h1>
+          <h1 className="text-[24px] font-bold text-[#1A1816] mb-1 flex items-center gap-2">
+            Contracts
+            <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-[#FEF3E2] text-[#B5620A]">Beta</span>
+          </h1>
           <p className="text-[14px] text-[#737370]">Send and manage e-signature contracts with sellers.</p>
         </div>
         <button
@@ -205,7 +242,7 @@ export default function BuyerContractsPage() {
                       className="h-8 px-4 bg-[#1A1816] hover:bg-[#000] text-white text-[13px] font-semibold rounded transition-colors"
                     >Resume</button>
                     <button
-                      onClick={() => handleDeleteDraft(d.id)}
+                      onClick={() => setDeleteConfirm({ kind: 'draft', id: d.id, label: d.title || 'this draft' })}
                       disabled={deletingDraftId === d.id}
                       className="h-8 w-8 flex items-center justify-center border border-[#E8E8E4] hover:border-[#D03839] hover:text-[#D03839] text-[#A8A8A4] rounded transition-colors disabled:opacity-50"
                     >
@@ -295,7 +332,7 @@ export default function BuyerContractsPage() {
                     <span className="text-[12px] text-[#737370]">Awaiting other party</span>
                   )}
                   <button
-                    onClick={() => handleDelete(c.id)}
+                    onClick={() => setDeleteConfirm({ kind: 'contract', id: c.id, label: c.title || 'this contract' })}
                     disabled={deletingId === c.id}
                     className="h-8 w-8 flex items-center justify-center border border-[#E8E8E4] hover:border-[#D03839] hover:text-[#D03839] text-[#A8A8A4] rounded transition-colors disabled:opacity-50"
                   >
@@ -309,6 +346,25 @@ export default function BuyerContractsPage() {
           })}
         </div>
       )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        busy={(deleteConfirm?.kind === 'contract' && deletingId === deleteConfirm?.id) || (deleteConfirm?.kind === 'draft' && deletingDraftId === deleteConfirm?.id)}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (!deleteConfirm) return
+          if (deleteConfirm.kind === 'contract') handleDelete(deleteConfirm.id)
+          else handleDeleteDraft(deleteConfirm.id)
+          setDeleteConfirm(null)
+        }}
+        title={deleteConfirm?.kind === 'draft' ? 'Delete this draft?' : 'Delete this contract?'}
+        message={deleteConfirm
+          ? (deleteConfirm.kind === 'draft'
+              ? `“${deleteConfirm.label}” will be removed. You can’t undo this.`
+              : `“${deleteConfirm.label}” will be permanently removed from your contracts.`)
+          : ''}
+        confirmText={deleteConfirm?.kind === 'draft' ? 'Delete draft' : 'Delete contract'}
+        danger
+      />
     </div>
   )
 }

@@ -1,13 +1,21 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 
+const SUBJECTS = ['General question', 'Listing help', 'Account help', 'Advertising / Partnership', 'Other']
+
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+
+  // Pre-select the subject when arriving from a specific page (e.g. Advertise → ?topic=advertise)
+  useEffect(() => {
+    const topic = new URLSearchParams(window.location.search).get('topic')
+    if (topic === 'advertise') setForm(prev => ({ ...prev, subject: 'Advertising / Partnership' }))
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -22,7 +30,7 @@ export default function ContactPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to send message')
       setSuccess(true)
-      setForm({ name: '', email: '', message: '' })
+      setForm({ name: '', email: '', subject: '', message: '' })
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
     } finally {
@@ -54,8 +62,8 @@ export default function ContactPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <a href="mailto:office@deelmap.co" className="text-[15px] text-[#444441] hover:text-[#D03839] transition-colors">
-                    office@deelmap.co
+                  <a href="mailto:support@deelmap.com" className="text-[15px] text-[#444441] hover:text-[#D03839] transition-colors">
+                    support@deelmap.com
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
@@ -119,6 +127,20 @@ export default function ContactPage() {
                       required
                       className="w-full h-11 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] placeholder-[#A8A8A4] focus:outline-none focus:border-[#D03839] transition-colors"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-medium text-[#1A1816] mb-1.5">
+                      Subject
+                    </label>
+                    <select
+                      value={form.subject}
+                      onChange={(e) => setForm(prev => ({ ...prev, subject: e.target.value }))}
+                      className="w-full h-11 px-3 border border-[#E8E8E4] rounded text-[14px] text-[#1A1816] focus:outline-none focus:border-[#D03839] transition-colors bg-white"
+                    >
+                      <option value="">What&apos;s this about?</option>
+                      {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
                   </div>
 
                   <div>

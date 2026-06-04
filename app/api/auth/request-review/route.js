@@ -4,7 +4,7 @@ import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-const ADMIN_PORTAL_URL = process.env.ADMIN_PORTAL_URL || 'https://admindashboarddeelmap-production.up.railway.app'
+const ADMIN_PORTAL_URL = process.env.ADMIN_PORTAL_URL || 'https://admin.deelmap.com'
 
 function getClientIP(request) {
   const cf = request.headers.get('cf-connecting-ip')
@@ -36,9 +36,9 @@ async function getNotificationEmails() {
       .single()
 
     if (data?.recipient_emails?.length) return data.recipient_emails
-    return ['hamza@airosofts.com']
+    return ['support@deelmap.com']
   } catch {
-    return ['hamza@airosofts.com']
+    return ['support@deelmap.com']
   }
 }
 
@@ -57,7 +57,7 @@ async function sendIPReviewNotification(user, message, clientIP) {
 
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://deelmap.com/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
 
@@ -123,7 +123,7 @@ async function sendIPReviewNotification(user, message, clientIP) {
   for (const to of recipients) {
     try {
       await resend.emails.send({
-        from: 'DeelMap Admin <noreply@deelmap.com>',
+        from: 'Deelmap <notifications@deelmap.com>',
         to,
         subject: `IP Review Request — ${fullName} (${user.email})`,
         html,

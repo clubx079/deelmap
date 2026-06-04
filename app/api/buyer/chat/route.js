@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import { Resend } from 'resend';
-import { generateReplyToAddress } from '@/lib/emailReplyUtils';
-import { generateAMPEmail, generateHTMLFallback } from '@/lib/ampEmailTemplate';
 import { withTimeout, fireAndForget } from '@/lib/timeout';
 
 // Marketplace (DeelMap) Supabase: conversations & messages – same DB as rest of site
@@ -52,60 +50,6 @@ async function isRecipientActiveOnMessages(supabase, recipientUserId, recipientT
     return (Date.now() - lastSeen) < PRESENCE_TTL_MS;
   } catch {
     return false;
-  }
-}
-
-// Helper function to send email notification to lender
-async function sendEmailToLender(lenderEmail, lenderName, buyerName, messageText, conversationId, propertyType, loanAmount) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn('[Buyer chat] RESEND_API_KEY not set; cannot send email to lender');
-    return;
-  }
-  try {
-    const chatLink = `${process.env.NEXT_PUBLIC_LENDER_URL || 'https://admin.ableman.co'}/lender/conversations/${conversationId}`;
-    const formattedLoanAmount = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(loanAmount || 0);
-
-    // Generate unique reply-to address for this conversation
-    const replyToAddress = generateReplyToAddress(conversationId);
-
-    // Generate AMP email with inline reply box
-    const ampHtml = generateAMPEmail({
-      conversationId,
-      senderName: buyerName,
-      messageText: messageText || '[Attachment sent]',
-      propertyType,
-      loanAmount: formattedLoanAmount,
-      recipientType: 'lender',
-      conversationUrl: chatLink
-    });
-
-    // Generate HTML fallback for non-AMP clients
-    const htmlFallback = generateHTMLFallback({
-      conversationId,
-      senderName: buyerName,
-      messageText: messageText || '[Attachment sent]',
-      propertyType,
-      loanAmount: formattedLoanAmount,
-      conversationUrl: chatLink
-    });
-
-    await withTimeout(
-      resend.emails.send({
-        from: 'Ableman Rei <notifications@ableman.co>',
-        to: lenderEmail,
-        reply_to: replyToAddress,
-        subject: `New message from ${buyerName} - Ableman`,
-        html: htmlFallback,
-        amp: ampHtml
-      }),
-      15000, // 15 second timeout for email send
-      'Email send timed out'
-    );
-
-    console.log('Email sent to lender with AMP:', lenderEmail);
-  } catch (error) {
-    console.error('Failed to send email to lender:', error);
   }
 }
 
@@ -265,7 +209,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     return;
   }
   try {
-    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sellerportaldeelmap-production-bea8.up.railway.app';
+    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || '').replace(/\/$/, '') || 'https://sell.deelmap.com';
     const messagesUrl = `${sellerBase}/messages?conversation=${conversationId}`;
     const preview = (messageText || '[Attachment]').slice(0, 200);
     const propertyText = String(propertyAddress || '').trim();
@@ -276,7 +220,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://deelmap.com/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -302,7 +246,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
 </body></html>`;
     await withTimeout(
       resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
         to: sellerEmail,
         subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - DeelMap`,
         html
@@ -789,7 +733,7 @@ export async function GET(request) {
         return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
       }
 
-      const { data: messages, error } = await supabase
+      const { data: rawMessages, error } = await supabase
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
@@ -802,6 +746,34 @@ export async function GET(request) {
           error: 'Failed to fetch messages'
         }, { status: 500 });
       }
+
+      // Attach a small preview of any quoted (replied-to) message, and never send
+      // the content of soft-deleted messages to the client.
+      const replyIds = [...new Set((rawMessages || []).map(m => m.reply_to_id).filter(Boolean))];
+      const replyMap = {};
+      if (replyIds.length) {
+        const { data: replied } = await supabase
+          .from('messages')
+          .select('id, sender_type, message_text, is_deleted, has_attachment')
+          .in('id', replyIds);
+        for (const r of replied || []) {
+          replyMap[r.id] = {
+            id: r.id,
+            sender_type: r.sender_type,
+            text: r.is_deleted ? 'Deleted message' : (r.message_text || (r.has_attachment ? '[Attachment]' : '')).slice(0, 140),
+          };
+        }
+      }
+      const messages = (rawMessages || []).map(m => {
+        const out = { ...m, reply_preview: m.reply_to_id ? (replyMap[m.reply_to_id] || null) : null };
+        if (m.is_deleted) {
+          out.message_text = null;
+          out.has_attachment = false;
+          out.attachment_url = null;
+          out.attachment_name = null;
+        }
+        return out;
+      });
 
       // Mark conversation as read when buyer opens it: clear mark_unread and set messages is_read
       const senderTypesToMark = conversation.seller_id != null ? ['seller'] : ['lender'];
@@ -875,7 +847,8 @@ export async function POST(request) {
         attachmentUrl = null,
         attachmentName = null,
         attachmentType = null,
-        attachmentSize = null
+        attachmentSize = null,
+        replyToId = null
       } = body;
 
       if (!conversationId) {
@@ -918,7 +891,23 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
       }
 
-      const replyToAddress = generateReplyToAddress(conversationId);
+      // True block: reject the send if the *recipient* has blocked this buyer.
+      let rcptType = null, rcptId = null;
+      if (conversation.seller_id != null) { rcptType = 'seller'; rcptId = conversation.seller_id; }
+      else if (conversation.lender_id != null) { rcptType = 'lender'; rcptId = conversation.lender_id; }
+      if (rcptType) {
+        const { data: rPref } = await supabase
+          .from('chat_user_preferences')
+          .select('is_blocked')
+          .eq('conversation_id', conversationId)
+          .eq('actor_type', rcptType)
+          .eq('actor_id', rcptId)
+          .maybeSingle();
+        if (rPref?.is_blocked) {
+          return NextResponse.json({ success: false, error: 'You can no longer send messages in this conversation.' }, { status: 403 });
+        }
+      }
+
       const senderIdForDb = conversation.seller_id != null ? String(authCheck.userUuid) : String(conversation.user_id);
 
       const { data: message, error } = await supabase
@@ -933,8 +922,8 @@ export async function POST(request) {
           attachment_name: attachmentName,
           attachment_type: attachmentType,
           attachment_size: attachmentSize,
-          reply_to_email: replyToAddress,
-          is_from_email: false
+          is_from_email: false,
+          reply_to_id: replyToId
         })
         .select()
         .single();
@@ -957,19 +946,6 @@ export async function POST(request) {
         last_outbound_at: new Date().toISOString(),
         mark_unread: false
       });
-
-      if (conversation.lender_id && financingRequest) {
-        const { data: lender } = await supabase.from('lenders').select('business_name, email').eq('id', conversation.lender_id).single();
-        const { data: financingRequestDetails } = await supabase.from('financing_requests').select('property_type, loan_amount').eq('id', conversation.financing_request_id).single();
-        if (lender?.email) {
-          const buyerName = `${financingRequest.first_name || ''} ${financingRequest.last_name || ''}`.trim() || 'Buyer';
-          // Lender presence is not tracked in this app; send email (or add lender heartbeat in admin portal later)
-          fireAndForget(
-            sendEmailToLender(lender.email, lender.business_name, buyerName, messageText, conversationId, financingRequestDetails?.property_type, financingRequestDetails?.loan_amount),
-            'Lender email notification'
-          );
-        }
-      }
 
       // Insert notification for seller (new message)
       if (conversation.seller_id) {
@@ -1039,6 +1015,104 @@ export async function POST(request) {
       }
 
       return NextResponse.json({ success: true, message });
+    }
+
+    // Soft-delete the user's OWN message
+    if (action === 'delete_message') {
+      const { conversationId, messageId } = body;
+      if (!conversationId || !messageId) {
+        return NextResponse.json({ success: false, error: 'Missing conversation or message ID' }, { status: 400 });
+      }
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('id, financing_request_id, seller_id, buyer_uuid, user_id')
+        .eq('id', conversationId).single();
+      if (!conversation) return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
+
+      let allowed = false;
+      if (conversation.seller_id != null) {
+        allowed = conversation.buyer_uuid === authCheck.userUuid || Number(conversation.user_id) === Number(authCheck.userId);
+      } else if (conversation.financing_request_id) {
+        const { data: fr } = await supabase.from('financing_requests').select('id')
+          .eq('id', conversation.financing_request_id).eq('user_id', authCheck.userUuid).single();
+        allowed = !!fr;
+      }
+      if (!allowed) return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
+
+      const { data: msg } = await supabase.from('messages')
+        .select('id, sender_type, sender_id').eq('id', messageId).eq('conversation_id', conversationId).single();
+      if (!msg) return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
+      const senderIdForDb = conversation.seller_id != null ? String(authCheck.userUuid) : String(conversation.user_id);
+      const isOwn = msg.sender_type === 'user' && String(msg.sender_id) === senderIdForDb;
+      if (!isOwn) return NextResponse.json({ success: false, error: 'You can only delete your own messages' }, { status: 403 });
+
+      const { error } = await supabase.from('messages')
+        .update({ is_deleted: true, deleted_at: new Date().toISOString(), message_text: null, has_attachment: false, attachment_url: null, attachment_name: null })
+        .eq('id', messageId);
+      if (error) return NextResponse.json({ success: false, error: 'Failed to delete message' }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    // Report a message — store a review record and alert admins
+    // Report the OTHER party in a conversation (user-level). Deduped per
+    // reporter -> reported user so one person can't spam the same target.
+    if (action === 'report_user') {
+      const { conversationId, reason = null, details = null } = body;
+      if (!conversationId) return NextResponse.json({ success: false, error: 'Missing conversation ID' }, { status: 400 });
+
+      const { data: conversation } = await supabase
+        .from('conversations')
+        .select('id, financing_request_id, seller_id, lender_id, buyer_uuid, user_id, property_address')
+        .eq('id', conversationId).single();
+      if (!conversation) return NextResponse.json({ success: false, error: 'Conversation not found' }, { status: 404 });
+
+      let allowed = false;
+      if (conversation.seller_id != null) {
+        allowed = conversation.buyer_uuid === authCheck.userUuid || Number(conversation.user_id) === Number(authCheck.userId);
+      } else if (conversation.financing_request_id) {
+        const { data: fr } = await supabase.from('financing_requests').select('id')
+          .eq('id', conversation.financing_request_id).eq('user_id', authCheck.userUuid).single();
+        allowed = !!fr;
+      }
+      if (!allowed) return NextResponse.json({ success: false, error: 'Unauthorized access to conversation' }, { status: 403 });
+
+      const reportedId = conversation.seller_id != null ? String(conversation.seller_id)
+        : (conversation.lender_id != null ? String(conversation.lender_id) : null);
+      if (!reportedId) return NextResponse.json({ success: false, error: 'Nothing to report here' }, { status: 400 });
+
+      // Dedup: one OPEN report per reporter -> reported user. Use limit(1) (not
+      // maybeSingle) so it never errors when duplicates already exist.
+      const { data: existing } = await supabase.from('message_reports')
+        .select('id').eq('reporter_id', String(authCheck.userUuid)).eq('reported_sender', reportedId).eq('status', 'open').limit(1);
+      if (existing && existing.length > 0) return NextResponse.json({ success: true, already: true });
+
+      const { data: report, error } = await supabase.from('message_reports').insert({
+        message_id: null,
+        conversation_id: conversationId,
+        reporter_id: String(authCheck.userUuid),
+        reported_sender: reportedId,
+        reason,
+        details,
+        status: 'open',
+      }).select('id').single();
+      if (error) return NextResponse.json({ success: false, error: 'Failed to submit report' }, { status: 500 });
+
+      // Admin notification — friendly copy (name + property, no raw IDs).
+      try {
+        const { data: sellerApp } = await supabase.from('seller_applications').select('contact_person_name, business_name').eq('id', reportedId).maybeSingle();
+        const reportedName = sellerApp ? (sellerApp.contact_person_name || sellerApp.business_name || 'a seller') : 'a user';
+        const { data: reporter } = await supabase.from('users').select('email').eq('id', authCheck.userUuid).maybeSingle();
+        await supabase.from('activity_log').insert({
+          event_type: 'message_reported',
+          title: `User reported${reason ? ` — ${reason}` : ''}`,
+          detail: `${reportedName} was reported by a buyer${conversation.property_address ? ` (re: ${conversation.property_address})` : ''}.`,
+          actor_email: reporter?.email || null,
+          entity_type: 'message_report',
+          entity_id: report?.id != null ? String(report.id) : null,
+        });
+      } catch (e) { console.error('report notification failed:', e?.message); }
+
+      return NextResponse.json({ success: true });
     }
 
     // Mark messages as read

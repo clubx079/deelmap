@@ -25,7 +25,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
   const {
     id, property_photos, price, arv, bedrooms, bathrooms, sqft,
     full_address, address, city, state, zip_code,
-    gross_yield, cap_rate, cash_on_cash, deal_type, status,
+    gross_yield, cap_rate, cash_on_cash, deal_type, status, sold,
     is_highlighted, listing_type, created_at,
   } = property
 
@@ -45,7 +45,7 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
     : featureImage
 
   const slug = property.slug || id
-  const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://deelmap-production-e7c2.up.railway.app'}/${slug}`
+  const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://deelmap.com'}/${slug}`
 
   const cityState = [city, state].filter(Boolean).join(', ')
   const displayAddress = isLoggedIn
@@ -159,12 +159,18 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                   <span className="text-[10px] text-[#A8A8A4] mt-1.5">Photos coming soon</span>
                 </div>
               )}
-              {roiLabel && (
+              {sold && (
+                <>
+                  <div className="absolute inset-0 bg-white/35 z-[1]" />
+                  <div className="absolute top-2 left-2 z-[2] px-2 py-0.5 bg-[#737370] text-white text-[10px] font-bold uppercase tracking-wide rounded">Sold</div>
+                </>
+              )}
+              {!sold && roiLabel && (
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 text-white text-[10px] font-semibold rounded">
                   {roiLabel}
                 </div>
               )}
-              <div className="absolute top-2 right-2">{favBtn}</div>
+              <div className="absolute top-2 right-2 z-[2]">{favBtn}</div>
             </Link>
 
             {/* Content */}
@@ -243,7 +249,13 @@ export default function PropertyCard({ property, isLoggedIn = false, layout = 'h
                   <span className="text-[11px] text-[#A8A8A4] mt-1.5">Photos coming soon</span>
                 </div>
               )}
-              {roiLabel && (
+              {sold && (
+                <>
+                  <div className="absolute inset-0 bg-white/35 z-[1]" />
+                  <div className="absolute top-2 left-2 z-[2] px-2 py-0.5 bg-[#737370] text-white text-[11px] font-bold uppercase tracking-wide rounded">Sold</div>
+                </>
+              )}
+              {!sold && roiLabel && (
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 text-white text-[11px] font-semibold rounded">
                   {roiLabel}
                 </div>

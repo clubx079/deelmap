@@ -399,11 +399,10 @@ body.modal-open {
 }
 
 /* Ensure proper z-index hierarchy */
-/* Remove or lower z-index from nav */
-nav {
-  position: relative; 
-  z-index: auto !important; /* or just delete this rule entirely */
-}
+/* NOTE: don't set `position` on nav here — the sticky Navbar uses Tailwind's
+   `fixed` utility, and an unlayered `nav{position:relative}` rule would
+   override it (Tailwind v4 utilities live in @layer utilities, which loses to
+   unlayered CSS), making the navbar scroll away instead of staying pinned. */
 
 
 .filter-bar {
@@ -456,9 +455,10 @@ nav {
 /* Add these CSS rules to your global.css file at the end */
 
 /* Navbar and dropdown z-index hierarchy */
+/* position intentionally NOT set here — see note above; the Navbar relies on
+   its Tailwind `fixed` class to stay pinned on scroll. */
 nav {
   z-index: 50 !important;
-  position: relative;
 }
 
 /* force dropdown out of stacking issues */

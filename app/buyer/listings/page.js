@@ -1078,7 +1078,7 @@ export default function MyListingsPage() {
                 key={plan.id}
                 type="button"
                 onClick={() => {
-                  const SELLER_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app'
+                  const SELLER_URL = process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sell.deelmap.com'
                   try { localStorage.setItem('deelmap_selected_plan', plan.id) } catch {}
                   const billing = sellerAnnual ? 'annual' : 'monthly'
                   window.location.href = `${SELLER_URL}/onboarding?plan=${plan.id}&billing=${billing}&no_trial=1`

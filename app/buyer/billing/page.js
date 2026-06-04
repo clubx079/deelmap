@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext'
+import Link from 'next/link'
 import { CreditCard, Check, AlertCircle, Loader2, ExternalLink, Receipt } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 
@@ -127,9 +128,9 @@ export default function BuyerBillingPage() {
           <div className="text-center py-6">
             <Receipt className="w-8 h-8 text-[#A8A8A4] mx-auto mb-2" />
             <p className="text-[13px] text-[#737370]">No purchases yet.</p>
-            <a href="/buyer/listings?new=1" className="mt-3 inline-flex items-center gap-1.5 px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors">
+            <Link href="/buyer/listings?new=1" className="mt-3 inline-flex items-center gap-1.5 px-4 min-h-[44px] bg-[#D03839] hover:bg-[#E0493B] text-white text-[13px] font-semibold rounded transition-colors">
               Post your first deal
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="-mx-5 -mb-5">

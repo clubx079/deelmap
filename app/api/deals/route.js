@@ -20,7 +20,7 @@ const DEAL_COLS = [
 const DEAL_SELECT = `${DEAL_COLS}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`;
 const MANUAL_SELECT = `
   id, slug, address, city, state, zipcode, latitude, longitude,
-  price, bedrooms, bathrooms, floor_area, property_type, status,
+  price, bedrooms, bathrooms, floor_area, property_type, status, property_status,
   is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
   property_images!left (image_url, image_key, sort_order)
 `;

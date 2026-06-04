@@ -91,7 +91,7 @@ export async function POST(request) {
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff">
       <tr>
         <td style="background:#ffffff;padding:12px 40px;text-align:center;border-bottom:2px solid #D03839">
-          <img src="https://sellerportaldeelmap-production-bea8.up.railway.app/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
+          <img src="https://deelmap.com/deelmap.png" alt="DeelMap" height="72" style="display:inline-block;height:72px;width:auto;border:0" />
         </td>
       </tr>
       <tr>
@@ -150,7 +150,7 @@ DeelMap Team
     console.log(`[${new Date().toISOString()}] Sending password reset email via Resend...`)
 
     const { data, error } = await resend.emails.send({
-      from: 'DeelMap Security <noreply@deelmap.com>',
+      from: 'Deelmap <notifications@deelmap.com>',
       to: [email],
       subject: `${resetOtp} is your password reset code`,
       html: htmlTemplate,

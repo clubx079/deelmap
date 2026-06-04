@@ -122,7 +122,7 @@ async function sendEmailToSeller(sellerEmail, subject, html) {
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
       to: sellerEmail,
       subject,
       html,
@@ -223,7 +223,7 @@ export async function POST(request) {
       const seller = sellerRes.data;
       const buyerName = buyer ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || buyer.email : 'A buyer';
       const sellerEmail = seller?.email;
-      const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app').replace(/\/$/, '');
+      const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sell.deelmap.com').replace(/\/$/, '');
       const logoUrl = `${sellerBase}/deelmap.png`;
       const messagesUrl = `${sellerBase}/messages?conversation=${conversation_id}`;
       const amountStr = formatCurrency(amount);
@@ -379,7 +379,7 @@ export async function PATCH(request) {
 
     if (offerErr || !offer) return NextResponse.json({ error: 'Offer not found' }, { status: 404 });
 
-    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sellerportaldeelmap-production-bea8.up.railway.app').replace(/\/$/, '');
+    const sellerBase = (process.env.NEXT_PUBLIC_SELLER_PORTAL_URL || 'https://sell.deelmap.com').replace(/\/$/, '');
     const logoUrl = `${sellerBase}/deelmap.png`;
     // offer.conversation_id is UUID — convert back to numeric for URL
     const convNumeric = uuidToNumeric(offer.conversation_id) ?? offer.conversation_id;
