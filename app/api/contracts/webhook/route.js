@@ -125,8 +125,10 @@ export async function POST(request) {
     }
 
     if (event_type !== 'form.completed') return NextResponse.json({ ok: true })
-    if (data?.role !== 'First Party') {
-      console.log('[webhook] skipping — role is not First Party, got:', data?.role)
+    // The signing chain is First Party (seller) → Co-Seller (optional) → Second
+    // Party (buyer). Only the sell-side completions advance the chain.
+    if (data?.role !== 'First Party' && data?.role !== 'Co-Seller') {
+      console.log('[webhook] skipping — role not in sign chain, got:', data?.role)
       return NextResponse.json({ ok: true })
     }
     const submissionId = data.submission_id || data.submission?.id
@@ -144,33 +146,44 @@ export async function POST(request) {
     console.log('[webhook] full submission submitters:', JSON.stringify(fullSubmission.submitters?.map(s => ({ id: s.id, role: s.role, slug: s.slug, email: s.email }))))
 
     const metadata = data.metadata || {}
-    const assigneeEmail = metadata.assigneeEmail
-    const assigneeName = metadata.assigneeName
+    const coSellerSubmitter = fullSubmission.submitters?.find(s => s.role === 'Co-Seller')
 
-    console.log('[webhook] assigneeEmail from metadata:', assigneeEmail)
+    // Pick the next party to activate. After the seller (First Party) signs, the
+    // co-seller goes next when present; otherwise the buyer. After the co-seller
+    // signs, the buyer goes next.
+    let nextSubmitter, assigneeEmail, assigneeName
+    if (data.role === 'First Party' && metadata.coSellerEmail && coSellerSubmitter?.id) {
+      nextSubmitter = coSellerSubmitter
+      assigneeEmail = metadata.coSellerEmail
+      assigneeName = metadata.coSellerName
+    } else {
+      nextSubmitter = fullSubmission.submitters?.find(s => s.role === 'Second Party')
+      assigneeEmail = metadata.assigneeEmail
+      assigneeName = metadata.assigneeName
+    }
+
+    console.log('[webhook] next party:', nextSubmitter?.role, 'email:', assigneeEmail)
 
     if (!assigneeEmail) {
-      console.log('[webhook] no assigneeEmail in metadata — aborting')
+      console.log('[webhook] no next email in metadata — aborting')
+      return NextResponse.json({ ok: true })
+    }
+    if (!nextSubmitter?.id) {
+      console.log('[webhook] no next submitter found — aborting')
       return NextResponse.json({ ok: true })
     }
 
-    const assigneeSubmitter = fullSubmission.submitters?.find(s => s.role === 'Second Party')
-    if (!assigneeSubmitter?.id) {
-      console.log('[webhook] no Second Party submitter found')
-      return NextResponse.json({ ok: true })
-    }
-
-    console.log('[webhook] patching assignee submitter id:', assigneeSubmitter.id, 'with email:', assigneeEmail)
-    const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${assigneeSubmitter.id}`, {
+    console.log('[webhook] patching next submitter id:', nextSubmitter.id, 'with email:', assigneeEmail)
+    const patchRes = await fetch(`${DOCUSEAL_BASE}/submitters/${nextSubmitter.id}`, {
       method: 'PATCH',
       headers: dsHeaders(),
       body: JSON.stringify({ email: assigneeEmail, name: assigneeName, send_email: false }),
     })
     console.log('[webhook] patch status:', patchRes.status)
 
-    const assignorName = data.name || data.email || 'The Buyer'
+    const assignorName = data.name || data.email || 'The other party'
     const property = fullSubmission.name || ''
-    const signingUrl = `${APP_URL}/sign/${assigneeSubmitter.slug}`
+    const signingUrl = `${APP_URL}/sign/${nextSubmitter.slug}`
 
     console.log('[webhook] sending email to:', assigneeEmail)
     const emailResult = await resend.emails.send({

@@ -118,6 +118,7 @@ export default function BuyerNewContractWizardPage() {
     property_tax_id:     '',
     other_description:   '',
     co_seller_name:      '',
+    co_seller_email:     '',
     co_buyer_name:       '',
     emd_escrow:          '',
     due_diligence_days:  '14',
@@ -290,7 +291,13 @@ export default function BuyerNewContractWizardPage() {
     if (s === 1) return !!templateId && !!contractRole
     if (s === 2) return propertyId === 'manual' ? manualAddress.trim().length > 4 : !!propertyId
     if (s === 3) return /\S+@\S+\.\S+/.test(buyerEmail) && buyerName.trim().length > 0
-    if (s === 4) return /\S+@\S+\.\S+/.test(sellerEmail) && sellerName.trim().length > 0
+    if (s === 4) {
+      const base = /\S+@\S+\.\S+/.test(sellerEmail) && sellerName.trim().length > 0
+      // If a co-seller name is entered, their email is required (they sign too).
+      const coName = (fieldValues.co_seller_name || '').trim()
+      const coOk = !coName || /\S+@\S+\.\S+/.test(fieldValues.co_seller_email || '')
+      return base && coOk
+    }
     if (s === 5) {
       const required = ['purchase_price', 'emd', 'closing_date']
       if (isAssignment) required.push('original_seller_name', 'original_psa_date')
@@ -346,6 +353,7 @@ export default function BuyerNewContractWizardPage() {
           contractRole,
           sellerName, sellerEmail,
           buyerName, buyerEmail,
+          coSellerEmail: fieldValues.co_seller_email || '',
           property, templateId,
           field_values: fieldValues,
         }),
@@ -495,7 +503,7 @@ export default function BuyerNewContractWizardPage() {
         {step === 1 && <Step1Setup templates={templates} templatesLoading={templatesLoading} templateId={templateId} onSelectTemplate={setTemplateId} contractRole={contractRole} onSelectRole={setContractRole} />}
         {step === 2 && <Step2Property properties={properties} propertiesLoading={propertiesLoading} propertyId={propertyId} onChange={setPropertyId} manualAddress={manualAddress} onManualAddressChange={setManualAddress} />}
         {step === 3 && <StepPartyInfo party="buyer" L={L} isAssignment={isAssignment} isYou={contractRole === 'buyer'} name={buyerName} email={buyerEmail} address={fieldValues.buyer_address} coName={fieldValues.co_buyer_name} onName={setBuyerName} onEmail={setBuyerEmail} onAddress={v => setField('buyer_address', v)} onCoName={v => setField('co_buyer_name', v)} />}
-        {step === 4 && <StepPartyInfo party="seller" L={L} isAssignment={isAssignment} isYou={contractRole === 'seller'} name={sellerName} email={sellerEmail} address={fieldValues.seller_address} coName={fieldValues.co_seller_name} onName={setSellerName} onEmail={setSellerEmail} onAddress={v => setField('seller_address', v)} onCoName={v => setField('co_seller_name', v)} />}
+        {step === 4 && <StepPartyInfo party="seller" L={L} isAssignment={isAssignment} isYou={contractRole === 'seller'} name={sellerName} email={sellerEmail} address={fieldValues.seller_address} coName={fieldValues.co_seller_name} coEmail={fieldValues.co_seller_email} onName={setSellerName} onEmail={setSellerEmail} onAddress={v => setField('seller_address', v)} onCoName={v => setField('co_seller_name', v)} onCoEmail={v => setField('co_seller_email', v)} />}
         {step === 5 && <Step5Terms values={fieldValues} onChange={setField} template={template} L={L} />}
         {step === 6 && <Step6Review template={template} L={L} fieldValues={fieldValues} buyerName={buyerName} buyerEmail={buyerEmail} sellerName={sellerName} sellerEmail={sellerEmail} contractRole={contractRole} onJump={setStep} selfDeal={selfDeal} />}
       </div>
@@ -622,7 +630,7 @@ function Step2Property({ properties, propertiesLoading, propertyId, onChange, ma
 }
 
 // Unified Buyer / Seller info step. `isYou` marks the creator's own side (prefilled).
-function StepPartyInfo({ party, L, isAssignment, isYou, name, email, address, coName, onName, onEmail, onAddress, onCoName }) {
+function StepPartyInfo({ party, L, isAssignment, isYou, name, email, address, coName, coEmail, onName, onEmail, onAddress, onCoName, onCoEmail }) {
   const roleLabel = party === 'buyer' ? L.buyer : L.seller
   const coLabel = party === 'buyer' ? 'co-buyer' : 'co-seller'
   const [coOpen, setCoOpen] = useState(!!coName)
@@ -656,12 +664,21 @@ function StepPartyInfo({ party, L, isAssignment, isYou, name, email, address, co
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-[13px] font-semibold text-[#1A1816] capitalize">{coLabel}</p>
-                  <p className="text-[12px] text-[#737370]">For jointly-held deals. Their name prints on the contract.</p>
+                  <p className="text-[12px] text-[#737370]">For jointly-held deals. They&apos;ll sign the contract too, right after you.</p>
                 </div>
-                <button type="button" onClick={() => { onCoName(''); setCoOpen(false) }} className="text-[12px] text-[#737370] hover:text-[#1A1816]">Remove</button>
+                <button type="button" onClick={() => { onCoName(''); onCoEmail?.(''); setCoOpen(false) }} className="text-[12px] text-[#737370] hover:text-[#1A1816]">Remove</button>
               </div>
-              <label className={LABEL_CLS}>{L.seller} Co-Signer Full Name / LLC</label>
-              <input type="text" value={coName || ''} onChange={e => onCoName(e.target.value)} placeholder="Jane Smith" className={INPUT_CLS} />
+              <div className="space-y-3">
+                <div>
+                  <label className={LABEL_CLS}>{L.seller} Co-Signer Full Name / LLC</label>
+                  <input type="text" value={coName || ''} onChange={e => onCoName(e.target.value)} placeholder="Jane Smith" className={INPUT_CLS} />
+                </div>
+                <div>
+                  <label className={LABEL_CLS}>{L.seller} Co-Signer Email <span className="text-[#D03839]">*</span></label>
+                  <input type="email" value={coEmail || ''} onChange={e => onCoEmail?.(e.target.value)} placeholder="co-seller@example.com" className={INPUT_CLS} />
+                  <p className="text-[11px] text-[#A8A8A4] mt-1">They&apos;ll get a signing link by email once you&apos;ve signed.</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
