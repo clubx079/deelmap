@@ -148,8 +148,11 @@ export default function BuyerNewContractWizardPage() {
     const myEmail = user.email || ''
     if (contractRole === 'seller') {
       setSellerName(prev => prev || myName); setSellerEmail(prev => prev || myEmail)
+      // moving off the buyer side: clear it if it still holds the auto-filled account info
+      setBuyerName(prev => prev === myName ? '' : prev); setBuyerEmail(prev => prev === myEmail ? '' : prev)
     } else if (contractRole === 'buyer') {
       setBuyerName(prev => prev || myName); setBuyerEmail(prev => prev || myEmail)
+      setSellerName(prev => prev === myName ? '' : prev); setSellerEmail(prev => prev === myEmail ? '' : prev)
     }
   }, [user, contractRole])
 
@@ -477,7 +480,7 @@ export default function BuyerNewContractWizardPage() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-6 items-start">
+      <div className={step >= 2 ? 'grid lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-6 items-start' : ''}>
         <div className="min-w-0">
 
       <div className={`grid gap-2 mb-6`} style={{ gridTemplateColumns: `repeat(${NUM_STEPS}, minmax(0, 1fr))` }}>
@@ -510,9 +513,11 @@ export default function BuyerNewContractWizardPage() {
       {sendError && <p className="text-[12px] text-[#D03839] mt-2 text-right">{sendError}</p>}
         </div>
 
-        <div className="hidden lg:block lg:sticky lg:top-6">
-          <LiveContractPreview isAssignment={isAssignment} L={L} contractRole={contractRole} buyerName={buyerName} sellerName={sellerName} fieldValues={fieldValues} />
-        </div>
+        {step >= 2 && (
+          <div className="hidden lg:block lg:sticky lg:top-6">
+            <LiveContractPreview isAssignment={isAssignment} L={L} contractRole={contractRole} buyerName={buyerName} sellerName={sellerName} fieldValues={fieldValues} />
+          </div>
+        )}
       </div>
     </div>
   )
