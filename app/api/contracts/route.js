@@ -79,6 +79,7 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const {
+      contractRole,
       sellerName, sellerEmail,
       buyerName, buyerEmail,
       property, templateId,
@@ -88,6 +89,13 @@ export async function POST(request) {
     if (!sellerEmail || !templateId || !buyerEmail) {
       return NextResponse.json({ error: 'sellerEmail, buyerEmail and templateId are required' }, { status: 400 })
     }
+
+    // The Seller is always First Party (signs first). The creator may be on
+    // either side: if they're the Seller they sign inline now; if they're the
+    // Buyer, the Seller (counterparty) is emailed to sign first and the creator
+    // signs after. Default to seller for backward-compatibility.
+    const creatorIsSeller = contractRole !== 'buyer'
+    const creatorEmail = creatorIsSeller ? sellerEmail : buyerEmail
 
     // Map wizard field keys → DocuSeal field names (sale_price, assignment_fee, etc.)
     // and apply autoFields (today's date, seller name auto-fill).
@@ -115,10 +123,12 @@ export async function POST(request) {
         role: 'First Party',
         email: sellerEmail,
         name: sellerName || sellerEmail,
-        send_email: false,
-        // Tag the submission so the buyer-portal list view can find contracts the
-        // user created (not just received).
-        application_key: `buyer:${sellerEmail}`,
+        // When the creator is the Seller they sign inline (no email). When the
+        // creator is the Buyer, email the Seller so they can sign first.
+        send_email: !creatorIsSeller,
+        // Tag the submission with the CREATOR's email so the portal list finds
+        // contracts they created, regardless of which side they're on.
+        application_key: `buyer:${creatorEmail}`,
         metadata: {
           assigneeEmail: buyerEmail,
           assigneeName: buyerName || buyerEmail,
@@ -165,7 +175,11 @@ export async function POST(request) {
     return NextResponse.json({
       submission_id: assignorSubmitter.submission_id,
       assignor_slug: assignorSubmitter.slug,
-      embed_src: assignorSubmitter.embed_src,
+      // Creator signs inline only when they're the Seller (First Party). When the
+      // creator is the Buyer, no embed — the Seller is emailed to sign first.
+      ...(creatorIsSeller
+        ? { embed_src: assignorSubmitter.embed_src }
+        : { firstSignerName: sellerName || sellerEmail }),
     })
   } catch {
     return NextResponse.json({ error: 'Failed to create contract' }, { status: 500 })
