@@ -26,6 +26,7 @@ export function Navbar() {
   const [communityUnread, setCommunityUnread] = useState(0)
   const [communityOpen, setCommunityOpen] = useState(false)
   const [hasCommunityProfile, setHasCommunityProfile] = useState(false)
+  const [communityChecked, setCommunityChecked] = useState(false)
 
   const aboutButtonRef = useRef(null)
   const notifBellRef = useRef(null)
@@ -76,7 +77,7 @@ export function Navbar() {
   // Fetch community notifications (only if user has a community profile)
   useEffect(() => {
     if (!user?.id) {
-      setCommunityUnread(0); setCommunityNotifs([]); setHasCommunityProfile(false); return
+      setCommunityUnread(0); setCommunityNotifs([]); setHasCommunityProfile(false); setCommunityChecked(false); return
     }
     const fetchCommunityNotifs = async () => {
       try {
@@ -85,9 +86,10 @@ export function Navbar() {
           const data = await res.json()
           setCommunityNotifs(data.notifications || [])
           setCommunityUnread(data.unread_count || 0)
-          setHasCommunityProfile(!!data.has_profile)
+          // Sticky: once a profile is found keep the icon, so polling can't flicker it off
+          setHasCommunityProfile(prev => prev || !!data.has_profile)
         }
-      } catch {}
+      } catch {} finally { setCommunityChecked(true) }
     }
     fetchCommunityNotifs()
     const interval = setInterval(fetchCommunityNotifs, 30000)
@@ -262,7 +264,12 @@ export function Navbar() {
                   >
                     + Post a Deal
                   </Link>
-                  {/* Community notifications — only shown when user has a community profile */}
+                  {/* Community notifications — only shown when user has a community profile.
+                      While the profile check is still loading we render a same-size spacer so
+                      the icon fades in without shifting the rest of the navbar. */}
+                  {!hasCommunityProfile && !communityChecked && (
+                    <div className="w-9 h-9" aria-hidden="true" />
+                  )}
                   {hasCommunityProfile && (
                     <div className="relative" ref={communityBellRef}>
                       <button

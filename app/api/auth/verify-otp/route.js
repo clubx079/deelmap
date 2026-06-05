@@ -119,7 +119,8 @@ export async function POST(request) {
       auth_provider: 'email',
       states_of_interest: userData.statesOfInterest || [],
       verified: true,
-      registration_ip: clientIP || null
+      registration_ip: clientIP || null,
+      ip_address: clientIP || null
     }
 
     console.log('[VERIFY-OTP] Attempting to create user with data:', {
