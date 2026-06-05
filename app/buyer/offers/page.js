@@ -36,20 +36,48 @@ export default function MyOffersPage() {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
+  const [actingId, setActingId] = useState(null);
 
   useEffect(() => {
     setPageTitle('My Offers');
     return () => setPageTitle('');
   }, [setPageTitle]);
 
-  useEffect(() => {
+  const loadOffers = () => {
     if (!user?.id) return;
     fetch('/api/buyer/offers', { headers: { Authorization: `Bearer ${user.id}` } })
       .then(r => r.json())
       .then(data => setOffers(data.offers || []))
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadOffers();
   }, [user?.id]);
+
+  const handleOfferAction = async (offerId, action) => {
+    if (!user?.id) return;
+    const optimisticStatus = action === 'accept_counter' ? 'accepted'
+      : action === 'reject_counter' ? 'rejected' : 'withdrawn';
+    const prevOffers = offers;
+    setActingId(offerId);
+    setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: optimisticStatus } : o));
+    try {
+      const res = await fetch('/api/buyer/offers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.id}` },
+        body: JSON.stringify({ offer_id: offerId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error();
+      loadOffers();
+    } catch {
+      setOffers(prevOffers);
+    } finally {
+      setActingId(null);
+    }
+  };
 
   const filtered = filter === 'All'
     ? offers
@@ -114,6 +142,10 @@ export default function MyOffersPage() {
             const listingHref = offer.property_slug ? `/${offer.property_slug}` : (offer.property_id ? `/${offer.property_id}` : null);
             const priceDiff = offer.property_price && offer.offer_price
               ? offer.offer_price - offer.property_price : null;
+            const isCounter = !!offer.parent_offer_id;
+            const canWithdraw = !isCounter && offer.status === 'pending';
+            const canRespondCounter = isCounter && offer.status === 'pending';
+            const acting = actingId === offer.id;
             return (
               <div key={offer.id} className="bg-white border border-[#E8E8E4] rounded overflow-hidden flex flex-col sm:flex-row">
                 {/* Property image */}
@@ -186,6 +218,30 @@ export default function MyOffersPage() {
                           <MessageCircle className="w-3.5 h-3.5" />
                           View chat
                         </Link>
+                      )}
+                      {canRespondCounter && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleOfferAction(offer.id, 'accept_counter')}
+                            disabled={acting}
+                            className="px-3 min-h-[44px] bg-[#0F6E56] hover:bg-[#0D5E49] text-white text-[12px] font-semibold rounded transition-colors disabled:opacity-50 whitespace-nowrap">
+                            {acting ? '…' : 'Accept'}
+                          </button>
+                          <button
+                            onClick={() => handleOfferAction(offer.id, 'reject_counter')}
+                            disabled={acting}
+                            className="px-3 min-h-[44px] border border-[#E8E8E4] text-[#737370] hover:text-[#D03839] text-[12px] font-semibold rounded transition-colors disabled:opacity-50 whitespace-nowrap">
+                            Decline
+                          </button>
+                        </div>
+                      )}
+                      {canWithdraw && (
+                        <button
+                          onClick={() => handleOfferAction(offer.id, 'withdraw')}
+                          disabled={acting}
+                          className="px-3 min-h-[44px] border border-[#D03839] text-[#D03839] hover:bg-[#FEF0EF] text-[12px] font-semibold rounded transition-colors disabled:opacity-50 whitespace-nowrap">
+                          {acting ? 'Withdrawing…' : 'Withdraw'}
+                        </button>
                       )}
                       {listingHref && (
                         <Link href={listingHref}

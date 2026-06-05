@@ -386,6 +386,7 @@ export function Navbar() {
                                 const t = n.type || ''
                                 const convId = resolveInboxConversationId(n.related_conversation_id)
                                 if (convId) return `/buyer/inbox?conversation=${convId}`
+                                if (t === 'buy_box_match' && n.related_property_id) return `/${n.related_property_id}`
                                 if (t === 'listing_approved' || t === 'listing_rejected') return '/buyer/listings'
                                 if (t.startsWith('offer_') || t === 'counter_received') return '/buyer/offers'
                                 if (t.startsWith('contract_')) return '/buyer/contracts'

@@ -507,8 +507,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const propertyPrice = conversation?.property_price;
   const propertyAddress = conversation?.property_address;
   const propertyImage = conversation?.property_thumbnail_url;
-  const arv = propertyPrice ? Math.round(propertyPrice * 1.8) : null;
-  const spread = arv && propertyPrice ? arv - propertyPrice : null;
 
   return (
     <div className="flex h-full" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
@@ -750,9 +748,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               <Paperclip className="w-5 h-5 text-[#737370]" />
             </button>
             <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-            <button type="button" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] transition-colors duration-200 flex-shrink-0">
-              <Smile className="w-5 h-5 text-[#737370]" />
-            </button>
 
             <div className="flex-1 relative">
               <textarea
@@ -787,11 +782,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
         {propertyImage && (
           <div className="relative h-[160px] bg-[#FAFAF8]">
             <img src={propertyImage} alt="" className="w-full h-full object-cover" />
-            {arv && propertyPrice && (
-              <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-[#1A1816]/70 text-white text-[11px] font-semibold rounded-full">
-                +{Math.round(((arv - propertyPrice) / propertyPrice) * 100)}% ROI
-              </span>
-            )}
           </div>
         )}
 
@@ -820,14 +810,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           {propertyPrice && (
             <div className="mb-2">
               <span className="text-[22px] font-bold text-[#1A1816]">{formatCurrency(propertyPrice)}</span>
-              {arv && <span className="ml-2 text-[12px] text-[#0F6E56] font-medium">ARV {formatCurrency(arv)}</span>}
             </div>
-          )}
-
-          {spread && (
-            <p className="text-[12px] text-[#0F6E56] font-medium flex items-center gap-0.5">
-              <span>&#8593;</span> {formatCurrency(spread)} spread potential
-            </p>
           )}
         </div>
 
@@ -935,11 +918,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
             {propertyImage && (
               <div className="relative h-[180px] bg-[#FAFAF8] flex-shrink-0">
                 <img src={propertyImage} alt="" className="w-full h-full object-cover" />
-                {arv && propertyPrice && (
-                  <span className="absolute top-2.5 right-2.5 px-2 py-0.5 bg-[#1A1816]/70 text-white text-[11px] font-semibold rounded-full">
-                    +{Math.round(((arv - propertyPrice) / propertyPrice) * 100)}% ROI
-                  </span>
-                )}
               </div>
             )}
             {/* Property Details */}
@@ -965,13 +943,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               {propertyPrice && (
                 <div className="mb-2">
                   <span className="text-[22px] font-bold text-[#1A1816]">{formatCurrency(propertyPrice)}</span>
-                  {arv && <span className="ml-2 text-[12px] text-[#0F6E56] font-medium">ARV {formatCurrency(arv)}</span>}
                 </div>
-              )}
-              {spread && (
-                <p className="text-[12px] text-[#0F6E56] font-medium flex items-center gap-0.5">
-                  <span>&#8593;</span> {formatCurrency(spread)} spread potential
-                </p>
               )}
             </div>
             {/* Seller Info */}

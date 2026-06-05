@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { mapFieldValues, decorateTemplates } from '@/lib/contract-templates'
+import { sendSigningEmail } from '@/lib/contract-emails'
 
 const DOCUSEAL_BASE = 'https://api.docuseal.com'
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
 
 function dsHeaders() {
   return { 'X-Auth-Token': process.env.DOCUSEAL_API_KEY, 'Content-Type': 'application/json' }
@@ -17,7 +19,7 @@ export async function GET(request) {
       const res = await fetch(`${DOCUSEAL_BASE}/templates?limit=50`, { headers: dsHeaders(), cache: 'no-store' })
       const json = await res.json()
       // Decorate with friendly labels + fieldMap from TEMPLATE_CONFIG so the
-      // wizard can show "Purchase Contract" instead of "(A to B) Deelmap…"
+      // wizard can show "Purchase Contract" instead of "(A to B) DeelMap…"
       return NextResponse.json(decorateTemplates(json.data || []))
     }
 
@@ -95,10 +97,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'sellerEmail, buyerEmail and templateId are required' }, { status: 400 })
     }
 
-    // The Seller is always First Party (signs first). The creator may be on
-    // either side: if they're the Seller they sign inline now; if they're the
-    // Buyer, the Seller (counterparty) is emailed to sign first and the creator
-    // signs after. Default to seller for backward-compatibility.
+    // The Seller is always First Party and signs first. Nobody signs inline on
+    // the portal — every party (seller → co-seller → buyer) receives an emailed
+    // signing link, in order. The creator side just tags the submission.
     const creatorIsSeller = contractRole !== 'buyer'
     const creatorEmail = creatorIsSeller ? sellerEmail : buyerEmail
 
@@ -129,9 +130,10 @@ export async function POST(request) {
         role: 'First Party',
         email: sellerEmail,
         name: sellerName || sellerEmail,
-        // When the creator is the Seller they sign inline (no email). When the
-        // creator is the Buyer, email the Seller so they can sign first.
-        send_email: !creatorIsSeller,
+        // The seller always signs first. Suppress DocuSeal's own email — we send
+        // our branded signing email below instead (no inline signing). The
+        // co-seller and buyer are activated by the webhook in turn.
+        send_email: false,
         // Tag the submission with the CREATOR's email so the portal list finds
         // contracts they created, regardless of which side they're on.
         application_key: `buyer:${creatorEmail}`,
@@ -211,14 +213,27 @@ export async function POST(request) {
       })
     }
 
+    // Email the seller our branded signing link (DocuSeal's own email is
+    // suppressed). The co-seller and buyer get the same branded email from the
+    // webhook as the chain advances.
+    try {
+      await sendSigningEmail({
+        to: sellerEmail,
+        signerName: sellerName || sellerEmail,
+        property: property || '',
+        signingUrl: `${APP_URL}/sign/${assignorSubmitter.slug}`,
+        leadLine: 'A contract is ready for your signature. Please review and sign below — once you sign, it moves to the next party automatically.',
+      })
+    } catch (e) {
+      console.error('[contracts] first-signer email failed:', e?.message || e)
+    }
+
     return NextResponse.json({
       submission_id: assignorSubmitter.submission_id,
       assignor_slug: assignorSubmitter.slug,
-      // Creator signs inline only when they're the Seller (First Party). When the
-      // creator is the Buyer, no embed — the Seller is emailed to sign first.
-      ...(creatorIsSeller
-        ? { embed_src: assignorSubmitter.embed_src }
-        : { firstSignerName: sellerName || sellerEmail }),
+      // No inline signing — the seller is emailed the signing link, then the
+      // co-seller and buyer in turn via the webhook chain.
+      firstSignerName: sellerName || sellerEmail,
     })
   } catch {
     return NextResponse.json({ error: 'Failed to create contract' }, { status: 500 })

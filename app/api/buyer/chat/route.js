@@ -246,7 +246,7 @@ async function sendEmailToSeller(sellerEmail, sellerName, buyerName, messageText
 </body></html>`;
     await withTimeout(
       resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
         to: sellerEmail,
         subject: `New message from ${(buyerName || 'A buyer').slice(0, 50)}${propertyText ? ` • ${propertyText.slice(0, 50)}` : ''} - DeelMap`,
         html

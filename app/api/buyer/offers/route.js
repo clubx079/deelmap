@@ -122,7 +122,7 @@ async function sendEmailToSeller(sellerEmail, subject, html) {
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'Deelmap <notifications@deelmap.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'DeelMap <notifications@deelmap.com>',
       to: sellerEmail,
       subject,
       html,

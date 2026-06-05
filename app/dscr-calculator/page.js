@@ -487,14 +487,14 @@ export default function DSCRCalculatorPage() {
     ].join(''))
 
     const metricsRows = section('Key Metrics', [
-      row('DSCR', r.dscr.toFixed(3) + 'x'),
+      row('DSCR', isFinite(r.dscrRatio) ? r.dscrRatio.toFixed(3) + 'x' : '∞'),
       row('Cap Rate', (r.capRate * 100).toFixed(2) + '%'),
-      row('Cash-on-Cash Return', (r.coc * 100).toFixed(2) + '%'),
-      row('Gross Yield', (r.grossYield * 100).toFixed(2) + '%'),
-      row('Estimated IRR', r.irr !== null ? (r.irr * 100).toFixed(1) + '%' : '—'),
+      row('Cash-on-Cash Return', isFinite(r.coc) ? (r.coc * 100).toFixed(2) + '%' : '∞'),
+      row('Gross Yield', r.purchase > 0 ? ((r.grossRentMo * 12 / r.purchase) * 100).toFixed(2) + '%' : '—'),
+      row('Estimated IRR', isFinite(r.irr) ? (r.irr * 100).toFixed(1) + '%' : '—'),
       row('Annual Net Cash Flow', money(r.annNOI), r.annNOI >= 0 ? '#1A6B3C' : '#D03839'),
-      row('Break-even Occupancy', (r.breakeven * 100).toFixed(1) + '%'),
-      row('Equity at Purchase', money(r.equityAtPurchase)),
+      row('Break-even Occupancy', isFinite(r.beoOcc) ? (r.beoOcc * 100).toFixed(1) + '%' : '—'),
+      row('Equity at Refi', money(r.equityRefi)),
     ].join(''))
 
     win.document.write(`<!DOCTYPE html>

@@ -79,11 +79,47 @@ export async function POST(req) {
 
     if (!matched.length) return NextResponse.json({ sent: 0 })
 
-    if (!resend) return NextResponse.json({ error: 'Resend not configured' }, { status: 500 })
-
     const dealUrl = `https://deelmap.com/${deal.slug || deal.id}`
     const price = deal.price ? `$${Number(deal.price).toLocaleString('en-US')}` : 'Contact for price'
     const address = deal.full_address || deal.address || `${deal.city || ''}, ${deal.state || ''}`
+
+    // In-app notifications (independent of email). Dedupe so the same buyer
+    // isn't notified twice for the same deal.
+    const matchedIds = matched.map(b => b.users?.id).filter(Boolean)
+    const alreadyNotified = new Set()
+    if (matchedIds.length) {
+      const { data: existing } = await supabase
+        .from('notifications')
+        .select('recipient_id')
+        .eq('type', 'buy_box_match')
+        .eq('related_property_id', deal.id)
+        .in('recipient_id', matchedIds)
+      for (const row of existing || []) alreadyNotified.add(row.recipient_id)
+    }
+
+    for (const box of matched) {
+      const user = box.users
+      if (!user?.id || alreadyNotified.has(user.id)) continue
+      try {
+        await supabase.from('notifications').insert({
+          recipient_id: user.id,
+          recipient_type: 'buyer',
+          type: 'buy_box_match',
+          title: 'New deal matches your buy box',
+          body: `${address} — ${price}`,
+          related_property_id: deal.id,
+          is_read: false,
+        })
+        alreadyNotified.add(user.id)
+      } catch (e) {
+        console.error(`[notify-buy-box] Failed to insert in-app notification for ${user.id}:`, e)
+      }
+    }
+
+    if (!resend) {
+      console.log(`[notify-buy-box] source=${source} id=${id} matched=${matched.length} in-app only (Resend not configured)`)
+      return NextResponse.json({ sent: 0, notified: alreadyNotified.size })
+    }
 
     let sent = 0
     for (const box of matched) {
@@ -91,7 +127,7 @@ export async function POST(req) {
       if (!user?.email) continue
       try {
         await resend.emails.send({
-          from: 'Deelmap <notifications@deelmap.com>',
+          from: 'DeelMap <notifications@deelmap.com>',
           to: user.email,
           subject: `New deal matching your buy box — ${address}`,
           html: `

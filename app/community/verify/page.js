@@ -244,7 +244,7 @@ export default function VerifyPage() {
                   </h2>
                   <p className="text-[13px] text-[#737370] mt-2 max-w-md mx-auto leading-relaxed">
                     Your badge is live across the community. Need to change roles or submit additional credentials?
-                    Reach out to <a className="text-[#D03839] font-semibold" href="mailto:support@deelmap.com">support@deelmap.com</a>.
+                    Reach out through our <a className="text-[#D03839] font-semibold" href="/contact">Contact page</a>.
                   </p>
                   <Link
                     href="/community/me"

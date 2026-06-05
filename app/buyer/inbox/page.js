@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
-import { MessageSquare, Search, DollarSign, Home, Pin, Flag, X, Check, Loader2 } from 'lucide-react';
+import { MessageSquare, Search, DollarSign, Home, Pin, Flag, X, Check, Loader2, MoreVertical } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
@@ -295,7 +295,7 @@ export default function InboxPage() {
                       e.preventDefault();
                       setContextMenu({ x: e.clientX, y: e.clientY, conversation });
                     }}
-                    className={`flex items-start gap-3 px-5 py-3.5 cursor-pointer transition-colors duration-200 border-l-2 ${
+                    className={`group flex items-start gap-3 px-5 py-3.5 cursor-pointer transition-colors duration-200 border-l-2 ${
                       isActive
                         ? 'bg-[#FAFAF8] border-l-[#D03839]'
                         : 'border-l-transparent hover:bg-[#FAFAF8]'
@@ -333,6 +333,21 @@ export default function InboxPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Options button — touch-reachable equivalent of right-click */}
+                    <button
+                      type="button"
+                      aria-label="Conversation options"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const r = e.currentTarget.getBoundingClientRect();
+                        const x = Math.min(r.right - 176, window.innerWidth - 184);
+                        setContextMenu({ x: Math.max(8, x), y: r.bottom + 4, conversation });
+                      }}
+                      className="flex-shrink-0 -mr-1 p-1.5 rounded text-[#A8A8A4] hover:bg-[#F3F3F0] hover:text-[#1A1816] transition-colors duration-200 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
                   </div>
                 );
               })}

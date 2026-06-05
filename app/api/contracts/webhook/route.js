@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 import { contractDownloadUrl } from '@/lib/contractDownload'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = 'Deelmap <notifications@deelmap.com>'
+const FROM = 'DeelMap <notifications@deelmap.com>'
 const DOCUSEAL_BASE = 'https://api.docuseal.com'
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://deelmap.com').replace(/\/+$/, '')
 

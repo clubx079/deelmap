@@ -150,7 +150,7 @@ DeelMap Team
     console.log(`[${new Date().toISOString()}] Sending password reset email via Resend...`)
 
     const { data, error } = await resend.emails.send({
-      from: 'Deelmap <notifications@deelmap.com>',
+      from: 'DeelMap <notifications@deelmap.com>',
       to: [email],
       subject: `${resetOtp} is your password reset code`,
       html: htmlTemplate,

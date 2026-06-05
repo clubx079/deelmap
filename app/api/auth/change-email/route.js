@@ -67,7 +67,7 @@ export async function POST(request) {
       if (!resend) return NextResponse.json({ message: 'Email service is not configured.' }, { status: 500 })
       const { error } = await withTimeout(
         resend.emails.send({
-          from: 'Deelmap <notifications@deelmap.com>',
+          from: 'DeelMap <notifications@deelmap.com>',
           to: [email],
           subject: `${code} is your DeelMap email-change code`,
           html: codeEmailHtml(code),
