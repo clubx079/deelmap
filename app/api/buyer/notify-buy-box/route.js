@@ -91,7 +91,7 @@ export async function POST(req) {
       if (!user?.email) continue
       try {
         await resend.emails.send({
-          from: 'Deelmap <notifications@deelmap.com>',
+          from: 'DeelMap <notifications@deelmap.com>',
           to: user.email,
           subject: `New deal matching your buy box — ${address}`,
           html: `

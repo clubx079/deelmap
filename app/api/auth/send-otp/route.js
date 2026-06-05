@@ -166,7 +166,7 @@ DeelMap Team
 
     const { data, error } = await withTimeout(
       resend.emails.send({
-        from: 'Deelmap <notifications@deelmap.com>',
+        from: 'DeelMap <notifications@deelmap.com>',
         to: [email],
         subject: `${otp} is your DeelMap verification code`,
         html: htmlTemplate,

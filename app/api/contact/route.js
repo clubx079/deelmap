@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 // Contact / support submissions are recorded on the shared Monday board
-// "Deelmap Contact & Support". All calls are server-side; the API key never
+// "DeelMap Contact & Support". All calls are server-side; the API key never
 // reaches the browser.
 const MONDAY_API_URL = 'https://api.monday.com/v2'
 const BOARD_ID = '18415712401'

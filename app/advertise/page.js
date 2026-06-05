@@ -151,11 +151,11 @@ export default function AdvertisePage() {
                 Reach out to us and we'll put together a package that works for your budget and goals.
               </p>
               <a
-                href="mailto:support@deelmap.com"
+                href="/contact?subject=advertising"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#D03839] hover:bg-[#E0493B] text-white text-sm font-semibold rounded transition-colors"
               >
                 <Mail className="w-4 h-4" />
-                support@deelmap.com
+                Get in touch
               </a>
             </div>
           </div>

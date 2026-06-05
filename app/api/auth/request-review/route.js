@@ -123,7 +123,7 @@ async function sendIPReviewNotification(user, message, clientIP) {
   for (const to of recipients) {
     try {
       await resend.emails.send({
-        from: 'Deelmap <notifications@deelmap.com>',
+        from: 'DeelMap <notifications@deelmap.com>',
         to,
         subject: `IP Review Request — ${fullName} (${user.email})`,
         html,
