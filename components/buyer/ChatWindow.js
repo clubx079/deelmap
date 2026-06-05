@@ -748,9 +748,6 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
               <Paperclip className="w-5 h-5 text-[#737370]" />
             </button>
             <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-            <button type="button" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded hover:bg-[#FAFAF8] transition-colors duration-200 flex-shrink-0">
-              <Smile className="w-5 h-5 text-[#737370]" />
-            </button>
 
             <div className="flex-1 relative">
               <textarea
