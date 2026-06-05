@@ -29,6 +29,7 @@ export default function BuyerDashboard() {
   });
   const [recentMessages, setRecentMessages] = useState([]);
   const [recentDeals, setRecentDeals] = useState([]);
+  const [marketData, setMarketData] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -44,6 +45,13 @@ export default function BuyerDashboard() {
   useEffect(() => {
     if (user?.id) fetchDashboardData();
   }, [user]);
+
+  useEffect(() => {
+    fetch('/api/buyer/market-insights')
+      .then(r => r.json())
+      .then(d => setMarketData(Array.isArray(d?.topStates) ? d.topStates.slice(0, 4) : []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -207,14 +215,6 @@ export default function BuyerDashboard() {
     }
     return url;
   };
-
-  // Market insights (static for now — can be made dynamic later)
-  const marketData = [
-    { city: 'Phoenix, AZ', avgRoi: '22.4%', deals: 48, trend: 'Trending', trendUp: true },
-    { city: 'Tampa, FL', avgRoi: '18.1%', deals: 31, trend: 'Trending', trendUp: true },
-    { city: 'Memphis, TN', avgRoi: '16.8%', deals: 22, trend: 'Stable', trendUp: false },
-    { city: 'Atlanta, GA', avgRoi: '19.6%', deals: 37, trend: 'Rising', trendUp: true },
-  ];
 
   if (loading) {
     return (
@@ -405,30 +405,32 @@ export default function BuyerDashboard() {
                 View all
               </Link>
             </div>
-            {/* Table header */}
-            <div className="px-4 py-2 flex items-center justify-between text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1.1px] border-b border-[#E8E8E4]">
-              <span>City</span>
-              <span>AVG ROI · Deals</span>
-            </div>
-            <div className="divide-y divide-[#E8E8E4]">
-              {marketData.map((item, i) => (
-                <div key={i} className="px-4 py-2.5 flex items-center justify-between">
-                  <div>
-                    <p className="text-[13px] font-medium text-[#1A1816]">{item.city}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      {item.trendUp && <TrendingUp className="w-3 h-3 text-[#0F6E56]" />}
-                      <span className={`text-[11px] font-medium ${item.trendUp ? 'text-[#0F6E56]' : 'text-[#737370]'}`}>
-                        {item.trend}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[14px] font-semibold text-[#0F6E56]">{item.avgRoi}</p>
-                    <p className="text-[11px] text-[#A8A8A4]">{item.deals} active deals</p>
-                  </div>
+            {marketData.length > 0 ? (
+              <>
+                {/* Table header */}
+                <div className="px-4 py-2 flex items-center justify-between text-[11px] font-semibold text-[#A8A8A4] uppercase tracking-[1.1px] border-b border-[#E8E8E4]">
+                  <span>State</span>
+                  <span>Avg yield · Deals</span>
                 </div>
-              ))}
-            </div>
+                <div className="divide-y divide-[#E8E8E4]">
+                  {marketData.map((item) => (
+                    <div key={item.state} className="px-4 py-2.5 flex items-center justify-between">
+                      <div>
+                        <p className="text-[13px] font-medium text-[#1A1816]">{item.state}</p>
+                      </div>
+                      <div className="text-right">
+                        {item.avgYield > 0 && (
+                          <p className="text-[14px] font-semibold text-[#0F6E56]">{item.avgYield}%</p>
+                        )}
+                        <p className="text-[11px] text-[#A8A8A4]">{item.count} active deals</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="px-4 py-6 text-[13px] text-[#737370]">No market data available</div>
+            )}
           </div>
 
           {/* Quick Actions */}
@@ -570,9 +572,9 @@ function DealCard({ deal, getFeatureImage, formatCurrency }) {
   };
 
   const image = getFeatureImage(deal);
-  const arv = deal.purchase_price || (deal.price ? Math.round(deal.price * 1.8) : null);
-  const spread = arv && deal.price ? arv - deal.price : null;
-  const roi = arv && deal.price ? Math.round(((arv - deal.price) / deal.price) * 100) : null;
+  const arv = deal.arv ?? deal.after_repair_value ?? null;
+  const roiRaw = deal.cash_on_cash ?? deal.gross_yield ?? null;
+  const roi = roiRaw && Number(roiRaw) > 0 ? Math.round(Number(roiRaw)) : null;
   const listingUrl = `https://deelmap.com/${deal.slug || deal.id}`;
 
   return (

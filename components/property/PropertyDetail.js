@@ -215,6 +215,9 @@ export function PropertyDetail({ property }) {
       bathrooms: property.bathrooms,
       sqft: property.sqft,
       gross_yield: property.gross_yield,
+      cash_on_cash: property.cash_on_cash,
+      arv: property.arv,
+      after_repair_value: property.after_repair_value,
       purchase_price: property.purchase_price,
       property_photos: property.property_photos?.slice(0, 1) || [],
     }
