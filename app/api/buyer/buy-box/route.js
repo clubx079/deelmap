@@ -26,6 +26,15 @@ export async function POST(request) {
   const { user_id, min_price, max_price, property_types, locations, min_beds, min_baths, deal_types } = body
   if (!user_id) return NextResponse.json({ error: 'user_id required' }, { status: 400 })
 
+  // A buy box is eligible for deal-match alerts (is_active) unless the buyer
+  // explicitly turned alerts off via their notification preferences.
+  const { data: userRow } = await supabase
+    .from('users')
+    .select('notification_preferences')
+    .eq('id', user_id)
+    .maybeSingle()
+  const is_active = (userRow?.notification_preferences?.buyBoxMatch) !== false
+
   const { error } = await supabase
     .from('buyer_buy_boxes')
     .upsert({
@@ -37,6 +46,7 @@ export async function POST(request) {
       min_beds: min_beds ?? null,
       min_baths: min_baths ?? null,
       deal_types: deal_types || [],
+      is_active,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' })
 
