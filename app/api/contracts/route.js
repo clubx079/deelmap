@@ -95,10 +95,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'sellerEmail, buyerEmail and templateId are required' }, { status: 400 })
     }
 
-    // The Seller is always First Party (signs first). The creator may be on
-    // either side: if they're the Seller they sign inline now; if they're the
-    // Buyer, the Seller (counterparty) is emailed to sign first and the creator
-    // signs after. Default to seller for backward-compatibility.
+    // The Seller is always First Party and signs first. Nobody signs inline on
+    // the portal — every party (seller → co-seller → buyer) receives an emailed
+    // signing link, in order. The creator side just tags the submission.
     const creatorIsSeller = contractRole !== 'buyer'
     const creatorEmail = creatorIsSeller ? sellerEmail : buyerEmail
 
@@ -129,9 +128,9 @@ export async function POST(request) {
         role: 'First Party',
         email: sellerEmail,
         name: sellerName || sellerEmail,
-        // When the creator is the Seller they sign inline (no email). When the
-        // creator is the Buyer, email the Seller so they can sign first.
-        send_email: !creatorIsSeller,
+        // The seller always signs first — email them the signing link (no inline
+        // signing). The co-seller and buyer are activated by the webhook in turn.
+        send_email: true,
         // Tag the submission with the CREATOR's email so the portal list finds
         // contracts they created, regardless of which side they're on.
         application_key: `buyer:${creatorEmail}`,
@@ -214,11 +213,9 @@ export async function POST(request) {
     return NextResponse.json({
       submission_id: assignorSubmitter.submission_id,
       assignor_slug: assignorSubmitter.slug,
-      // Creator signs inline only when they're the Seller (First Party). When the
-      // creator is the Buyer, no embed — the Seller is emailed to sign first.
-      ...(creatorIsSeller
-        ? { embed_src: assignorSubmitter.embed_src }
-        : { firstSignerName: sellerName || sellerEmail }),
+      // No inline signing — the seller is emailed the signing link, then the
+      // co-seller and buyer in turn via the webhook chain.
+      firstSignerName: sellerName || sellerEmail,
     })
   } catch {
     return NextResponse.json({ error: 'Failed to create contract' }, { status: 500 })
