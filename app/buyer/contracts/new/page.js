@@ -487,7 +487,7 @@ export default function BuyerNewContractWizardPage() {
         )}
       </div>
 
-      <div className={step === NUM_STEPS ? 'grid lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-6 items-start' : ''}>
+      <div className={step === NUM_STEPS ? 'grid xl:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-6 items-start' : ''}>
         <div className="min-w-0">
 
       <div className={`grid gap-2 mb-6`} style={{ gridTemplateColumns: `repeat(${NUM_STEPS}, minmax(0, 1fr))` }}>
@@ -521,7 +521,7 @@ export default function BuyerNewContractWizardPage() {
         </div>
 
         {step === NUM_STEPS && (
-          <div className="hidden lg:block lg:sticky lg:top-6">
+          <div className="xl:sticky xl:top-6">
             <LiveContractPreview isAssignment={isAssignment} L={L} contractRole={contractRole} buyerName={buyerName} sellerName={sellerName} fieldValues={fieldValues} />
           </div>
         )}
