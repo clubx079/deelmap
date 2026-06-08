@@ -233,7 +233,7 @@ export default function BuyerContractsPage() {
                     </div>
                     <div className="flex items-center gap-3 text-[12px] text-[#737370] flex-wrap">
                       <span>Last updated {fmtDate(d.updated_at)}</span>
-                      <span>Counterparty: {counterparty}</span>
+                      <span>Other party: {counterparty}</span>
                     </div>
                   </div>
                   <div className="shrink-0 flex items-center gap-2">

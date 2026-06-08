@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useContext, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, FileText, Home, PenLine, Loader2, User, Users, Check, Send } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Home, PenLine, Loader2, User, Users, Check, Send, Info } from 'lucide-react'
 import { DocusealForm } from '@docuseal/react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -96,6 +96,7 @@ export default function BuyerNewContractWizardPage() {
 
   const [templates, setTemplates]               = useState([])
   const [templatesLoading, setTemplatesLoading] = useState(true)
+  const [templatesError, setTemplatesError]     = useState(false)
 
   const [properties, setProperties]             = useState([])
   const [propertiesLoading, setPropertiesLoading] = useState(false)
@@ -159,13 +160,24 @@ export default function BuyerNewContractWizardPage() {
     }
   }, [user, contractRole])
 
-  useEffect(() => {
+  // Load templates — distinguish a fetch FAILURE (show Retry) from a genuine
+  // empty list. A non-ok response or thrown error sets templatesError so the
+  // user gets a retryable message instead of a permanent dead-end.
+  const loadTemplates = () => {
     setTemplatesLoading(true)
+    setTemplatesError(false)
     fetch('/api/contracts?type=templates')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('templates fetch failed')
+        return r.json()
+      })
       .then(raw => setTemplates(Array.isArray(raw) ? decorateTemplates(raw) : []))
-      .catch(() => setTemplates([]))
+      .catch(() => { setTemplates([]); setTemplatesError(true) })
       .finally(() => setTemplatesLoading(false))
+  }
+
+  useEffect(() => {
+    loadTemplates()
   }, [])
 
   useEffect(() => {
@@ -182,23 +194,45 @@ export default function BuyerNewContractWizardPage() {
         if (!d || d.error) return
         setCurrentDraftId(d.id)
         if (d.template_id) setTemplateId(String(d.template_id))
-        if (d.property_id) setPropertyId(d.property_id)
-        if (d.buyer_name) setBuyerName(d.buyer_name)
-        if (d.buyer_email) setBuyerEmail(d.buyer_email)
+        let resolvedStep = 1
         if (d.field_values && typeof d.field_values === 'object') {
           const fv = d.field_values
           if (fv.__contract_role) setContractRole(fv.__contract_role)
           if (fv.__seller_name) setSellerName(fv.__seller_name)
           if (fv.__seller_email) setSellerEmail(fv.__seller_email)
+          // Restore the property selection — manual entry vs a saved listing.
+          if (fv.__property_manual) {
+            setPropertyId('manual')
+            setManualAddress(fv.__manual_address || fv.property_address || '')
+          } else if (d.property_id) {
+            setPropertyId(d.property_id)
+          }
           setFieldValues(prev => ({ ...prev, ...fv }))
+          // Resume at the last step the user was on; otherwise fall back to the
+          // last step that has data. Clamp to a valid range.
+          const NUM_STEPS = 6
+          const savedStep = Number(fv.__step)
+          if (Number.isFinite(savedStep) && savedStep >= 1) {
+            resolvedStep = Math.min(NUM_STEPS, Math.max(1, savedStep))
+          } else {
+            const hasTerms = ['purchase_price', 'emd', 'closing_date'].some(k => fv[k] && String(fv[k]).trim() !== '')
+            const hasSeller = !!fv.__seller_name || !!fv.__seller_email
+            const hasBuyer = !!d.buyer_name || !!d.buyer_email
+            const hasProperty = !!fv.__property_manual || !!d.property_id || !!fv.property_address
+            resolvedStep = hasTerms ? 5 : hasSeller ? 4 : hasBuyer ? 3 : hasProperty ? 2 : 1
+          }
+        } else if (d.property_id) {
+          setPropertyId(d.property_id)
         }
-        setStep(1)
+        if (d.buyer_name) setBuyerName(d.buyer_name)
+        if (d.buyer_email) setBuyerEmail(d.buyer_email)
+        setStep(resolvedStep)
       })
       .catch(() => {})
   }, [resumeDraftId])
 
   // Mark dirty whenever the user changes anything we care about
-  useEffect(() => { if (readyForAutoSave) setDirty(true) }, [templateId, contractRole, propertyId, manualAddress, buyerName, buyerEmail, sellerName, sellerEmail, fieldValues, readyForAutoSave])
+  useEffect(() => { if (readyForAutoSave) setDirty(true) }, [templateId, contractRole, propertyId, manualAddress, buyerName, buyerEmail, sellerName, sellerEmail, fieldValues, step, readyForAutoSave])
 
   // Enable auto-save once user has picked a role + a template
   useEffect(() => {
@@ -223,6 +257,9 @@ export default function BuyerNewContractWizardPage() {
         __contract_role: contractRole || '',
         __seller_name: sellerName || '',
         __seller_email: sellerEmail || '',
+        __manual_address: propertyId === 'manual' ? (manualAddress || fieldValues.property_address || '') : '',
+        __property_manual: propertyId === 'manual',
+        __step: step,
       },
     })
 
@@ -262,7 +299,7 @@ export default function BuyerNewContractWizardPage() {
 
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dirty, readyForAutoSave, templateId, contractRole, propertyId, manualAddress, buyerName, buyerEmail, sellerName, sellerEmail, fieldValues, currentDraftId, autoSaving])
+  }, [dirty, readyForAutoSave, templateId, contractRole, propertyId, manualAddress, buyerName, buyerEmail, sellerName, sellerEmail, fieldValues, currentDraftId, autoSaving, step])
 
   useEffect(() => {
     if (!user?.id) return
@@ -480,6 +517,12 @@ export default function BuyerNewContractWizardPage() {
         <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">
           New Contract — <span className="text-[#737370] font-medium">Step {step} of {NUM_STEPS} · {STEP_LABELS[step - 1]}</span>
         </h1>
+        {(step === 1 || step === NUM_STEPS) && (
+          <p className="flex items-start gap-1.5 text-[12px] text-[#A8A8A4] mt-1 max-w-[760px] leading-relaxed">
+            <Info className="w-3.5 h-3.5 mt-px shrink-0" />
+            <span>This is a template provided for your convenience. DeelMap is not a law firm and does not provide legal advice. We strongly recommend you have this document reviewed by a licensed attorney before signing. DeelMap and its affiliates accept no liability for the content, validity, or enforceability of any agreement created using this platform.</span>
+          </p>
+        )}
         {readyForAutoSave && (
           <p className="text-[12px] text-[#A8A8A4] mt-1">
             {autoSaving ? <span className="inline-flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving…</span> : autoSaveError ? <span className="text-[#D03839]">{autoSaveError}</span> : lastSavedAt ? <><span className="text-[#0F6E56]">✓ Saved</span> {new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</> : null}
@@ -495,7 +538,7 @@ export default function BuyerNewContractWizardPage() {
       </div>
 
       <div className="bg-white border border-[#E8E8E4] rounded p-5">
-        {step === 1 && <Step1Setup templates={templates} templatesLoading={templatesLoading} templateId={templateId} onSelectTemplate={setTemplateId} contractRole={contractRole} onSelectRole={setContractRole} />}
+        {step === 1 && <Step1Setup templates={templates} templatesLoading={templatesLoading} templatesError={templatesError} onRetryTemplates={loadTemplates} templateId={templateId} onSelectTemplate={setTemplateId} contractRole={contractRole} onSelectRole={setContractRole} />}
         {step === 2 && <Step2Property properties={properties} propertiesLoading={propertiesLoading} propertyId={propertyId} onChange={setPropertyId} manualAddress={manualAddress} onManualAddressChange={setManualAddress} />}
         {step === 3 && <StepPartyInfo party="buyer" L={L} isAssignment={isAssignment} isYou={contractRole === 'buyer'} name={buyerName} email={buyerEmail} address={fieldValues.buyer_address} coName={fieldValues.co_buyer_name} onName={setBuyerName} onEmail={setBuyerEmail} onAddress={v => setField('buyer_address', v)} onCoName={v => setField('co_buyer_name', v)} />}
         {step === 4 && <StepPartyInfo party="seller" L={L} isAssignment={isAssignment} isYou={contractRole === 'seller'} name={sellerName} email={sellerEmail} address={fieldValues.seller_address} coName={fieldValues.co_seller_name} coEmail={fieldValues.co_seller_email} onName={setSellerName} onEmail={setSellerEmail} onAddress={v => setField('seller_address', v)} onCoName={v => setField('co_seller_name', v)} onCoEmail={v => setField('co_seller_email', v)} />}
@@ -530,11 +573,20 @@ export default function BuyerNewContractWizardPage() {
   )
 }
 
-function Step1Setup({ templates, templatesLoading, templateId, onSelectTemplate, contractRole, onSelectRole }) {
+function Step1Setup({ templates, templatesLoading, templatesError, onRetryTemplates, templateId, onSelectTemplate, contractRole, onSelectRole }) {
   const selectedTemplate = templates.find(t => String(t.id) === String(templateId))
   const isAssignment = selectedTemplate?.slug === 'assignment'
   const L = roleLabels(isAssignment)
   if (templatesLoading) return <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-20 bg-[#FAFAF8] border border-[#E8E8E4] rounded animate-pulse" />)}</div>
+  // The request FAILED — offer a retry rather than the permanent empty-state.
+  if (!templates.length && templatesError) return (
+    <div className="text-center py-10 text-[13px] text-[#737370]">
+      <p className="text-[14px] font-semibold text-[#1A1816] mb-1">Couldn't load contract templates</p>
+      <p>Something went wrong reaching our contracts service. Please try again.</p>
+      <button type="button" onClick={onRetryTemplates} className="mt-4 h-10 px-5 inline-flex items-center gap-1.5 text-[13px] font-semibold bg-[#1A1816] text-white rounded hover:bg-black">Retry</button>
+    </div>
+  )
+  // The request SUCCEEDED but returned zero templates — genuine empty state.
   if (!templates.length) return <div className="text-center py-10 text-[13px] text-[#737370]"><p className="text-[14px] font-semibold text-[#1A1816] mb-1">No contract templates available</p><p>Contracts aren't available right now. Please try again later or contact support.</p></div>
   return (
     <div>
