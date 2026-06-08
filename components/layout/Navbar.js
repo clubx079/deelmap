@@ -7,6 +7,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { resolveInboxConversationId } from '@/lib/conversationId'
 import { RegistrationModal } from '@/components/RegistrationModal'
 
+// The Navbar is mounted per-page, so it remounts on every navigation. Remember
+// whether the signed-in user has a community profile across those remounts so
+// the community icon stays visible instead of disappearing and re-fetching.
+let cachedHasCommunityProfile = false
+
 export function Navbar() {
   const { user, signOut, displayName, profileExtras } = useAuth()
   const pathname = usePathname()
@@ -25,8 +30,10 @@ export function Navbar() {
   const [communityNotifs, setCommunityNotifs] = useState([])
   const [communityUnread, setCommunityUnread] = useState(0)
   const [communityOpen, setCommunityOpen] = useState(false)
-  const [hasCommunityProfile, setHasCommunityProfile] = useState(false)
-  const [communityChecked, setCommunityChecked] = useState(false)
+  // Initialize from the module cache so the icon is present on the first paint
+  // after a navigation (no flash). Falls back to false on a cold page load.
+  const [hasCommunityProfile, setHasCommunityProfile] = useState(cachedHasCommunityProfile)
+  const [communityChecked, setCommunityChecked] = useState(cachedHasCommunityProfile)
 
   const aboutButtonRef = useRef(null)
   const notifBellRef = useRef(null)
@@ -77,6 +84,7 @@ export function Navbar() {
   // Fetch community notifications (only if user has a community profile)
   useEffect(() => {
     if (!user?.id) {
+      cachedHasCommunityProfile = false
       setCommunityUnread(0); setCommunityNotifs([]); setHasCommunityProfile(false); setCommunityChecked(false); return
     }
     const fetchCommunityNotifs = async () => {
@@ -86,8 +94,13 @@ export function Navbar() {
           const data = await res.json()
           setCommunityNotifs(data.notifications || [])
           setCommunityUnread(data.unread_count || 0)
-          // Sticky: once a profile is found keep the icon, so polling can't flicker it off
-          setHasCommunityProfile(prev => prev || !!data.has_profile)
+          // Sticky: once a profile is found keep the icon, so polling can't flicker it off.
+          // Also cache it at module scope so it survives navigation remounts.
+          setHasCommunityProfile(prev => {
+            const next = prev || !!data.has_profile
+            cachedHasCommunityProfile = next
+            return next
+          })
         }
       } catch {} finally { setCommunityChecked(true) }
     }
