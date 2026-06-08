@@ -517,10 +517,12 @@ export default function BuyerNewContractWizardPage() {
         <h1 className="text-[24px] font-bold text-[#1A1816] mb-1">
           New Contract — <span className="text-[#737370] font-medium">Step {step} of {NUM_STEPS} · {STEP_LABELS[step - 1]}</span>
         </h1>
-        <p className="flex items-start gap-1.5 text-[12px] text-[#A8A8A4] mt-1 max-w-[760px] leading-relaxed">
-          <Info className="w-3.5 h-3.5 mt-px shrink-0" />
-          <span>This is a template provided for your convenience. DeelMap is not a law firm and does not provide legal advice. We strongly recommend you have this document reviewed by a licensed attorney before signing. DeelMap and its affiliates accept no liability for the content, validity, or enforceability of any agreement created using this platform.</span>
-        </p>
+        {(step === 1 || step === NUM_STEPS) && (
+          <p className="flex items-start gap-1.5 text-[12px] text-[#A8A8A4] mt-1 max-w-[760px] leading-relaxed">
+            <Info className="w-3.5 h-3.5 mt-px shrink-0" />
+            <span>This is a template provided for your convenience. DeelMap is not a law firm and does not provide legal advice. We strongly recommend you have this document reviewed by a licensed attorney before signing. DeelMap and its affiliates accept no liability for the content, validity, or enforceability of any agreement created using this platform.</span>
+          </p>
+        )}
         {readyForAutoSave && (
           <p className="text-[12px] text-[#A8A8A4] mt-1">
             {autoSaving ? <span className="inline-flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving…</span> : autoSaveError ? <span className="text-[#D03839]">{autoSaveError}</span> : lastSavedAt ? <><span className="text-[#0F6E56]">✓ Saved</span> {new Date(lastSavedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</> : null}
