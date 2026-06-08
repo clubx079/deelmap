@@ -9,6 +9,31 @@ function dsHeaders() {
   return { 'X-Auth-Token': process.env.DOCUSEAL_API_KEY, 'Content-Type': 'application/json' }
 }
 
+// Fetch the templates list with an 8s timeout + one retry on timeout/5xx. The
+// list is effectively static (IDs hardcoded in TEMPLATE_CONFIG) so it's cached
+// for 5 minutes — a transient DocuSeal hiccup shouldn't dead-end the wizard.
+async function fetchTemplates() {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
+    try {
+      const res = await fetch(`${DOCUSEAL_BASE}/templates?limit=50`, {
+        headers: dsHeaders(),
+        signal: controller.signal,
+        next: { revalidate: 300 },
+      })
+      clearTimeout(timer)
+      if (res.status >= 500) { if (attempt === 0) continue; throw new Error(`DocuSeal ${res.status}`) }
+      if (!res.ok) throw new Error(`DocuSeal ${res.status}`)
+      return res
+    } catch (e) {
+      clearTimeout(timer)
+      if (attempt === 0) continue
+      throw e
+    }
+  }
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const email = searchParams.get('email')
@@ -16,7 +41,14 @@ export async function GET(request) {
 
   try {
     if (type === 'templates') {
-      const res = await fetch(`${DOCUSEAL_BASE}/templates?limit=50`, { headers: dsHeaders(), cache: 'no-store' })
+      // Timeout + one retry so a transient DocuSeal failure surfaces as a real
+      // error (non-200) the client can retry — not a permanent "no templates".
+      let res
+      try {
+        res = await fetchTemplates()
+      } catch {
+        return NextResponse.json({ error: 'templates_unavailable' }, { status: 502 })
+      }
       const json = await res.json()
       // Decorate with friendly labels + fieldMap from TEMPLATE_CONFIG so the
       // wizard can show "Purchase Contract" instead of "(A to B) DeelMap…"
