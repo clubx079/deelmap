@@ -25,7 +25,24 @@ export async function GET(request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const rows = data || [];
+  let rows = data || [];
+
+  // Re-validate against live data: a deal that has since gone inactive or been
+  // flagged incomplete (or a manual listing no longer published) must not keep
+  // showing here just because we stored a snapshot at view-time. Mirror the
+  // marketplace's active filter (wholesale_deals: active + not incomplete;
+  // properties: admin_status active + published/active).
+  const allIds = rows.map(r => r.property_id).filter(Boolean);
+  if (allIds.length > 0) {
+    const [wd, mp] = await Promise.all([
+      supabase.from('wholesale_deals').select('id, status, is_incomplete').in('id', allIds),
+      supabase.from('properties').select('id, status, admin_status').in('id', allIds),
+    ]);
+    const valid = new Set();
+    for (const d of wd.data || []) if (d.status === 'active' && d.is_incomplete === false) valid.add(d.id);
+    for (const p of mp.data || []) if (p.admin_status === 'active' && ['published', 'active'].includes(p.status)) valid.add(p.id);
+    rows = rows.filter(r => valid.has(r.property_id));
+  }
 
   // The stored property_data is a snapshot taken at view-time, which can carry a
   // stale or incomplete photo set (e.g. a single non-featured photo). Overlay the
