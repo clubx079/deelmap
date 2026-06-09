@@ -220,7 +220,11 @@ export default function BuyerContractsPage() {
                 ? 'Assignment Contract'
                 : 'Contract'
               const address = d.field_values?.property_address || `Untitled ${tplLabel}`
-              const counterparty = d.buyer_name || d.buyer_email || 'Not set'
+              // The "other party" is whoever the creator is NOT. If they created
+              // this as the buyer, the other party is the seller, and vice-versa.
+              const counterparty = d.field_values?.__contract_role === 'buyer'
+                ? (d.field_values?.__seller_name || d.field_values?.__seller_email || 'Not set')
+                : (d.buyer_name || d.buyer_email || 'Not set')
               return (
                 <div key={d.id} className="bg-white border border-dashed border-[#E8E8E4] rounded p-4 flex items-center gap-4">
                   <div className="w-9 h-9 bg-[#FAFAF8] border border-[#E8E8E4] rounded flex items-center justify-center shrink-0">
