@@ -97,14 +97,14 @@ export default function MarketInsightsPage() {
     {
       label: 'Avg gross yield',
       value: summary.avgYield ? `${summary.avgYield}%` : '—',
-      sub: 'Wholesale deals only',
+      sub: 'Annualised rental return',
       icon: <TrendingUp className="w-4 h-4 text-[#0F6E56]" />,
       iconBg: '#E4F5EC',
     },
     {
       label: 'Avg cap rate',
       value: summary.avgCapRate ? `${summary.avgCapRate}%` : '—',
-      sub: 'Wholesale deals only',
+      sub: 'Net operating income / price',
       icon: <BarChart2 className="w-4 h-4 text-[#1A1816]" />,
       iconBg: '#F3F3F0',
     },
@@ -216,7 +216,7 @@ export default function MarketInsightsPage() {
               <span>State</span>
               <span className="text-center">Active deals</span>
               <span className="text-center">Avg price</span>
-              <span className="text-right">Avg yield <span className="text-[#C9C9C4] lowercase">(wholesale)</span></span>
+              <span className="text-right">Avg yield</span>
             </div>
             {topStates.map((s, i) => (
               <Link key={s.state} href={`/marketplace?search=${encodeURIComponent(s.state)}`} className="flex items-center justify-between sm:grid sm:grid-cols-4 gap-2 px-4 py-3 hover:bg-[#FAFAF8] transition-colors cursor-pointer group">
