@@ -43,7 +43,7 @@ export async function POST(request) {
         .maybeSingle()
 
       if (!userRow?.phone) {
-        return NextResponse.json({ message: 'No phone number on file for this account. Please use email instead.' }, { status: 400 })
+        return NextResponse.json({ message: "We couldn't send a reset code by SMS. Please use the email option instead." }, { status: 400 })
       }
 
       const digits = userRow.phone.replace(/\D/g, '')
@@ -52,7 +52,7 @@ export async function POST(request) {
         : (digits.length === 11 && digits.startsWith('1') ? `+${digits}` : null)
 
       if (!e164Phone) {
-        return NextResponse.json({ message: 'Invalid phone number on file. Please use email instead.' }, { status: 400 })
+        return NextResponse.json({ message: "We couldn't send a reset code by SMS. Please use the email option instead." }, { status: 400 })
       }
 
       console.log(`[forgot-password] Sending SMS reset code to ${e164Phone}`)
