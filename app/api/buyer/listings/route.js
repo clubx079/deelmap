@@ -250,15 +250,40 @@ export async function PATCH(request) {
     const body = await request.json()
     const { id, action, ...fields } = body
 
-    // Enhancement flag update (after successful add-on payment)
+    // Enhancement flag update — only after a VERIFIED add-on payment.
     if (action === 'enhance') {
-      const addOns = fields.add_ons || []
+      // Require a Stripe PaymentIntent and verify it server-side. Never trust the
+      // client's add_ons list — grant only what the payment actually covered.
+      const piId = fields.stripe_payment_intent_id
+      if (!piId) return NextResponse.json({ error: 'Payment required to enhance a listing.' }, { status: 402 })
+
+      let paymentIntent
+      try {
+        paymentIntent = await stripe.paymentIntents.retrieve(piId)
+      } catch {
+        return NextResponse.json({ error: 'Could not verify payment. Please contact support.' }, { status: 402 })
+      }
+      if (paymentIntent.status !== 'succeeded') {
+        return NextResponse.json({ error: 'Payment has not been completed.' }, { status: 402 })
+      }
+      // The PaymentIntent must belong to this user AND this listing (set at creation
+      // in /api/buyer/listings/payment), so a payment can't be replayed elsewhere.
+      if (paymentIntent.metadata?.userId !== userId || String(paymentIntent.metadata?.listing_id) !== String(id)) {
+        return NextResponse.json({ error: 'This payment does not match this listing.' }, { status: 403 })
+      }
+
+      // Grant only the add-ons the payment actually covered (from PI metadata).
+      const paidAddOns = paymentIntent.metadata?.add_ons ? paymentIntent.metadata.add_ons.split(',').filter(Boolean) : []
       const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       const in7Days  = new Date(Date.now() +  7 * 24 * 60 * 60 * 1000).toISOString()
       const flags = {}
-      if (addOns.includes('highlight') || addOns.includes('bundle')) { flags.is_highlighted = true; flags.highlight_ends_at = in30Days }
-      if (addOns.includes('boost') || addOns.includes('bundle')) { flags.is_boosted = true; flags.boost_ends_at = in7Days }
-      if (addOns.includes('homepage')) { flags.is_homepage_featured = true; flags.homepage_feature_ends_at = in7Days }
+      if (paidAddOns.includes('highlight') || paidAddOns.includes('bundle')) { flags.is_highlighted = true; flags.highlight_ends_at = in30Days }
+      if (paidAddOns.includes('boost') || paidAddOns.includes('bundle')) { flags.is_boosted = true; flags.boost_ends_at = in7Days }
+      if (paidAddOns.includes('homepage')) { flags.is_homepage_featured = true; flags.homepage_feature_ends_at = in7Days }
+      if (Object.keys(flags).length === 0) {
+        return NextResponse.json({ error: 'No paid add-ons found on this payment.' }, { status: 400 })
+      }
+
       const { error: enhError } = await supabaseMarketplace
         .from('properties')
         .update(flags)

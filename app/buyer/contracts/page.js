@@ -89,7 +89,7 @@ export default function BuyerContractsPage() {
 
   async function handleDelete(id) {
     setDeletingId(id)
-    await fetch('/api/contracts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    await fetch('/api/contracts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, email: user?.email }) })
     setContracts(prev => prev.filter(c => c.id !== id))
     setDeletingId(null)
   }
