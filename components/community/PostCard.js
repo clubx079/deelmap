@@ -117,7 +117,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
   return (
     <article
       onClick={onCardClick}
-      className={`bg-white border rounded-lg overflow-hidden cursor-pointer transition-all hover:border-[#D1D1CE] md:grid md:grid-cols-[52px_1fr] ${
+      className={`bg-white border rounded-lg cursor-pointer transition-all hover:border-[#D1D1CE] md:grid md:grid-cols-[52px_1fr] ${
         post.is_pinned
           ? 'border-[#F5C4C0] bg-linear-to-b from-[#FFFBFB] to-white'
           : deal
@@ -126,7 +126,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
       }`}
     >
       {/* Desktop vote rail — hidden on mobile (vote goes into the action bar) */}
-      <div className="hidden md:block">
+      <div className="hidden md:block rounded-l-lg overflow-hidden">
         <VoteRail score={score} userVote={userVote} onVote={(v) => onVote?.(post.id, v)} />
       </div>
 

@@ -146,7 +146,7 @@ function CommunityInner() {
       {/* Sub-nav — sticks to viewport top when the navbar scrolls away.
           Navbar is position:relative in this app (globals.css), so it scrolls
           out of view and the sub-nav becomes the top affixed bar. */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
+      <div className="sticky top-[80px] z-30 bg-white border-b border-[#E8E8E4]">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8">
           <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
             {SUB_NAV.map(chip => {
@@ -165,6 +165,14 @@ function CommunityInner() {
                 </button>
               )
             })}
+            {profile && (
+              <Link
+                href="/community/me"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold whitespace-nowrap transition-colors border bg-white text-[#444441] border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816]"
+              >
+                My Profile
+              </Link>
+            )}
             {profile && (
               <Link
                 href="/community/me/saved"

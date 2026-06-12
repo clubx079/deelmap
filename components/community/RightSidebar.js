@@ -11,10 +11,12 @@ const RULES = [
   { strong: 'No off-platform routing.', rest: ' Deal-linked discussions stay on DeelMap.' },
 ]
 
-export function RightSidebar({ profile, trending = [], activeDeals = [], nextTier = null, onStartVerify }) {
+export function RightSidebar({ profile, trending = [], activeDeals = [], nextTier = null, onStartVerify, hideEquity = false }) {
   return (
     <aside className="hidden lg:block sticky top-[68px] self-start">
-      {profile ? <EquityCard profile={profile} nextTier={nextTier} /> : <JoinCard />}
+      {/* On the profile page the equity is already shown in the hero + overview,
+          so the card would be redundant — hideEquity skips it there. */}
+      {!hideEquity && (profile ? <EquityCard profile={profile} nextTier={nextTier} /> : <JoinCard />)}
       <VerifyCTA profile={profile} onStartVerify={onStartVerify} />
       <TrendingPanel items={trending} />
       <ActiveDealsPanel items={activeDeals} />
@@ -29,7 +31,7 @@ function EquityCard({ profile, nextTier }) {
     : 100
   const togo = nextTier ? Math.max(0, nextTier.min_equity - profile.equity_score) : 0
   return (
-    <div className="bg-linear-to-br from-[#0F172A] to-[#1E293B] text-white border border-[#0F172A] rounded-lg p-4 mb-3.5">
+    <Link href="/community/me" className="group block bg-[#1A1816] hover:bg-[#262320] text-white border border-[#1A1816] rounded-lg p-4 mb-3.5 transition-colors">
       <div className="text-[12px] font-bold uppercase tracking-wider text-white/60 mb-3">Your Equity</div>
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-[34px] font-extrabold leading-none tracking-tight">{(profile.equity_score || 0).toLocaleString()}</span>
@@ -46,7 +48,11 @@ function EquityCard({ profile, nextTier }) {
           : <span>Top tier reached.</span>
         }
       </div>
-    </div>
+      <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between text-[12px] font-semibold text-white/70 group-hover:text-white transition-colors">
+        <span>View your profile</span>
+        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+      </div>
+    </Link>
   )
 }
 

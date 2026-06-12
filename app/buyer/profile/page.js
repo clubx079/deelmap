@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext'
@@ -62,9 +63,11 @@ export default function BuyerProfilePage() {
   const [savingName, setSavingName] = useState(false)
   const [nameMsg, setNameMsg] = useState('')
 
-  // Handle (community identity)
+  // Handle (community identity) — single source of truth is community_profiles.handle
   const [isEditingHandle, setIsEditingHandle] = useState(false)
-  const [handleDraft, setHandleDraft] = useState({ nickname: '', isAnonymous: false })
+  const [communityHandle, setCommunityHandle] = useState('')
+  const [hasCommunityProfile, setHasCommunityProfile] = useState(false)
+  const [handleDraft, setHandleDraft] = useState({ handle: '', isAnonymous: false })
   const [savingHandle, setSavingHandle] = useState(false)
   const [handleMsg, setHandleMsg] = useState('')
 
@@ -91,9 +94,18 @@ export default function BuyerProfilePage() {
   }, [])
 
   useEffect(() => {
-    if (user?.id) { fetchUserData(); fetchBuyBox() }
+    if (user?.id) { fetchUserData(); fetchBuyBox(); fetchCommunityHandle() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  async function fetchCommunityHandle() {
+    try {
+      const res = await fetch('/api/community/profile', { headers: { 'x-user-id': user.id } })
+      const d = await res.json()
+      if (d?.profile?.handle) { setCommunityHandle(d.profile.handle); setHasCommunityProfile(true) }
+      else { setCommunityHandle(''); setHasCommunityProfile(false) }
+    } catch {}
+  }
 
   async function fetchUserData() {
     try {
@@ -111,7 +123,7 @@ export default function BuyerProfilePage() {
           isAnonymous: data.is_anonymous || false,
         })
         setNameDraft({ firstName: data.first_name || '', lastName: data.last_name || '' })
-        setHandleDraft({ nickname: data.nickname || '', isAnonymous: data.is_anonymous || false })
+        setHandleDraft(prev => ({ ...prev, isAnonymous: data.is_anonymous || false }))
         setAlertsOn((data.notification_preferences || {}).buyBoxMatch || false)
       }
     } finally {
@@ -179,13 +191,35 @@ export default function BuyerProfilePage() {
     setSavingHandle(true)
     setHandleMsg('')
     try {
+      const handle = (handleDraft.handle || '').trim().toLowerCase()
+      // Save the handle to the community profile — the single source of truth that
+      // powers the community, @mentions, and the seller chat. Creates the profile
+      // on first save; rotates it (90-day cooldown) afterwards.
+      if (handle !== communityHandle) {
+        if (handle.length < 3 || handle.length > 24 || !/^[a-z0-9_]+$/.test(handle)) {
+          setHandleMsg('Use 3–24 lowercase letters, numbers, or underscores.')
+          return
+        }
+        const res = await fetch('/api/community/profile', {
+          method: hasCommunityProfile ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+          body: JSON.stringify({ handle }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (!res.ok) { setHandleMsg(d.error || 'Could not save your handle. Please try again.'); return }
+        setCommunityHandle(d.profile?.handle || handle)
+        setHasCommunityProfile(true)
+      }
+      // Anonymity is a separate preference from the handle.
       const { error } = await supabase
         .from('users')
-        .update({ nickname: handleDraft.nickname || null, is_anonymous: handleDraft.isAnonymous, updated_at: new Date().toISOString() })
+        .update({ is_anonymous: handleDraft.isAnonymous, updated_at: new Date().toISOString() })
         .eq('id', user.id)
-      if (error) { setHandleMsg('Could not save. Please try again.'); return }
-      setProfile(prev => ({ ...prev, nickname: handleDraft.nickname, isAnonymous: handleDraft.isAnonymous }))
+      if (error) { setHandleMsg('Handle saved, but the anonymity setting failed. Please try again.'); return }
+      setProfile(prev => ({ ...prev, isAnonymous: handleDraft.isAnonymous }))
       setIsEditingHandle(false)
+    } catch {
+      setHandleMsg('Could not save. Please try again.')
     } finally {
       setSavingHandle(false)
     }
@@ -235,7 +269,7 @@ export default function BuyerProfilePage() {
   }
 
   const displayName = `${profile.firstName} ${profile.lastName}`.trim() || 'Your profile'
-  const handleLabel = profile.nickname ? `@${profile.nickname}` : (profile.isAnonymous ? 'Anonymous' : 'No handle set')
+  const handleLabel = communityHandle ? `@${communityHandle}` : (profile.isAnonymous ? 'Anonymous' : 'No handle set')
   const initials = (profile.firstName?.[0] || profile.email?.[0] || 'U').toUpperCase()
 
   if (loading) {
@@ -318,12 +352,12 @@ export default function BuyerProfilePage() {
                   <User className="w-4 h-4 text-[#444441]" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-[#1A1816]">Community handle</p>
-                  <p className="text-[12px] text-[#737370]">How you appear in the community and to sellers</p>
+                  <p className="text-[14px] font-semibold text-[#1A1816]">Your handle</p>
+                  <p className="text-[12px] text-[#737370]">Shown instead of your real name across DeelMap — and it's your community @handle too</p>
                 </div>
               </div>
               {!isEditingHandle && (
-                <button onClick={() => { setHandleDraft({ nickname: profile.nickname, isAnonymous: profile.isAnonymous }); setIsEditingHandle(true); setHandleMsg('') }}
+                <button onClick={() => { setHandleDraft({ handle: communityHandle, isAnonymous: profile.isAnonymous }); setIsEditingHandle(true); setHandleMsg('') }}
                   className="flex-shrink-0 flex items-center gap-1.5 px-3 min-h-[44px] border border-[#E8E8E4] hover:bg-[#FAFAF8] text-[#444441] rounded text-[12px] font-semibold transition-colors">
                   <Edit2 className="w-3.5 h-3.5" /> Edit
                 </button>
@@ -335,8 +369,8 @@ export default function BuyerProfilePage() {
                 <label className="block text-[12px] font-semibold text-[#444441] mb-1.5">Handle</label>
                 <div className="flex items-center gap-2">
                   <span className="text-[14px] text-[#737370]">@</span>
-                  <input type="text" value={isEditingHandle ? handleDraft.nickname : profile.nickname} disabled={!isEditingHandle}
-                    onChange={(e) => setHandleDraft(prev => ({ ...prev, nickname: e.target.value.replace(/\s+/g, '') }))}
+                  <input type="text" value={isEditingHandle ? handleDraft.handle : communityHandle} disabled={!isEditingHandle}
+                    onChange={(e) => setHandleDraft(prev => ({ ...prev, handle: e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase() }))}
                     placeholder="yourhandle"
                     className={`flex-1 px-4 py-3 border rounded text-[13px] outline-none transition-all ${isEditingHandle ? 'border-[#E8E8E4] bg-white focus:border-[#D03839] focus:ring-1 focus:ring-[#D03839]/20' : 'border-[#E8E8E4] bg-[#FAFAF8] cursor-not-allowed text-[#737370]'}`} />
                 </div>
@@ -357,6 +391,13 @@ export default function BuyerProfilePage() {
                   </button>
                 </div>
               )}
+              <div className="pt-3 border-t border-[#F0F0EC] flex items-center flex-wrap gap-2.5 text-[12.5px] font-semibold">
+                <Link href="/community/me" className="text-[#444441] hover:text-[#D03839] transition-colors">My community profile</Link>
+                <span className="text-[#D1D1CE]">·</span>
+                <Link href="/community/me/saved" className="text-[#444441] hover:text-[#D03839] transition-colors">Saved posts</Link>
+                <span className="text-[#D1D1CE]">·</span>
+                <Link href="/community/notifications" className="text-[#444441] hover:text-[#D03839] transition-colors">Notifications</Link>
+              </div>
             </div>
           </div>
 

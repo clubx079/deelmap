@@ -11,6 +11,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
+import { ProfileSubNav } from '@/components/community/ProfileSubNav'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
@@ -72,33 +73,7 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      {/* Sub-nav */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-          <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Community
-            </Link>
-            <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#1A1816] text-white text-[13px] font-semibold whitespace-nowrap">
-              <UserIcon className="w-3.5 h-3.5" strokeWidth={2.5} />
-              My Profile
-            </span>
-            {profile && (
-              <Link
-                href="/community/me/saved"
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                Saved
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
+      <ProfileSubNav active="profile" />
 
       {!profileChecked ? (
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-10">
@@ -167,6 +142,7 @@ export default function MyProfilePage() {
               trending={[]}
               activeDeals={[]}
               onStartVerify={onStartVerify}
+              hideEquity
             />
           </div>
         </>
@@ -198,7 +174,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
   const togo = nextTier ? Math.max(0, nextTier.min_equity - equity) : 0
 
   return (
-    <div className="bg-linear-to-br from-[#0F172A] to-[#1E293B] text-white">
+    <div className="bg-[#1A1816] text-white">
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-6 md:py-8">
         <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-6">
           {/* Avatar */}
@@ -258,7 +234,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-[#1A1816] font-bold text-[13px] rounded hover:bg-white/90 transition-colors w-full md:w-auto"
+              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-[#1A1816] font-bold text-[13px] rounded hover:bg-white/90 transition-colors w-full md:w-[150px]"
             >
               <Pencil className="w-3.5 h-3.5" strokeWidth={2.5} />
               Edit profile
@@ -267,7 +243,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
               <button
                 type="button"
                 onClick={onStartVerify}
-                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors w-full md:w-auto"
+                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors w-full md:w-[150px]"
               >
                 <ShieldCheck className="w-3.5 h-3.5" strokeWidth={2.5} />
                 Get verified

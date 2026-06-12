@@ -213,7 +213,7 @@ function LotPageInner({ params }) {
       <Navbar />
 
       {/* Sub-nav — back link only */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
+      <div className="sticky top-[80px] z-30 bg-white border-b border-[#E8E8E4]">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8">
           <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
             <Link

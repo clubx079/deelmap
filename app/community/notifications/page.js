@@ -9,6 +9,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
+import { ProfileSubNav } from '@/components/community/ProfileSubNav'
 import { showToast } from '@/components/community/Dialogs'
 
 const FILTERS = [
@@ -89,29 +90,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      {/* Sub-nav */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-          <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Community
-            </Link>
-            <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#1A1816] text-white text-[13px] font-semibold whitespace-nowrap">
-              <Bell className="w-3.5 h-3.5" strokeWidth={2.5} fill="currentColor" />
-              Notifications
-              {unread > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#D03839] text-[10.5px] font-extrabold ml-1">
-                  {unread > 99 ? '99+' : unread}
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
+      <ProfileSubNav active="notifications" />
 
       {/* Hero strip */}
       <div className="bg-white border-b border-[#E8E8E4]">
