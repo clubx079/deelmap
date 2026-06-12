@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Bell, BellOff, Check, MessageSquare, AtSign, ShieldCheck, Gavel, Inbox,
+  ArrowLeft, Bell, BellOff, Check, MessageSquare, AtSign, ShieldCheck, Gavel, Inbox, Layers,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
@@ -23,6 +23,7 @@ const TYPE_ICONS = {
   mention:              { icon: AtSign,        bg: '#FEF0EF', fg: '#D03839' },
   verification_status:  { icon: ShieldCheck,   bg: '#DCFCE7', fg: '#0F6E56' },
   mod_action:           { icon: Gavel,         bg: '#FEF3C7', fg: '#92400E' },
+  lot_post:             { icon: Layers,        bg: '#FAFAF8', fg: '#1A1816' },
 }
 
 export default function NotificationsPage() {
@@ -181,6 +182,10 @@ export default function NotificationsPage() {
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#92400E] mt-1.5 shrink-0" />
                 <span><strong className="text-[#1A1816] font-bold">Mod actions</strong> on your content.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1A1816] mt-1.5 shrink-0" />
+                <span><strong className="text-[#1A1816] font-bold">New posts</strong> in Lots you follow.</span>
               </li>
             </ul>
             <div className="mt-4 pt-3 border-t border-[#F3F3EF]">

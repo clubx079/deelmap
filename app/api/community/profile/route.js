@@ -20,7 +20,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('community_profiles')
-    .select('id, handle, display_name, bio, avatar_url, equity_score, tier_id, role_badge, is_moderator, handle_changed_at, email_replies, email_mentions, email_verification_status')
+    .select('id, handle, display_name, bio, avatar_url, equity_score, tier_id, role_badge, is_moderator, handle_changed_at, email_replies, email_mentions, email_verification_status, email_subscriptions')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -51,6 +51,7 @@ export async function GET(request) {
       email_replies: data.email_replies !== false,
       email_mentions: data.email_mentions !== false,
       email_verification_status: data.email_verification_status !== false,
+      email_subscriptions: data.email_subscriptions !== false,
     },
     tier: tier || null,
     next_tier: nextTier || null,
@@ -130,6 +131,7 @@ export async function PATCH(request) {
   if (typeof body.email_replies === 'boolean')             patch.email_replies = body.email_replies
   if (typeof body.email_mentions === 'boolean')            patch.email_mentions = body.email_mentions
   if (typeof body.email_verification_status === 'boolean') patch.email_verification_status = body.email_verification_status
+  if (typeof body.email_subscriptions === 'boolean')       patch.email_subscriptions = body.email_subscriptions
 
   if (body.handle && body.handle !== current.handle) {
     const handleErr = validateHandle(body.handle)
@@ -150,7 +152,7 @@ export async function PATCH(request) {
     .from('community_profiles')
     .update(patch)
     .eq('id', current.id)
-    .select('id, handle, display_name, bio, avatar_url, equity_score, tier_id, role_badge, is_moderator, handle_changed_at, email_replies, email_mentions, email_verification_status')
+    .select('id, handle, display_name, bio, avatar_url, equity_score, tier_id, role_badge, is_moderator, handle_changed_at, email_replies, email_mentions, email_verification_status, email_subscriptions')
     .single()
 
   if (error) {

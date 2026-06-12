@@ -441,35 +441,60 @@ function PostsTab({ authHeaders }) {
   )
 }
 
+const LOT_CATEGORY_LABELS = {
+  real_estate: 'Real Estate',
+  lending:     'Lending',
+  finance:     'Finance',
+  contractors: 'Contractors',
+  markets:     'Markets',
+}
+const LOT_CATEGORY_ORDER = ['real_estate', 'lending', 'finance', 'contractors', 'markets']
+
 function SubscriptionsTab({ authHeaders }) {
-  const [subs, setSubs] = useState(null)
+  const [lots, setLots] = useState(null)
+  const [subscribed, setSubscribed] = useState(() => new Set()) // lot slugs
   const [busy, setBusy] = useState(null) // lot slug being toggled
 
   useEffect(() => {
-    fetch('/api/community/subscriptions', { headers: authHeaders() })
-      .then(r => r.json())
-      .then(d => setSubs(d.subscriptions || []))
-      .catch(() => setSubs([]))
+    Promise.all([
+      fetch('/api/community/lots').then(r => r.json()).catch(() => ({ flat: [] })),
+      fetch('/api/community/subscriptions', { headers: authHeaders() }).then(r => r.json()).catch(() => ({ subscriptions: [] })),
+    ]).then(([l, s]) => {
+      setLots(l.flat || [])
+      setSubscribed(new Set((s.subscriptions || []).map(x => x.slug)))
+    })
   }, [authHeaders])
 
-  const unsubscribe = async (lot) => {
+  const toggle = async (lot) => {
+    const isSub = subscribed.has(lot.slug)
     setBusy(lot.slug)
-    const prev = subs
-    setSubs(prev.filter(s => s.slug !== lot.slug))
-    const res = await fetch(`/api/community/subscriptions?lot_slug=${lot.slug}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-    }).catch(() => null)
+    // optimistic
+    setSubscribed(prev => {
+      const next = new Set(prev)
+      if (isSub) next.delete(lot.slug); else next.add(lot.slug)
+      return next
+    })
+    const res = await fetch(
+      isSub ? `/api/community/subscriptions?lot_slug=${lot.slug}` : '/api/community/subscriptions',
+      isSub
+        ? { method: 'DELETE', headers: authHeaders() }
+        : { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ lot_slug: lot.slug }) }
+    ).catch(() => null)
     setBusy(null)
     if (!res?.ok) {
-      setSubs(prev)
-      showToast('Could not unsubscribe.', { variant: 'error' })
+      // revert
+      setSubscribed(prev => {
+        const next = new Set(prev)
+        if (isSub) next.add(lot.slug); else next.delete(lot.slug)
+        return next
+      })
+      showToast(isSub ? 'Could not unsubscribe.' : 'Could not subscribe.', { variant: 'error' })
     } else {
-      showToast(`Unsubscribed from ${lot.name}`, { variant: 'success' })
+      showToast(isSub ? `Unsubscribed from ${lot.name}` : `Subscribed to ${lot.name}`, { variant: 'success' })
     }
   }
 
-  if (subs === null) {
+  if (lots === null) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
@@ -479,59 +504,73 @@ function SubscriptionsTab({ authHeaders }) {
     )
   }
 
-  if (!subs.length) {
-    return (
-      <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
-          <Layers className="w-6 h-6" strokeWidth={2} />
-        </div>
-        <h3 className="text-[18px] font-extrabold text-[#1A1816] tracking-tight">No subscriptions yet.</h3>
-        <p className="text-[13px] text-[#737370] mt-2 max-w-md mx-auto leading-relaxed">
-          Subscribe to Lots you care about — rates, comps, contractors, off-market deals — and they&apos;ll filter your feed.
-        </p>
-        <Link
-          href="/community"
-          className="mt-5 inline-flex items-center gap-1.5 h-11 px-5 bg-[#D03839] hover:bg-[#C73022] text-white font-bold text-[14px] rounded transition-colors"
-        >
-          <Compass className="w-4 h-4" strokeWidth={2.5} /> Browse Lots
-        </Link>
-      </div>
-    )
-  }
+  const subCount = subscribed.size
+  const groups = LOT_CATEGORY_ORDER
+    .map(cat => ({ cat, items: lots.filter(l => l.category === cat) }))
+    .filter(g => g.items.length)
 
   return (
-    <div className="space-y-2">
-      {subs.map(lot => (
-        <div
-          key={lot.id}
-          className="bg-white border border-[#E8E8E4] rounded p-4 flex items-center gap-3"
-        >
-          <div className="w-10 h-10 rounded shrink-0 flex items-center justify-center text-white"
-               style={{ background: lot.accent_color || '#737370' }}>
-            <Layers className="w-5 h-5" strokeWidth={2} />
+    <div className="space-y-4">
+      {/* Explainer / count */}
+      <div className="bg-white border border-[#E8E8E4] rounded p-4 flex items-start gap-3">
+        <div className="w-10 h-10 rounded bg-[#1A1816] text-white flex items-center justify-center shrink-0">
+          <Layers className="w-5 h-5" strokeWidth={2} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-extrabold text-[#1A1816]">
+            {subCount > 0 ? `Subscribed to ${subCount} Lot${subCount === 1 ? '' : 's'}` : 'Subscribe to your first Lot'}
           </div>
-          <div className="flex-1 min-w-0">
-            <Link
-              href={`/community/${lot.slug}`}
-              className="text-[14.5px] font-bold text-[#1A1816] hover:text-[#D03839] truncate inline-block max-w-full"
-            >
-              {lot.name}
-            </Link>
-            <div className="text-[11.5px] text-[#737370] font-semibold mt-0.5 flex items-center gap-2 flex-wrap">
-              <span>{(lot.post_count || 0).toLocaleString()} posts</span>
-              <span className="text-[#D1D1CE]">·</span>
-              <span>{(lot.member_count || 0).toLocaleString()} members</span>
+          <p className="text-[12.5px] text-[#737370] leading-relaxed mt-0.5">
+            Get a notification — and an email — every time someone posts in a Lot you follow. Manage email alerts in{' '}
+            <span className="font-semibold text-[#444441]">Settings → Email notifications</span>.
+          </p>
+        </div>
+      </div>
+
+      {groups.map(group => (
+        <div key={group.cat} className="bg-white border border-[#E8E8E4] rounded">
+          <div className="px-4 pt-3.5 pb-2.5 border-b border-[#F3F3EF]">
+            <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370]">
+              {LOT_CATEGORY_LABELS[group.cat] || group.cat}
             </div>
           </div>
-          <button
-            type="button"
-            disabled={busy === lot.slug}
-            onClick={() => unsubscribe(lot)}
-            className="shrink-0 h-9 px-3 inline-flex items-center gap-1.5 border border-[#E8E8E4] rounded text-[12.5px] font-bold text-[#444441] hover:border-[#D03839] hover:text-[#D03839] disabled:opacity-50"
-          >
-            {busy === lot.slug ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" strokeWidth={2.5} />}
-            Unsubscribe
-          </button>
+          <ul className="p-2">
+            {group.items.map(lot => {
+              const isSub = subscribed.has(lot.slug)
+              return (
+                <li key={lot.id} className="flex items-center gap-3 px-2 py-2 rounded hover:bg-[#FAFAF8] transition-colors">
+                  <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: lot.accent_color || '#737370' }} />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/community/${lot.slug}`}
+                      className="text-[13.5px] font-bold text-[#1A1816] hover:text-[#D03839] truncate inline-block max-w-full"
+                    >
+                      {lot.name}
+                    </Link>
+                    <div className="text-[11px] text-[#A8A8A4] font-semibold">
+                      {(lot.post_count || 0).toLocaleString()} posts
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy === lot.slug}
+                    onClick={() => toggle(lot)}
+                    className={`shrink-0 h-8 px-3 inline-flex items-center gap-1.5 rounded text-[12px] font-bold transition-colors disabled:opacity-50 ${
+                      isSub
+                        ? 'border border-[#E8E8E4] text-[#444441] hover:border-[#D03839] hover:text-[#D03839]'
+                        : 'bg-[#D03839] hover:bg-[#C73022] text-white'
+                    }`}
+                  >
+                    {busy === lot.slug
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : isSub
+                        ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Subscribed</>
+                        : <>Subscribe</>}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       ))}
     </div>
@@ -545,6 +584,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
   const [emailReplies, setEmailReplies] = useState(profile.email_replies !== false)
   const [emailMentions, setEmailMentions] = useState(profile.email_mentions !== false)
   const [emailVerificationStatus, setEmailVerificationStatus] = useState(profile.email_verification_status !== false)
+  const [emailSubscriptions, setEmailSubscriptions] = useState(profile.email_subscriptions !== false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -562,7 +602,8 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
     (handleEditable && handle !== profile.handle) ||
     emailReplies !== (profile.email_replies !== false) ||
     emailMentions !== (profile.email_mentions !== false) ||
-    emailVerificationStatus !== (profile.email_verification_status !== false)
+    emailVerificationStatus !== (profile.email_verification_status !== false) ||
+    emailSubscriptions !== (profile.email_subscriptions !== false)
 
   const save = async () => {
     setSaving(true); setError(null)
@@ -573,6 +614,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
     if (emailReplies !== (profile.email_replies !== false)) patch.email_replies = emailReplies
     if (emailMentions !== (profile.email_mentions !== false)) patch.email_mentions = emailMentions
     if (emailVerificationStatus !== (profile.email_verification_status !== false)) patch.email_verification_status = emailVerificationStatus
+    if (emailSubscriptions !== (profile.email_subscriptions !== false)) patch.email_subscriptions = emailSubscriptions
 
     if (!Object.keys(patch).length) { setSaving(false); return }
 
@@ -685,6 +727,12 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
             blurb="A moderator approves or rejects your verification."
             checked={emailVerificationStatus}
             onChange={setEmailVerificationStatus}
+          />
+          <EmailToggle
+            label="New posts in your Lots"
+            blurb="Someone posts in a Lot you subscribe to."
+            checked={emailSubscriptions}
+            onChange={setEmailSubscriptions}
           />
         </div>
       </div>
