@@ -88,7 +88,7 @@ export default function PublicProfilePage({ params }) {
       <div className="min-h-screen bg-[#FAFAF8]">
         <Navbar />
         <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-10">
-          <div className="bg-white border border-[#E8E8E4] rounded-xl p-6 animate-pulse h-48" />
+          <div className="bg-white border border-[#E8E8E4] rounded p-6 animate-pulse h-48" />
         </div>
         <Footer hideCta />
       </div>
@@ -198,7 +198,7 @@ export default function PublicProfilePage({ params }) {
                   Actions
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white text-[#1A1816] rounded-lg shadow-xl border border-[#E8E8E4] py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white text-[#1A1816] rounded shadow-xl border border-[#E8E8E4] py-1 z-50">
                     <button
                       type="button"
                       disabled={blockBusy}
@@ -248,7 +248,7 @@ export default function PublicProfilePage({ params }) {
 
 function EmptyPosts({ handle }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
+    <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
         <MessageSquare className="w-6 h-6" strokeWidth={2} />
       </div>
@@ -264,7 +264,7 @@ function EmptyPosts({ handle }) {
 
 function BlockedByBanner({ handle }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
+    <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEE2E2] text-[#991B1B] mb-4">
         <AlertCircle className="w-6 h-6" strokeWidth={2} />
       </div>
@@ -280,7 +280,7 @@ function BlockedByBanner({ handle }) {
 
 function YouBlockedBanner({ handle, onUnblock, busy }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
+    <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF3C7] text-[#92400E] mb-4">
         <Slash className="w-6 h-6" strokeWidth={2} />
       </div>
@@ -308,7 +308,7 @@ function ProfileNotFound({ handle }) {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-12">
-        <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
           <div className="p-8 md:p-12 text-center bg-linear-to-b from-[#FFFBFB] to-white">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
               <UserIcon className="w-6 h-6" strokeWidth={2} />

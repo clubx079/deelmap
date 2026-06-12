@@ -104,7 +104,7 @@ function ModalShell({ children, onClose, maxWidth = 'max-w-md', tall = false }) 
       onClick={(e) => { if (e.target === e.currentTarget) onClose?.(null) }}
     >
       <div
-        className={`relative bg-white w-full ${maxWidth} h-full sm:h-auto sm:shadow-2xl sm:border sm:border-[#E8E8E4] sm:rounded-xl sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain`}
+        className={`relative bg-white w-full ${maxWidth} h-full sm:h-auto sm:shadow-2xl sm:border sm:border-[#E8E8E4] sm:rounded sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain`}
       >
         {children}
       </div>
@@ -172,7 +172,7 @@ function DialogHeader({ icon: Icon, iconColor = '#737370', iconBg = '#FAFAF8', t
   return (
     <div className="shrink-0 px-5 pt-5 pb-3 border-b border-[#F3F3EF] flex items-start gap-3">
       {Icon && (
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: iconBg, color: iconColor }}>
+        <div className="w-10 h-10 rounded flex items-center justify-center shrink-0" style={{ background: iconBg, color: iconColor }}>
           <Icon className="w-5 h-5" strokeWidth={2.25} />
         </div>
       )}
@@ -409,7 +409,7 @@ function ToastStack({ items }) {
       {items.map(t => (
         <div
           key={t.id}
-          className={`pointer-events-auto px-4 py-2.5 rounded-lg shadow-lg text-[13px] font-semibold flex items-center gap-2 max-w-[480px] animate-[toastIn_0.18s_ease-out] ${
+          className={`pointer-events-auto px-4 py-2.5 rounded shadow-lg text-[13px] font-semibold flex items-center gap-2 max-w-[480px] animate-[toastIn_0.18s_ease-out] ${
             t.variant === 'success' ? 'bg-[#0F6E56] text-white'
             : t.variant === 'error' ? 'bg-[#D03839] text-white'
             : t.variant === 'warn'  ? 'bg-[#B5620A] text-white'

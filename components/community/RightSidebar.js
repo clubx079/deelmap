@@ -31,7 +31,7 @@ function EquityCard({ profile, nextTier }) {
     : 100
   const togo = nextTier ? Math.max(0, nextTier.min_equity - profile.equity_score) : 0
   return (
-    <Link href="/community/me" className="group block bg-[#1A1816] hover:bg-[#262320] text-white border border-[#1A1816] rounded-lg p-4 mb-3.5 transition-colors">
+    <Link href="/community/me" className="group block bg-[#1A1816] hover:bg-[#262320] text-white border border-[#1A1816] rounded p-4 mb-3.5 transition-colors">
       <div className="text-[12px] font-bold uppercase tracking-wider text-white/60 mb-3">Your Equity</div>
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-[34px] font-extrabold leading-none tracking-tight">{(profile.equity_score || 0).toLocaleString()}</span>
@@ -58,7 +58,7 @@ function EquityCard({ profile, nextTier }) {
 
 function JoinCard() {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-lg p-4 mb-3.5">
+    <div className="bg-white border border-[#E8E8E4] rounded p-4 mb-3.5">
       <div className="text-[14px] font-bold text-[#1A1816] mb-1">Join the conversation</div>
       <div className="text-[12.5px] text-[#444441] leading-relaxed mb-3">
         Pick a handle to start posting, voting, and saving deal discussions.
@@ -73,7 +73,7 @@ function JoinCard() {
 function VerifyCTA({ profile }) {
   if (profile?.role_badge) return null
   return (
-    <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded-lg p-4 mb-3.5">
+    <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded p-4 mb-3.5">
       <div className="w-9 h-9 bg-[#0F6E56] rounded flex items-center justify-center text-white mb-2.5">
         <ShieldCheck className="w-5 h-5" strokeWidth={2.5} />
       </div>
@@ -94,7 +94,7 @@ function VerifyCTA({ profile }) {
 function TrendingPanel({ items }) {
   if (!items.length) return null
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-lg mb-3.5">
+    <div className="bg-white border border-[#E8E8E4] rounded mb-3.5">
       <div className="px-4 pt-3.5 pb-2.5 flex justify-between items-center">
         <div className="text-[12px] font-bold uppercase tracking-wider text-[#1A1816] flex items-center gap-1.5">
           <TrendingUp className="w-3.5 h-3.5" strokeWidth={2.5} />
@@ -126,7 +126,7 @@ function TrendingPanel({ items }) {
 function ActiveDealsPanel({ items }) {
   if (!items.length) return null
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-lg mb-3.5">
+    <div className="bg-white border border-[#E8E8E4] rounded mb-3.5">
       <div className="px-4 pt-3.5 pb-2.5 flex justify-between items-center">
         <div className="text-[12px] font-bold uppercase tracking-wider text-[#1A1816]">◆ Active Deal Discussions</div>
       </div>
@@ -157,7 +157,7 @@ function ActiveDealsPanel({ items }) {
 
 function RulesPanel() {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-lg">
+    <div className="bg-white border border-[#E8E8E4] rounded">
       <div className="px-4 pt-3.5 pb-2.5">
         <div className="text-[12px] font-bold uppercase tracking-wider text-[#1A1816]">Community Rules</div>
       </div>

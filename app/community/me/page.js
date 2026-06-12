@@ -77,7 +77,7 @@ export default function MyProfilePage() {
 
       {!profileChecked ? (
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-10">
-          <div className="bg-white border border-[#E8E8E4] rounded-xl p-6 animate-pulse">
+          <div className="bg-white border border-[#E8E8E4] rounded p-6 animate-pulse">
             <div className="h-20 w-20 rounded-full bg-[#F3F3EF] mb-4" />
             <div className="h-6 w-40 bg-[#F3F3EF] rounded mb-2" />
             <div className="h-4 w-72 bg-[#F3F3EF] rounded" />
@@ -288,7 +288,7 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
       </div>
 
       {/* Equity / tier */}
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370] mb-3">Tier progress</div>
         <div className="flex items-end justify-between mb-2">
           <div>
@@ -318,8 +318,8 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
 
       {/* Verify CTA if not verified */}
       {!profile.role_badge && (
-        <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded-xl p-5 flex flex-col md:flex-row md:items-center gap-4">
-          <div className="w-11 h-11 bg-[#0F6E56] rounded-lg flex items-center justify-center text-white shrink-0">
+        <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded p-5 flex flex-col md:flex-row md:items-center gap-4">
+          <div className="w-11 h-11 bg-[#0F6E56] rounded flex items-center justify-center text-white shrink-0">
             <ShieldCheck className="w-5.5 h-5.5" strokeWidth={2.25} />
           </div>
           <div className="flex-1">
@@ -338,7 +338,7 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
       )}
 
       {/* Subscriptions preview */}
-      <div className="bg-white border border-[#E8E8E4] rounded-xl">
+      <div className="bg-white border border-[#E8E8E4] rounded">
         <div className="px-5 pt-4 pb-3 flex items-center justify-between">
           <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370]">Your Lots</div>
           <span className="text-[11.5px] text-[#737370]">{subs?.length || 0} subscribed</span>
@@ -385,7 +385,7 @@ function StatCard({ label, value, tone = 'dark' }) {
     ? 'bg-linear-to-br from-[#FEF0EF] to-white border-[#F5C4C0] text-[#D03839]'
     : 'bg-white border-[#E8E8E4] text-[#1A1816]'
   return (
-    <div className={`border rounded-xl p-3.5 md:p-4 ${styles}`}>
+    <div className={`border rounded p-3.5 md:p-4 ${styles}`}>
       <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#737370] mb-1">{label}</div>
       <div className="text-[22px] md:text-[24px] font-extrabold leading-none tracking-tight">{value}</div>
     </div>
@@ -406,7 +406,7 @@ function PostsTab({ authHeaders }) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg h-32 animate-pulse" />
+          <div key={i} className="bg-white border border-[#E8E8E4] rounded h-32 animate-pulse" />
         ))}
       </div>
     )
@@ -414,7 +414,7 @@ function PostsTab({ authHeaders }) {
 
   if (!posts.length) {
     return (
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
+      <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <MessageSquare className="w-6 h-6" strokeWidth={2} />
         </div>
@@ -473,7 +473,7 @@ function SubscriptionsTab({ authHeaders }) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg h-20 animate-pulse" />
+          <div key={i} className="bg-white border border-[#E8E8E4] rounded h-20 animate-pulse" />
         ))}
       </div>
     )
@@ -481,7 +481,7 @@ function SubscriptionsTab({ authHeaders }) {
 
   if (!subs.length) {
     return (
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
+      <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Layers className="w-6 h-6" strokeWidth={2} />
         </div>
@@ -504,7 +504,7 @@ function SubscriptionsTab({ authHeaders }) {
       {subs.map(lot => (
         <div
           key={lot.id}
-          className="bg-white border border-[#E8E8E4] rounded-lg p-4 flex items-center gap-3"
+          className="bg-white border border-[#E8E8E4] rounded p-4 flex items-center gap-3"
         >
           <div className="w-10 h-10 rounded shrink-0 flex items-center justify-center text-white"
                style={{ background: lot.accent_color || '#737370' }}>
@@ -594,7 +594,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
 
   return (
     <div className="space-y-3.5">
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <h3 className="text-[15px] font-extrabold text-[#1A1816] tracking-tight">Public profile</h3>
         <p className="text-[12.5px] text-[#737370] mt-1">These are visible to other community members.</p>
 
@@ -663,7 +663,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
       </div>
 
       {/* Email preferences */}
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <h3 className="text-[15px] font-extrabold text-[#1A1816] tracking-tight">Email notifications</h3>
         <p className="text-[12.5px] text-[#737370] mt-1">Decide which community events also send you an email. In-app notifications stay on regardless.</p>
 
@@ -690,7 +690,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
       </div>
 
       {/* Privacy callout */}
-      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded-xl p-4 flex gap-3">
+      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4 flex gap-3">
         <ShieldCheck className="w-5 h-5 text-[#0F6E56] shrink-0 mt-0.5" strokeWidth={2.25} />
         <div className="text-[12.5px] text-[#444441] leading-relaxed">
           <strong className="text-[#1A1816]">Your account and community profile are kept separate.</strong>{' '}
@@ -701,9 +701,9 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
       {/* Verification link */}
       <Link
         href="/community/verify"
-        className="bg-white border border-[#E8E8E4] rounded-xl p-4 flex items-center gap-3 hover:border-[#D1D1CE] transition-colors"
+        className="bg-white border border-[#E8E8E4] rounded p-4 flex items-center gap-3 hover:border-[#D1D1CE] transition-colors"
       >
-        <div className="w-10 h-10 rounded-lg bg-[#0F6E56] text-white flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded bg-[#0F6E56] text-white flex items-center justify-center shrink-0">
           <ShieldCheck className="w-5 h-5" strokeWidth={2.25} />
         </div>
         <div className="flex-1 min-w-0">
@@ -723,7 +723,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
 function GuestPrompt() {
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-12">
-      <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden max-w-2xl mx-auto">
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden max-w-2xl mx-auto">
         <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
             <UserIcon className="w-6 h-6" strokeWidth={2} />
@@ -750,7 +750,7 @@ function GuestPrompt() {
 function NeedProfilePrompt({ onPick }) {
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-12">
-      <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden max-w-2xl mx-auto">
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden max-w-2xl mx-auto">
         <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
             <UserIcon className="w-6 h-6" strokeWidth={2} />
@@ -776,7 +776,7 @@ function NeedProfilePrompt({ onPick }) {
 
 function EmailToggle({ label, blurb, checked, onChange }) {
   return (
-    <label className="flex items-center gap-3 p-3 rounded-lg border border-[#E8E8E4] hover:border-[#D1D1CE] cursor-pointer transition-colors">
+    <label className="flex items-center gap-3 p-3 rounded border border-[#E8E8E4] hover:border-[#D1D1CE] cursor-pointer transition-colors">
       <div className="flex-1 min-w-0">
         <div className="text-[13.5px] font-bold text-[#1A1816]">{label}</div>
         <div className="text-[12px] text-[#737370] leading-snug mt-0.5">{blurb}</div>
@@ -791,8 +791,8 @@ function EmailToggle({ label, blurb, checked, onChange }) {
         }`}
       >
         <span
-          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-            checked ? 'translate-x-4.5' : 'translate-x-0.5'
+          className={`absolute top-0.5 left-0 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+            checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
           }`}
         />
       </button>

@@ -120,7 +120,7 @@ export default function NotificationsPage() {
       <div className="max-w-[1100px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
         <main className="min-w-0">
           {/* Filter pills */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg p-1.5 flex items-center gap-1 mb-4">
+          <div className="bg-white border border-[#E8E8E4] rounded p-1.5 flex items-center gap-1 mb-4">
             {FILTERS.map(f => {
               const active = f.value === filter
               return (
@@ -163,7 +163,7 @@ export default function NotificationsPage() {
 
         {/* Right rail — explainer */}
         <aside className="hidden lg:block">
-          <div className="bg-white border border-[#E8E8E4] rounded-lg p-4 sticky top-[68px]">
+          <div className="bg-white border border-[#E8E8E4] rounded p-4 sticky top-[68px]">
             <h3 className="text-[13.5px] font-extrabold text-[#1A1816] tracking-tight mb-2">What lands here</h3>
             <ul className="space-y-2.5 text-[12.5px] text-[#444441]">
               <li className="flex items-start gap-2">
@@ -213,7 +213,7 @@ function NotificationRow({ n, onMarkRead }) {
       <Link
         href={n.href}
         onClick={() => unread && onMarkRead(n.id)}
-        className={`flex items-start gap-3 p-3.5 rounded-lg border transition-colors ${
+        className={`flex items-start gap-3 p-3.5 rounded border transition-colors ${
           unread
             ? 'bg-white border-[#E8E8E4] border-l-4 border-l-[#D03839]'
             : 'bg-white border-[#E8E8E4] hover:border-[#D1D1CE]'
@@ -250,7 +250,7 @@ function ListSkeleton() {
   return (
     <ul className="space-y-2">
       {[1, 2, 3, 4].map(i => (
-        <li key={i} className="bg-white border border-[#E8E8E4] rounded-lg p-3.5 flex items-start gap-3 animate-pulse">
+        <li key={i} className="bg-white border border-[#E8E8E4] rounded p-3.5 flex items-start gap-3 animate-pulse">
           <div className="w-9 h-9 rounded bg-[#F3F3EF] shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-3/4 bg-[#F3F3EF] rounded" />
@@ -264,7 +264,7 @@ function ListSkeleton() {
 
 function EmptyState({ filter }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Inbox className="w-6 h-6" strokeWidth={2} />
@@ -290,7 +290,7 @@ function EmptyState({ filter }) {
 
 function GuestPrompt() {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Bell className="w-6 h-6" strokeWidth={2} />
@@ -315,7 +315,7 @@ function GuestPrompt() {
 
 function NeedProfilePrompt({ onPick }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <BellOff className="w-6 h-6" strokeWidth={2} />

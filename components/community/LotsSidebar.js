@@ -18,7 +18,7 @@ export function LotsSidebar({ groups }) {
   if (!groups?.length) {
     return (
       <aside className="hidden lg:block">
-        <div className="bg-white border border-[#E8E8E4] rounded-lg p-4 text-[13px] text-[#737370]">
+        <div className="bg-white border border-[#E8E8E4] rounded p-4 text-[13px] text-[#737370]">
           Loading lots…
         </div>
       </aside>
@@ -28,7 +28,7 @@ export function LotsSidebar({ groups }) {
   return (
     <aside className="hidden lg:block">
       {groups.map(group => (
-        <div key={group.category} className="bg-white border border-[#E8E8E4] rounded-lg p-4 mb-3">
+        <div key={group.category} className="bg-white border border-[#E8E8E4] rounded p-4 mb-3">
           <div className="flex items-center gap-2 mb-3 text-[12px] font-bold text-[#1A1816] uppercase tracking-wider">
             <span className="w-2 h-2 rounded-[2px]" style={{ background: group.accent || '#737370' }} />
             {CATEGORY_LABELS[group.category] || group.category}

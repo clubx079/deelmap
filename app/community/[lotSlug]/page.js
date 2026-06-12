@@ -45,7 +45,7 @@ function LotPageFallback() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-10">
-        <div className="bg-white border border-[#E8E8E4] rounded-xl h-40 animate-pulse" />
+        <div className="bg-white border border-[#E8E8E4] rounded h-40 animate-pulse" />
       </div>
     </div>
   )
@@ -248,7 +248,7 @@ function LotPageInner({ params }) {
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <div className="flex items-start gap-3.5 min-w-0">
                 <div
-                  className="w-12 h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center text-white shrink-0 shadow-md"
+                  className="w-12 h-12 md:w-14 md:h-14 rounded flex items-center justify-center text-white shrink-0 shadow-md"
                   style={{ background: accent }}
                 >
                   <Layers className="w-6 h-6 md:w-7 md:h-7" strokeWidth={2.25} />
@@ -320,7 +320,7 @@ function LotPageInner({ params }) {
       <div className="max-w-[1440px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
         <main className="min-w-0">
           {/* Sort bar */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg p-1.5 flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
+          <div className="bg-white border border-[#E8E8E4] rounded p-1.5 flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
             {SORT_TABS.map(tab => {
               const active = tab.value === sort
               const Icon = tab.icon
@@ -365,7 +365,7 @@ function LotPageInner({ params }) {
         <aside className="hidden lg:block sticky top-[68px] self-start">
           {/* About this Lot */}
           {lot && (
-            <div className="bg-white border border-[#E8E8E4] rounded-lg p-4 mb-3.5">
+            <div className="bg-white border border-[#E8E8E4] rounded p-4 mb-3.5">
               <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370] mb-2">About this Lot</div>
               <div className="text-[13px] text-[#444441] leading-relaxed">
                 {lot.description || 'A focused place to discuss this topic with verified pros and serious investors.'}
@@ -393,7 +393,7 @@ function LotPageInner({ params }) {
 
           {/* Top contributors */}
           {contributors.length > 0 && (
-            <div className="bg-white border border-[#E8E8E4] rounded-lg p-4 mb-3.5">
+            <div className="bg-white border border-[#E8E8E4] rounded p-4 mb-3.5">
               <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370] mb-2.5">
                 Top contributors · 90d
               </div>
@@ -448,7 +448,7 @@ function FeedSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg grid grid-cols-[52px_1fr] overflow-hidden">
+        <div key={i} className="bg-white border border-[#E8E8E4] rounded grid grid-cols-[52px_1fr] overflow-hidden">
           <div className="bg-[#FAFAF8] border-r border-[#E8E8E4] h-32 animate-pulse" />
           <div className="p-4 space-y-3">
             <div className="h-4 w-1/2 bg-[#F3F3EF] rounded animate-pulse" />
@@ -465,7 +465,7 @@ function FeedSkeleton() {
 function EmptyState({ lot, onStart }) {
   const lotName = lot?.name || 'this Lot'
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center border-b border-[#E8E8E4] bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <MessageSquare className="w-6 h-6" strokeWidth={2} />
@@ -493,7 +493,7 @@ function LotNotFound({ slug }) {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-12">
-        <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
           <div className="p-8 md:p-12 text-center bg-linear-to-b from-[#FFFBFB] to-white">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
               <Layers className="w-6 h-6" strokeWidth={2} />

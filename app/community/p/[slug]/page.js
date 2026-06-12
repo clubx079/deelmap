@@ -255,7 +255,7 @@ export default function PostDetailPage({ params }) {
   if (!post) {
     return (
       <Shell>
-        <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 text-center">
+        <div className="bg-white border border-[#E8E8E4] rounded p-8 text-center">
           <p className="text-[15px] font-semibold text-[#1A1816]">Post not found.</p>
           <Link href="/community" className="inline-block mt-3 text-[13px] text-[#D03839] font-semibold">← Back to Community</Link>
         </div>
@@ -294,7 +294,7 @@ export default function PostDetailPage({ params }) {
 
         <main>
           {/* ── POST CARD ───────────────────────────────────────────── */}
-          <article className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden md:grid md:grid-cols-[64px_1fr]">
+          <article className="bg-white border border-[#E8E8E4] rounded overflow-hidden md:grid md:grid-cols-[64px_1fr]">
             {/* Desktop vote rail — hidden on mobile (vote goes inline in the action bar) */}
             <div className="hidden md:block bg-[#FAFAF8] border-r border-[#E8E8E4]">
               <VoteRail score={post.score || 0} userVote={post.user_vote || 0} onVote={onPostVote} />
@@ -340,7 +340,7 @@ export default function PostDetailPage({ params }) {
               </h1>
 
               {/* Author block — desktop only (mobile has the compact row above) */}
-              <div className="hidden md:flex items-center gap-3 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded-lg mb-5">
+              <div className="hidden md:flex items-center gap-3 p-3 bg-[#FAFAF8] border border-[#E8E8E4] rounded mb-5">
                 <div
                   className="w-10 h-10 rounded-full text-white font-extrabold text-[13px] flex items-center justify-center shrink-0 tracking-tight"
                   style={{ background: avatarGradient(post.author?.handle) }}
@@ -373,7 +373,7 @@ export default function PostDetailPage({ params }) {
                   href={post.deal.slug || post.deal.id ? `/${post.deal.slug || post.deal.id}` : '/marketplace'}
                   className="block mt-4 md:mt-5 max-w-[720px]"
                 >
-                  <div className="bg-[#ECFDF5] border border-[#BBF7D0] rounded-lg p-3 md:p-3.5 hover:bg-[#DCFCE7] transition-colors">
+                  <div className="bg-[#ECFDF5] border border-[#BBF7D0] rounded p-3 md:p-3.5 hover:bg-[#DCFCE7] transition-colors">
                     <div className="grid grid-cols-[44px_1fr] md:grid-cols-[56px_1fr_auto] items-center gap-2.5 md:gap-3.5">
                       <div className="w-11 h-11 md:w-14 md:h-14 rounded bg-linear-to-br from-[#94A3B8] to-[#64748B] flex items-center justify-center text-white relative">
                         <HomeIcon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={1.5} />
@@ -437,7 +437,7 @@ export default function PostDetailPage({ params }) {
                 <ShareMenu
                   url={`/community/p/${post.slug}`}
                   title={post.title}
-                  triggerClassName="inline-flex items-center gap-1.5 px-2 md:px-3 py-2 rounded-lg text-[13px] font-semibold text-[#444441] hover:text-[#1A1816] hover:bg-[#FAFAF8] transition-colors"
+                  triggerClassName="inline-flex items-center gap-1.5 px-2 md:px-3 py-2 rounded text-[13px] font-semibold text-[#444441] hover:text-[#1A1816] hover:bg-[#FAFAF8] transition-colors"
                   iconClassName="w-3.5 h-3.5"
                   label={<span className="hidden sm:inline">Share</span>}
                 />
@@ -460,7 +460,7 @@ export default function PostDetailPage({ params }) {
                     })
                     if (result?.ok) showToast('Report submitted. Mods will review within 24h.', { variant: 'success' })
                   }}
-                  className="ml-auto inline-flex items-center gap-1.5 px-2 md:px-3 py-2 rounded-lg text-[13px] font-semibold text-[#737370] hover:bg-[#FEF0EF] hover:text-[#D03839] transition-colors"
+                  className="ml-auto inline-flex items-center gap-1.5 px-2 md:px-3 py-2 rounded text-[13px] font-semibold text-[#737370] hover:bg-[#FEF0EF] hover:text-[#D03839] transition-colors"
                   title="Report this post"
                 >
                   <Flag className="w-3.5 h-3.5" />
@@ -475,7 +475,7 @@ export default function PostDetailPage({ params }) {
             <div className="text-[16px] font-extrabold text-[#1A1816] tracking-tight">
               <strong className="text-[#D03839]">{post.comment_count || 0}</strong> {post.comment_count === 1 ? 'comment' : 'comments'}
             </div>
-            <div className="ml-auto flex items-center gap-1 p-1 bg-white border border-[#E8E8E4] rounded-lg">
+            <div className="ml-auto flex items-center gap-1 p-1 bg-white border border-[#E8E8E4] rounded">
               {['top', 'new', 'old'].map(s => (
                 <button
                   key={s}
@@ -509,7 +509,7 @@ export default function PostDetailPage({ params }) {
           {/* ── THREAD ──────────────────────────────────────────────── */}
           <div className="space-y-2 mt-4">
             {tree.length === 0 ? (
-              <div className="bg-white border border-dashed border-[#E8E8E4] rounded-xl p-8 text-center text-[14px] text-[#737370]">
+              <div className="bg-white border border-dashed border-[#E8E8E4] rounded p-8 text-center text-[14px] text-[#737370]">
                 No comments yet. Drop the first reply — specifics beat sympathy.
               </div>
             ) : tree.map(c => (
@@ -565,7 +565,7 @@ function CommentNode({
 
   return (
     <div>
-      <div className={`relative border ${cardCls} rounded-lg p-3.5`}>
+      <div className={`relative border ${cardCls} rounded p-3.5`}>
         {isTopReply && (
           <span className="absolute -top-2.5 left-3.5 px-2 py-0.5 bg-[#0F6E56] text-white rounded text-[9px] font-extrabold tracking-[0.1em] uppercase">
             ▲ Top Reply
@@ -717,7 +717,7 @@ function CommentVoteBtn({ dir, active, onClick, score }) {
 function SignInToReplyCard({ user, onSignIn, onPickHandle }) {
   if (!user?.id) {
     return (
-      <div className="bg-white border border-[#E8E8E4] rounded-xl px-4 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="bg-white border border-[#E8E8E4] rounded px-4 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="text-[14px] font-bold text-[#1A1816]">Sign in to reply</div>
           <div className="text-[12.5px] text-[#737370] mt-0.5">
@@ -736,7 +736,7 @@ function SignInToReplyCard({ user, onSignIn, onPickHandle }) {
   }
   // Signed in but no community profile yet
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl px-4 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div className="bg-white border border-[#E8E8E4] rounded px-4 py-5 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-bold text-[#1A1816]">Pick a handle to reply</div>
         <div className="text-[12.5px] text-[#737370] mt-0.5">
@@ -831,7 +831,7 @@ function CommentComposer({ profile, onSubmit, onCancel, onFocus, isReply, replyi
   }
 
   return (
-    <form onSubmit={submit} className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <form onSubmit={submit} className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="flex items-center gap-2 md:gap-2.5 px-3 md:px-4 py-2 md:py-2.5 bg-[#FAFAF8] border-b border-[#E8E8E4]">
         <div
           className="w-7 h-7 rounded-full text-white font-bold text-[11px] flex items-center justify-center shrink-0"
@@ -922,7 +922,7 @@ function ActionBtn({ icon: Icon, children, onClick, active, iconFilled }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded text-[13px] font-semibold transition-colors ${
         active ? 'text-[#D03839] bg-[#FEF0EF]' : 'text-[#444441] hover:text-[#1A1816] hover:bg-[#FAFAF8]'
       }`}
     >
@@ -937,12 +937,12 @@ function ActionBtn({ icon: Icon, children, onClick, active, iconFilled }) {
 function LotCard({ lot, accent, soft }) {
   if (!lot?.slug) return null
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="px-4 pt-3.5 pb-1.5 text-[11px] font-extrabold tracking-wider uppercase text-[#737370]">About this Lot</div>
       <div className="px-4 pb-4">
         <div className="flex items-center gap-2.5 py-2">
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center font-extrabold text-[14px] shrink-0"
+            className="w-9 h-9 rounded flex items-center justify-center font-extrabold text-[14px] shrink-0"
             style={{ background: soft, color: accent }}
           >
             {(lot.name || '?')[0].toUpperCase()}
@@ -958,7 +958,7 @@ function LotCard({ lot, accent, soft }) {
         </div>
         <Link
           href={`/community?lot=${lot.slug}`}
-          className="w-full h-9 inline-flex items-center justify-center bg-[#1A1816] hover:bg-[#2A2825] text-white font-bold text-[13px] rounded-lg transition-colors"
+          className="w-full h-9 inline-flex items-center justify-center bg-[#1A1816] hover:bg-[#2A2825] text-white font-bold text-[13px] rounded transition-colors"
         >
           Open Lot
         </Link>
@@ -978,7 +978,7 @@ function Stat({ label, value }) {
 
 function VerifiedInThreadCard({ items }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="px-4 pt-3.5 pb-1.5 text-[11px] font-extrabold tracking-wider uppercase text-[#737370]">Verified in this thread</div>
       <div className="px-4 pb-3 space-y-2">
         {items.map((p) => (
@@ -1008,7 +1008,7 @@ function roleColor(role) {
 
 function RelatedCard({ items, lotName, lotSlug }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="px-4 pt-3.5 pb-1.5 flex items-center justify-between">
         <div className="text-[11px] font-extrabold tracking-wider uppercase text-[#737370]">More in {lotName || 'Lot'}</div>
         {lotSlug && (
@@ -1042,7 +1042,7 @@ function MiniRulesCard() {
     { strong: 'No off-platform routing.',      rest: '' },
   ]
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="px-4 pt-3.5 pb-1.5 text-[11px] font-extrabold tracking-wider uppercase text-[#737370]">Lot Rules</div>
       <ul className="px-4 pb-3 space-y-2">
         {rules.map((r, i) => (

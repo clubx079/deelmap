@@ -211,7 +211,7 @@ function CommunityInner() {
 
         <main>
           {/* Sort bar */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg p-1.5 flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
+          <div className="bg-white border border-[#E8E8E4] rounded p-1.5 flex items-center gap-1 mb-4 overflow-x-auto no-scrollbar">
             {SORT_TABS.map(tab => {
               const active = tab.value === sort
               const Icon = tab.icon
@@ -280,7 +280,7 @@ function CommunityInner() {
 
 function FirstVisitPrompt({ onPick }) {
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1A1816] text-white rounded-lg shadow-xl px-4 py-3 flex items-center gap-3 max-w-[92vw]">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1A1816] text-white rounded shadow-xl px-4 py-3 flex items-center gap-3 max-w-[92vw]">
       <span className="text-[13px]">Pick your community handle to start posting, voting, and saving.</span>
       <button onClick={onPick} className="px-3 py-1.5 bg-[#D03839] hover:bg-[#C73022] rounded text-[12px] font-bold">
         Pick handle
@@ -293,7 +293,7 @@ function FeedSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg grid grid-cols-[52px_1fr] overflow-hidden">
+        <div key={i} className="bg-white border border-[#E8E8E4] rounded grid grid-cols-[52px_1fr] overflow-hidden">
           <div className="bg-[#FAFAF8] border-r border-[#E8E8E4] h-32" />
           <div className="p-4 space-y-3">
             <div className="h-4 w-1/2 bg-[#F3F3EF] rounded" />
@@ -314,7 +314,7 @@ function EmptyState({ onStart }) {
     { icon: TrendingUp,    color: '#D03839', bg: '#FEE2E2', title: 'Anchor to a deal',      body: 'Link any active listing or off-market deal. Comments stay attached.' },
   ]
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-lg overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center border-b border-[#E8E8E4] bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <MessageSquare className="w-6 h-6" strokeWidth={2} />

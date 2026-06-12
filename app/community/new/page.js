@@ -210,7 +210,7 @@ export default function NewPostPage() {
   if (!profileChecked) {
     return (
       <Shell>
-        <div className="bg-white border border-[#E8E8E4] rounded-lg p-8 text-[14px] text-[#737370]">Loading…</div>
+        <div className="bg-white border border-[#E8E8E4] rounded p-8 text-[14px] text-[#737370]">Loading…</div>
       </Shell>
     )
   }
@@ -252,7 +252,7 @@ export default function NewPostPage() {
 
         {/* ── COMPOSER CARD ───────────────────────────────────────── */}
         <form onSubmit={submit}>
-          <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
 
             {/* Lot picker */}
             <section className="px-5 py-4 border-b border-[#F3F3EF]">
@@ -369,7 +369,7 @@ export default function NewPostPage() {
               <SectionLabel>Link a Deal</SectionLabel>
 
               {linkedDeal ? (
-                <div className="bg-[#ECFDF5] border border-[#BBF7D0] rounded-lg p-3 grid grid-cols-[44px_1fr_auto] items-center gap-3">
+                <div className="bg-[#ECFDF5] border border-[#BBF7D0] rounded p-3 grid grid-cols-[44px_1fr_auto] items-center gap-3">
                   <div className="w-11 h-11 rounded bg-linear-to-br from-[#94A3B8] to-[#64748B] flex items-center justify-center text-white">
                     <HomeIcon className="w-5 h-5" strokeWidth={1.5} />
                   </div>
@@ -386,7 +386,7 @@ export default function NewPostPage() {
                   </button>
                 </div>
               ) : (
-                <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-dashed border-[#86EFAC] rounded-lg p-3.5">
+                <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-dashed border-[#86EFAC] rounded p-3.5">
                   <div className="flex items-center gap-2.5 mb-2.5">
                     <div className="w-7 h-7 rounded bg-[#0F6E56] flex items-center justify-center text-white shrink-0">
                       <HomeIcon className="w-4 h-4" strokeWidth={2} />
@@ -484,7 +484,7 @@ export default function NewPostPage() {
 
         {/* ── RIGHT RAIL — POSTING GUIDE ───────────────────────────── */}
         <aside className="lg:sticky lg:top-[24px]">
-          <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+          <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
             <div className="px-4 pt-3.5 pb-2 text-[11px] font-extrabold tracking-wider uppercase text-[#737370]">
               Post like an operator
             </div>
