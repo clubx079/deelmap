@@ -164,8 +164,8 @@ export default function HomePage() {
       <Suspense fallback={null}><AuthLinkOpener /></Suspense>
       <Navbar />
 
-      {/* Hero Section — starts below the fixed navbar */}
-      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh', marginTop: '80px' }}>
+      {/* Hero Section — the Navbar already reserves its height via a spacer */}
+      <section className="relative overflow-hidden bg-[#F7F6F3]" style={{ minHeight: '88vh' }}>
         {/* Background map */}
         <Image
           src="/assets/hero-map-bg.png"
