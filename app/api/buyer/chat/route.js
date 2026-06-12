@@ -949,12 +949,16 @@ export async function POST(request) {
 
       // Insert notification for seller (new message)
       if (conversation.seller_id) {
-        const buyerMsgData = await supabase.from('users').select('first_name, last_name, nickname, is_anonymous').eq('id', authCheck.userUuid).maybeSingle();
-        const bName = buyerMsgData?.data
-          ? (buyerMsgData.data.is_anonymous
-              ? (buyerMsgData.data.nickname || 'Anonymous')
-              : `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer')
-          : 'A buyer';
+        const buyerMsgData = await supabase.from('users').select('first_name, last_name, is_anonymous').eq('id', authCheck.userUuid).maybeSingle();
+        let bName = 'A buyer';
+        if (buyerMsgData?.data) {
+          if (buyerMsgData.data.is_anonymous) {
+            const { data: cp } = await supabase.from('community_profiles').select('handle').eq('user_id', authCheck.userUuid).maybeSingle();
+            bName = cp?.handle ? `@${cp.handle}` : 'Anonymous';
+          } else {
+            bName = `${buyerMsgData.data.first_name || ''} ${buyerMsgData.data.last_name || ''}`.trim() || 'A buyer';
+          }
+        }
         supabase.from('notifications').insert({
           recipient_id: conversation.seller_id,
           recipient_type: 'seller',
@@ -991,12 +995,16 @@ export async function POST(request) {
               }
             }
           }
-          const buyerData = await supabase.from('users').select('first_name, last_name, nickname, is_anonymous').eq('id', authCheck.userUuid).single();
-          const buyerName = buyerData?.data
-            ? (buyerData.data.is_anonymous
-                ? (buyerData.data.nickname || 'Anonymous')
-                : [buyerData.data.first_name, buyerData.data.last_name].filter(Boolean).join(' ').trim() || 'A buyer')
-            : 'A buyer';
+          const buyerData = await supabase.from('users').select('first_name, last_name, is_anonymous').eq('id', authCheck.userUuid).single();
+          let buyerName = 'A buyer';
+          if (buyerData?.data) {
+            if (buyerData.data.is_anonymous) {
+              const { data: cp } = await supabase.from('community_profiles').select('handle').eq('user_id', authCheck.userUuid).maybeSingle();
+              buyerName = cp?.handle ? `@${cp.handle}` : 'Anonymous';
+            } else {
+              buyerName = [buyerData.data.first_name, buyerData.data.last_name].filter(Boolean).join(' ').trim() || 'A buyer';
+            }
+          }
           let propertyAddress = conversation.property_address || null;
           if (!propertyAddress && conversation.property_id) {
             const { address } = await getDealAddressAndSlug(supabase, conversation.property_id);

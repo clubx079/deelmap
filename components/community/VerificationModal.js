@@ -135,7 +135,7 @@ export function VerificationModal({ open, onClose, onSubmitted }) {
       className="fixed inset-0 z-[9999] sm:flex sm:items-center sm:justify-center overscroll-contain bg-black/30 backdrop-blur-[2px] sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
     >
-      <div className="relative bg-white w-full max-w-[820px] h-full sm:h-auto sm:shadow-2xl sm:border sm:border-[#E8E8E4] sm:rounded-xl sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
+      <div className="relative bg-white w-full max-w-[820px] h-full sm:h-auto sm:shadow-2xl sm:border sm:border-[#E8E8E4] sm:rounded sm:max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
 
         {/* Header */}
         <div className="shrink-0 flex items-start justify-between px-5 pt-5 pb-4 border-b border-[#F3F3EF]">

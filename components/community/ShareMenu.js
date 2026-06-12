@@ -107,7 +107,7 @@ export function ShareMenu({ url, title, triggerClassName, iconClassName, label =
           ref={menuRef}
           role="menu"
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: MENU_WIDTH, zIndex: 9000 }}
-          className="bg-white border border-[#E8E8E4] rounded-lg shadow-xl overflow-hidden"
+          className="bg-white border border-[#E8E8E4] rounded shadow-xl overflow-hidden"
         >
           <ShareItem icon={Link2}        label="Copy link"       onClick={copy} />
           <ShareItem icon={ExternalLink} label="Open in new tab" onClick={openNew} />

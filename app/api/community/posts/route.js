@@ -7,6 +7,7 @@ import {
   serverError,
   slugifyTitle,
 } from '@/lib/community/auth'
+import { emailNewLotPost } from '@/lib/community/emailNotify'
 
 const PAGE_SIZE = 20
 
@@ -194,7 +195,7 @@ export async function POST(request) {
 
   // Resolve profile
   const { data: profile } = await supabase
-    .from('community_profiles').select('id, equity_score, is_shadowbanned')
+    .from('community_profiles').select('id, handle, equity_score, is_shadowbanned')
     .eq('user_id', userId).maybeSingle()
   if (!profile) return NextResponse.json({ error: 'profile_required' }, { status: 409 })
   if (profile.is_shadowbanned) {
@@ -204,7 +205,7 @@ export async function POST(request) {
 
   // Resolve lot
   const { data: lot } = await supabase
-    .from('community_lots').select('id, min_equity_to_post, is_active')
+    .from('community_lots').select('id, name, slug, min_equity_to_post, is_active')
     .eq('slug', lotSlug).maybeSingle()
   if (!lot || !lot.is_active) return badRequest('Lot not found.')
   if (profile.equity_score < (lot.min_equity_to_post || 0)) {
@@ -244,5 +245,61 @@ export async function POST(request) {
     return serverError(error.message)
   }
 
+  // ── Fire-and-forget: notify subscribers of this Lot.
+  // Shadowbanned posts are invisible, so they don't notify.
+  if (!profile.is_shadowbanned) {
+    notifyLotSubscribers({ supabase, lot, post: data, author: profile }).catch(() => {})
+  }
+
   return NextResponse.json({ post: data })
+}
+
+// Notify everyone subscribed to the Lot (except the author): an in-app
+// notification for all, plus an email for those who keep email_subscriptions on.
+async function notifyLotSubscribers({ supabase, lot, post, author }) {
+  const { data: subs } = await supabase
+    .from('community_lot_subscriptions')
+    .select('profile_id')
+    .eq('lot_id', lot.id)
+  if (!subs?.length) return
+
+  const subscriberIds = subs.map(s => s.profile_id).filter(id => id !== author.id)
+  if (!subscriberIds.length) return
+
+  const { data: recipients } = await supabase
+    .from('community_profiles')
+    .select('id, user_id, email_subscriptions')
+    .in('id', subscriberIds)
+  if (!recipients?.length) return
+
+  // In-app notifications for all subscribers (batched)
+  const rows = recipients.map(r => ({
+    profile_id: r.id,
+    type: 'lot_post',
+    title: `New post in ${lot.name}`,
+    body: post.title.slice(0, 280),
+    ref_post_id: post.id,
+  }))
+  await supabase.from('community_notifications').insert(rows)
+
+  // Emails — only those who haven't turned the preference off
+  const emailRecipients = recipients.filter(r => r.email_subscriptions !== false)
+  const userIds = emailRecipients.map(r => r.user_id).filter(Boolean)
+  if (!userIds.length) return
+
+  const { data: users } = await supabase.from('users').select('id, email').in('id', userIds)
+  const emailById = Object.fromEntries((users || []).map(u => [u.id, u.email]))
+
+  for (const r of emailRecipients) {
+    const email = emailById[r.user_id]
+    if (email) {
+      emailNewLotPost({
+        to: email,
+        authorHandle: author.handle,
+        lotName: lot.name,
+        postTitle: post.title,
+        postSlug: post.slug,
+      })
+    }
+  }
 }

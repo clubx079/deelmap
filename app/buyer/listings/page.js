@@ -49,7 +49,7 @@ function EnhanceCheckoutForm({ listingId, selectedAddOns, totalCents, discount, 
         const res = await fetch('/api/buyer/listings', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-          body: JSON.stringify({ id: listingId, action: 'enhance', add_ons: selectedAddOns }),
+          body: JSON.stringify({ id: listingId, action: 'enhance', add_ons: selectedAddOns, stripe_payment_intent_id: paymentIntent.id }),
         })
         const d = await res.json()
         if (!d.success) { setError('Payment succeeded but update failed. Contact support.'); setProcessing(false); return }

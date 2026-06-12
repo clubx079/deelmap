@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import Link from 'next/link';
-import { Loader2, TrendingUp, DollarSign, Home, BarChart2, MapPin, ArrowRight } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Minus, DollarSign, Home, BarChart2, MapPin, ArrowRight, AlertCircle, RefreshCw } from 'lucide-react';
 
 function formatCurrency(n) {
   if (!n) return '—';
@@ -33,19 +33,37 @@ export default function MarketInsightsPage() {
   const { setPageTitle } = useBuyerPageTitle();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     setPageTitle('Market Insights');
     return () => setPageTitle('');
   }, [setPageTitle]);
 
-  useEffect(() => {
+  const loadInsights = () => {
+    setLoading(true);
+    setError(false);
     fetch('/api/buyer/market-insights')
-      .then(r => r.json())
-      .then(setData)
-      .catch(() => {})
+      .then(r => { if (!r.ok) throw new Error('failed'); return r.json(); })
+      .then(d => { if (d?.error) throw new Error('failed'); setData(d); })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadInsights(); }, []);
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6 flex flex-col items-center justify-center h-48 text-center" style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}>
+        <AlertCircle className="w-7 h-7 text-[#D03839] mb-3" />
+        <p className="text-[14px] font-semibold text-[#1A1816]">Couldn't load market insights</p>
+        <p className="text-[13px] text-[#737370] mt-1 mb-4">Something went wrong fetching the data.</p>
+        <button onClick={loadInsights} className="inline-flex items-center gap-1.5 px-3 h-9 border border-[#E8E8E4] rounded text-[13px] font-medium text-[#444441] hover:bg-[#FAFAF8]">
+          <RefreshCw className="w-3.5 h-3.5" /> Retry
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -64,7 +82,8 @@ export default function MarketInsightsPage() {
     {
       label: 'Active deals',
       value: summary.total?.toLocaleString() || '—',
-      sub: `${summary.newDeals || 0} added this month`,
+      sub: `${summary.newDeals || 0} added in the last 30 days`,
+      trend: summary.trendDir ? { dir: summary.trendDir, pct: summary.trendPct } : null,
       icon: <Home className="w-4 h-4 text-[#D03839]" />,
       iconBg: '#FEF0EF',
     },
@@ -119,6 +138,13 @@ export default function MarketInsightsPage() {
               </div>
             </div>
             <p className="text-[26px] font-bold text-[#1A1816] leading-none">{card.value}</p>
+            {card.trend && (
+              <p className={`flex items-center gap-1 text-[11px] font-semibold mt-1.5 ${card.trend.dir === 'up' ? 'text-[#0F6E56]' : card.trend.dir === 'down' ? 'text-[#D03839]' : 'text-[#737370]'}`}>
+                {card.trend.dir === 'up' ? <TrendingUp className="w-3 h-3" /> : card.trend.dir === 'down' ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                {card.trend.pct > 0 ? '+' : ''}{card.trend.pct}%
+                <span className="font-normal text-[#A8A8A4]">vs prior 30 days</span>
+              </p>
+            )}
             <p className="text-[11px] text-[#A8A8A4] mt-1.5">{card.sub}</p>
           </div>
         ))}
@@ -137,13 +163,14 @@ export default function MarketInsightsPage() {
             {topStates.length === 0 ? (
               <p className="text-[13px] text-[#737370]">No data available</p>
             ) : topStates.map((s) => (
-              <BarRow
-                key={s.state}
-                label={s.state}
-                count={s.count}
-                max={maxState}
-                sub={`deals`}
-              />
+              <Link key={s.state} href={`/marketplace?search=${encodeURIComponent(s.state)}`} className="block hover:opacity-80 transition-opacity">
+                <BarRow
+                  label={s.state}
+                  count={s.count}
+                  max={maxState}
+                  sub={`deals`}
+                />
+              </Link>
             ))}
           </div>
         </div>
@@ -192,17 +219,17 @@ export default function MarketInsightsPage() {
               <span className="text-right">Avg yield</span>
             </div>
             {topStates.map((s, i) => (
-              <div key={s.state} className="flex items-center justify-between sm:grid sm:grid-cols-4 gap-2 px-4 py-3 hover:bg-[#FAFAF8] transition-colors">
+              <Link key={s.state} href={`/marketplace?search=${encodeURIComponent(s.state)}`} className="flex items-center justify-between sm:grid sm:grid-cols-4 gap-2 px-4 py-3 hover:bg-[#FAFAF8] transition-colors cursor-pointer group">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold text-[#A8A8A4] w-5">{i + 1}</span>
-                  <p className="text-[13px] font-semibold text-[#1A1816]">{s.state}</p>
+                  <p className="text-[13px] font-semibold text-[#1A1816] group-hover:text-[#D03839] transition-colors">{s.state}</p>
                 </div>
                 <p className="text-[13px] text-[#737370] sm:text-center">{s.count} deals</p>
                 <p className="hidden sm:block text-[13px] font-medium text-[#1A1816] sm:text-center">{formatCurrency(s.avgPrice)}</p>
                 <p className={`hidden sm:block text-[13px] font-semibold text-right ${s.avgYield > 0 ? 'text-[#0F6E56]' : 'text-[#737370]'}`}>
                   {s.avgYield > 0 ? `${s.avgYield}%` : '—'}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

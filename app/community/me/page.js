@@ -11,6 +11,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
+import { ProfileSubNav } from '@/components/community/ProfileSubNav'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
@@ -72,37 +73,11 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      {/* Sub-nav */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-          <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Community
-            </Link>
-            <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#1A1816] text-white text-[13px] font-semibold whitespace-nowrap">
-              <UserIcon className="w-3.5 h-3.5" strokeWidth={2.5} />
-              My Profile
-            </span>
-            {profile && (
-              <Link
-                href="/community/me/saved"
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                Saved
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
+      <ProfileSubNav active="profile" />
 
       {!profileChecked ? (
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-10">
-          <div className="bg-white border border-[#E8E8E4] rounded-xl p-6 animate-pulse">
+          <div className="bg-white border border-[#E8E8E4] rounded p-6 animate-pulse">
             <div className="h-20 w-20 rounded-full bg-[#F3F3EF] mb-4" />
             <div className="h-6 w-40 bg-[#F3F3EF] rounded mb-2" />
             <div className="h-4 w-72 bg-[#F3F3EF] rounded" />
@@ -167,6 +142,7 @@ export default function MyProfilePage() {
               trending={[]}
               activeDeals={[]}
               onStartVerify={onStartVerify}
+              hideEquity
             />
           </div>
         </>
@@ -198,7 +174,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
   const togo = nextTier ? Math.max(0, nextTier.min_equity - equity) : 0
 
   return (
-    <div className="bg-linear-to-br from-[#0F172A] to-[#1E293B] text-white">
+    <div className="bg-[#1A1816] text-white">
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-6 md:py-8">
         <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-6">
           {/* Avatar */}
@@ -258,7 +234,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-[#1A1816] font-bold text-[13px] rounded hover:bg-white/90 transition-colors w-full md:w-auto"
+              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-[#1A1816] font-bold text-[13px] rounded hover:bg-white/90 transition-colors w-full md:w-[150px]"
             >
               <Pencil className="w-3.5 h-3.5" strokeWidth={2.5} />
               Edit profile
@@ -267,7 +243,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
               <button
                 type="button"
                 onClick={onStartVerify}
-                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors w-full md:w-auto"
+                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors w-full md:w-[150px]"
               >
                 <ShieldCheck className="w-3.5 h-3.5" strokeWidth={2.5} />
                 Get verified
@@ -312,7 +288,7 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
       </div>
 
       {/* Equity / tier */}
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370] mb-3">Tier progress</div>
         <div className="flex items-end justify-between mb-2">
           <div>
@@ -342,8 +318,8 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
 
       {/* Verify CTA if not verified */}
       {!profile.role_badge && (
-        <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded-xl p-5 flex flex-col md:flex-row md:items-center gap-4">
-          <div className="w-11 h-11 bg-[#0F6E56] rounded-lg flex items-center justify-center text-white shrink-0">
+        <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded p-5 flex flex-col md:flex-row md:items-center gap-4">
+          <div className="w-11 h-11 bg-[#0F6E56] rounded flex items-center justify-center text-white shrink-0">
             <ShieldCheck className="w-5.5 h-5.5" strokeWidth={2.25} />
           </div>
           <div className="flex-1">
@@ -362,7 +338,7 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
       )}
 
       {/* Subscriptions preview */}
-      <div className="bg-white border border-[#E8E8E4] rounded-xl">
+      <div className="bg-white border border-[#E8E8E4] rounded">
         <div className="px-5 pt-4 pb-3 flex items-center justify-between">
           <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370]">Your Lots</div>
           <span className="text-[11.5px] text-[#737370]">{subs?.length || 0} subscribed</span>
@@ -409,7 +385,7 @@ function StatCard({ label, value, tone = 'dark' }) {
     ? 'bg-linear-to-br from-[#FEF0EF] to-white border-[#F5C4C0] text-[#D03839]'
     : 'bg-white border-[#E8E8E4] text-[#1A1816]'
   return (
-    <div className={`border rounded-xl p-3.5 md:p-4 ${styles}`}>
+    <div className={`border rounded p-3.5 md:p-4 ${styles}`}>
       <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#737370] mb-1">{label}</div>
       <div className="text-[22px] md:text-[24px] font-extrabold leading-none tracking-tight">{value}</div>
     </div>
@@ -430,7 +406,7 @@ function PostsTab({ authHeaders }) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg h-32 animate-pulse" />
+          <div key={i} className="bg-white border border-[#E8E8E4] rounded h-32 animate-pulse" />
         ))}
       </div>
     )
@@ -438,7 +414,7 @@ function PostsTab({ authHeaders }) {
 
   if (!posts.length) {
     return (
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
+      <div className="bg-white border border-[#E8E8E4] rounded p-8 md:p-10 text-center">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <MessageSquare className="w-6 h-6" strokeWidth={2} />
         </div>
@@ -465,97 +441,136 @@ function PostsTab({ authHeaders }) {
   )
 }
 
+const LOT_CATEGORY_LABELS = {
+  real_estate: 'Real Estate',
+  lending:     'Lending',
+  finance:     'Finance',
+  contractors: 'Contractors',
+  markets:     'Markets',
+}
+const LOT_CATEGORY_ORDER = ['real_estate', 'lending', 'finance', 'contractors', 'markets']
+
 function SubscriptionsTab({ authHeaders }) {
-  const [subs, setSubs] = useState(null)
+  const [lots, setLots] = useState(null)
+  const [subscribed, setSubscribed] = useState(() => new Set()) // lot slugs
   const [busy, setBusy] = useState(null) // lot slug being toggled
 
   useEffect(() => {
-    fetch('/api/community/subscriptions', { headers: authHeaders() })
-      .then(r => r.json())
-      .then(d => setSubs(d.subscriptions || []))
-      .catch(() => setSubs([]))
+    Promise.all([
+      fetch('/api/community/lots').then(r => r.json()).catch(() => ({ flat: [] })),
+      fetch('/api/community/subscriptions', { headers: authHeaders() }).then(r => r.json()).catch(() => ({ subscriptions: [] })),
+    ]).then(([l, s]) => {
+      setLots(l.flat || [])
+      setSubscribed(new Set((s.subscriptions || []).map(x => x.slug)))
+    })
   }, [authHeaders])
 
-  const unsubscribe = async (lot) => {
+  const toggle = async (lot) => {
+    const isSub = subscribed.has(lot.slug)
     setBusy(lot.slug)
-    const prev = subs
-    setSubs(prev.filter(s => s.slug !== lot.slug))
-    const res = await fetch(`/api/community/subscriptions?lot_slug=${lot.slug}`, {
-      method: 'DELETE',
-      headers: authHeaders(),
-    }).catch(() => null)
+    // optimistic
+    setSubscribed(prev => {
+      const next = new Set(prev)
+      if (isSub) next.delete(lot.slug); else next.add(lot.slug)
+      return next
+    })
+    const res = await fetch(
+      isSub ? `/api/community/subscriptions?lot_slug=${lot.slug}` : '/api/community/subscriptions',
+      isSub
+        ? { method: 'DELETE', headers: authHeaders() }
+        : { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ lot_slug: lot.slug }) }
+    ).catch(() => null)
     setBusy(null)
     if (!res?.ok) {
-      setSubs(prev)
-      showToast('Could not unsubscribe.', { variant: 'error' })
+      // revert
+      setSubscribed(prev => {
+        const next = new Set(prev)
+        if (isSub) next.add(lot.slug); else next.delete(lot.slug)
+        return next
+      })
+      showToast(isSub ? 'Could not unsubscribe.' : 'Could not subscribe.', { variant: 'error' })
     } else {
-      showToast(`Unsubscribed from ${lot.name}`, { variant: 'success' })
+      showToast(isSub ? `Unsubscribed from ${lot.name}` : `Subscribed to ${lot.name}`, { variant: 'success' })
     }
   }
 
-  if (subs === null) {
+  if (lots === null) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg h-20 animate-pulse" />
+          <div key={i} className="bg-white border border-[#E8E8E4] rounded h-20 animate-pulse" />
         ))}
       </div>
     )
   }
 
-  if (!subs.length) {
-    return (
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 md:p-10 text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
-          <Layers className="w-6 h-6" strokeWidth={2} />
-        </div>
-        <h3 className="text-[18px] font-extrabold text-[#1A1816] tracking-tight">No subscriptions yet.</h3>
-        <p className="text-[13px] text-[#737370] mt-2 max-w-md mx-auto leading-relaxed">
-          Subscribe to Lots you care about — rates, comps, contractors, off-market deals — and they&apos;ll filter your feed.
-        </p>
-        <Link
-          href="/community"
-          className="mt-5 inline-flex items-center gap-1.5 h-11 px-5 bg-[#D03839] hover:bg-[#C73022] text-white font-bold text-[14px] rounded transition-colors"
-        >
-          <Compass className="w-4 h-4" strokeWidth={2.5} /> Browse Lots
-        </Link>
-      </div>
-    )
-  }
+  const subCount = subscribed.size
+  const groups = LOT_CATEGORY_ORDER
+    .map(cat => ({ cat, items: lots.filter(l => l.category === cat) }))
+    .filter(g => g.items.length)
 
   return (
-    <div className="space-y-2">
-      {subs.map(lot => (
-        <div
-          key={lot.id}
-          className="bg-white border border-[#E8E8E4] rounded-lg p-4 flex items-center gap-3"
-        >
-          <div className="w-10 h-10 rounded shrink-0 flex items-center justify-center text-white"
-               style={{ background: lot.accent_color || '#737370' }}>
-            <Layers className="w-5 h-5" strokeWidth={2} />
+    <div className="space-y-4">
+      {/* Explainer / count */}
+      <div className="bg-white border border-[#E8E8E4] rounded p-4 flex items-start gap-3">
+        <div className="w-10 h-10 rounded bg-[#1A1816] text-white flex items-center justify-center shrink-0">
+          <Layers className="w-5 h-5" strokeWidth={2} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[14px] font-extrabold text-[#1A1816]">
+            {subCount > 0 ? `Subscribed to ${subCount} Lot${subCount === 1 ? '' : 's'}` : 'Subscribe to your first Lot'}
           </div>
-          <div className="flex-1 min-w-0">
-            <Link
-              href={`/community/${lot.slug}`}
-              className="text-[14.5px] font-bold text-[#1A1816] hover:text-[#D03839] truncate inline-block max-w-full"
-            >
-              {lot.name}
-            </Link>
-            <div className="text-[11.5px] text-[#737370] font-semibold mt-0.5 flex items-center gap-2 flex-wrap">
-              <span>{(lot.post_count || 0).toLocaleString()} posts</span>
-              <span className="text-[#D1D1CE]">·</span>
-              <span>{(lot.member_count || 0).toLocaleString()} members</span>
+          <p className="text-[12.5px] text-[#737370] leading-relaxed mt-0.5">
+            Get a notification — and an email — every time someone posts in a Lot you follow. Manage email alerts in{' '}
+            <span className="font-semibold text-[#444441]">Settings → Email notifications</span>.
+          </p>
+        </div>
+      </div>
+
+      {groups.map(group => (
+        <div key={group.cat} className="bg-white border border-[#E8E8E4] rounded">
+          <div className="px-4 pt-3.5 pb-2.5 border-b border-[#F3F3EF]">
+            <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370]">
+              {LOT_CATEGORY_LABELS[group.cat] || group.cat}
             </div>
           </div>
-          <button
-            type="button"
-            disabled={busy === lot.slug}
-            onClick={() => unsubscribe(lot)}
-            className="shrink-0 h-9 px-3 inline-flex items-center gap-1.5 border border-[#E8E8E4] rounded text-[12.5px] font-bold text-[#444441] hover:border-[#D03839] hover:text-[#D03839] disabled:opacity-50"
-          >
-            {busy === lot.slug ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" strokeWidth={2.5} />}
-            Unsubscribe
-          </button>
+          <ul className="p-2">
+            {group.items.map(lot => {
+              const isSub = subscribed.has(lot.slug)
+              return (
+                <li key={lot.id} className="flex items-center gap-3 px-2 py-2 rounded hover:bg-[#FAFAF8] transition-colors">
+                  <span className="w-2.5 h-2.5 rounded-[2px] shrink-0" style={{ background: lot.accent_color || '#737370' }} />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/community/${lot.slug}`}
+                      className="text-[13.5px] font-bold text-[#1A1816] hover:text-[#D03839] truncate inline-block max-w-full"
+                    >
+                      {lot.name}
+                    </Link>
+                    <div className="text-[11px] text-[#A8A8A4] font-semibold">
+                      {(lot.post_count || 0).toLocaleString()} posts
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy === lot.slug}
+                    onClick={() => toggle(lot)}
+                    className={`shrink-0 h-8 px-3 inline-flex items-center gap-1.5 rounded text-[12px] font-bold transition-colors disabled:opacity-50 ${
+                      isSub
+                        ? 'border border-[#E8E8E4] text-[#444441] hover:border-[#D03839] hover:text-[#D03839]'
+                        : 'bg-[#D03839] hover:bg-[#C73022] text-white'
+                    }`}
+                  >
+                    {busy === lot.slug
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : isSub
+                        ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Subscribed</>
+                        : <>Subscribe</>}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       ))}
     </div>
@@ -569,6 +584,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
   const [emailReplies, setEmailReplies] = useState(profile.email_replies !== false)
   const [emailMentions, setEmailMentions] = useState(profile.email_mentions !== false)
   const [emailVerificationStatus, setEmailVerificationStatus] = useState(profile.email_verification_status !== false)
+  const [emailSubscriptions, setEmailSubscriptions] = useState(profile.email_subscriptions !== false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -586,7 +602,8 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
     (handleEditable && handle !== profile.handle) ||
     emailReplies !== (profile.email_replies !== false) ||
     emailMentions !== (profile.email_mentions !== false) ||
-    emailVerificationStatus !== (profile.email_verification_status !== false)
+    emailVerificationStatus !== (profile.email_verification_status !== false) ||
+    emailSubscriptions !== (profile.email_subscriptions !== false)
 
   const save = async () => {
     setSaving(true); setError(null)
@@ -597,6 +614,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
     if (emailReplies !== (profile.email_replies !== false)) patch.email_replies = emailReplies
     if (emailMentions !== (profile.email_mentions !== false)) patch.email_mentions = emailMentions
     if (emailVerificationStatus !== (profile.email_verification_status !== false)) patch.email_verification_status = emailVerificationStatus
+    if (emailSubscriptions !== (profile.email_subscriptions !== false)) patch.email_subscriptions = emailSubscriptions
 
     if (!Object.keys(patch).length) { setSaving(false); return }
 
@@ -618,7 +636,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
 
   return (
     <div className="space-y-3.5">
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <h3 className="text-[15px] font-extrabold text-[#1A1816] tracking-tight">Public profile</h3>
         <p className="text-[12.5px] text-[#737370] mt-1">These are visible to other community members.</p>
 
@@ -687,7 +705,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
       </div>
 
       {/* Email preferences */}
-      <div className="bg-white border border-[#E8E8E4] rounded-xl p-5">
+      <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <h3 className="text-[15px] font-extrabold text-[#1A1816] tracking-tight">Email notifications</h3>
         <p className="text-[12.5px] text-[#737370] mt-1">Decide which community events also send you an email. In-app notifications stay on regardless.</p>
 
@@ -710,11 +728,17 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
             checked={emailVerificationStatus}
             onChange={setEmailVerificationStatus}
           />
+          <EmailToggle
+            label="New posts in your Lots"
+            blurb="Someone posts in a Lot you subscribe to."
+            checked={emailSubscriptions}
+            onChange={setEmailSubscriptions}
+          />
         </div>
       </div>
 
       {/* Privacy callout */}
-      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded-xl p-4 flex gap-3">
+      <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4 flex gap-3">
         <ShieldCheck className="w-5 h-5 text-[#0F6E56] shrink-0 mt-0.5" strokeWidth={2.25} />
         <div className="text-[12.5px] text-[#444441] leading-relaxed">
           <strong className="text-[#1A1816]">Your account and community profile are kept separate.</strong>{' '}
@@ -725,9 +749,9 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
       {/* Verification link */}
       <Link
         href="/community/verify"
-        className="bg-white border border-[#E8E8E4] rounded-xl p-4 flex items-center gap-3 hover:border-[#D1D1CE] transition-colors"
+        className="bg-white border border-[#E8E8E4] rounded p-4 flex items-center gap-3 hover:border-[#D1D1CE] transition-colors"
       >
-        <div className="w-10 h-10 rounded-lg bg-[#0F6E56] text-white flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded bg-[#0F6E56] text-white flex items-center justify-center shrink-0">
           <ShieldCheck className="w-5 h-5" strokeWidth={2.25} />
         </div>
         <div className="flex-1 min-w-0">
@@ -747,7 +771,7 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
 function GuestPrompt() {
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-12">
-      <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden max-w-2xl mx-auto">
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden max-w-2xl mx-auto">
         <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
             <UserIcon className="w-6 h-6" strokeWidth={2} />
@@ -774,7 +798,7 @@ function GuestPrompt() {
 function NeedProfilePrompt({ onPick }) {
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-12">
-      <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden max-w-2xl mx-auto">
+      <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden max-w-2xl mx-auto">
         <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
             <UserIcon className="w-6 h-6" strokeWidth={2} />
@@ -800,7 +824,7 @@ function NeedProfilePrompt({ onPick }) {
 
 function EmailToggle({ label, blurb, checked, onChange }) {
   return (
-    <label className="flex items-center gap-3 p-3 rounded-lg border border-[#E8E8E4] hover:border-[#D1D1CE] cursor-pointer transition-colors">
+    <label className="flex items-center gap-3 p-3 rounded border border-[#E8E8E4] hover:border-[#D1D1CE] cursor-pointer transition-colors">
       <div className="flex-1 min-w-0">
         <div className="text-[13.5px] font-bold text-[#1A1816]">{label}</div>
         <div className="text-[12px] text-[#737370] leading-snug mt-0.5">{blurb}</div>
@@ -815,8 +839,8 @@ function EmailToggle({ label, blurb, checked, onChange }) {
         }`}
       >
         <span
-          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-            checked ? 'translate-x-4.5' : 'translate-x-0.5'
+          className={`absolute top-0.5 left-0 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+            checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
           }`}
         />
       </button>

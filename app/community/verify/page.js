@@ -173,7 +173,7 @@ export default function VerifyPage() {
       <Navbar />
 
       {/* Sub-nav */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
+      <div className="sticky top-[80px] z-30 bg-white border-b border-[#E8E8E4]">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8">
           <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
             <Link
@@ -195,7 +195,7 @@ export default function VerifyPage() {
       <div className="bg-linear-to-br from-[#0F6E56] to-[#065F46] text-white">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-7 md:py-10">
           <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-8">
-            <div className="w-14 h-14 md:w-16 md:h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-white/10 backdrop-blur-sm rounded flex items-center justify-center shrink-0">
               <ShieldCheck className="w-7 h-7 md:w-8 md:h-8" strokeWidth={2.25} />
             </div>
             <div className="flex-1 min-w-0">
@@ -220,7 +220,7 @@ export default function VerifyPage() {
       {/* Main grid */}
       <div className="max-w-[1100px] mx-auto px-3 md:px-8 py-5 md:py-7">
         {!profileChecked ? (
-          <div className="bg-white border border-[#E8E8E4] rounded-xl p-6 animate-pulse h-64" />
+          <div className="bg-white border border-[#E8E8E4] rounded p-6 animate-pulse h-64" />
         ) : isGuest ? (
           <GuestPrompt />
         ) : isMissingProfile ? (
@@ -235,7 +235,7 @@ export default function VerifyPage() {
 
               {/* Form (hide if already verified or pending) */}
               {isVerified ? (
-                <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 text-center">
+                <div className="bg-white border border-[#E8E8E4] rounded p-8 text-center">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#DCFCE7] text-[#0F6E56] mb-4">
                     <Check className="w-7 h-7" strokeWidth={2.5} />
                   </div>
@@ -254,7 +254,7 @@ export default function VerifyPage() {
                   </Link>
                 </div>
               ) : hasPending ? (
-                <div className="bg-white border border-[#E8E8E4] rounded-xl p-8 text-center">
+                <div className="bg-white border border-[#E8E8E4] rounded p-8 text-center">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF3C7] text-[#92400E] mb-4">
                     <Clock className="w-7 h-7" strokeWidth={2.25} />
                   </div>
@@ -266,7 +266,7 @@ export default function VerifyPage() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={submit} className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+                <form onSubmit={submit} className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
                   {/* Role picker */}
                   <section className="px-5 md:px-6 py-5 border-b border-[#F3F3EF]">
                     <SectionLabel required>Choose your role</SectionLabel>
@@ -429,7 +429,7 @@ export default function VerifyPage() {
 
             {/* Sidebar — process explainer */}
             <aside className="hidden lg:block">
-              <div className="bg-white border border-[#E8E8E4] rounded-xl p-5 sticky top-[68px]">
+              <div className="bg-white border border-[#E8E8E4] rounded p-5 sticky top-[68px]">
                 <h3 className="text-[14px] font-extrabold text-[#1A1816] tracking-tight mb-3">How it works</h3>
                 <ol className="space-y-3.5">
                   {[
@@ -451,7 +451,7 @@ export default function VerifyPage() {
                 </ol>
               </div>
 
-              <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded-xl p-4 mt-3 flex gap-3">
+              <div className="bg-[#FAFAF8] border border-[#E8E8E4] rounded p-4 mt-3 flex gap-3">
                 <ShieldCheck className="w-5 h-5 text-[#0F6E56] shrink-0 mt-0.5" strokeWidth={2.25} />
                 <div className="text-[12px] text-[#444441] leading-relaxed">
                   <strong className="text-[#1A1816]">Privacy promise.</strong>{' '}
@@ -476,7 +476,7 @@ export default function VerifyPage() {
 
 function SubmissionsList({ submissions }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl">
+    <div className="bg-white border border-[#E8E8E4] rounded">
       <div className="px-5 md:px-6 pt-4 pb-3 border-b border-[#F3F3EF]">
         <h3 className="text-[14px] font-extrabold text-[#1A1816] tracking-tight">Your submissions</h3>
         <p className="text-[12px] text-[#737370] mt-0.5">Latest review status for credentials you&apos;ve sent.</p>
@@ -537,7 +537,7 @@ function SectionLabel({ children, required, optional }) {
 
 function GuestPrompt() {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden max-w-2xl mx-auto">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden max-w-2xl mx-auto">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#DCFCE7] text-[#0F6E56] mb-4">
           <ShieldCheck className="w-6 h-6" strokeWidth={2} />
@@ -562,7 +562,7 @@ function GuestPrompt() {
 
 function NeedProfilePrompt({ onPick }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden max-w-2xl mx-auto">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden max-w-2xl mx-auto">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#DCFCE7] text-[#0F6E56] mb-4">
           <ShieldCheck className="w-6 h-6" strokeWidth={2} />

@@ -72,6 +72,12 @@ export async function GET() {
     const capRates = all.map(d => d.cap_rate).filter(Boolean);
     const newDeals = all.filter(d => d.created_at > thirtyDaysAgo).length;
 
+    // 30-day trend: deals added in the last 30 days vs the prior 30 (30–60 days ago).
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const prevDeals = all.filter(d => d.created_at > sixtyDaysAgo && d.created_at <= thirtyDaysAgo).length;
+    const trendPct = prevDeals > 0 ? Math.round(((newDeals - prevDeals) / prevDeals) * 100) : (newDeals > 0 ? 100 : 0);
+    const trendDir = newDeals > prevDeals ? 'up' : newDeals < prevDeals ? 'down' : 'flat';
+
     // By state
     const byState = {};
     all.forEach(d => {
@@ -122,6 +128,9 @@ export async function GET() {
         avgYield: +avg(yields).toFixed(1),
         avgCapRate: +avg(capRates).toFixed(1),
         newDeals,
+        prevDeals,
+        trendPct,
+        trendDir,
       },
       topStates,
       priceDistribution,

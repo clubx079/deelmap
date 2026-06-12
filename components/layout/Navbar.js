@@ -18,6 +18,7 @@ export function Navbar() {
   const [showAboutDropdown, setShowAboutDropdown] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifUnread, setNotifUnread] = useState(0)
+  const [communityUnread, setCommunityUnread] = useState(0)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
 
@@ -50,7 +51,7 @@ export function Navbar() {
 
   // Fetch notifications
   useEffect(() => {
-    if (!user?.id) { setNotifUnread(0); setNotifications([]); return }
+    if (!user?.id) { setNotifUnread(0); setNotifications([]); setCommunityUnread(0); return }
     const fetchNotifs = async () => {
       try {
         const res = await fetch('/api/buyer/notifications', { headers: { Authorization: `Bearer ${user.id}` } })
@@ -59,6 +60,12 @@ export function Navbar() {
           setNotifUnread(data.unreadCount || 0)
           setNotifications(data.notifications || [])
         }
+      } catch {}
+      // Community replies/mentions live in a separate table — fold their unread
+      // count into the same bell so a reply alerts you anywhere in the portal.
+      try {
+        const cRes = await fetch('/api/community/notifications', { headers: { 'x-user-id': user.id } })
+        if (cRes.ok) { const cData = await cRes.json(); setCommunityUnread(cData.unread_count || 0) }
       } catch {}
     }
     fetchNotifs()
@@ -243,9 +250,9 @@ export function Navbar() {
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                       </svg>
-                      {notifUnread > 0 && (
+                      {(notifUnread + communityUnread) > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-[#D03839] rounded-full leading-none">
-                          {notifUnread > 99 ? '99+' : notifUnread}
+                          {(notifUnread + communityUnread) > 99 ? '99+' : (notifUnread + communityUnread)}
                         </span>
                       )}
                     </button>
@@ -267,8 +274,20 @@ export function Navbar() {
                             </button>
                           )}
                         </div>
+                        {communityUnread > 0 && (
+                          <Link
+                            href="/community/notifications"
+                            onClick={() => setNotifOpen(false)}
+                            className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#E8E8E4] bg-[#FAFAF8] hover:bg-[#F3F3EF] transition-colors"
+                          >
+                            <span className="text-[13px] font-semibold text-[#1A1816] truncate">
+                              {communityUnread} new community {communityUnread === 1 ? 'reply' : 'replies'}
+                            </span>
+                            <span className="text-[12px] text-[#D03839] font-semibold flex-shrink-0 whitespace-nowrap">View →</span>
+                          </Link>
+                        )}
                         <div className="max-h-[340px] overflow-y-auto">
-                          {notifications.length === 0 ? (
+                          {notifications.length === 0 && communityUnread === 0 ? (
                             <div className="flex items-center justify-center h-16 text-[13px] text-[#737370]">No notifications yet</div>
                           ) : notifications.map(n => (
                             <Link
@@ -343,6 +362,9 @@ export function Navbar() {
           </div>
         </div>
       </nav>
+      {/* Spacer — the nav above is position:fixed (h-[80px]); this reserves its
+          height so page content isn't hidden underneath it. */}
+      <div className="h-[80px]" aria-hidden="true" />
 
       {/* Mobile Menu */}
       <div className={`fixed inset-0 z-[9999] md:hidden ${showMobileMenu ? 'pointer-events-auto' : 'pointer-events-none'}`}>

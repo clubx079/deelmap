@@ -274,8 +274,28 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const { id } = await request.json()
+    const { id, email } = await request.json()
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+    if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Ownership check (mirrors GET): the caller may only delete a contract they are
+    // a submitter on OR that they created. Without this, anyone could delete any
+    // contract — including signed legal docs — just by guessing the id.
+    const [subRes, createdRes] = await Promise.all([
+      fetch(`${DOCUSEAL_BASE}/submissions/${id}`, { headers: dsHeaders(), cache: 'no-store' }),
+      fetch(`${DOCUSEAL_BASE}/submitters?application_key=buyer:${encodeURIComponent(email)}&limit=100`, { headers: dsHeaders(), cache: 'no-store' }),
+    ])
+    if (!subRes.ok) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
+    const submission = await subRes.json()
+    const createdJson = await createdRes.json()
+
+    const isSubmitter = submission.submitters?.some(s => s.email?.toLowerCase() === email.toLowerCase())
+    const createdIds = new Set((createdJson.data || []).map(s => String(s.submission_id)))
+    const isCreator = createdIds.has(String(id))
+    if (!isSubmitter && !isCreator) {
+      return NextResponse.json({ error: 'Not authorized to delete this contract' }, { status: 403 })
+    }
+
     const res = await fetch(`${DOCUSEAL_BASE}/submissions/${id}`, { method: 'DELETE', headers: dsHeaders() })
     if (!res.ok) return NextResponse.json({ error: 'Failed to delete' }, { status: res.status })
     return NextResponse.json({ success: true })

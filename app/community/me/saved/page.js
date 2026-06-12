@@ -9,6 +9,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
+import { ProfileSubNav } from '@/components/community/ProfileSubNav'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
@@ -116,24 +117,7 @@ export default function MySavedPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      {/* Sub-nav — minimal, just a back link */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-          <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Community
-            </Link>
-            <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#1A1816] text-white text-[13px] font-semibold whitespace-nowrap">
-              <Bookmark className="w-3.5 h-3.5" strokeWidth={2.5} fill="currentColor" />
-              My Saved
-            </span>
-          </div>
-        </div>
-      </div>
+      <ProfileSubNav active="saved" />
 
       {/* Hero strip */}
       <div className="bg-white border-b border-[#E8E8E4]">
@@ -213,7 +197,7 @@ function FeedSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white border border-[#E8E8E4] rounded-lg grid grid-cols-[52px_1fr] overflow-hidden">
+        <div key={i} className="bg-white border border-[#E8E8E4] rounded grid grid-cols-[52px_1fr] overflow-hidden">
           <div className="bg-[#FAFAF8] border-r border-[#E8E8E4] h-32" />
           <div className="p-4 space-y-3">
             <div className="h-4 w-1/2 bg-[#F3F3EF] rounded animate-pulse" />
@@ -229,7 +213,7 @@ function FeedSkeleton() {
 
 function GuestPrompt() {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white border-b border-[#E8E8E4]">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Bookmark className="w-6 h-6" strokeWidth={2} />
@@ -254,7 +238,7 @@ function GuestPrompt() {
 
 function NeedProfilePrompt({ onPick }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Bookmark className="w-6 h-6" strokeWidth={2} />
@@ -284,7 +268,7 @@ function EmptyState() {
     { title: 'Build a reference library', body: 'Save lender rate quotes and contractor recommendations for when you need them.' },
   ]
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white border-b border-[#E8E8E4]">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Bookmark className="w-6 h-6" strokeWidth={2} />

@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Bell, BellOff, Check, MessageSquare, AtSign, ShieldCheck, Gavel, Inbox,
+  ArrowLeft, Bell, BellOff, Check, MessageSquare, AtSign, ShieldCheck, Gavel, Inbox, Layers,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
+import { ProfileSubNav } from '@/components/community/ProfileSubNav'
 import { showToast } from '@/components/community/Dialogs'
 
 const FILTERS = [
@@ -22,6 +23,7 @@ const TYPE_ICONS = {
   mention:              { icon: AtSign,        bg: '#FEF0EF', fg: '#D03839' },
   verification_status:  { icon: ShieldCheck,   bg: '#DCFCE7', fg: '#0F6E56' },
   mod_action:           { icon: Gavel,         bg: '#FEF3C7', fg: '#92400E' },
+  lot_post:             { icon: Layers,        bg: '#FAFAF8', fg: '#1A1816' },
 }
 
 export default function NotificationsPage() {
@@ -89,29 +91,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      {/* Sub-nav */}
-      <div className="sticky top-0 z-30 bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-          <div className="h-[52px] flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-[13px] font-semibold text-[#444441] border border-[#E8E8E4] hover:border-[#D1D1CE] hover:text-[#1A1816] transition-colors whitespace-nowrap"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Community
-            </Link>
-            <span className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-[#1A1816] text-white text-[13px] font-semibold whitespace-nowrap">
-              <Bell className="w-3.5 h-3.5" strokeWidth={2.5} fill="currentColor" />
-              Notifications
-              {unread > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#D03839] text-[10.5px] font-extrabold ml-1">
-                  {unread > 99 ? '99+' : unread}
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
+      <ProfileSubNav active="notifications" />
 
       {/* Hero strip */}
       <div className="bg-white border-b border-[#E8E8E4]">
@@ -141,7 +121,7 @@ export default function NotificationsPage() {
       <div className="max-w-[1100px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
         <main className="min-w-0">
           {/* Filter pills */}
-          <div className="bg-white border border-[#E8E8E4] rounded-lg p-1.5 flex items-center gap-1 mb-4">
+          <div className="bg-white border border-[#E8E8E4] rounded p-1.5 flex items-center gap-1 mb-4">
             {FILTERS.map(f => {
               const active = f.value === filter
               return (
@@ -184,7 +164,7 @@ export default function NotificationsPage() {
 
         {/* Right rail — explainer */}
         <aside className="hidden lg:block">
-          <div className="bg-white border border-[#E8E8E4] rounded-lg p-4 sticky top-[68px]">
+          <div className="bg-white border border-[#E8E8E4] rounded p-4 sticky top-[68px]">
             <h3 className="text-[13.5px] font-extrabold text-[#1A1816] tracking-tight mb-2">What lands here</h3>
             <ul className="space-y-2.5 text-[12.5px] text-[#444441]">
               <li className="flex items-start gap-2">
@@ -202,6 +182,10 @@ export default function NotificationsPage() {
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#92400E] mt-1.5 shrink-0" />
                 <span><strong className="text-[#1A1816] font-bold">Mod actions</strong> on your content.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1A1816] mt-1.5 shrink-0" />
+                <span><strong className="text-[#1A1816] font-bold">New posts</strong> in Lots you follow.</span>
               </li>
             </ul>
             <div className="mt-4 pt-3 border-t border-[#F3F3EF]">
@@ -234,7 +218,7 @@ function NotificationRow({ n, onMarkRead }) {
       <Link
         href={n.href}
         onClick={() => unread && onMarkRead(n.id)}
-        className={`flex items-start gap-3 p-3.5 rounded-lg border transition-colors ${
+        className={`flex items-start gap-3 p-3.5 rounded border transition-colors ${
           unread
             ? 'bg-white border-[#E8E8E4] border-l-4 border-l-[#D03839]'
             : 'bg-white border-[#E8E8E4] hover:border-[#D1D1CE]'
@@ -271,7 +255,7 @@ function ListSkeleton() {
   return (
     <ul className="space-y-2">
       {[1, 2, 3, 4].map(i => (
-        <li key={i} className="bg-white border border-[#E8E8E4] rounded-lg p-3.5 flex items-start gap-3 animate-pulse">
+        <li key={i} className="bg-white border border-[#E8E8E4] rounded p-3.5 flex items-start gap-3 animate-pulse">
           <div className="w-9 h-9 rounded bg-[#F3F3EF] shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-3/4 bg-[#F3F3EF] rounded" />
@@ -285,7 +269,7 @@ function ListSkeleton() {
 
 function EmptyState({ filter }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Inbox className="w-6 h-6" strokeWidth={2} />
@@ -311,7 +295,7 @@ function EmptyState({ filter }) {
 
 function GuestPrompt() {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <Bell className="w-6 h-6" strokeWidth={2} />
@@ -336,7 +320,7 @@ function GuestPrompt() {
 
 function NeedProfilePrompt({ onPick }) {
   return (
-    <div className="bg-white border border-[#E8E8E4] rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#E8E8E4] rounded overflow-hidden">
       <div className="p-8 md:p-10 text-center bg-linear-to-b from-[#FFFBFB] to-white">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF0EF] text-[#D03839] mb-4">
           <BellOff className="w-6 h-6" strokeWidth={2} />

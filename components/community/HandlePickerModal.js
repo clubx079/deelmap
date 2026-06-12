@@ -119,7 +119,7 @@ export function HandlePickerModal({ open, onClose, onCreated }) {
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
       <div className="min-h-full flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md border border-[#E8E8E4]">
+      <div className="bg-white rounded shadow-2xl w-full max-w-md border border-[#E8E8E4]">
         <div className="flex items-start justify-between px-5 pt-5 pb-3 border-b border-[#E8E8E4]">
           <div>
             <h2 className="text-[18px] font-extrabold text-[#1A1816] tracking-tight">Pick your community handle</h2>

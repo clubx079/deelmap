@@ -92,7 +92,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
 
   if (hidden) {
     return (
-      <article className="bg-white border border-[#E8E8E4] rounded-lg p-4 text-[12.5px] text-[#737370] flex items-center justify-between gap-3">
+      <article className="bg-white border border-[#E8E8E4] rounded p-4 text-[12.5px] text-[#737370] flex items-center justify-between gap-3">
         <span className="flex items-center gap-2">
           <EyeOff className="w-4 h-4" />
           Hidden from your feed.
@@ -117,7 +117,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
   return (
     <article
       onClick={onCardClick}
-      className={`bg-white border rounded-lg overflow-hidden cursor-pointer transition-all hover:border-[#D1D1CE] md:grid md:grid-cols-[52px_1fr] ${
+      className={`bg-white border rounded cursor-pointer transition-all hover:border-[#D1D1CE] md:grid md:grid-cols-[52px_1fr] ${
         post.is_pinned
           ? 'border-[#F5C4C0] bg-linear-to-b from-[#FFFBFB] to-white'
           : deal
@@ -126,7 +126,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
       }`}
     >
       {/* Desktop vote rail — hidden on mobile (vote goes into the action bar) */}
-      <div className="hidden md:block">
+      <div className="hidden md:block rounded-l overflow-hidden">
         <VoteRail score={score} userVote={userVote} onVote={(v) => onVote?.(post.id, v)} />
       </div>
 
@@ -198,7 +198,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
 
         {deal && (
           <Link href={dealHref(deal)} className="block mb-3">
-            <div className="bg-[#ECFDF5] border border-[#BBF7D0] rounded-lg p-2.5 md:p-3 hover:bg-[#DCFCE7] transition-colors">
+            <div className="bg-[#ECFDF5] border border-[#BBF7D0] rounded p-2.5 md:p-3 hover:bg-[#DCFCE7] transition-colors">
               <div className="grid grid-cols-[44px_1fr] md:grid-cols-[52px_1fr_auto] items-center gap-2.5 md:gap-3">
                 <div className="w-11 h-11 md:w-[52px] md:h-[52px] rounded bg-linear-to-br from-[#94A3B8] to-[#64748B] flex items-center justify-center text-white relative">
                   <HomeIcon className="w-5 h-5" strokeWidth={1.5} />
@@ -306,7 +306,7 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
                 <MoreHorizontal className="w-4 h-4" />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 bottom-full mb-1 sm:bottom-auto sm:top-full sm:mt-1 w-52 bg-white rounded-lg shadow-xl border border-[#E8E8E4] py-1 z-50">
+                <div className="absolute right-0 bottom-full mb-1 sm:bottom-auto sm:top-full sm:mt-1 w-52 bg-white rounded shadow-xl border border-[#E8E8E4] py-1 z-50">
                   <button
                     type="button"
                     role="menuitem"
