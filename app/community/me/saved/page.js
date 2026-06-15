@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
 import { ProfileTabs } from '@/components/community/ProfileTabs'
+import { ProfileHero } from '@/components/community/ProfileHero'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
@@ -116,6 +117,8 @@ export default function MySavedPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
+
+      <ProfileHero profile={profile} />
 
       <ProfileTabs active="saved" />
 

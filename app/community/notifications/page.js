@@ -10,6 +10,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { ProfileTabs } from '@/components/community/ProfileTabs'
+import { ProfileHero } from '@/components/community/ProfileHero'
 import { showToast } from '@/components/community/Dialogs'
 
 const FILTERS = [
@@ -90,6 +91,8 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
+
+      <ProfileHero profile={profile} />
 
       <ProfileTabs active="notifications" unread={unread} />
 
