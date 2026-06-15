@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, User as UserIcon, ShieldCheck, Bookmark, Compass, Pencil, Check, X,
+  ArrowLeft, User as UserIcon, ShieldCheck, Bookmark, Compass, Check, X,
   MessageSquare, Layers, Loader2, Settings, ChevronRight,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
@@ -87,13 +87,7 @@ export default function MyProfilePage() {
       ) : (
         <>
           {/* Hero */}
-          <ProfileHero
-            profile={profile}
-            tier={tier}
-            nextTier={nextTier}
-            onEdit={() => setTab('settings')}
-            onStartVerify={onStartVerify}
-          />
+          <ProfileHero profile={profile} />
 
           {/* Unified profile tab bar */}
           <ProfileTabs active={tab} onSelect={setTab} />
@@ -140,20 +134,14 @@ export default function MyProfilePage() {
 
 // ──────────────────────────── Hero ────────────────────────────
 
-function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
-  const equity = profile.equity_score || 0
-  const pct = nextTier && nextTier.min_equity > 0
-    ? Math.min(100, Math.round((equity / nextTier.min_equity) * 100))
-    : 100
-  const togo = nextTier ? Math.max(0, nextTier.min_equity - equity) : 0
-
+function ProfileHero({ profile }) {
   return (
     <div className="bg-[#1A1816] text-white">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-6">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-4 md:py-5">
+        <div className="flex flex-row items-center gap-4 md:gap-5">
           {/* Avatar */}
           <div className="shrink-0">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-br from-[#D03839] to-[#FB7185] flex items-center justify-center text-white text-[28px] md:text-[32px] font-extrabold border-[3px] border-white/10 shadow-xl">
+            <div className="w-16 h-16 md:w-[72px] md:h-[72px] rounded-full bg-linear-to-br from-[#D03839] to-[#FB7185] flex items-center justify-center text-white text-[22px] md:text-[26px] font-extrabold border-[3px] border-white/10 shadow-xl">
               {(profile.handle || '?').slice(0, 1).toUpperCase()}
             </div>
           </div>
@@ -180,48 +168,7 @@ function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
               {profile.display_name || 'No display name set'}
             </div>
             {profile.bio && (
-              <p className="text-[13px] text-white/80 mt-2 leading-relaxed max-w-2xl">{profile.bio}</p>
-            )}
-
-            {/* Equity strip */}
-            <div className="mt-4 max-w-md">
-              <div className="flex items-baseline gap-2 mb-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/60">Equity</span>
-                <span className="text-[18px] font-extrabold leading-none">{equity.toLocaleString()}</span>
-                {tier && (
-                  <span className="text-[11.5px] text-white/60 font-semibold">· {tier.name} tier</span>
-                )}
-              </div>
-              <div className="h-[5px] bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-linear-to-r from-[#D03839] to-[#FB7185]" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="mt-1.5 text-[11.5px] text-white/60">
-                {nextTier
-                  ? <>{togo.toLocaleString()} Equity to <strong className="text-white font-bold">{nextTier.name}</strong></>
-                  : 'Top tier reached.'}
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-2 md:items-end">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-[#1A1816] font-bold text-[13px] rounded hover:bg-white/90 transition-colors w-full md:w-[150px]"
-            >
-              <Pencil className="w-3.5 h-3.5" strokeWidth={2.5} />
-              Edit profile
-            </button>
-            {!profile.role_badge && (
-              <button
-                type="button"
-                onClick={onStartVerify}
-                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors w-full md:w-[150px]"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" strokeWidth={2.5} />
-                Get verified
-              </button>
+              <p className="text-[13px] text-white/80 mt-1.5 leading-relaxed max-w-2xl line-clamp-2">{profile.bio}</p>
             )}
           </div>
         </div>
