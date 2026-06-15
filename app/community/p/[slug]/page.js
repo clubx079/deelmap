@@ -516,8 +516,8 @@ export default function PostDetailPage({ params }) {
             ))}
           </div>
 
-          {/* ── COMMENT COMPOSER (bottom of thread, Facebook-style) ──── */}
-          <div className="mt-4">
+          {/* ── COMMENT COMPOSER (sticky bottom, Facebook-style) ──────── */}
+          <div className="sticky bottom-0 z-20 -mx-3 md:-mx-4 mt-4 px-3 md:px-4 pt-3 pb-3 bg-[#FAFAF8]/95 backdrop-blur-sm border-t border-[#E8E8E4] shadow-[0_-4px_16px_rgba(26,24,22,0.06)]">
             {user?.id && profile ? (
               <CommentComposer
                 profile={profile}
