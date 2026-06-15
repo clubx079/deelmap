@@ -9,7 +9,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
-import { ProfileSubNav } from '@/components/community/ProfileSubNav'
+import { ProfileTabs } from '@/components/community/ProfileTabs'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
@@ -117,7 +117,7 @@ export default function MySavedPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      <ProfileSubNav active="saved" />
+      <ProfileTabs active="saved" />
 
       {/* Hero strip */}
       <div className="bg-white border-b border-[#E8E8E4]">

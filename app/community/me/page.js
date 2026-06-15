@@ -11,19 +11,12 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
-import { ProfileSubNav } from '@/components/community/ProfileSubNav'
+import { ProfileTabs } from '@/components/community/ProfileTabs'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
 
 const HANDLE_COOLDOWN_DAYS = 90
-
-const TABS = [
-  { value: 'overview',      label: 'Overview',       icon: UserIcon },
-  { value: 'posts',         label: 'My Posts',       icon: MessageSquare },
-  { value: 'subscriptions', label: 'Subscriptions',  icon: Layers },
-  { value: 'settings',      label: 'Settings',       icon: Settings },
-]
 
 export default function MyProfilePage() {
   const { user } = useAuth()
@@ -40,6 +33,12 @@ export default function MyProfilePage() {
     () => (user?.id ? { 'x-user-id': user.id } : {}),
     [user?.id]
   )
+
+  // Honor an incoming ?tab= (links from the Saved / Notifications tabs)
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (t && ['overview', 'posts', 'subscriptions', 'settings'].includes(t)) setTab(t)
+  }, [])
 
   // Load profile + tier
   useEffect(() => {
@@ -73,8 +72,6 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      <ProfileSubNav active="profile" />
-
       {!profileChecked ? (
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-10">
           <div className="bg-white border border-[#E8E8E4] rounded p-6 animate-pulse">
@@ -98,31 +95,8 @@ export default function MyProfilePage() {
             onStartVerify={onStartVerify}
           />
 
-          {/* Tabs */}
-          <div className="bg-white border-b border-[#E8E8E4]">
-            <div className="max-w-[1440px] mx-auto px-2 md:px-6">
-              <div className="flex items-center gap-0 overflow-x-auto no-scrollbar">
-                {TABS.map(t => {
-                  const active = t.value === tab
-                  const Icon = t.icon
-                  return (
-                    <button
-                      key={t.value}
-                      onClick={() => setTab(t.value)}
-                      className={`inline-flex items-center gap-2 px-4 md:px-5 h-12 text-[13.5px] font-bold whitespace-nowrap border-b-2 transition-colors ${
-                        active
-                          ? 'text-[#D03839] border-[#D03839]'
-                          : 'text-[#737370] border-transparent hover:text-[#1A1816]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" strokeWidth={2.25} />
-                      {t.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          {/* Unified profile tab bar */}
+          <ProfileTabs active={tab} onSelect={setTab} />
 
           <div className="max-w-[1440px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
             <main className="min-w-0">
