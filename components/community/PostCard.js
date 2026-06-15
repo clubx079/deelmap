@@ -7,6 +7,7 @@ import { MessageSquare, Bookmark, Pin, Home as HomeIcon, ArrowRight, ArrowBigUp,
 import { useAuth } from '@/hooks/useAuth'
 import { VoteRail } from './VoteRail'
 import { VerifyBadge } from './VerifyBadge'
+import { UserHoverCard } from './UserHoverCard'
 import { LotTag } from './LotTag'
 import { ShareMenu } from './ShareMenu'
 import { showToast } from './Dialogs'
@@ -164,7 +165,9 @@ export function PostCard({ post, onVote, onSave, onHide, onBlock, isSaved = fals
           {lot.name && <LotTag label={lot.name} category={lot.category} slug={lot.slug} />}
           {post.market_tag && <LotTag label={post.market_tag} category="markets" asLink={false} />}
           <span className="inline-flex items-center gap-1.5 font-semibold text-[#444441]">
-            <Link href={`/community/u/${author.handle}`} className="text-[#1A1816] hover:text-[#D03839] font-bold">@{author.handle}</Link>
+            <UserHoverCard handle={author.handle}>
+              <Link href={`/community/u/${author.handle}`} className="text-[#1A1816] hover:text-[#D03839] font-bold">@{author.handle}</Link>
+            </UserHoverCard>
             {author.role_badge && <VerifyBadge kind={author.role_badge} />}
             {typeof author.equity_score === 'number' && (
               <span className="text-[11px] text-[#737370] font-semibold">

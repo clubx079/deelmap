@@ -13,6 +13,7 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { VoteRail } from '@/components/community/VoteRail'
 import { VerifyBadge } from '@/components/community/VerifyBadge'
+import { UserHoverCard } from '@/components/community/UserHoverCard'
 import { LotTag } from '@/components/community/LotTag'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { showToast, showPrompt, showReportDialog } from '@/components/community/Dialogs'
@@ -490,22 +491,6 @@ export default function PostDetailPage({ params }) {
             </div>
           </div>
 
-          {/* ── COMMENT COMPOSER ────────────────────────────────────── */}
-          {user?.id && profile ? (
-            <CommentComposer
-              profile={profile}
-              authHeaders={authHeaders}
-              onSubmit={(text) => onSubmitComment(text, null)}
-              isReply={false}
-            />
-          ) : (
-            <SignInToReplyCard
-              user={user}
-              onSignIn={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
-              onPickHandle={() => setShowHandlePicker(true)}
-            />
-          )}
-
           {/* ── THREAD ──────────────────────────────────────────────── */}
           <div className="space-y-2 mt-4">
             {tree.length === 0 ? (
@@ -529,6 +514,24 @@ export default function PostDetailPage({ params }) {
                 depth={0}
               />
             ))}
+          </div>
+
+          {/* ── COMMENT COMPOSER (bottom of thread, Facebook-style) ──── */}
+          <div className="mt-4">
+            {user?.id && profile ? (
+              <CommentComposer
+                profile={profile}
+                authHeaders={authHeaders}
+                onSubmit={(text) => onSubmitComment(text, null)}
+                isReply={false}
+              />
+            ) : (
+              <SignInToReplyCard
+                user={user}
+                onSignIn={() => window.dispatchEvent(new CustomEvent('showAuth', { detail: { step: 'login' } }))}
+                onPickHandle={() => setShowHandlePicker(true)}
+              />
+            )}
           </div>
         </main>
 
@@ -583,7 +586,9 @@ function CommentNode({
               >
                 {initials(comment.author?.handle)}
               </div>
-              <span className="text-[13px] font-bold text-[#1A1816]">@{comment.author?.handle}</span>
+              <UserHoverCard handle={comment.author?.handle}>
+                <Link href={`/community/u/${comment.author?.handle}`} className="text-[13px] font-bold text-[#1A1816] hover:text-[#D03839]">@{comment.author?.handle}</Link>
+              </UserHoverCard>
               {isOP && (
                 <span className="px-1.5 py-0.5 bg-[#FEF0EF] text-[#D03839] rounded text-[9px] font-extrabold tracking-[0.08em]">OP</span>
               )}

@@ -279,63 +279,18 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
 
   return (
     <div className="space-y-3.5">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Equity" value={(profile.equity_score || 0).toLocaleString()} tone="red" />
-        <StatCard label="Posts"     value={stats?.post_count ?? '—'}      tone="dark" />
-        <StatCard label="Saved"     value={stats?.saved_count ?? '—'}     tone="dark" />
-        <StatCard label="Subscribed" value={subs?.length ?? '—'}          tone="dark" />
+      {/* Compact stat line — Reddit-style, replaces the four big stat cards.
+          Equity/tier already live in the hero, so we keep this to one slim row. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[#737370] px-1 pb-1">
+        <span><strong className="text-[#D03839] font-bold">{(profile.equity_score || 0).toLocaleString()}</strong> Equity</span>
+        {tier && <><span className="text-[#D1D1CE]">·</span><span><strong className="text-[#1A1816] font-semibold">{tier.name}</strong></span></>}
+        <span className="text-[#D1D1CE]">·</span>
+        <span><strong className="text-[#1A1816] font-semibold">{stats?.post_count ?? '—'}</strong> posts</span>
+        <span className="text-[#D1D1CE]">·</span>
+        <span><strong className="text-[#1A1816] font-semibold">{stats?.saved_count ?? '—'}</strong> saved</span>
+        <span className="text-[#D1D1CE]">·</span>
+        <span><strong className="text-[#1A1816] font-semibold">{subs?.length ?? '—'}</strong> subscribed</span>
       </div>
-
-      {/* Equity / tier */}
-      <div className="bg-white border border-[#E8E8E4] rounded p-5">
-        <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370] mb-3">Tier progress</div>
-        <div className="flex items-end justify-between mb-2">
-          <div>
-            <div className="text-[26px] font-extrabold text-[#1A1816] leading-none tracking-tight">
-              {(profile.equity_score || 0).toLocaleString()} <span className="text-[14px] font-bold text-[#737370]">Equity</span>
-            </div>
-            {tier && <div className="text-[12.5px] text-[#737370] mt-1">Current tier: <strong className="text-[#1A1816] font-bold">{tier.name}</strong></div>}
-          </div>
-          {nextTier && (
-            <div className="text-right">
-              <div className="text-[12px] font-bold text-[#1A1816]">{nextTier.name}</div>
-              <div className="text-[11.5px] text-[#737370]">{Math.max(0, nextTier.min_equity - (profile.equity_score || 0)).toLocaleString()} to go</div>
-            </div>
-          )}
-        </div>
-        <div className="h-2 bg-[#F3F3EF] rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full bg-linear-to-r from-[#D03839] to-[#FB7185]"
-            style={{
-              width: `${nextTier && nextTier.min_equity > 0
-                ? Math.min(100, Math.round(((profile.equity_score || 0) / nextTier.min_equity) * 100))
-                : 100}%`,
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Verify CTA if not verified */}
-      {!profile.role_badge && (
-        <div className="bg-linear-to-br from-[#ECFDF5] to-white border border-[#BBF7D0] rounded p-5 flex flex-col md:flex-row md:items-center gap-4">
-          <div className="w-11 h-11 bg-[#0F6E56] rounded flex items-center justify-center text-white shrink-0">
-            <ShieldCheck className="w-5.5 h-5.5" strokeWidth={2.25} />
-          </div>
-          <div className="flex-1">
-            <div className="text-[15px] font-extrabold text-[#1A1816] mb-0.5">Get a verification badge</div>
-            <div className="text-[13px] text-[#444441] leading-relaxed">
-              Verify your role (Lender, Contractor, Agent, Principal, or Wholesaler) to earn 3× Equity on replies and post in restricted Lots.
-            </div>
-          </div>
-          <Link
-            href="/community/verify"
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors whitespace-nowrap"
-          >
-            Start verification <ChevronRight className="w-3.5 h-3.5" strokeWidth={3} />
-          </Link>
-        </div>
-      )}
 
       {/* Subscriptions preview */}
       <div className="bg-white border border-[#E8E8E4] rounded">
