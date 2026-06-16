@@ -7,6 +7,7 @@ import {
   Clock, AlertCircle, ChevronRight,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { showToast } from '@/components/community/Dialogs'
@@ -464,6 +465,7 @@ export default function VerifyPage() {
         )}
       </div>
 
+      <Footer hideCta />
 
       <HandlePickerModal
         open={showHandlePicker}

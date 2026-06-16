@@ -9,6 +9,7 @@ import {
   Check,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { showPrompt, showToast } from '@/components/community/Dialogs'
@@ -589,6 +590,7 @@ function Shell({ children }) {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
       <main className="max-w-[1080px] mx-auto px-4 md:px-8 py-5 pb-16">{children}</main>
+      <Footer hideCta />
     </div>
   )
 }

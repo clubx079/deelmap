@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Flame, Plus, ShieldCheck, MessageSquare, TrendingUp } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { LotsSidebar } from '@/components/community/LotsSidebar'
@@ -303,7 +302,6 @@ function CommunityInner() {
         <RightSidebar profile={profile} nextTier={nextTier} trending={trending} activeDeals={activeDeals} onStartVerify={onStartVerify} />
       </div>
 
-      <Footer hideCta />
 
       <HandlePickerModal
         open={showHandlePicker}
