@@ -11,6 +11,7 @@ export async function GET(request) {
   const url = new URL(request.url)
   const unreadOnly = url.searchParams.get('unread') === '1'
   const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)))
+  const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0)
 
   const { data: profile } = await supabase
     .from('community_profiles').select('id').eq('user_id', userId).maybeSingle()
@@ -24,7 +25,7 @@ export async function GET(request) {
     `)
     .eq('profile_id', profile.id)
     .order('created_at', { ascending: false })
-    .limit(limit)
+    .range(offset, offset + limit - 1)
   if (unreadOnly) q = q.eq('is_read', false)
 
   const { data: notifs, error } = await q
@@ -57,7 +58,7 @@ export async function GET(request) {
     .eq('profile_id', profile.id)
     .eq('is_read', false)
 
-  return NextResponse.json({ notifications: hydrated, unread_count: unreadCount || 0, has_profile: true })
+  return NextResponse.json({ notifications: hydrated, unread_count: unreadCount || 0, has_profile: true, has_more: (notifs || []).length === limit })
 }
 
 // POST { action: 'mark_read' | 'mark_all_read', notification_id? }

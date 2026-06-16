@@ -47,6 +47,10 @@ function CommunityInner() {
   const [nextTier, setNextTier] = useState(null)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
   const [showVerification, setShowVerification] = useState(false)
+  const [trending, setTrending] = useState([])
+  const [activeDeals, setActiveDeals] = useState([])
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const authHeaders = useCallback(
     () => (user?.id ? { 'x-user-id': user.id } : {}),
@@ -58,6 +62,14 @@ function CommunityInner() {
     fetch('/api/community/lots').then(r => r.json()).then(d => setLots(d.groups || [])).catch(() => setLots([]))
   }, [])
 
+  // Load sidebar panels (trending + active deal discussions) once
+  useEffect(() => {
+    fetch('/api/community/sidebar')
+      .then(r => r.json())
+      .then(d => { setTrending(d.trending || []); setActiveDeals(d.activeDeals || []) })
+      .catch(() => {})
+  }, [])
+
   // Load profile when user changes
   useEffect(() => {
     if (!user?.id) { setProfile(null); setProfileLoaded(true); return }
@@ -67,19 +79,33 @@ function CommunityInner() {
       .catch(() => setProfileLoaded(true))
   }, [user?.id])
 
-  // Load feed when filters change
-  useEffect(() => {
-    setLoading(true)
+  const feedQuery = useCallback((offset = 0) => {
     const q = new URLSearchParams()
     q.set('sort', sort === 'deal' ? 'hot' : sort)
     if (sort === 'deal') q.set('deal', '1')
     if (lotSlug) q.set('lot', lotSlug)
-    fetch(`/api/community/posts?${q.toString()}`, { headers: authHeaders() })
+    if (offset) q.set('offset', String(offset))
+    return q.toString()
+  }, [sort, lotSlug])
+
+  // Load feed when filters change
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/community/posts?${feedQuery(0)}`, { headers: authHeaders() })
       .then(r => r.json())
-      .then(d => setPosts(d.posts || []))
-      .catch(() => setPosts([]))
+      .then(d => { setPosts(d.posts || []); setHasMore(!!d.has_more) })
+      .catch(() => { setPosts([]); setHasMore(false) })
       .finally(() => setLoading(false))
-  }, [sort, lotSlug, authHeaders])
+  }, [feedQuery, authHeaders])
+
+  const loadMore = useCallback(() => {
+    setLoadingMore(true)
+    fetch(`/api/community/posts?${feedQuery(posts.length)}`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => { setPosts(prev => [...prev, ...(d.posts || [])]); setHasMore(!!d.has_more) })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false))
+  }, [feedQuery, authHeaders, posts.length])
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(params.toString())
@@ -249,11 +275,21 @@ function CommunityInner() {
                   onSave={handleSave}
                 />
               ))}
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full h-11 rounded border border-[#E8E8E4] bg-white text-[13.5px] font-bold text-[#1A1816] hover:border-[#D1D1CE] disabled:opacity-60 transition-colors"
+                >
+                  {loadingMore ? 'Loading…' : 'Load more'}
+                </button>
+              )}
             </div>
           )}
         </main>
 
-        <RightSidebar profile={profile} nextTier={nextTier} trending={[]} activeDeals={[]} onStartVerify={onStartVerify} />
+        <RightSidebar profile={profile} nextTier={nextTier} trending={trending} activeDeals={activeDeals} onStartVerify={onStartVerify} />
       </div>
 
       <Footer hideCta />

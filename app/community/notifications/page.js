@@ -32,6 +32,10 @@ export default function NotificationsPage() {
   const [items, setItems] = useState(null)
   const [unread, setUnread] = useState(0)
   const [filter, setFilter] = useState('all')
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const PAGE = 30
   const [profile, setProfile] = useState(null)
   const [profileChecked, setProfileChecked] = useState(false)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
@@ -54,14 +58,39 @@ export default function NotificationsPage() {
     if (!user?.id || !profile) { setItems([]); return }
     const url = new URL('/api/community/notifications', window.location.origin)
     if (filter === 'unread') url.searchParams.set('unread', '1')
-    url.searchParams.set('limit', '50')
+    url.searchParams.set('limit', String(PAGE))
     const r = await fetch(url.toString(), { headers: authHeaders() })
     const d = await r.json()
     setItems(d.notifications || [])
     setUnread(d.unread_count || 0)
+    setHasMore(!!d.has_more)
   }, [user?.id, profile, filter, authHeaders])
 
-  useEffect(() => { load() }, [load])
+  const loadMore = useCallback(async () => {
+    if (!user?.id || !profile) return
+    setLoadingMore(true)
+    const url = new URL('/api/community/notifications', window.location.origin)
+    if (filter === 'unread') url.searchParams.set('unread', '1')
+    url.searchParams.set('limit', String(PAGE))
+    url.searchParams.set('offset', String((items || []).length))
+    try {
+      const r = await fetch(url.toString(), { headers: authHeaders() })
+      const d = await r.json()
+      setItems(prev => [...(prev || []), ...(d.notifications || [])])
+      setHasMore(!!d.has_more)
+    } catch { /* ignore */ }
+    finally { setLoadingMore(false) }
+  }, [user?.id, profile, filter, authHeaders, items])
+
+  // Auto-refresh: poll every 30s and whenever the tab regains focus, so new
+  // replies / mentions / verification updates appear without a manual reload.
+  useEffect(() => {
+    load()
+    const interval = setInterval(load, 30000)
+    const onFocus = () => load()
+    window.addEventListener('focus', onFocus)
+    return () => { clearInterval(interval); window.removeEventListener('focus', onFocus) }
+  }, [load])
 
   const markAllRead = async () => {
     if (!unread) return
@@ -157,11 +186,23 @@ export default function NotificationsPage() {
           ) : items.length === 0 ? (
             <EmptyState filter={filter} />
           ) : (
-            <ul className="space-y-2">
-              {items.map(n => (
-                <NotificationRow key={n.id} n={n} onMarkRead={markRead} />
-              ))}
-            </ul>
+            <>
+              <ul className="space-y-2">
+                {items.map(n => (
+                  <NotificationRow key={n.id} n={n} onMarkRead={markRead} />
+                ))}
+              </ul>
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="mt-3 w-full h-11 rounded border border-[#E8E8E4] bg-white text-[13.5px] font-bold text-[#1A1816] hover:border-[#D1D1CE] disabled:opacity-60 transition-colors"
+                >
+                  {loadingMore ? 'Loading…' : 'Load more'}
+                </button>
+              )}
+            </>
           )}
         </main>
 

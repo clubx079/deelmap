@@ -74,11 +74,21 @@ function LotPageInner({ params }) {
   const [subBusy, setSubBusy] = useState(false)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
   const [showVerification, setShowVerification] = useState(false)
+  const [trending, setTrending] = useState([])
+  const [activeDeals, setActiveDeals] = useState([])
 
   const authHeaders = useCallback(
     () => (user?.id ? { 'x-user-id': user.id } : {}),
     [user?.id]
   )
+
+  // Load sidebar panels (trending + active deal discussions)
+  useEffect(() => {
+    fetch('/api/community/sidebar')
+      .then(r => r.json())
+      .then(d => { setTrending(d.trending || []); setActiveDeals(d.activeDeals || []) })
+      .catch(() => {})
+  }, [])
 
   // Load lot detail
   useEffect(() => {
@@ -421,8 +431,8 @@ function LotPageInner({ params }) {
           <RightSidebar
             profile={profile}
             nextTier={nextTier}
-            trending={[]}
-            activeDeals={[]}
+            trending={trending}
+            activeDeals={activeDeals}
             onStartVerify={onStartVerify}
           />
         </aside>
