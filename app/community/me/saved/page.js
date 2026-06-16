@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bookmark, ArrowLeft, Plus, Compass } from 'lucide-react'
+import { Bookmark, ArrowLeft, Plus } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
@@ -121,29 +121,6 @@ export default function MySavedPage() {
       <ProfileHero profile={profile} />
 
       <ProfileTabs active="saved" />
-
-      {/* Hero strip */}
-      <div className="bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-4 md:py-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-[22px] md:text-[30px] font-extrabold tracking-tight text-[#1A1816] leading-tight">
-              My Saved
-            </h1>
-            <p className="text-[12.5px] md:text-[13.5px] text-[#737370] mt-1">
-              {posts.length === 0
-                ? 'Threads you bookmark for later show up here.'
-                : `${posts.length} thread${posts.length === 1 ? '' : 's'} saved.`}
-            </p>
-          </div>
-          <Link
-            href="/community"
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#1A1816] hover:bg-[#2A2825] text-white font-bold text-[13px] rounded transition-colors w-full sm:w-auto"
-          >
-            <Compass className="w-4 h-4" strokeWidth={2.5} />
-            Browse Community
-          </Link>
-        </div>
-      </div>
 
       {/* Grid: feed + right rail (no left sidebar — not relevant here) */}
       <div className="max-w-[1440px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">

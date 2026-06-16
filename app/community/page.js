@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Flame, Plus, ShieldCheck, MessageSquare, TrendingUp } from 'lucide-react'
@@ -98,14 +98,30 @@ function CommunityInner() {
       .finally(() => setLoading(false))
   }, [feedQuery, authHeaders])
 
+  const loadingMoreRef = useRef(false)
   const loadMore = useCallback(() => {
+    if (loadingMoreRef.current || !hasMore) return
+    loadingMoreRef.current = true
     setLoadingMore(true)
     fetch(`/api/community/posts?${feedQuery(posts.length)}`, { headers: authHeaders() })
       .then(r => r.json())
       .then(d => { setPosts(prev => [...prev, ...(d.posts || [])]); setHasMore(!!d.has_more) })
       .catch(() => {})
-      .finally(() => setLoadingMore(false))
-  }, [feedQuery, authHeaders, posts.length])
+      .finally(() => { loadingMoreRef.current = false; setLoadingMore(false) })
+  }, [feedQuery, authHeaders, posts.length, hasMore])
+
+  // Infinite scroll: auto-load the next page when the sentinel nears the viewport
+  const sentinelRef = useRef(null)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore) return
+    const obs = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore() },
+      { rootMargin: '600px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [hasMore, loadMore])
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(params.toString())
@@ -276,14 +292,9 @@ function CommunityInner() {
                 />
               ))}
               {hasMore && (
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="w-full h-11 rounded border border-[#E8E8E4] bg-white text-[13.5px] font-bold text-[#1A1816] hover:border-[#D1D1CE] disabled:opacity-60 transition-colors"
-                >
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </button>
+                <div ref={sentinelRef} className="h-10 flex items-center justify-center text-[13px] text-[#737370]">
+                  {loadingMore && 'Loading…'}
+                </div>
               )}
             </div>
           )}

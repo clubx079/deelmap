@@ -15,14 +15,14 @@ export async function GET() {
         .select('slug, title, comment_count, hot_score, lot:community_lots!community_posts_lot_id_fkey(name)')
         .eq('is_removed', false)
         .order('hot_score', { ascending: false })
-        .limit(6),
+        .limit(3),
       supabase
         .from('community_posts')
         .select('slug, comment_count, hot_score, property_id, wholesale_deal_id')
         .eq('is_removed', false)
         .or('property_id.not.is.null,wholesale_deal_id.not.is.null')
         .order('hot_score', { ascending: false })
-        .limit(4),
+        .limit(3),
     ])
 
     const trending = (trendingRes.data || []).map(p => ({

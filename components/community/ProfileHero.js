@@ -37,9 +37,9 @@ export function ProfileHero({ profile }) {
                 </span>
               )}
             </div>
-            <div className="text-[13.5px] text-white/70">
-              {profile.display_name || 'No display name set'}
-            </div>
+            {profile.display_name && (
+              <div className="text-[13.5px] text-white/70">{profile.display_name}</div>
+            )}
             {profile.bio && (
               <p className="text-[13px] text-white/80 mt-1.5 leading-relaxed max-w-2xl line-clamp-2">{profile.bio}</p>
             )}
