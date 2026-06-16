@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Bookmark, ArrowLeft, Plus } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
@@ -157,7 +156,6 @@ export default function MySavedPage() {
         />
       </div>
 
-      <Footer hideCta />
 
       <HandlePickerModal
         open={showHandlePicker}

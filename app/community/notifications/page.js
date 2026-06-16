@@ -6,7 +6,6 @@ import {
   ArrowLeft, Bell, BellOff, Check, MessageSquare, AtSign, ShieldCheck, Gavel, Inbox, Layers,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { ProfileTabs } from '@/components/community/ProfileTabs'
@@ -238,7 +237,6 @@ export default function NotificationsPage() {
         </aside>
       </div>
 
-      <Footer hideCta />
 
       <HandlePickerModal
         open={showHandlePicker}

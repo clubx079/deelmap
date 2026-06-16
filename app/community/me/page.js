@@ -7,7 +7,6 @@ import {
   MessageSquare, Layers, Loader2, Settings, ChevronRight,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
@@ -117,7 +116,6 @@ export default function MyProfilePage() {
         </>
       )}
 
-      <Footer hideCta />
 
       <HandlePickerModal
         open={showHandlePicker}
