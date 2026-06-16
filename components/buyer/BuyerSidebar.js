@@ -1,13 +1,12 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Search, MessageSquare, Star, FileText,
-  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users, UserCircle, Bell
+  DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users, UserCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { resolveInboxConversationId } from '@/lib/conversationId';
 
 export default function BuyerSidebar({ mobileOpen, onClose }) {
   const { user } = useAuth();
