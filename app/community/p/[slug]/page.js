@@ -108,6 +108,14 @@ function buildTree(flat) {
 export default function PostDetailPage({ params }) {
   const { slug } = use(params)
   const { user } = useAuth()
+  const router = useRouter()
+
+  // Back: return to wherever the user came from; fall back to the feed if they
+  // landed here directly (new tab, shared link).
+  const goBack = useCallback(() => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push('/community')
+  }, [router])
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -274,6 +282,16 @@ export default function PostDetailPage({ params }) {
 
   return (
     <Shell>
+      {/* Back button */}
+      <button
+        type="button"
+        onClick={goBack}
+        className="inline-flex items-center gap-1.5 h-9 pl-2 pr-3 mb-3 -ml-1 rounded text-[13px] font-semibold text-[#444441] hover:text-[#1A1816] hover:bg-[#F3F3EF] transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
+        Back
+      </button>
+
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-[13px] text-[#737370] font-medium mb-4">
         <Link href="/community" className="hover:text-[#D03839]">Community</Link>
