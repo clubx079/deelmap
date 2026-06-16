@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, use } from 'react'
+import { useEffect, useState, useCallback, useRef, use } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, ShieldCheck, MessageSquare, User as UserIcon, Calendar,
@@ -26,6 +26,17 @@ export default function PublicProfilePage({ params }) {
 
   const [blockBusy, setBlockBusy] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  // Close the actions menu on outside click or Escape
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [menuOpen])
 
   const authHeaders = useCallback(
     () => (user?.id ? { 'x-user-id': user.id } : {}),
@@ -188,7 +199,7 @@ export default function PublicProfilePage({ params }) {
 
             {/* Actions */}
             {viewer && !viewer.is_self && (
-              <div className="relative shrink-0">
+              <div className="relative shrink-0" ref={menuRef}>
                 <button
                   type="button"
                   onClick={() => setMenuOpen(o => !o)}

@@ -73,6 +73,7 @@ export default function VerifyPage() {
   const [docs, setDocs] = useState([])
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [justSubmitted, setJustSubmitted] = useState(false)
   const [error, setError] = useState(null)
   const fileRef = useRef(null)
 
@@ -153,6 +154,7 @@ export default function VerifyPage() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Could not submit.'); setSubmitting(false); return }
       showToast('Submitted for review', { variant: 'success' })
+      setJustSubmitted(true)
       resetForm()
       // Reload submissions
       fetch('/api/community/verifications', { headers: authHeaders() })
@@ -253,7 +255,7 @@ export default function VerifyPage() {
                     Back to profile <ChevronRight className="w-3.5 h-3.5" strokeWidth={3} />
                   </Link>
                 </div>
-              ) : hasPending ? (
+              ) : (hasPending || justSubmitted) ? (
                 <div className="bg-white border border-[#E8E8E4] rounded p-8 text-center">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#FEF3C7] text-[#92400E] mb-4">
                     <Clock className="w-7 h-7" strokeWidth={2.25} />
@@ -429,7 +431,7 @@ export default function VerifyPage() {
 
             {/* Sidebar — process explainer */}
             <aside className="hidden lg:block">
-              <div className="bg-white border border-[#E8E8E4] rounded p-5 sticky top-[68px]">
+              <div className="bg-white border border-[#E8E8E4] rounded p-5 sticky top-[88px]">
                 <h3 className="text-[14px] font-extrabold text-[#1A1816] tracking-tight mb-3">How it works</h3>
                 <ol className="space-y-3.5">
                   {[

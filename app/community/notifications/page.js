@@ -142,10 +142,11 @@ export default function NotificationsPage() {
             type="button"
             onClick={markAllRead}
             disabled={!unread}
+            title={unread ? 'Mark all notifications as read' : 'Nothing unread'}
             className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#1A1816] hover:bg-[#2A2825] disabled:bg-[#D1D1CE] disabled:cursor-not-allowed text-white font-bold text-[13px] rounded transition-colors w-full sm:w-auto"
           >
             <Check className="w-4 h-4" strokeWidth={2.5} />
-            Mark all read
+            {unread ? 'Mark all read' : 'All read'}
           </button>
         </div>
       </div>
@@ -208,7 +209,7 @@ export default function NotificationsPage() {
 
         {/* Right rail — explainer */}
         <aside className="hidden lg:block">
-          <div className="bg-white border border-[#E8E8E4] rounded p-4 sticky top-[68px]">
+          <div className="bg-white border border-[#E8E8E4] rounded p-4 sticky top-[88px]">
             <h3 className="text-[13.5px] font-extrabold text-[#1A1816] tracking-tight mb-2">What lands here</h3>
             <ul className="space-y-2.5 text-[12.5px] text-[#444441]">
               <li className="flex items-start gap-2">

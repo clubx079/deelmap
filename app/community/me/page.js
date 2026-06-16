@@ -475,6 +475,14 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
     emailVerificationStatus !== (profile.email_verification_status !== false) ||
     emailSubscriptions !== (profile.email_subscriptions !== false)
 
+  // Warn before leaving (refresh / close / navigate) with unsaved edits
+  useEffect(() => {
+    if (!dirty) return
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
+
   const save = async () => {
     setSaving(true); setError(null)
     const patch = {}

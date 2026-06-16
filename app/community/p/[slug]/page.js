@@ -117,6 +117,13 @@ export default function PostDetailPage({ params }) {
     else router.push('/community')
   }, [router])
 
+  // Re-render every 60s so relative timestamps ("just now" → "2m ago") stay fresh.
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 60000)
+    return () => clearInterval(t)
+  }, [])
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
@@ -510,7 +517,7 @@ export default function PostDetailPage({ params }) {
           </div>
 
           {/* ── THREAD ──────────────────────────────────────────────── */}
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2 mt-4 pb-2">
             {tree.length === 0 ? (
               <div className="bg-white border border-dashed border-[#E8E8E4] rounded p-8 text-center text-[14px] text-[#737370]">
                 No comments yet. Drop the first reply — specifics beat sympathy.
@@ -554,7 +561,7 @@ export default function PostDetailPage({ params }) {
         </main>
 
         {/* ── RIGHT RAIL ───────────────────────────────────────────── */}
-        <aside className="lg:sticky lg:top-[24px] space-y-3.5">
+        <aside className="lg:sticky lg:top-[88px] space-y-3.5">
           <LotCard lot={lot} accent={lotAccent} soft={lotSoft} />
           {verifiedInThread.length > 0 && <VerifiedInThreadCard items={verifiedInThread} />}
           {related.length > 0 && <RelatedCard items={related} lotName={lot.name} lotSlug={lot.slug} />}

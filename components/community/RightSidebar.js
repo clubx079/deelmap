@@ -13,7 +13,7 @@ const RULES = [
 
 export function RightSidebar({ profile, trending = [], activeDeals = [], nextTier = null, onStartVerify, hideEquity = false }) {
   return (
-    <aside className="hidden lg:block sticky top-[68px] self-start">
+    <aside className="hidden lg:block sticky top-[88px] self-start">
       {/* On the profile page the equity is already shown in the hero + overview,
           so the card would be redundant — hideEquity skips it there. */}
       {!hideEquity && (profile ? <EquityCard profile={profile} nextTier={nextTier} /> : <JoinCard />)}

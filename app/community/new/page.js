@@ -54,6 +54,15 @@ export default function NewPostPage() {
 
   const authHeaders = useCallback(() => (user?.id ? { 'x-user-id': user.id } : {}), [user?.id])
 
+  // Unsaved-work guard: warn before leaving once the user has typed something
+  const hasUnsaved = (title.trim() || body.trim()) && !submitting
+  useEffect(() => {
+    if (!hasUnsaved) return
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [hasUnsaved])
+
   // Profile check
   useEffect(() => {
     if (!user?.id) {
@@ -455,7 +464,11 @@ export default function NewPostPage() {
                 ) : null
               })()}
               <div className="ml-auto flex items-center gap-2">
-                <Link href="/community" className="h-9 px-3.5 inline-flex items-center text-[13px] font-semibold text-[#444441] border border-[#D1D1CE] rounded hover:bg-white">
+                <Link
+                  href="/community"
+                  onClick={(e) => { if (hasUnsaved && !window.confirm('Discard this post? Your unsaved changes will be lost.')) e.preventDefault() }}
+                  className="h-9 px-3.5 inline-flex items-center text-[13px] font-semibold text-[#444441] border border-[#D1D1CE] rounded hover:bg-white"
+                >
                   Cancel
                 </Link>
                 <button

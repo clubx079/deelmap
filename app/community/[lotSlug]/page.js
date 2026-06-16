@@ -372,7 +372,7 @@ function LotPageInner({ params }) {
         </main>
 
         {/* Sidebar */}
-        <aside className="hidden lg:block sticky top-[68px] self-start">
+        <aside className="hidden lg:block sticky top-[88px] self-start">
           {/* About this Lot */}
           {lot && (
             <div className="bg-white border border-[#E8E8E4] rounded p-4 mb-3.5">
