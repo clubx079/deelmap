@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, Bell, BellOff, Check, MessageSquare, AtSign, ShieldCheck, Gavel, Inbox, Layers,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
-import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
-import { ProfileSubNav } from '@/components/community/ProfileSubNav'
+import { ProfileTabs } from '@/components/community/ProfileTabs'
+import { ProfileHero } from '@/components/community/ProfileHero'
 import { showToast } from '@/components/community/Dialogs'
 
 const FILTERS = [
@@ -31,6 +31,10 @@ export default function NotificationsPage() {
   const [items, setItems] = useState(null)
   const [unread, setUnread] = useState(0)
   const [filter, setFilter] = useState('all')
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const PAGE = 30
   const [profile, setProfile] = useState(null)
   const [profileChecked, setProfileChecked] = useState(false)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
@@ -53,14 +57,54 @@ export default function NotificationsPage() {
     if (!user?.id || !profile) { setItems([]); return }
     const url = new URL('/api/community/notifications', window.location.origin)
     if (filter === 'unread') url.searchParams.set('unread', '1')
-    url.searchParams.set('limit', '50')
+    url.searchParams.set('limit', String(PAGE))
     const r = await fetch(url.toString(), { headers: authHeaders() })
     const d = await r.json()
     setItems(d.notifications || [])
     setUnread(d.unread_count || 0)
+    setHasMore(!!d.has_more)
   }, [user?.id, profile, filter, authHeaders])
 
-  useEffect(() => { load() }, [load])
+  const loadingMoreRef = useRef(false)
+  const loadMore = useCallback(async () => {
+    if (!user?.id || !profile || loadingMoreRef.current || !hasMore) return
+    loadingMoreRef.current = true
+    setLoadingMore(true)
+    const url = new URL('/api/community/notifications', window.location.origin)
+    if (filter === 'unread') url.searchParams.set('unread', '1')
+    url.searchParams.set('limit', String(PAGE))
+    url.searchParams.set('offset', String((items || []).length))
+    try {
+      const r = await fetch(url.toString(), { headers: authHeaders() })
+      const d = await r.json()
+      setItems(prev => [...(prev || []), ...(d.notifications || [])])
+      setHasMore(!!d.has_more)
+    } catch { /* ignore */ }
+    finally { loadingMoreRef.current = false; setLoadingMore(false) }
+  }, [user?.id, profile, filter, authHeaders, items, hasMore])
+
+  // Infinite scroll: auto-load when the sentinel nears the viewport
+  const sentinelRef = useRef(null)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore) return
+    const obs = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore() },
+      { rootMargin: '600px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [hasMore, loadMore])
+
+  // Auto-refresh: poll every 30s and whenever the tab regains focus, so new
+  // replies / mentions / verification updates appear without a manual reload.
+  useEffect(() => {
+    load()
+    const interval = setInterval(load, 30000)
+    const onFocus = () => load()
+    window.addEventListener('focus', onFocus)
+    return () => { clearInterval(interval); window.removeEventListener('focus', onFocus) }
+  }, [load])
 
   const markAllRead = async () => {
     if (!unread) return
@@ -91,56 +135,45 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      <ProfileSubNav active="notifications" />
+      <ProfileHero profile={profile} />
 
-      {/* Hero strip */}
-      <div className="bg-white border-b border-[#E8E8E4]">
-        <div className="max-w-[1100px] mx-auto px-4 md:px-8 py-4 md:py-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-[22px] md:text-[30px] font-extrabold tracking-tight text-[#1A1816] leading-tight">
-              Notifications
-            </h1>
-            <p className="text-[12.5px] md:text-[13.5px] text-[#737370] mt-1">
-              {unread > 0
-                ? `${unread} unread · replies, mentions, and verification updates.`
-                : 'You\'re all caught up.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={markAllRead}
-            disabled={!unread}
-            className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#1A1816] hover:bg-[#2A2825] disabled:bg-[#D1D1CE] disabled:cursor-not-allowed text-white font-bold text-[13px] rounded transition-colors w-full sm:w-auto"
-          >
-            <Check className="w-4 h-4" strokeWidth={2.5} />
-            Mark all read
-          </button>
-        </div>
-      </div>
+      <ProfileTabs active="notifications" unread={unread} />
 
       <div className="max-w-[1100px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
         <main className="min-w-0">
-          {/* Filter pills */}
-          <div className="bg-white border border-[#E8E8E4] rounded p-1.5 flex items-center gap-1 mb-4">
-            {FILTERS.map(f => {
-              const active = f.value === filter
-              return (
-                <button
-                  key={f.value}
-                  onClick={() => setFilter(f.value)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                    active ? 'bg-[#1A1816] text-white' : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816]'
-                  }`}
-                >
-                  {f.label}
-                  {f.value === 'unread' && unread > 0 && !active && (
-                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#D03839] text-white text-[10px] font-extrabold">
-                      {unread}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+          {/* Filter pills + mark-all-read */}
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="bg-white border border-[#E8E8E4] rounded p-1.5 flex items-center gap-1">
+              {FILTERS.map(f => {
+                const active = f.value === filter
+                return (
+                  <button
+                    key={f.value}
+                    onClick={() => setFilter(f.value)}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                      active ? 'bg-[#1A1816] text-white' : 'text-[#444441] hover:bg-[#FAFAF8] hover:text-[#1A1816]'
+                    }`}
+                  >
+                    {f.label}
+                    {f.value === 'unread' && unread > 0 && !active && (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#D03839] text-white text-[10px] font-extrabold">
+                        {unread}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={markAllRead}
+              disabled={!unread}
+              title={unread ? 'Mark all notifications as read' : 'Nothing unread'}
+              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#1A1816] hover:bg-[#2A2825] disabled:bg-[#D1D1CE] disabled:cursor-not-allowed text-white font-bold text-[13px] rounded transition-colors whitespace-nowrap shrink-0"
+            >
+              <Check className="w-4 h-4" strokeWidth={2.5} />
+              {unread ? 'Mark all read' : 'All read'}
+            </button>
           </div>
 
           {!profileChecked ? (
@@ -154,17 +187,24 @@ export default function NotificationsPage() {
           ) : items.length === 0 ? (
             <EmptyState filter={filter} />
           ) : (
-            <ul className="space-y-2">
-              {items.map(n => (
-                <NotificationRow key={n.id} n={n} onMarkRead={markRead} />
-              ))}
-            </ul>
+            <>
+              <ul className="space-y-2">
+                {items.map(n => (
+                  <NotificationRow key={n.id} n={n} onMarkRead={markRead} />
+                ))}
+              </ul>
+              {hasMore && (
+                <div ref={sentinelRef} className="mt-3 h-10 flex items-center justify-center text-[13px] text-[#737370]">
+                  {loadingMore && 'Loading…'}
+                </div>
+              )}
+            </>
           )}
         </main>
 
         {/* Right rail — explainer */}
         <aside className="hidden lg:block">
-          <div className="bg-white border border-[#E8E8E4] rounded p-4 sticky top-[68px]">
+          <div className="bg-white border border-[#E8E8E4] rounded p-4 sticky top-[88px]">
             <h3 className="text-[13.5px] font-extrabold text-[#1A1816] tracking-tight mb-2">What lands here</h3>
             <ul className="space-y-2.5 text-[12.5px] text-[#444441]">
               <li className="flex items-start gap-2">
@@ -197,7 +237,6 @@ export default function NotificationsPage() {
         </aside>
       </div>
 
-      <Footer hideCta />
 
       <HandlePickerModal
         open={showHandlePicker}

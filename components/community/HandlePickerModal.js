@@ -57,6 +57,14 @@ export function HandlePickerModal({ open, onClose, onCreated }) {
     return lockBodyScroll()
   }, [open])
 
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   if (!open) return null
 
   const onChange = (v) => {
@@ -117,8 +125,12 @@ export function HandlePickerModal({ open, onClose, onCreated }) {
     <div
       className="fixed inset-0 z-[9999] overflow-y-auto overscroll-contain bg-black/30 backdrop-blur-[2px]"
       style={{ WebkitOverflowScrolling: 'touch' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
     >
-      <div className="min-h-full flex items-center justify-center p-4">
+      <div
+        className="min-h-full flex items-center justify-center p-4"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose?.() }}
+      >
       <div className="bg-white rounded shadow-2xl w-full max-w-md border border-[#E8E8E4]">
         <div className="flex items-start justify-between px-5 pt-5 pb-3 border-b border-[#E8E8E4]">
           <div>

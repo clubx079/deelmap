@@ -95,6 +95,7 @@ export function ShareMenu({ url, title, triggerClassName, iconClassName, label =
         type="button"
         onClick={toggle}
         className={triggerClassName || defaultTrigger}
+        aria-label={label || 'Share'}
         aria-haspopup="menu"
         aria-expanded={open}
       >

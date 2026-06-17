@@ -1,4 +1,5 @@
 import { supabaseMarketplace } from '@/lib/supabase'
+import { getServiceClient } from '@/lib/community/auth'
 import { toCitySlug } from '@/lib/cityUtils'
 
 const ABBR_TO_SLUG = {
@@ -25,6 +26,17 @@ export default async function sitemap() {
     { url: `${SITE}/how-to-find-off-market-properties`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE}/how-to-wholesale-real-estate`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE}/what-is-arv`, changeFrequency: 'monthly', priority: 0.5 },
+    // Public marketing / resource / comparison pages
+    { url: `${SITE}/our-story`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/advertise`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/resources`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/resources/dscr-loan`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/dscr-calculator`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE}/financing`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/help`, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${SITE}/faq`, changeFrequency: 'monthly', priority: 0.5 },
+    ...['auction-com', 'connected-investors', 'deal-machine', 'investorlift', 'listsource', 'propstream', 'zillow']
+      .map(s => ({ url: `${SITE}/vs/${s}`, changeFrequency: 'monthly', priority: 0.5 })),
   ]
 
   const { data: stateRows } = await supabaseMarketplace
@@ -92,5 +104,46 @@ export default async function sitemap() {
     cityPages.push({ url: `${SITE}/deals/${citySlug}`, changeFrequency: 'daily', priority: 0.7 })
   }
 
-  return [...staticPages, ...statePages, ...listingPages, ...manualPages, ...cityPages]
+  // ── Community (forum) — feed, Lots, posts, public profiles ──────────────
+  const communityPages = [
+    { url: `${SITE}/community`, changeFrequency: 'hourly', priority: 0.8 },
+  ]
+  try {
+    const community = getServiceClient()
+
+    const { data: lots } = await community
+      .from('community_lots')
+      .select('slug')
+      .eq('is_active', true)
+    for (const lot of lots || []) {
+      if (lot.slug) communityPages.push({ url: `${SITE}/community/${lot.slug}`, changeFrequency: 'daily', priority: 0.7 })
+    }
+
+    const { data: posts } = await community
+      .from('community_posts')
+      .select('slug, updated_at')
+      .eq('is_removed', false)
+      .order('updated_at', { ascending: false })
+      .limit(5000)
+    for (const post of posts || []) {
+      if (post.slug) communityPages.push({
+        url: `${SITE}/community/p/${post.slug}`,
+        lastModified: post.updated_at ? new Date(post.updated_at) : new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.6,
+      })
+    }
+
+    const { data: profiles } = await community
+      .from('community_profiles')
+      .select('handle')
+      .eq('is_shadowbanned', false)
+      .order('last_seen_at', { ascending: false })
+      .limit(2000)
+    for (const p of profiles || []) {
+      if (p.handle) communityPages.push({ url: `${SITE}/community/u/${p.handle}`, changeFrequency: 'weekly', priority: 0.4 })
+    }
+  } catch { /* community optional — never break the sitemap */ }
+
+  return [...staticPages, ...statePages, ...listingPages, ...manualPages, ...cityPages, ...communityPages]
 }

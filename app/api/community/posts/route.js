@@ -22,6 +22,7 @@ export async function GET(request) {
   const sort = url.searchParams.get('sort') || 'hot'
   const lotSlug = url.searchParams.get('lot')
   const dealOnly = url.searchParams.get('deal') === '1'
+  const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0)
   const userId = getUserIdFromRequest(request)
 
   // Viewer-relative filters: hidden posts + blocked authors
@@ -55,7 +56,7 @@ export async function GET(request) {
       lot:community_lots!community_posts_lot_id_fkey(id, slug, name, category, accent_color)
     `)
     .eq('is_removed', false)
-    .limit(PAGE_SIZE)
+    .range(offset, offset + PAGE_SIZE - 1)
 
   if (hiddenPostIds.length) {
     q = q.not('id', 'in', `(${hiddenPostIds.map(id => `"${id}"`).join(',')})`)
@@ -154,7 +155,7 @@ export async function GET(request) {
     }
   })
 
-  return NextResponse.json({ posts: hydrated })
+  return NextResponse.json({ posts: hydrated, has_more: posts.length === PAGE_SIZE })
 }
 
 function formatDeal(d, kind) {

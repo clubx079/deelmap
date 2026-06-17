@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, User as UserIcon, ShieldCheck, Bookmark, Compass, Pencil, Check, X,
+  ArrowLeft, User as UserIcon, ShieldCheck, Bookmark, Compass, Check, X,
   MessageSquare, Layers, Loader2, Settings, ChevronRight,
 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
@@ -11,19 +11,13 @@ import { Footer } from '@/components/layout/Footer'
 import { useAuth } from '@/hooks/useAuth'
 import { PostCard } from '@/components/community/PostCard'
 import { RightSidebar } from '@/components/community/RightSidebar'
-import { ProfileSubNav } from '@/components/community/ProfileSubNav'
+import { ProfileTabs } from '@/components/community/ProfileTabs'
+import { ProfileHero } from '@/components/community/ProfileHero'
 import { HandlePickerModal } from '@/components/community/HandlePickerModal'
 import { VerificationModal } from '@/components/community/VerificationModal'
 import { showToast } from '@/components/community/Dialogs'
 
 const HANDLE_COOLDOWN_DAYS = 90
-
-const TABS = [
-  { value: 'overview',      label: 'Overview',       icon: UserIcon },
-  { value: 'posts',         label: 'My Posts',       icon: MessageSquare },
-  { value: 'subscriptions', label: 'Subscriptions',  icon: Layers },
-  { value: 'settings',      label: 'Settings',       icon: Settings },
-]
 
 export default function MyProfilePage() {
   const { user } = useAuth()
@@ -40,6 +34,12 @@ export default function MyProfilePage() {
     () => (user?.id ? { 'x-user-id': user.id } : {}),
     [user?.id]
   )
+
+  // Honor an incoming ?tab= (links from the Saved / Notifications tabs)
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (t && ['overview', 'posts', 'subscriptions', 'settings'].includes(t)) setTab(t)
+  }, [])
 
   // Load profile + tier
   useEffect(() => {
@@ -73,8 +73,6 @@ export default function MyProfilePage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <Navbar />
 
-      <ProfileSubNav active="profile" />
-
       {!profileChecked ? (
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-10">
           <div className="bg-white border border-[#E8E8E4] rounded p-6 animate-pulse">
@@ -90,39 +88,10 @@ export default function MyProfilePage() {
       ) : (
         <>
           {/* Hero */}
-          <ProfileHero
-            profile={profile}
-            tier={tier}
-            nextTier={nextTier}
-            onEdit={() => setTab('settings')}
-            onStartVerify={onStartVerify}
-          />
+          <ProfileHero profile={profile} />
 
-          {/* Tabs */}
-          <div className="bg-white border-b border-[#E8E8E4]">
-            <div className="max-w-[1440px] mx-auto px-2 md:px-6">
-              <div className="flex items-center gap-0 overflow-x-auto no-scrollbar">
-                {TABS.map(t => {
-                  const active = t.value === tab
-                  const Icon = t.icon
-                  return (
-                    <button
-                      key={t.value}
-                      onClick={() => setTab(t.value)}
-                      className={`inline-flex items-center gap-2 px-4 md:px-5 h-12 text-[13.5px] font-bold whitespace-nowrap border-b-2 transition-colors ${
-                        active
-                          ? 'text-[#D03839] border-[#D03839]'
-                          : 'text-[#737370] border-transparent hover:text-[#1A1816]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" strokeWidth={2.25} />
-                      {t.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          {/* Unified profile tab bar */}
+          <ProfileTabs active={tab} onSelect={setTab} />
 
           <div className="max-w-[1440px] mx-auto px-3 md:px-8 py-4 md:py-5 grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-[1fr_320px]">
             <main className="min-w-0">
@@ -164,97 +133,6 @@ export default function MyProfilePage() {
   )
 }
 
-// ──────────────────────────── Hero ────────────────────────────
-
-function ProfileHero({ profile, tier, nextTier, onEdit, onStartVerify }) {
-  const equity = profile.equity_score || 0
-  const pct = nextTier && nextTier.min_equity > 0
-    ? Math.min(100, Math.round((equity / nextTier.min_equity) * 100))
-    : 100
-  const togo = nextTier ? Math.max(0, nextTier.min_equity - equity) : 0
-
-  return (
-    <div className="bg-[#1A1816] text-white">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-6">
-          {/* Avatar */}
-          <div className="shrink-0">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-linear-to-br from-[#D03839] to-[#FB7185] flex items-center justify-center text-white text-[28px] md:text-[32px] font-extrabold border-[3px] border-white/10 shadow-xl">
-              {(profile.handle || '?').slice(0, 1).toUpperCase()}
-            </div>
-          </div>
-
-          {/* Identity */}
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-[22px] md:text-[30px] font-extrabold tracking-tight leading-none">
-                @{profile.handle}
-              </h1>
-              {profile.role_badge && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10.5px] font-extrabold tracking-wide text-white bg-[#0F6E56]">
-                  <ShieldCheck className="w-3 h-3" strokeWidth={2.5} />
-                  Verified {cap(profile.role_badge)}
-                </span>
-              )}
-              {profile.is_moderator && (
-                <span className="inline-flex items-center px-2 py-1 rounded text-[10.5px] font-extrabold tracking-wide text-white bg-[#D03839]">
-                  Moderator
-                </span>
-              )}
-            </div>
-            <div className="text-[13.5px] text-white/70">
-              {profile.display_name || 'No display name set'}
-            </div>
-            {profile.bio && (
-              <p className="text-[13px] text-white/80 mt-2 leading-relaxed max-w-2xl">{profile.bio}</p>
-            )}
-
-            {/* Equity strip */}
-            <div className="mt-4 max-w-md">
-              <div className="flex items-baseline gap-2 mb-1.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-white/60">Equity</span>
-                <span className="text-[18px] font-extrabold leading-none">{equity.toLocaleString()}</span>
-                {tier && (
-                  <span className="text-[11.5px] text-white/60 font-semibold">· {tier.name} tier</span>
-                )}
-              </div>
-              <div className="h-[5px] bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-linear-to-r from-[#D03839] to-[#FB7185]" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="mt-1.5 text-[11.5px] text-white/60">
-                {nextTier
-                  ? <>{togo.toLocaleString()} Equity to <strong className="text-white font-bold">{nextTier.name}</strong></>
-                  : 'Top tier reached.'}
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-2 md:items-end">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-[#1A1816] font-bold text-[13px] rounded hover:bg-white/90 transition-colors w-full md:w-[150px]"
-            >
-              <Pencil className="w-3.5 h-3.5" strokeWidth={2.5} />
-              Edit profile
-            </button>
-            {!profile.role_badge && (
-              <button
-                type="button"
-                onClick={onStartVerify}
-                className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0F6E56] hover:bg-[#0A5740] text-white font-bold text-[13px] rounded transition-colors w-full md:w-[150px]"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" strokeWidth={2.5} />
-                Get verified
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ──────────────────────────── Tabs ────────────────────────────
 
@@ -279,14 +157,6 @@ function OverviewTab({ profile, tier, nextTier, authHeaders, onStartVerify }) {
 
   return (
     <div className="space-y-3.5">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Equity" value={(profile.equity_score || 0).toLocaleString()} tone="red" />
-        <StatCard label="Posts"     value={stats?.post_count ?? '—'}      tone="dark" />
-        <StatCard label="Saved"     value={stats?.saved_count ?? '—'}     tone="dark" />
-        <StatCard label="Subscribed" value={subs?.length ?? '—'}          tone="dark" />
-      </div>
-
       {/* Equity / tier */}
       <div className="bg-white border border-[#E8E8E4] rounded p-5">
         <div className="text-[11.5px] font-bold uppercase tracking-wider text-[#737370] mb-3">Tier progress</div>
@@ -604,6 +474,14 @@ function SettingsTab({ profile, authHeaders, onUpdated }) {
     emailMentions !== (profile.email_mentions !== false) ||
     emailVerificationStatus !== (profile.email_verification_status !== false) ||
     emailSubscriptions !== (profile.email_subscriptions !== false)
+
+  // Warn before leaving (refresh / close / navigate) with unsaved edits
+  useEffect(() => {
+    if (!dirty) return
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
 
   const save = async () => {
     setSaving(true); setError(null)

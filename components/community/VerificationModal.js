@@ -64,6 +64,14 @@ export function VerificationModal({ open, onClose, onSubmitted }) {
     return lockBodyScroll()
   }, [open])
 
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   // Reset state when closing
   useEffect(() => {
     if (open) return

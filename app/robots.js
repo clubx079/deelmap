@@ -22,6 +22,7 @@ export default function robots() {
           '/privacy-policy',
           '/terms-of-use',
           '/advertise',
+          '/community',
         ],
         disallow: [
           '/buyer/',
@@ -32,6 +33,11 @@ export default function robots() {
           '/saved-properties',
           '/temp-seller',
           '/debug-property',
+          // Community: keep the public pages crawlable, block the logged-in app pages
+          '/community/me',
+          '/community/notifications',
+          '/community/new',
+          '/community/verify',
         ],
       },
     ],
