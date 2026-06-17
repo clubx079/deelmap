@@ -105,7 +105,7 @@ function buildTree(flat) {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
-export function PostDetailClient({ slug }) {
+export function PostDetailClient({ slug, initialData = null }) {
   const { user } = useAuth()
   const router = useRouter()
 
@@ -123,8 +123,10 @@ export function PostDetailClient({ slug }) {
     return () => clearInterval(t)
   }, [])
 
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  // Seed from server-rendered data (SSR) so the post renders in the initial HTML;
+  // the load() effect then revalidates + adds the viewer's vote/save state.
+  const [data, setData] = useState(initialData)
+  const [loading, setLoading] = useState(!initialData)
   const [showHandlePicker, setShowHandlePicker] = useState(false)
   const [profile, setProfile] = useState(null)
   const [replyParent, setReplyParent] = useState(null)

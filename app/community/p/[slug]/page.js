@@ -1,28 +1,10 @@
 import { notFound } from 'next/navigation'
-import { getServiceClient } from '@/lib/community/auth'
+import { getPostBySlug } from '@/lib/community/getPost'
 import { PostDetailClient } from './PostDetailClient'
 
 export const revalidate = 60
 
 const SITE = 'https://deelmap.com'
-
-// Light server fetch — just what metadata + JSON-LD need (not the full comment tree).
-async function getPostMeta(slug) {
-  const s = typeof slug === 'string' ? slug.trim() : ''
-  if (!s) return null
-  const supabase = getServiceClient()
-  const { data } = await supabase
-    .from('community_posts')
-    .select(`
-      id, slug, title, body, score, comment_count, created_at, updated_at, is_removed,
-      author:community_profiles!community_posts_author_id_fkey(handle, display_name, role_badge),
-      lot:community_lots!community_posts_lot_id_fkey(slug, name)
-    `)
-    .eq('slug', s)
-    .maybeSingle()
-  if (!data || data.is_removed) return null
-  return data
-}
 
 function excerpt(text, n = 155) {
   if (!text) return ''
@@ -32,8 +14,9 @@ function excerpt(text, n = 155) {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const post = await getPostMeta(slug)
-  if (!post) return { title: 'Discussion not found | DeelMap Community' }
+  const result = await getPostBySlug(slug)
+  if (!result) return { title: 'Discussion not found | DeelMap Community' }
+  const post = result.post
 
   const title = `${post.title} | DeelMap Community`
   const description =
@@ -71,18 +54,25 @@ function buildJsonLd(post) {
   }
 }
 
+function buildBreadcrumb(post) {
+  const items = [
+    { '@type': 'ListItem', position: 1, name: 'Community', item: `${SITE}/community` },
+  ]
+  if (post.lot?.slug) items.push({ '@type': 'ListItem', position: 2, name: post.lot.name, item: `${SITE}/community/${post.lot.slug}` })
+  items.push({ '@type': 'ListItem', position: items.length + 1, name: post.title, item: `${SITE}/community/p/${post.slug}` })
+  return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items }
+}
+
 export default async function PostPage({ params }) {
   const { slug } = await params
-  const post = await getPostMeta(slug)
-  if (!post) notFound()
+  const result = await getPostBySlug(slug)
+  if (!result) notFound()
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(post)) }}
-      />
-      <PostDetailClient slug={slug} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(result.post)) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumb(result.post)) }} />
+      <PostDetailClient slug={slug} initialData={result} />
     </>
   )
 }
