@@ -26,6 +26,17 @@ export default async function sitemap() {
     { url: `${SITE}/how-to-find-off-market-properties`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE}/how-to-wholesale-real-estate`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE}/what-is-arv`, changeFrequency: 'monthly', priority: 0.5 },
+    // Public marketing / resource / comparison pages
+    { url: `${SITE}/our-story`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/advertise`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/resources`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/resources/dscr-loan`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/dscr-calculator`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${SITE}/financing`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE}/help`, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${SITE}/faq`, changeFrequency: 'monthly', priority: 0.5 },
+    ...['auction-com', 'connected-investors', 'deal-machine', 'investorlift', 'listsource', 'propstream', 'zillow']
+      .map(s => ({ url: `${SITE}/vs/${s}`, changeFrequency: 'monthly', priority: 0.5 })),
   ]
 
   const { data: stateRows } = await supabaseMarketplace
