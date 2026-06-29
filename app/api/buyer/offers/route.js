@@ -145,7 +145,14 @@ export async function POST(request) {
     const { conversation_id, property_id, amount, closing_timeline, financing_type, earnest_money, inspection_period, notes } = body;
 
     if (!conversation_id) return NextResponse.json({ error: 'conversation_id is required' }, { status: 400 });
-    if (!amount) return NextResponse.json({ error: 'offer price is required' }, { status: 400 });
+    // Offer price must be a real, positive number (blocks 0, negatives, NaN, and absurd values).
+    const offerAmount = Number(amount);
+    if (!Number.isFinite(offerAmount) || offerAmount <= 0) {
+      return NextResponse.json({ error: 'A valid positive offer price is required' }, { status: 400 });
+    }
+    if (offerAmount > 1_000_000_000) {
+      return NextResponse.json({ error: 'Offer price is too large' }, { status: 400 });
+    }
 
     // Validate buyer owns this conversation
     const { data: conv, error: convErr } = await supabase
@@ -386,10 +393,19 @@ export async function PATCH(request) {
     const messagesUrl = `${sellerBase}/messages?conversation=${convNumeric}`;
 
     if (action === 'withdraw') {
+      // State guard: an offer may only be withdrawn while it is still pending.
+      // Per product decision, an ACCEPTED offer can NOT be withdrawn.
+      if (offer.status === 'accepted') {
+        return NextResponse.json({ error: 'This offer has already been accepted and can no longer be withdrawn.' }, { status: 409 });
+      }
+      if (offer.status !== 'pending') {
+        return NextResponse.json({ error: `This offer can no longer be withdrawn (current status: ${offer.status}).` }, { status: 409 });
+      }
       const { error: updateErr } = await supabase
         .from('offers')
         .update({ status: 'withdrawn', updated_at: new Date().toISOString() })
-        .eq('id', offer_id);
+        .eq('id', offer_id)
+        .eq('status', 'pending'); // race-safe: do nothing if it was accepted/changed meanwhile
       if (updateErr) return NextResponse.json({ error: 'Failed to withdraw offer' }, { status: 500 });
 
       // Async: notify seller + email

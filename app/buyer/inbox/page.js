@@ -6,6 +6,7 @@ import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { MessageSquare, Search, DollarSign, Home, Pin, Flag, X, Check, Loader2, MoreVertical } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { supabase } from '@/lib/supabase';
 
 const AVATAR_PAIRS = [
   { bg: '#FEF0EF', text: '#D03839' },
@@ -57,10 +58,24 @@ export default function InboxPage() {
   useEffect(() => {
     if (user?.id) {
       fetchConversations();
-      const interval = setInterval(() => fetchConversations(false), 5000);
+      // Slow safety-net poll; realtime (below) drives instant list/preview updates.
+      const interval = setInterval(() => fetchConversations(false), 30000);
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Realtime: refresh the conversation list (last-message preview + unread) the instant
+  // any of this buyer's conversations changes. One table per channel.
+  useEffect(() => {
+    if (!user?.id) return;
+    const refresh = () => fetchConversations(false);
+    const channel = supabase
+      .channel(`buyer-inbox-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `buyer_uuid=eq.${user.id}` }, refresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `buyer_uuid=eq.${user.id}` }, refresh)
+      .subscribe((status) => console.log('[buyer-inbox realtime]', status));
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
 
   // Heartbeat for presence
   useEffect(() => {

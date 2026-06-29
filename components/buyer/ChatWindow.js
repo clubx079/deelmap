@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase';
+import { supabase as marketplaceSupabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
@@ -29,10 +29,8 @@ function MessageActions({ isUser, onReply, onCopy, onDelete, copied }) {
 }
 
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
+  // Shared marketplace client — one known-good realtime connection for the whole buyer app.
+  return marketplaceSupabase || null;
 }
 
 function getInitials(name) {
@@ -255,8 +253,13 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const setupRealtimeSubscription = () => {
     const supabase = getSupabase();
     if (!supabase) return () => {};
-    const channel = supabase
-      .channel(`conversation-${conversation.id}`, { config: { broadcast: { self: true } } })
+
+    // IMPORTANT: one table per channel. Supabase Realtime does NOT reliably deliver
+    // postgres_changes when a single channel subscribes to multiple tables — it
+    // reports SUBSCRIBED but never delivers. So messages and offers each get their
+    // own channel. (See UXissues/messaging-not-realtime.md.)
+    const messagesChannel = supabase
+      .channel(`conv-${conversation.id}-messages`, { config: { broadcast: { self: true } } })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'messages',
         filter: `conversation_id=eq.${conversation.id}`
@@ -286,9 +289,17 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           } catch {}
         }
       })
+      .subscribe();
+
+    // offers.conversation_id is stored as a UUID (toUuid of the numeric conversation id),
+    // so the realtime filter must use that UUID form — not the numeric id (which is what
+    // messages uses). Without this, the offers/Deal-Overview events never match.
+    const offerConvUuid = `00000000-0000-0000-0000-${Number(conversation.id).toString(16).padStart(12, '0')}`;
+    const offersChannel = supabase
+      .channel(`conv-${conversation.id}-offers`, { config: { broadcast: { self: true } } })
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'offers',
-        filter: `conversation_id=eq.${conversation.id}`
+        filter: `conversation_id=eq.${offerConvUuid}`
       }, (payload) => {
         const newOffer = payload.new;
         if (!newOffer?.id) return;
@@ -297,14 +308,18 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'offers',
-        filter: `conversation_id=eq.${conversation.id}`
+        filter: `conversation_id=eq.${offerConvUuid}`
       }, (payload) => {
         const updated = payload.new;
         if (!updated?.id) return;
         setOffers((prev) => prev.map(o => String(o.id) === String(updated.id) ? { ...o, ...updated } : o));
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(offersChannel);
+    };
   };
 
   const handleSendMessage = async (e) => {

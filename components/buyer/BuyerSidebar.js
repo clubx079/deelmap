@@ -7,6 +7,7 @@ import {
   DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users, UserCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 
 export default function BuyerSidebar({ mobileOpen, onClose }) {
   const { user } = useAuth();
@@ -17,9 +18,23 @@ export default function BuyerSidebar({ mobileOpen, onClose }) {
   useEffect(() => {
     if (user?.id) {
       fetchUnreadCount();
+      // Poll as a safety-net fallback; realtime (below) handles instant updates.
       const interval = setInterval(fetchUnreadCount, 10000);
       return () => clearInterval(interval);
     }
+  }, [user?.id]);
+
+  // Realtime: refresh the unread badge the instant any of this buyer's conversations
+  // changes (a new message updates the conversation row). Uses the shared marketplace
+  // client (known-good connection). One table per channel.
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`buyer-unread-${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `buyer_uuid=eq.${user.id}` }, () => fetchUnreadCount())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `buyer_uuid=eq.${user.id}` }, () => fetchUnreadCount())
+      .subscribe((status) => console.log('[buyer-unread realtime]', status));
+    return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
   const fetchUnreadCount = async () => {
