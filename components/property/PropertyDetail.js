@@ -1146,7 +1146,12 @@ export function PropertyDetail({ property }) {
                         <div className="flex items-start justify-between gap-3">
                           <span className="text-[13px] text-[#737370] shrink-0">Date</span>
                           <span className="text-[13px] font-semibold text-[#1A1816] text-right">
-                            {new Date(property.auction_date).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })}
+                            {/* auction_date is a plain "YYYY-MM-DD"; parse as a LOCAL date so US
+                                timezones don't roll it back a day (Issue #2). */}
+                            {(() => {
+                              const [y, m, d] = property.auction_date.split('-').map(Number)
+                              return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
+                            })()}
                           </span>
                         </div>
                       )}
@@ -1162,23 +1167,33 @@ export function PropertyDetail({ property }) {
                       </div>
                     </div>
                     {property.auction_date && (() => {
-                      const datePart = property.auction_date.replace(/-/g, '')
-                      let startDate, endDate
+                      // Build a valid Google Calendar event (Issue #4). auction_date is a plain
+                      // "YYYY-MM-DD" parsed as local; the end time rolls past midnight correctly
+                      // (no invalid hour 24); and the timezone is pinned via ctz so out-of-state
+                      // buyers see the right hour instead of the viewer's local time.
+                      const pad = (n) => String(n).padStart(2, '0')
+                      const [yy, mm, dd] = property.auction_date.split('-').map(Number)
+                      let startDate, endDate, ctz = null
                       const match = property.auction_time?.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
                       if (match) {
                         let h = parseInt(match[1])
-                        const m = match[2]
+                        const min = match[2]
                         const ap = match[3].toUpperCase()
                         if (ap === 'PM' && h !== 12) h += 12
                         if (ap === 'AM' && h === 12) h = 0
-                        const hh = String(h).padStart(2, '0')
-                        startDate = `${datePart}T${hh}${m}00`
-                        endDate = `${datePart}T${String(h + 1).padStart(2, '0')}${m}00`
+                        startDate = `${yy}${pad(mm)}${pad(dd)}T${pad(h)}${min}00`
+                        // End one hour later; roll to the next calendar day when h+1 hits 24.
+                        let endH = h + 1
+                        let endObj = new Date(yy, mm - 1, dd)
+                        if (endH >= 24) { endH -= 24; endObj = new Date(yy, mm - 1, dd + 1) }
+                        endDate = `${endObj.getFullYear()}${pad(endObj.getMonth() + 1)}${pad(endObj.getDate())}T${pad(endH)}${min}00`
+                        // Auction times are quoted in Eastern Time; tell Google so the hour is fixed.
+                        if (/\bET\b/i.test(property.auction_time || '')) ctz = 'America/New_York'
                       } else {
-                        const next = new Date(property.auction_date)
-                        next.setDate(next.getDate() + 1)
-                        startDate = datePart
-                        endDate = next.toISOString().slice(0, 10).replace(/-/g, '')
+                        // All-day event spanning [auction_date, next day) using local date math.
+                        startDate = `${yy}${pad(mm)}${pad(dd)}`
+                        const next = new Date(yy, mm - 1, dd + 1)
+                        endDate = `${next.getFullYear()}${pad(next.getMonth() + 1)}${pad(next.getDate())}`
                       }
                       const title = encodeURIComponent(`Auction: ${property.full_address || property.address || 'Property'}`)
                       const loc = encodeURIComponent(property.auction_location || '')
@@ -1187,7 +1202,7 @@ export function PropertyDetail({ property }) {
                         property.auction_location && `Location: ${property.auction_location}`,
                         property.full_address && `Property: ${property.full_address}`,
                       ].filter(Boolean).join('\n'))
-                      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}&details=${details}&location=${loc}`
+                      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDate}/${endDate}${ctz ? `&ctz=${ctz}` : ''}&details=${details}&location=${loc}`
                       return (
                         <a
                           href={calUrl}

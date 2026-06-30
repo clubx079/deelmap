@@ -202,13 +202,21 @@ export async function GET(request) {
       return q;
     };
 
+    // Query-time auction expiry guard (Issue #1): never serve an auction whose date has
+    // already passed, independent of the once-a-day expire-listings cron. "Today" is taken
+    // in ET because auctions are stored/quoted in Eastern Time. Wholesale deals always pass
+    // (null / non-auction listing_type, or null auction_date); only past-dated auctions drop.
+    const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const auctionLiveOr = `listing_type.is.null,listing_type.neq.auction,auction_date.is.null,auction_date.gte.${todayET}`;
+
     const baseDeal = () => supabaseMarketplace
       .from('wholesale_deals')
       .select(DEAL_SELECT, { count: 'exact' })
       .eq('status', statusToFilter)
       .eq('is_incomplete', false)
       .neq('state', 'HI')
-      .eq('property_photos.is_featured', true);
+      .eq('property_photos.is_featured', true)
+      .or(auctionLiveOr);
 
     const dealSort = (q) => {
       if (sortBy === 'price-low') return q.order('price', { ascending: true, nullsFirst: false });
@@ -235,7 +243,8 @@ export async function GET(request) {
     const dealCount = (which, mode = 'exact') => {
       let q = supabaseMarketplace.from('wholesale_deals')
         .select('id', { count: mode, head: true })
-        .eq('status', statusToFilter).eq('is_incomplete', false).neq('state', 'HI');
+        .eq('status', statusToFilter).eq('is_incomplete', false).neq('state', 'HI')
+        .or(auctionLiveOr);
       q = applyDealFilters(q);
       if (which === 'auction') q = q.eq('listing_type', 'auction');
       else if (which === 'wholesale') q = q.or('listing_type.is.null,listing_type.neq.auction');
