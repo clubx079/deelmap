@@ -6,7 +6,7 @@ import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { MessageSquare, Search, DollarSign, Home, Pin, Flag, X, Check, Loader2, MoreVertical } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 const AVATAR_PAIRS = [
   { bg: '#FEF0EF', text: '#D03839' },
@@ -58,8 +58,9 @@ export default function InboxPage() {
   useEffect(() => {
     if (user?.id) {
       fetchConversations();
-      // Slow safety-net poll; realtime (below) drives instant list/preview updates.
-      const interval = setInterval(() => fetchConversations(false), 30000);
+      // Fast refresh of the list/preview — reliable even if the realtime websocket
+      // can't connect in this browser. fetchConversations(false) is silent (no spinner).
+      const interval = setInterval(() => fetchConversations(false), 3000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -68,13 +69,17 @@ export default function InboxPage() {
   // any of this buyer's conversations changes. One table per channel.
   useEffect(() => {
     if (!user?.id) return;
+    const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
+    const sb = createClient(url, key);
     const refresh = () => fetchConversations(false);
-    const channel = supabase
+    const channel = sb
       .channel(`buyer-inbox-${user.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `buyer_uuid=eq.${user.id}` }, refresh)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `buyer_uuid=eq.${user.id}` }, refresh)
       .subscribe((status) => console.log('[buyer-inbox realtime]', status));
-    return () => { supabase.removeChannel(channel); };
+    return () => { sb.removeChannel(channel); };
   }, [user?.id]);
 
   // Heartbeat for presence

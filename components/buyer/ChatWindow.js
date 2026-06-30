@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { supabase as marketplaceSupabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
@@ -29,8 +29,13 @@ function MessageActions({ isUser, onReply, onCopy, onDelete, copied }) {
 }
 
 function getSupabase() {
-  // Shared marketplace client — one known-good realtime connection for the whole buyer app.
-  return marketplaceSupabase || null;
+  if (typeof window === 'undefined') return null;
+  // Fresh client per component (own websocket) — mirrors the working seller setup and
+  // avoids multiple channels racing on one shared socket.
+  const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
 }
 
 function getInitials(name) {
@@ -91,6 +96,32 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const cleanup = setupRealtimeSubscription();
       return cleanup;
     }
+  }, [conversation?.id, user?.id]);
+
+  // Reliable fast refresh of the OPEN conversation — works even if the realtime
+  // websocket can't connect in this browser. Only updates state when the content
+  // actually changes (new message or read-status change), so it never causes
+  // scroll jumps or flicker while idle.
+  useEffect(() => {
+    if (!conversation?.id || !user?.id) return;
+    let stopped = false;
+    const msgKey = (arr) => (arr || []).map(m => `${m.id}:${m.is_read ? 1 : 0}`).join(',');
+    const offKey = (arr) => (arr || []).map(o => `${o.id}:${o.status}`).join(',');
+    const tick = async () => {
+      try {
+        const [mRes, oRes] = await Promise.all([
+          fetch(`/api/buyer/chat?action=get_messages&conversation_id=${conversation.id}`, { headers: { 'Authorization': `Bearer ${user.id}` } }),
+          fetch(`/api/buyer/offers?conversation_id=${conversation.id}`, { headers: { 'Authorization': `Bearer ${user.id}` } }),
+        ]);
+        const mData = await mRes.json().catch(() => ({}));
+        const oData = await oRes.json().catch(() => ({}));
+        if (stopped) return;
+        if (mData.success) setMessages(prev => msgKey(prev) === msgKey(mData.messages) ? prev : (mData.messages || []));
+        if (oData.offers)  setOffers(prev => offKey(prev) === offKey(oData.offers) ? prev : oData.offers);
+      } catch {}
+    };
+    const interval = setInterval(tick, 2500);
+    return () => { stopped = true; clearInterval(interval); };
   }, [conversation?.id, user?.id]);
 
   useEffect(() => {
