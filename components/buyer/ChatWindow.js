@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency } from '@/lib/format';
 import Link from 'next/link';
@@ -29,8 +29,11 @@ function MessageActions({ isUser, onReply, onCopy, onDelete, copied }) {
 }
 
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY;
+  if (typeof window === 'undefined') return null;
+  // Fresh client per component (own websocket) — mirrors the working seller setup and
+  // avoids multiple channels racing on one shared socket.
+  const url = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
 }
@@ -93,6 +96,32 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const cleanup = setupRealtimeSubscription();
       return cleanup;
     }
+  }, [conversation?.id, user?.id]);
+
+  // Reliable fast refresh of the OPEN conversation — works even if the realtime
+  // websocket can't connect in this browser. Only updates state when the content
+  // actually changes (new message or read-status change), so it never causes
+  // scroll jumps or flicker while idle.
+  useEffect(() => {
+    if (!conversation?.id || !user?.id) return;
+    let stopped = false;
+    const msgKey = (arr) => (arr || []).map(m => `${m.id}:${m.is_read ? 1 : 0}`).join(',');
+    const offKey = (arr) => (arr || []).map(o => `${o.id}:${o.status}`).join(',');
+    const tick = async () => {
+      try {
+        const [mRes, oRes] = await Promise.all([
+          fetch(`/api/buyer/chat?action=get_messages&conversation_id=${conversation.id}`, { headers: { 'Authorization': `Bearer ${user.id}` } }),
+          fetch(`/api/buyer/offers?conversation_id=${conversation.id}`, { headers: { 'Authorization': `Bearer ${user.id}` } }),
+        ]);
+        const mData = await mRes.json().catch(() => ({}));
+        const oData = await oRes.json().catch(() => ({}));
+        if (stopped) return;
+        if (mData.success) setMessages(prev => msgKey(prev) === msgKey(mData.messages) ? prev : (mData.messages || []));
+        if (oData.offers)  setOffers(prev => offKey(prev) === offKey(oData.offers) ? prev : oData.offers);
+      } catch {}
+    };
+    const interval = setInterval(tick, 2500);
+    return () => { stopped = true; clearInterval(interval); };
   }, [conversation?.id, user?.id]);
 
   useEffect(() => {
@@ -255,8 +284,13 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
   const setupRealtimeSubscription = () => {
     const supabase = getSupabase();
     if (!supabase) return () => {};
-    const channel = supabase
-      .channel(`conversation-${conversation.id}`, { config: { broadcast: { self: true } } })
+
+    // IMPORTANT: one table per channel. Supabase Realtime does NOT reliably deliver
+    // postgres_changes when a single channel subscribes to multiple tables — it
+    // reports SUBSCRIBED but never delivers. So messages and offers each get their
+    // own channel. (See UXissues/messaging-not-realtime.md.)
+    const messagesChannel = supabase
+      .channel(`conv-${conversation.id}-messages`, { config: { broadcast: { self: true } } })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'messages',
         filter: `conversation_id=eq.${conversation.id}`
@@ -286,9 +320,17 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
           } catch {}
         }
       })
+      .subscribe();
+
+    // offers.conversation_id is stored as a UUID (toUuid of the numeric conversation id),
+    // so the realtime filter must use that UUID form — not the numeric id (which is what
+    // messages uses). Without this, the offers/Deal-Overview events never match.
+    const offerConvUuid = `00000000-0000-0000-0000-${Number(conversation.id).toString(16).padStart(12, '0')}`;
+    const offersChannel = supabase
+      .channel(`conv-${conversation.id}-offers`, { config: { broadcast: { self: true } } })
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'offers',
-        filter: `conversation_id=eq.${conversation.id}`
+        filter: `conversation_id=eq.${offerConvUuid}`
       }, (payload) => {
         const newOffer = payload.new;
         if (!newOffer?.id) return;
@@ -297,14 +339,18 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       })
       .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'offers',
-        filter: `conversation_id=eq.${conversation.id}`
+        filter: `conversation_id=eq.${offerConvUuid}`
       }, (payload) => {
         const updated = payload.new;
         if (!updated?.id) return;
         setOffers((prev) => prev.map(o => String(o.id) === String(updated.id) ? { ...o, ...updated } : o));
       })
       .subscribe();
-    return () => supabase.removeChannel(channel);
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(offersChannel);
+    };
   };
 
   const handleSendMessage = async (e) => {
