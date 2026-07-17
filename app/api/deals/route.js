@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
 import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers';
+import { excludeOffMainland } from '@/lib/mainland';
 
 const supabaseMarketplace = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
@@ -157,6 +158,7 @@ export async function GET(request) {
           else q = q.or(`address.ilike.${qq},full_address.ilike.${qq},city.ilike.${qq},state.ilike.${qq},zip_code.ilike.${qq}`);
         }
       }
+      q = excludeOffMainland(q);
       return q;
     };
 
@@ -199,6 +201,7 @@ export async function GET(request) {
           q = q.or(`city.ilike.${qq},address.ilike.${qq},state.ilike.${qq}`);
         }
       }
+      q = excludeOffMainland(q);
       return q;
     };
 
@@ -214,7 +217,6 @@ export async function GET(request) {
       .select(DEAL_SELECT, { count: 'exact' })
       .eq('status', statusToFilter)
       .eq('is_incomplete', false)
-      .neq('state', 'HI')
       .eq('property_photos.is_featured', true)
       .or(auctionLiveOr);
 
@@ -243,7 +245,7 @@ export async function GET(request) {
     const dealCount = (which, mode = 'exact') => {
       let q = supabaseMarketplace.from('wholesale_deals')
         .select('id', { count: mode, head: true })
-        .eq('status', statusToFilter).eq('is_incomplete', false).neq('state', 'HI')
+        .eq('status', statusToFilter).eq('is_incomplete', false)
         .or(auctionLiveOr);
       q = applyDealFilters(q);
       if (which === 'auction') q = q.eq('listing_type', 'auction');

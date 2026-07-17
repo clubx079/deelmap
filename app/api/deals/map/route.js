@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase';
+import { excludeOffMainland } from '@/lib/mainland';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
@@ -98,7 +99,6 @@ export async function GET(request) {
         .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng')
         .eq('status', 'active')
         .eq('is_incomplete', false)
-        .neq('state', 'HI')
         .not('address_google_lat', 'is', null)
         .not('address_google_lng', 'is', null);
 
@@ -126,6 +126,7 @@ export async function GET(request) {
       if (searchQuery) {
         q = applySearchQuery(q, searchQuery.trim(), 'city', 'state', ['address', 'full_address', 'city', 'state', 'zip_code']);
       }
+      q = excludeOffMainland(q);
       return q;
     };
 
@@ -214,6 +215,7 @@ export async function GET(request) {
             q = q.or(`city.ilike.${qt},address.ilike.${qt},state.ilike.${qt}`);
           }
         }
+        q = excludeOffMainland(q);
         return q;
       };
 
