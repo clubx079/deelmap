@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { Resend } from 'resend'
 import { contractDownloadUrl } from '@/lib/contractDownload'
 
@@ -14,26 +15,46 @@ function dsHeaders() {
 // DocuSeal webhook — relies on submission validation; configure DOCUSEAL_WEBHOOK_SECRET for signature auth.
 // This is a third-party (DocuSeal) callback, not our own server/cron, so it cannot present
 // our internal CRON_SECRET and stays off the requireInternalSecret perimeter (it's on the
-// public allowlist by design). If DOCUSEAL_WEBHOOK_SECRET is set we verify DocuSeal's
-// signature header; until then, every branch below independently re-fetches the submission
-// from DocuSeal's API and bails out with no side effects (no email/PATCH) unless it resolves
-// to a real submission — a forged submission_id that DocuSeal doesn't recognize is a no-op.
+// public allowlist by design). If DOCUSEAL_WEBHOOK_SECRET is set we verify DocuSeal's HMAC
+// signature (SHA-256 hex of the raw body, keyed with the shared secret) against the
+// X-Docuseal-Signature header. Regardless of whether the secret is configured, every branch
+// below independently re-fetches the submission from DocuSeal's API and bails out with no
+// side effects (no email/PATCH) unless it resolves to a real submission — a forged
+// submission_id that DocuSeal doesn't recognize is a no-op. Crucially, the identity of the
+// NEXT signer (email/name to PATCH and notify) is always read off that authoritative,
+// API-fetched submitter record — never off the request body's `data.metadata` — so a forged
+// or replayed webhook cannot redirect a contract to an attacker-controlled email address.
 const DOCUSEAL_WEBHOOK_SECRET = process.env.DOCUSEAL_WEBHOOK_SECRET
 
-function verifyDocusealSignature(request) {
-  if (!DOCUSEAL_WEBHOOK_SECRET) return true // no secret configured — fall through to submission validation below
+function verifyDocusealSignature(request, rawBody) {
+  if (!DOCUSEAL_WEBHOOK_SECRET) {
+    // No secret configured — warn loudly, but still proceed: every downstream branch only
+    // acts on data pulled fresh from the DocuSeal API (never on body-supplied routing info),
+    // so an unauthenticated caller can at most trigger a re-fetch of a real submission.
+    console.warn('[webhook] DOCUSEAL_WEBHOOK_SECRET is not configured — signature verification is DISABLED. Configure it in production.')
+    return true
+  }
   const signature = request.headers.get('x-docuseal-signature')
-  return !!signature && signature === DOCUSEAL_WEBHOOK_SECRET
+  if (!signature) return false
+  const expected = crypto.createHmac('sha256', DOCUSEAL_WEBHOOK_SECRET).update(rawBody).digest('hex')
+  try {
+    const a = Buffer.from(signature)
+    const b = Buffer.from(expected)
+    return a.length === b.length && crypto.timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
 }
 
 export async function POST(request) {
   try {
-    if (!verifyDocusealSignature(request)) {
+    const rawBody = await request.text()
+    if (!verifyDocusealSignature(request, rawBody)) {
       console.warn('[webhook] rejected — invalid X-Docuseal-Signature')
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
+    const body = JSON.parse(rawBody)
     const { event_type, data } = body
 
     console.log('[webhook] received event_type:', event_type, '| role:', data?.role)
@@ -182,10 +203,14 @@ export async function POST(request) {
       console.log('[webhook] form.completed — DocuSeal returned no submission data, dropping')
       return NextResponse.json({ ok: true })
     }
-    console.log('[webhook] submitter metadata:', JSON.stringify(data.metadata))
     console.log('[webhook] full submission submitters:', JSON.stringify(fullSubmission.submitters?.map(s => ({ id: s.id, role: s.role, slug: s.slug, email: s.email }))))
 
-    const metadata = data.metadata || {}
+    // Authoritative only: read the routing metadata off the DocuSeal submitter record we
+    // just fetched via our own API key (matched by the role that completed), never off the
+    // untrusted request-body `data.metadata` — otherwise a forged/replayed webhook could
+    // redirect the next-signer PATCH + notification email to an attacker-chosen address.
+    const completedSubmitter = fullSubmission.submitters?.find(s => s.role === data.role)
+    const metadata = completedSubmitter?.metadata || {}
     const coSellerSubmitter = fullSubmission.submitters?.find(s => s.role === 'Co-Seller')
 
     // Pick the next party to activate. After the seller (First Party) signs, the

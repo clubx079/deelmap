@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
+import { requireInternalSecret } from '@/lib/internalAuth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
@@ -19,6 +20,9 @@ function generateShortToken() {
 // POST - Generate a new magic link token
 export async function POST(request) {
   try {
+    const denied = requireInternalSecret(request)
+    if (denied) return denied
+
     const body = await request.json()
     const {
       temp_seller_id,

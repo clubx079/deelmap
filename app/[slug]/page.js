@@ -194,7 +194,9 @@ async function getProperty(slugParam, isAuthed) {
     return {
       ...normalized,
       agent,
-      posted_by: manualProperty.posted_by || null,
+      // posted_by is a raw user id — only expose it to signed-in visitors, same gate as
+      // the contact fields above.
+      posted_by: isAuthed ? (manualProperty.posted_by || null) : null,
       source: 'manual'
     }
   }
