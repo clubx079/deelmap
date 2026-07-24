@@ -1,5 +1,16 @@
 // app/api/live-tracking/route.js
 // API endpoint for tracking live user sessions
+//
+// DEVIATION FROM TASK-7 BRIEF (flagged, not silently applied): the brief classifies this
+// route as "server-to-server/cron" and asks for a requireInternalSecret(CRON_SECRET) guard
+// like notifications/send-sms and notifications/check-viewers. That classification does not
+// match the code: hooks/useLiveTracking.js calls this route directly from every visitor's
+// browser (session_start/heartbeat/page_change/etc, no auth header, no secret) as a
+// site-wide analytics beacon. A real internal-secret guard would 403 every legitimate call
+// and break live analytics for all users, and embedding CRON_SECRET in client JS to work
+// around that would leak the shared secret used by other internal routes. Left unguarded
+// pending a real fix (e.g. rate limiting / bot filtering, or a public, non-secret anti-abuse
+// token distinct from CRON_SECRET) — see task-7-report.md for detail.
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 

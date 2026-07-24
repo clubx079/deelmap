@@ -11,8 +11,28 @@ function dsHeaders() {
   return { 'X-Auth-Token': process.env.DOCUSEAL_API_KEY, 'Content-Type': 'application/json' }
 }
 
+// DocuSeal webhook — relies on submission validation; configure DOCUSEAL_WEBHOOK_SECRET for signature auth.
+// This is a third-party (DocuSeal) callback, not our own server/cron, so it cannot present
+// our internal CRON_SECRET and stays off the requireInternalSecret perimeter (it's on the
+// public allowlist by design). If DOCUSEAL_WEBHOOK_SECRET is set we verify DocuSeal's
+// signature header; until then, every branch below independently re-fetches the submission
+// from DocuSeal's API and bails out with no side effects (no email/PATCH) unless it resolves
+// to a real submission — a forged submission_id that DocuSeal doesn't recognize is a no-op.
+const DOCUSEAL_WEBHOOK_SECRET = process.env.DOCUSEAL_WEBHOOK_SECRET
+
+function verifyDocusealSignature(request) {
+  if (!DOCUSEAL_WEBHOOK_SECRET) return true // no secret configured — fall through to submission validation below
+  const signature = request.headers.get('x-docuseal-signature')
+  return !!signature && signature === DOCUSEAL_WEBHOOK_SECRET
+}
+
 export async function POST(request) {
   try {
+    if (!verifyDocusealSignature(request)) {
+      console.warn('[webhook] rejected — invalid X-Docuseal-Signature')
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { event_type, data } = body
 
@@ -26,9 +46,19 @@ export async function POST(request) {
       // DeelMap-branded download link (streams the PDF via our own domain).
       const downloadLink = contractDownloadUrl(APP_URL, submissionId)
 
-      // Always fetch the full submission — webhook payload may have stale placeholder email for the Assignee
+      // Always fetch the full submission — webhook payload may have stale placeholder email for the Assignee.
+      // This also doubles as our submission-validation guard: a forged/bogus submission_id
+      // that DocuSeal doesn't recognize gets rejected here before any email is sent.
       const fullRes = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, { headers: dsHeaders() })
+      if (!fullRes.ok) {
+        console.log('[webhook] submission.completed — submission_id did not resolve via DocuSeal API, dropping')
+        return NextResponse.json({ ok: true })
+      }
       const full = await fullRes.json()
+      if (!full?.id) {
+        console.log('[webhook] submission.completed — DocuSeal returned no submission data, dropping')
+        return NextResponse.json({ ok: true })
+      }
 
       const property = full.name || data.name || ''
       const documents = full.documents || []
@@ -138,10 +168,20 @@ export async function POST(request) {
     }
 
     console.log('[webhook] fetching full submission:', submissionId)
+    // Submission-validation guard: a forged/bogus submission_id that DocuSeal doesn't
+    // recognize is rejected here before any submitter is patched or emailed.
     const submissionRes = await fetch(`${DOCUSEAL_BASE}/submissions/${submissionId}`, {
       headers: dsHeaders(),
     })
+    if (!submissionRes.ok) {
+      console.log('[webhook] form.completed — submission_id did not resolve via DocuSeal API, dropping')
+      return NextResponse.json({ ok: true })
+    }
     const fullSubmission = await submissionRes.json()
+    if (!fullSubmission?.id) {
+      console.log('[webhook] form.completed — DocuSeal returned no submission data, dropping')
+      return NextResponse.json({ ok: true })
+    }
     console.log('[webhook] submitter metadata:', JSON.stringify(data.metadata))
     console.log('[webhook] full submission submitters:', JSON.stringify(fullSubmission.submitters?.map(s => ({ id: s.id, role: s.role, slug: s.slug, email: s.email }))))
 

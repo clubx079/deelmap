@@ -1,9 +1,13 @@
 // app/api/notifications/send-sms/route.js
 import { NextResponse } from 'next/server'
 import { sendSMS } from '@/lib/sms'
+import { requireInternalSecret } from '@/lib/internalAuth'
 
 export async function POST(request) {
   try {
+    const denied = requireInternalSecret(request)
+    if (denied) return denied
+
     const { to, message, from } = await request.json()
 
     const result = await sendSMS({ to, message, from })
