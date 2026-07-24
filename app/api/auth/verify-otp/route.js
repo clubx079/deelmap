@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { verifyOtp } from '@/lib/otpStore'
 import { sendBuyerWelcomeEmail } from '@/lib/welcomeEmail'
 import { enrollAutomation } from '@/lib/enrollAutomation'
+import { signSession, buildSessionCookie } from '@/lib/session'
 
 
 
@@ -311,7 +312,7 @@ export async function POST(request) {
     })()
 
     // Return user data in the format expected by useAuth
-    return NextResponse.json({
+    const res = NextResponse.json({
       message: 'Account created successfully',
       user: {
         id: newUser.id,
@@ -323,6 +324,8 @@ export async function POST(request) {
         name: `${newUser.first_name} ${newUser.last_name}`.trim()
       }
     })
+    res.headers.append('Set-Cookie', buildSessionCookie(signSession({ userId: newUser.id })))
+    return res
 
   } catch (error) {
     console.error('[VERIFY-OTP] Unexpected error:', error)

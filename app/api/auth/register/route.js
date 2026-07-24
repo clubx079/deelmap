@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { signSession, buildSessionCookie } from '@/lib/session'
 
 export async function POST(request) {
   try {
@@ -53,11 +54,15 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       message: 'Registration successful',
       user: authData.user,
       session: authData.session
     })
+    if (authData.user?.id) {
+      res.headers.append('Set-Cookie', buildSessionCookie(signSession({ userId: authData.user.id })))
+    }
+    return res
 
   } catch (error) {
     console.error('Registration error:', error)

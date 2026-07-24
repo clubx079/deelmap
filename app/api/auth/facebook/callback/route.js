@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
+import { signSession, buildSessionCookie } from '@/lib/session'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
@@ -132,6 +133,10 @@ export async function GET(request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
+
+    if (user?.id) {
+      response.headers.append('Set-Cookie', buildSessionCookie(signSession({ userId: user.id })))
+    }
 
     return response
   } catch (error) {
