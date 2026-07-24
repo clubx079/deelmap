@@ -7,7 +7,7 @@ export async function GET(request) {
     
     let query = supabase
       .from('properties')
-      .select('*')
+      .select('id, slug, seo_title, city, state, zipcode, latitude, longitude, price, property_type, bedrooms, bathrooms, floor_area, status, is_highlighted, is_boosted, is_homepage_featured, created_at')
       .eq('status', 'active')
 
     // Apply filters based on search params
