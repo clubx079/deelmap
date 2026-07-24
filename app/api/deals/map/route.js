@@ -96,7 +96,7 @@ export async function GET(request) {
     const buildWholesaleQuery = () => {
       let q = supabase
         .from('wholesale_deals')
-        .select('id, slug, address, full_address, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng')
+        .select('id, slug, city, state, zip_code, price, arv, bedrooms, bathrooms, sqft, listing_type, address_google_lat, address_google_lng')
         .eq('status', 'active')
         .eq('is_incomplete', false)
         .not('address_google_lat', 'is', null)
@@ -152,8 +152,8 @@ export async function GET(request) {
       return {
         id: d.id,
         slug: d.slug,
-        address: d.address,
-        full_address: d.full_address,
+        address: null,        // exact address hidden until login (UI shows "Login to view full address")
+        full_address: null,
         city: d.city,
         state: d.state,
         zip_code: d.zip_code,
@@ -176,7 +176,7 @@ export async function GET(request) {
       const buildManualQuery = () => {
         let q = supabase
           .from('properties')
-          .select('id, slug, address, city, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type')
+          .select('id, slug, city, state, latitude, longitude, price, bedrooms, bathrooms, floor_area, property_type')
           .in('status', ['active', 'published'])
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
@@ -240,7 +240,7 @@ export async function GET(request) {
         pins.push({
           id: p.id,
           slug: p.slug,
-          address: p.address,
+          address: null,        // exact address hidden until login
           city: p.city || null,
           state: p.state,
           price: p.price,
