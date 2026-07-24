@@ -13,9 +13,8 @@ const supabaseService = supabaseServiceKey
   : null
 
 function getUserId(request) {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null
-  return authHeader.replace('Bearer ', '').trim() || null
+  const userId = request.headers.get('x-user-id')
+  return userId || null
 }
 
 // GET: Check if deal(s) are marked not interested. ?dealId=uuid or ?dealIds=uuid1,uuid2

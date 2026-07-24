@@ -8,16 +8,14 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 export async function GET(request) {
   try {
     // Get user from localStorage (client sends it)
-    const authHeader = request.headers.get('authorization');
+    const userId = request.headers.get('x-user-id');
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!userId) {
       return NextResponse.json({
         success: false,
         error: 'Not authenticated'
       }, { status: 401 });
     }
-
-    const userId = authHeader.replace('Bearer ', '');
 
     // Fetch user from database
     const { data: user, error } = await supabase

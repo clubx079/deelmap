@@ -15,12 +15,10 @@ const supabase = createClient(
  */
 export async function GET(request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = authHeader.replace('Bearer ', '');
 
     const { data: favorites, error: favError } = await supabase
       .from('user_favorites')

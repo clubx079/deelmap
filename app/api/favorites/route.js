@@ -19,13 +19,11 @@ const supabaseService = supabaseServiceKey
 // GET: Get user's favorites
 export async function GET(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const userId = request.headers.get('x-user-id')
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const userId = authHeader.replace('Bearer ', '')
 
     // Verify user exists (use service role if available to avoid RLS blocking)
     const client = supabaseService || supabase
@@ -65,13 +63,12 @@ export async function GET(request) {
 // POST: Add favorite
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const userId = request.headers.get('x-user-id')
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = authHeader.replace('Bearer ', '')
     const { property_id } = await request.json()
 
     if (!property_id) {
@@ -137,13 +134,12 @@ export async function POST(request) {
 // DELETE: Remove favorite
 export async function DELETE(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const userId = request.headers.get('x-user-id')
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = authHeader.replace('Bearer ', '')
     const { searchParams } = new URL(request.url)
     const property_id = searchParams.get('property_id')
 

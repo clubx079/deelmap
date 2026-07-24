@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
+import { signSession, buildSessionCookie } from '@/lib/session'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_ANON_KEY
@@ -76,7 +77,7 @@ export async function POST(request) {
 
     console.log('User signed in successfully:', email)
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       message: 'Sign in successful',
       user: {
         id: user.id,
@@ -87,6 +88,8 @@ export async function POST(request) {
         phone: user.phone
       }
     })
+    res.headers.append('Set-Cookie', buildSessionCookie(signSession({ userId: user.id })))
+    return res
 
   } catch (error) {
     console.error('Sign in error:', error)

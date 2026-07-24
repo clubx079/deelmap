@@ -2,10 +2,14 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { sendSMS } from '@/lib/sms'
+import { requireInternalSecret } from '@/lib/internalAuth'
 
 // This endpoint checks for properties with 2+ unique viewers and notifies temp sellers
 export async function POST(request) {
   try {
+    const denied = requireInternalSecret(request)
+    if (denied) return denied
+
     // 1. Get all properties with 2+ unique viewers from property_analytics
     const { data: propertiesWithViewers, error: analyticsError } = await supabase
       .from('property_analytics')

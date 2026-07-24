@@ -8,21 +8,25 @@ const supabaseMarketplace = createClient(
   process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Public marketplace grid projection — city/state (no exact street), price, beds/baths,
+// sqft, thumbnail image, coordinates, and the investment/listing metadata the card renders.
+// Deliberately excludes: contract_url, seller phone/email, temp_seller_id / seller_id,
+// posted_by, rejection_reason, and exact street address (address / full_address).
 const DEAL_COLS = [
-  'id', 'slug', 'address', 'full_address', 'city', 'state', 'zip_code',
+  'id', 'slug', 'city', 'state', 'zip_code',
   'address_google_lat', 'address_google_lng',
   'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
   'listing_type', 'auction_date', 'auction_time', 'auction_location',
   'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
   'year_built', 'lot_size',
-  'created_at', 'updated_at', 'temp_seller_id',
+  'created_at', 'updated_at',
   'estimated_rent', 'purchase_price'
 ].join(',');
-const DEAL_SELECT = `${DEAL_COLS}, property_photos!left(photo_url, optimized_url, is_featured), temp_seller_logins!temp_seller_id(seller_name)`;
+const DEAL_SELECT = `${DEAL_COLS}, property_photos!left(photo_url, optimized_url, is_featured)`;
 const MANUAL_SELECT = `
-  id, slug, address, city, state, zipcode, latitude, longitude,
+  id, slug, city, state, zipcode, latitude, longitude,
   price, bedrooms, bathrooms, floor_area, property_type, status, property_status,
-  is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at, seller_id, posted_by,
+  is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at,
   property_images!left (image_url, image_key, sort_order)
 `;
 
