@@ -1,18 +1,27 @@
 //app/[slug]/page.js
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase'
 import { supabaseMarketplace } from '@/lib/supabase'
 import { PropertyDetail } from '@/components/property/PropertyDetail'
 import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
 import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers'
 import { toCitySlug } from '@/lib/cityUtils'
+import { verifySession } from '@/lib/session'
 
 export const revalidate = 3600
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-async function getProperty(slugParam) {
+// Seller contact (phone) and the exact street address are only for signed-in visitors —
+// logged-out requests get the public teaser (city/state/price/beds/baths/photos) only.
+async function getIsAuthed() {
+  const store = await cookies()
+  return !!verifySession(store.get('dm_session')?.value)
+}
+
+async function getProperty(slugParam, isAuthed) {
   const slug = typeof slugParam === 'string' ? slugParam.trim() : ''
   if (!slug) return null
 
@@ -60,9 +69,10 @@ async function getProperty(slugParam) {
   }
 
   if (wholesaleProperty) {
-    // Fetch agent (temp seller) when linked
+    // Fetch agent (temp seller) when linked — seller contact is gated behind a valid session;
+    // logged-out visitors never trigger this fetch and never receive the phone number.
     let agent = null
-    if (wholesaleProperty.temp_seller_id) {
+    if (isAuthed && wholesaleProperty.temp_seller_id) {
       const { data: tempSeller } = await supabaseMarketplace
         .from('temp_seller_logins')
         .select('seller_name, seller_phone')
@@ -76,8 +86,8 @@ async function getProperty(slugParam) {
       }
     }
 
-    // Fall back to agent_phone/agent_name columns on the deal itself
-    if (!agent) {
+    // Fall back to agent_phone/agent_name columns on the deal itself (also gated)
+    if (isAuthed && !agent) {
       agent = {
         name: wholesaleProperty.agent_name || null,
         phone: wholesaleProperty.agent_phone || null
@@ -86,6 +96,11 @@ async function getProperty(slugParam) {
 
     // Normalize and return
     const normalized = normalizeWholesaleDeal(wholesaleProperty)
+    if (!isAuthed) {
+      // Exact street address is gated behind auth too; city/state/zip stay in the public teaser.
+      normalized.address = ''
+      normalized.full_address = ''
+    }
     return {
       ...normalized,
       agent,
@@ -129,44 +144,53 @@ async function getProperty(slugParam) {
   }
 
   if (manualProperty) {
+    // Seller/buyer contact (name + phone) is gated behind a valid session — none of these
+    // fetches run, and no contact field is populated, for logged-out visitors.
     let agent = null
 
-    // Use contact fields set directly on the listing first
-    if (manualProperty.contact_name || manualProperty.contact_phone) {
-      agent = {
-        name: manualProperty.contact_name || 'Seller',
-        phone: manualProperty.contact_phone || null
-      }
-    } else if (manualProperty.posted_by) {
-      // Buyer-posted deal: fetch buyer's phone from users table
-      const { data: buyer } = await supabaseMarketplace
-        .from('users')
-        .select('first_name, last_name, phone')
-        .eq('id', manualProperty.posted_by)
-        .single()
-      if (buyer) {
+    if (isAuthed) {
+      // Use contact fields set directly on the listing first
+      if (manualProperty.contact_name || manualProperty.contact_phone) {
         agent = {
-          name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || 'Buyer',
-          phone: buyer.phone || null
+          name: manualProperty.contact_name || 'Seller',
+          phone: manualProperty.contact_phone || null
         }
-      }
-    } else if (manualProperty.seller_id) {
-      // Seller portal listing: fall back to seller account phone
-      const { data: seller } = await supabaseMarketplace
-        .from('seller_applications')
-        .select('contact_person_name, business_name, phone')
-        .eq('id', manualProperty.seller_id)
-        .single()
-      if (seller) {
-        agent = {
-          name: seller.contact_person_name || seller.business_name || 'Seller',
-          phone: seller.phone || null
+      } else if (manualProperty.posted_by) {
+        // Buyer-posted deal: fetch buyer's phone from users table
+        const { data: buyer } = await supabaseMarketplace
+          .from('users')
+          .select('first_name, last_name, phone')
+          .eq('id', manualProperty.posted_by)
+          .single()
+        if (buyer) {
+          agent = {
+            name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ') || 'Buyer',
+            phone: buyer.phone || null
+          }
+        }
+      } else if (manualProperty.seller_id) {
+        // Seller portal listing: fall back to seller account phone
+        const { data: seller } = await supabaseMarketplace
+          .from('seller_applications')
+          .select('contact_person_name, business_name, phone')
+          .eq('id', manualProperty.seller_id)
+          .single()
+        if (seller) {
+          agent = {
+            name: seller.contact_person_name || seller.business_name || 'Seller',
+            phone: seller.phone || null
+          }
         }
       }
     }
 
     // Normalize and return
     const normalized = normalizeManualProperty(manualProperty, manualProperty.property_images || [])
+    if (!isAuthed) {
+      // Exact street address is gated behind auth too; city/state/zip stay in the public teaser.
+      normalized.address = ''
+      normalized.full_address = ''
+    }
     return {
       ...normalized,
       agent,
@@ -225,7 +249,8 @@ function buildJsonLd(property) {
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params
-  const property = await getProperty(resolvedParams.slug)
+  const isAuthed = await getIsAuthed()
+  const property = await getProperty(resolvedParams.slug, isAuthed)
 
   if (!property) {
     return { title: 'Property Not Found | DeelMap' }
@@ -273,7 +298,8 @@ export async function generateMetadata({ params }) {
 
 export default async function PropertyPage({ params }) {
   const resolvedParams = await params
-  const property = await getProperty(resolvedParams.slug)
+  const isAuthed = await getIsAuthed()
+  const property = await getProperty(resolvedParams.slug, isAuthed)
 
   if (!property) {
     notFound()
