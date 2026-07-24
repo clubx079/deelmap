@@ -20,13 +20,11 @@ const supabaseService = supabaseServiceKey
 // Check if properties are favorited (batch check)
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get('authorization')
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const userId = request.headers.get('x-user-id')
+
+    if (!userId) {
       return NextResponse.json({ favorited: {} })
     }
-
-    const userId = authHeader.replace('Bearer ', '')
     const { property_ids } = await request.json()
 
     if (!property_ids || !Array.isArray(property_ids) || property_ids.length === 0) {

@@ -8,13 +8,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Helper function to check buyer authentication
 async function checkBuyerAuth(request) {
-  const authHeader = request.headers.get('authorization');
+  const userId = request.headers.get('x-user-id');
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!userId) {
     return { authenticated: false, error: 'Not authenticated' };
   }
-
-  const userId = authHeader.replace('Bearer ', '');
 
   try {
     const { data: user, error } = await supabase

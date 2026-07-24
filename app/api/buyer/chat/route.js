@@ -298,13 +298,11 @@ async function upsertBuyerConversationPref(supabase, conversationId, buyerUuid, 
 // Helper function to check buyer authentication
 async function checkBuyerAuth(request, supabase) {
   if (!supabase) return { authenticated: false, error: 'Database not configured' };
-  const authHeader = request.headers.get('authorization');
+  const userUuid = request.headers.get('x-user-id');
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!userUuid) {
     return { authenticated: false, error: 'Not authenticated' };
   }
-
-  const userUuid = authHeader.replace('Bearer ', '');
 
   try {
     const { data: user, error } = await supabase

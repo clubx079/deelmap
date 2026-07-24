@@ -7,9 +7,7 @@ const supabase = createClient(
 );
 
 function getUser(request) {
-  const auth = request.headers.get('authorization');
-  if (!auth?.startsWith('Bearer ')) return null;
-  return auth.replace('Bearer ', '');
+  return request.headers.get('x-user-id') || null;
 }
 
 export async function GET(request) {
