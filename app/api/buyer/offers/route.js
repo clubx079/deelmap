@@ -10,9 +10,8 @@ function getSupabase() {
 }
 
 function getBuyerIdFromRequest(request) {
-  const auth = request.headers.get('authorization');
-  if (auth?.startsWith('Bearer ')) return auth.slice(7).trim();
-  return null;
+  // Trusted id injected by middleware after verifying dm_session.
+  return request.headers.get('x-user-id') || null;
 }
 
 // Convert a numeric user/conversation id to stable UUID for UUID columns.
