@@ -53,9 +53,20 @@ export async function POST(request) {
     let user_type = 'anon'
     let source = SOURCES.has(body.source) ? body.source : 'general'
     if (tok) {
+      // Explicit attribution via the signed email link token.
       user_id = tok.uid
       user_type = TYPES.has(tok.type) ? tok.type : 'anon'
       source = SOURCES.has(tok.source) ? tok.source : source
+    } else {
+      // No token → fall back to the logged-in session. Middleware verifies the
+      // dm_session cookie and injects a trusted x-user-id (= users.id) on this
+      // route, so a signed-in buyer's feedback is attributed to their account
+      // instead of showing as Anonymous in the admin portal.
+      const sessionUserId = request.headers.get('x-user-id')
+      if (sessionUserId) {
+        user_id = sessionUserId
+        user_type = 'buyer'
+      }
     }
 
     const { data, error } = await supabase
