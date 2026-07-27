@@ -298,16 +298,19 @@ export async function POST(request) {
     console.log('[VERIFY-OTP] States of interest:', userData.statesOfInterest)
 
     // Onboarding is owned entirely by the admin follow-up automations. At signup
-    // we classify the buyer (Star Buyer detection via LLM) and route accordingly:
+    // we classify the buyer (Star Buyer: US-based real-estate professional) and
+    // route accordingly:
     //   star  → 'star_buyer'   event (personalized professional flow)
     //   else  → 'buyer_welcome' event (standard flow)
-    // The verdict is persisted on the user for admin visibility. Fail-open: any
-    // error falls back to the standard welcome. No hardcoded email is sent here.
+    // NOTE: this whole block is fire-and-forget — it runs AFTER the signup
+    // response, so the AI detection never slows the buyer's sign-up. A non-US
+    // location also short-circuits before the LLM. Fail-open on any error.
+    const cfCountry = request.headers.get('cf-ipcountry') || ''
     ;(async () => {
       const name = `${newUser.first_name || ''} ${newUser.last_name || ''}`.trim()
       try {
         const verdict = await classifyBuyer({
-          name, email: newUser.email, statesOfInterest: newUser.states_of_interest,
+          name, email: newUser.email, country: cfCountry, statesOfInterest: newUser.states_of_interest,
         })
 
         // Best-effort persist (service role bypasses RLS); never blocks enrollment.
