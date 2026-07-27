@@ -173,6 +173,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const data = await res.json();
       if (data.success) {
         setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'withdrawn' } : o));
+        import('@/lib/analytics').then(({ trackEvent }) => trackEvent('offer_withdrawn', { property_id: conversation?.property_id, offer_id: offerId }));
       }
     } catch (err) {
       console.error('Failed to withdraw offer:', err);
@@ -192,6 +193,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const data = await res.json();
       if (data.success) {
         setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'accepted' } : o));
+        import('@/lib/analytics').then(({ trackEvent }) => trackEvent('counter_offer_accepted', { property_id: conversation?.property_id, offer_id: offerId }));
       }
     } catch (err) {
       console.error('Failed to accept counter:', err);
@@ -211,6 +213,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const data = await res.json();
       if (data.success) {
         setOffers(prev => prev.map(o => o.id === offerId ? { ...o, status: 'rejected' } : o));
+        import('@/lib/analytics').then(({ trackEvent }) => trackEvent('counter_offer_rejected', { property_id: conversation?.property_id, offer_id: offerId }));
       }
     } catch (err) {
       console.error('Failed to reject counter:', err);
@@ -235,6 +238,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
     setOfferError('');
     setOfferSuccess(false);
     setShowOfferForm(true);
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('make_offer_clicked', { property_id: conversation?.property_id, source: 'chat' }));
   };
 
   const handleSubmitInlineOffer = async () => {
@@ -261,6 +265,7 @@ export default function ChatWindow({ conversation, lender, financingRequest, onB
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Failed to submit offer');
       setOfferSuccess(true);
+      import('@/lib/analytics').then(({ trackEvent }) => trackEvent('offer_submitted', { property_id: conversation?.property_id, offer_amount: numericAmount, source: 'chat' }));
       fetchOffers();
     } catch (err) {
       setOfferError(err.message || 'Something went wrong');

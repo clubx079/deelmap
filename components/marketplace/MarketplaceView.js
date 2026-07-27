@@ -106,7 +106,10 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
     authToken: user?.id ? `Bearer ${user.id}` : undefined
   })
 
-  const handleMarkerClick = (property) => setSelectedProperty(property)
+  const handleMarkerClick = (property) => {
+    setSelectedProperty(property)
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('map_pin_clicked', { property_id: property?.id }))
+  }
 
   const handleBoundsChange = (bounds) => {
     setMapBounds(bounds)
@@ -327,7 +330,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => { setSortBy(opt.value); setShowSortDropdown(false) }}
+                    onClick={() => { setSortBy(opt.value); setShowSortDropdown(false); import('@/lib/analytics').then(({ trackEvent }) => trackEvent('sort_changed', { sort_by: opt.value })) }}
                     className={`w-full flex items-center justify-between px-4 py-2.5 text-[13px] transition-colors hover:bg-[#FAFAF8] ${
                       sortBy === opt.value ? 'font-semibold text-[#1A1816]' : 'text-[#444441]'
                     }`}
@@ -483,7 +486,7 @@ function MarketplaceViewInner({ defaultSearch = '' }) {
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
-                    onClick={() => { setSortBy(opt.value); setShowMobileSortDropdown(false) }}
+                    onClick={() => { setSortBy(opt.value); setShowMobileSortDropdown(false); import('@/lib/analytics').then(({ trackEvent }) => trackEvent('sort_changed', { sort_by: opt.value })) }}
                     className={`w-full flex items-center justify-between px-4 py-3.5 text-[14px] transition-colors active:bg-[#F3F3F0] ${
                       sortBy === opt.value ? 'font-semibold text-[#1A1816] bg-[#FAFAF8]' : 'text-[#444441]'
                     }`}

@@ -17,6 +17,7 @@ export default function SavedPropertiesPage() {
   useEffect(() => {
     if (!user) { setLoading(false); return }
     loadSavedProperties()
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('saved_deals_viewed'))
   }, [user])
 
   const loadSavedProperties = async () => {
