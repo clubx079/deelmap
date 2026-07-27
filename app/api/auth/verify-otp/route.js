@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { verifyOtp } from '@/lib/otpStore'
 import { enrollAutomation } from '@/lib/enrollAutomation'
+import { classifyBuyer } from '@/lib/starBuyer'
 import { signSession, buildSessionCookie } from '@/lib/session'
 
 
@@ -296,16 +297,42 @@ export async function POST(request) {
     console.log('[VERIFY-OTP] User ID:', newUser.id)
     console.log('[VERIFY-OTP] States of interest:', userData.statesOfInterest)
 
-    // Welcome is owned entirely by the admin follow-up automations. Enroll the
-    // buyer into any active `buyer_welcome` flow; if none exists, NO email is
-    // sent. There is deliberately no hardcoded fallback send here.
+    // Onboarding is owned entirely by the admin follow-up automations. At signup
+    // we classify the buyer (Star Buyer detection via LLM) and route accordingly:
+    //   star  → 'star_buyer'   event (personalized professional flow)
+    //   else  → 'buyer_welcome' event (standard flow)
+    // The verdict is persisted on the user for admin visibility. Fail-open: any
+    // error falls back to the standard welcome. No hardcoded email is sent here.
     ;(async () => {
       const name = `${newUser.first_name || ''} ${newUser.last_name || ''}`.trim()
       try {
-        await enrollAutomation('buyer_welcome', newUser.id,
-          { buyer_id: newUser.id, name, email: newUser.email }, { immediate: true })
+        const verdict = await classifyBuyer({
+          name, email: newUser.email, statesOfInterest: newUser.states_of_interest,
+        })
+
+        // Best-effort persist (service role bypasses RLS); never blocks enrollment.
+        try {
+          await (supabaseService || supabase).from('users').update({
+            is_star_buyer: verdict.isStar,
+            buyer_tier: verdict.isStar ? 'star' : 'normal',
+            star_persona: verdict.persona || null,
+            star_company: verdict.company || null,
+            star_confidence: verdict.confidence ?? null,
+            star_reason: verdict.reason || null,
+            classified_at: new Date().toISOString(),
+          }).eq('id', newUser.id)
+        } catch (e) {
+          console.error('[verify-otp] star persist failed:', e?.message || e)
+        }
+
+        const event = verdict.isStar ? 'star_buyer' : 'buyer_welcome'
+        await enrollAutomation(event, newUser.id, {
+          buyer_id: newUser.id, name, email: newUser.email,
+          company: verdict.company || '', persona: verdict.persona || '',
+          star_reason: verdict.reason || '',
+        }, { immediate: true })
       } catch (e) {
-        console.error('[verify-otp] welcome enroll failed:', e?.message || e)
+        console.error('[verify-otp] classify/enroll failed:', e?.message || e)
       }
     })()
 
