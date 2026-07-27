@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 import { verifyOtp } from '@/lib/otpStore'
-import { sendBuyerWelcomeEmail } from '@/lib/welcomeEmail'
 import { enrollAutomation } from '@/lib/enrollAutomation'
 import { signSession, buildSessionCookie } from '@/lib/session'
 
@@ -297,17 +296,16 @@ export async function POST(request) {
     console.log('[VERIFY-OTP] User ID:', newUser.id)
     console.log('[VERIFY-OTP] States of interest:', userData.statesOfInterest)
 
-    // Welcome — instant + tracked via the automation engine; falls back to a
-    // direct send if the engine is unreachable.
+    // Welcome is owned entirely by the admin follow-up automations. Enroll the
+    // buyer into any active `buyer_welcome` flow; if none exists, NO email is
+    // sent. There is deliberately no hardcoded fallback send here.
     ;(async () => {
       const name = `${newUser.first_name || ''} ${newUser.last_name || ''}`.trim()
       try {
-        const r = await enrollAutomation('buyer_welcome', newUser.id,
+        await enrollAutomation('buyer_welcome', newUser.id,
           { buyer_id: newUser.id, name, email: newUser.email }, { immediate: true })
-        if (r && r.sent > 0) return
-        await sendBuyerWelcomeEmail({ to: newUser.email, name })
       } catch (e) {
-        console.error('[verify-otp] welcome failed:', e?.message || e)
+        console.error('[verify-otp] welcome enroll failed:', e?.message || e)
       }
     })()
 
