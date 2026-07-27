@@ -200,6 +200,21 @@ export function PropertyDetail({ property }) {
     })
   }, [property?.id])
 
+  // Track key detail-page interactions (fired on the state transition so every
+  // trigger point is covered, not just one button).
+  useEffect(() => {
+    if (!showImageModal) return
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('photo_gallery_opened', { property_id: property?.id }))
+  }, [showImageModal])
+  useEffect(() => {
+    if (!showShareModal) return
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('property_share_opened', { property_id: property?.id }))
+  }, [showShareModal])
+  useEffect(() => {
+    if (!showPhonePopup) return
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('seller_phone_revealed', { property_id: property?.id }))
+  }, [showPhonePopup])
+
   // Save to recently viewed in DB
   useEffect(() => {
     if (!property?.id || !user?.id) return
