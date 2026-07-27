@@ -189,6 +189,11 @@ export default function FinancingPage() {
 
       if (!response.ok) throw new Error('Failed to save financing request')
 
+      import('@/lib/analytics').then(({ trackEvent }) => trackEvent('financing_request_submitted', {
+        property_type: formData.propertyType, transaction_type: formData.transactionType,
+        loan_amount: formData.loanAmount, credit_score: formData.creditScore,
+        has_property: !!formData.propertyAddress,
+      }))
       setSubmitted(true)
       setSelectedPropertyPrice(null)
       setFormData({

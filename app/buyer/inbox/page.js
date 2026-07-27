@@ -56,6 +56,11 @@ export default function InboxPage() {
   }, [setPageTitle]);
 
   useEffect(() => {
+    if (!user?.id) return;
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('inbox_opened'));
+  }, [user?.id]);
+
+  useEffect(() => {
     if (user?.id) {
       fetchConversations();
       // Fast refresh of the list/preview — reliable even if the realtime websocket
@@ -230,6 +235,7 @@ export default function InboxPage() {
 
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
+    import('@/lib/analytics').then(({ trackEvent }) => trackEvent('conversation_opened', { conversation_id: conversation?.id, property_id: conversation?.property_id }));
     setTimeout(() => fetchConversations(false), 500);
   };
 

@@ -229,6 +229,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true)
+      import('@/lib/analytics').then(({ trackEvent }) => trackEvent('oauth_login_clicked', { provider: 'google' }))
       await signInWithGoogle()
       handleClose()
     } catch (err) {
@@ -241,6 +242,7 @@ export function RegistrationModal({ isOpen, onClose, initialStep = 'login', defa
   const handleFacebookSignIn = async () => {
     try {
       setLoading(true)
+      import('@/lib/analytics').then(({ trackEvent }) => trackEvent('oauth_login_clicked', { provider: 'facebook' }))
       await signInWithFacebook()
       handleClose()
     } catch (err) {
