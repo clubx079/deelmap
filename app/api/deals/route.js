@@ -30,8 +30,12 @@ const MANUAL_SELECT = `
   id, slug, city, state, zipcode, latitude, longitude,
   price, bedrooms, bathrooms, floor_area, property_type, status, property_status,
   is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at,
-  property_images!left (image_url, image_key, sort_order)
+  property_images (image_url, image_key, sort_order)
 `;
+// NOTE: plain embed (default left join), same reason as DEAL_SELECT above. The `!left`
+// hint 400s on AiroBase ("no foreign key matching hint 'left'"), and because the manual
+// query's error is intentionally swallowed (manual properties are "optional"), that failure
+// was silent — every `properties` row vanished from the marketplace grid/map search.
 
 const STATE_NAME_TO_ABBR = {
   'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
