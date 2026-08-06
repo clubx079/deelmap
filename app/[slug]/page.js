@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 import { supabase } from '@/lib/supabase'
 import { supabaseMarketplace } from '@/lib/supabase'
 import { PropertyDetail } from '@/components/property/PropertyDetail'
-import { getPreferredPhotoUrl } from '@/utils/propertyPhotos'
+import { getPreferredPhotoUrl, getPrimaryPhotoUrl } from '@/utils/propertyPhotos'
 import { normalizeWholesaleDeal, normalizeManualProperty } from '@/lib/propertyMappers'
 import { toCitySlug } from '@/lib/cityUtils'
 import { verifySession } from '@/lib/session'
@@ -211,7 +211,16 @@ function buildJsonLd(property) {
   const fullAddress = property.full_address || property.display_address ||
     [property.address, property.city, property.state, property.zip_code].filter(Boolean).join(', ')
   const url = `${SITE}/${property.slug || property.id}`
-  const photos = (property.property_photos || [])
+  // Sort by is_featured then display_order (the embed is returned unordered by
+  // PostgREST) so the JSON-LD hero matches the visible gallery's first photo.
+  const photos = [...(property.property_photos || [])]
+    .sort((a, b) => {
+      if (a?.is_featured && !b?.is_featured) return -1
+      if (!a?.is_featured && b?.is_featured) return 1
+      const ao = Number.isFinite(a?.display_order) ? a.display_order : 0
+      const bo = Number.isFinite(b?.display_order) ? b.display_order : 0
+      return ao - bo
+    })
     .map(p => getPreferredPhotoUrl(p))
     .filter(Boolean)
 
@@ -272,7 +281,7 @@ export async function generateMetadata({ params }) {
 
   const pathSegment = property.slug || property.id
   const url = `${SITE}/${pathSegment}`
-  const primaryImageUrl = getPreferredPhotoUrl(property.property_photos?.[0])
+  const primaryImageUrl = getPrimaryPhotoUrl(property.property_photos)
   const hasValidImage = Boolean(primaryImageUrl)
 
   return {
