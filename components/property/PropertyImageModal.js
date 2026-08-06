@@ -18,7 +18,9 @@ export function PropertyImageModal({ isOpen, onClose, photos, initialIndex = 0, 
 
   const getUrlForTier = useCallback((photo, tier) => {
     const width = QUALITY_TIERS[tier]
-    if (width === null) return getPreferredPhotoUrl(photo) || '/placeholder.jpg'
+    // Full-size tier: route through the optimizer at max width (the private B2
+    // signing host isn't reachable directly from the browser — see getThumbnailUrl).
+    if (width === null) return getThumbnailUrl(photo, 3840) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
     return getThumbnailUrl(photo, width) || getPreferredPhotoUrl(photo) || '/placeholder.jpg'
   }, [])
 
