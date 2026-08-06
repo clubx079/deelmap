@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@airostack/client'
 import { normalizeManualProperty } from '@/lib/propertyMappers'
 
 const supabase = createClient(

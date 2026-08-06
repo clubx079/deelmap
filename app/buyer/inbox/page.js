@@ -6,7 +6,7 @@ import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext';
 import { MessageSquare, Search, DollarSign, Home, Pin, Flag, X, Check, Loader2, MoreVertical } from 'lucide-react';
 import ChatWindow from '@/components/buyer/ChatWindow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@airostack/client';
 
 const AVATAR_PAIRS = [
   { bg: '#FEF0EF', text: '#D03839' },

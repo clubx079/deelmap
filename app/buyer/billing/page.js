@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useBuyerPageTitle } from '@/context/BuyerPageTitleContext'
 import Link from 'next/link'
 import { CreditCard, Check, AlertCircle, Loader2, ExternalLink, Receipt } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@airostack/client'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,

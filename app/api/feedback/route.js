@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@airostack/client'
 import { verifyFeedbackToken } from '@/lib/feedbackToken'
 
 // Public feedback intake → `feedback` table (shown in the admin portal).

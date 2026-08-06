@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@airostack/client'
 import Stripe from 'stripe'
 
 // Buyers (acting as sellers) ALWAYS pay the per-contract fee — there is no free

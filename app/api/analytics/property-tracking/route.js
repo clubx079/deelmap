@@ -42,7 +42,7 @@ function getClientIP(request) {
 async function isSystemUser(email) {
   if (!email) return false
 
-  const { createClient } = await import('@supabase/supabase-js')
+  const { createClient } = await import('@airostack/client')
   const adminClient = createClient(
     process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL,
     process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY

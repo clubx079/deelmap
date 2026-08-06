@@ -7,7 +7,7 @@ import {
   DollarSign, TrendingUp, Settings, X, Building2, CreditCard, ScrollText, Gift, Users, UserCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@airostack/client';
 
 export default function BuyerSidebar({ mobileOpen, onClose }) {
   const { user } = useAuth();

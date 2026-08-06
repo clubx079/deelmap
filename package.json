@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@airostack/client": "^0.6.0",
     "@aws-sdk/client-s3": "^3.933.0",
     "@docuseal/react": "^1.0.75",
     "@googlemaps/js-api-loader": "^1.16.10",

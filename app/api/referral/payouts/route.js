@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@airostack/client'
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_MARKETPLACE_SUPABASE_URL, process.env.MARKETPLACE_SUPABASE_SERVICE_ROLE_KEY)
