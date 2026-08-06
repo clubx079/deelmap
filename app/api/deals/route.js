@@ -17,6 +17,7 @@ const DEAL_COLS = [
   'address_google_lat', 'address_google_lng',
   'price', 'bedrooms', 'bathrooms', 'sqft', 'property_type', 'status',
   'listing_type', 'auction_date', 'auction_time', 'auction_location',
+  'arv', 'repair_cost',
   'gross_yield', 'cap_rate', 'cash_on_cash', 'price_per_square_foot',
   'year_built', 'lot_size',
   'created_at', 'updated_at',
