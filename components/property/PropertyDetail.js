@@ -488,7 +488,7 @@ export function PropertyDetail({ property }) {
         photos={photos}
         initialIndex={modalInitialIndex}
         onPhotoView={handlePhotoViewFromModal}
-        preloadedUrl={photos.length > 0 ? getPreferredPhotoUrl(photos[modalInitialIndex]) || null : null}
+        preloadedUrl={photos.length > 0 ? getThumbnailUrl(photos[modalInitialIndex], 2048) || getPreferredPhotoUrl(photos[modalInitialIndex]) || null : null}
       />
 
       {/* Page content */}
