@@ -22,7 +22,10 @@ const DEAL_COLS = [
   'created_at', 'updated_at',
   'estimated_rent', 'purchase_price'
 ].join(',');
-const DEAL_SELECT = `${DEAL_COLS}, property_photos!left(photo_url, optimized_url, is_featured)`;
+// NOTE: plain embed (default left join). AiroBase's PostgREST rejects the `!left`
+// join-type modifier ("no foreign key matching hint 'left'") — a plain embed gives
+// the same left-join behavior and works on both Supabase and AiroBase.
+const DEAL_SELECT = `${DEAL_COLS}, property_photos(photo_url, optimized_url, is_featured)`;
 const MANUAL_SELECT = `
   id, slug, city, state, zipcode, latitude, longitude,
   price, bedrooms, bathrooms, floor_area, property_type, status, property_status,
