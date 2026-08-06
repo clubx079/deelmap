@@ -262,13 +262,15 @@ function StepPhotos({ photos, onPhotosChange, userId, rejectionError }) {
         // Compress before upload
         uploadFile = await compressImage(uploadFile)
 
-        const imageKey = `manual/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-        const { error } = await supabaseMarketplace.storage
-          .from('scraperpropertyphotos')
-          .upload(imageKey, uploadFile, { cacheControl: '3600', upsert: false })
-        const remoteUrl = !error
-          ? supabaseMarketplace.storage.from('scraperpropertyphotos').getPublicUrl(imageKey).data.publicUrl
-          : null
+        // Upload to the private Backblaze B2 bucket via the server route (B2 keys
+        // must stay server-side). Returns the /api/img signing URL stored in the DB.
+        const fd = new FormData()
+        fd.append('file', uploadFile)
+        fd.append('userId', String(userId || 'anon'))
+        const upRes = await fetch('/api/upload-listing-image', { method: 'POST', body: fd })
+        const upJson = upRes.ok ? await upRes.json().catch(() => null) : null
+        const remoteUrl = upJson?.success ? upJson.url : null
+        const imageKey = upJson?.key || null
         onPhotosChange(prev => prev.map((p, idx) =>
           idx === baseIndex + i
             ? { ...p, image_url: remoteUrl || p.preview_url, image_key: imageKey, uploading: false, converting: false }
