@@ -27,8 +27,19 @@ const DEAL_COLS = [
 // join-type modifier ("no foreign key matching hint 'left'") — a plain embed gives
 // the same left-join behavior and works on both Supabase and AiroBase.
 const DEAL_SELECT = `${DEAL_COLS}, property_photos(photo_url, optimized_url, is_featured)`;
+// Logged-in users additionally get the exact street address (address / full_address),
+// the same street address already shown on the property detail page. Anonymous users
+// keep the city/state-only projection above.
+const DEAL_SELECT_AUTH = `${DEAL_COLS},address,full_address, property_photos(photo_url, optimized_url, is_featured)`;
 const MANUAL_SELECT = `
   id, slug, city, state, zipcode, latitude, longitude,
+  price, bedrooms, bathrooms, floor_area, property_type, status, property_status,
+  is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at,
+  property_images (image_url, image_key, sort_order)
+`;
+// Manual properties store the full address in `address`; expose it to logged-in users only.
+const MANUAL_SELECT_AUTH = `
+  id, slug, address, city, state, zipcode, latitude, longitude,
   price, bedrooms, bathrooms, floor_area, property_type, status, property_status,
   is_homepage_featured, is_highlighted, is_boosted, created_at, updated_at,
   property_images (image_url, image_key, sort_order)
@@ -79,6 +90,22 @@ async function processDealPhotos(deals) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+
+    // Logged-in users see the exact street address in the grid (same as the detail
+    // page); guests see city/state only. The marketplace client sends the session as
+    // `Authorization: Bearer <userId>`; verify that id is a real user before revealing
+    // the street address. Any failure falls back to the masked (public) projection.
+    let isAuthed = false;
+    const bearerId = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+    if (/^[0-9a-fA-F-]{36}$/.test(bearerId)) {
+      try {
+        const { data: authUsers } = await supabaseMarketplace
+          .from('users').select('id').eq('id', bearerId).limit(1);
+        isAuthed = Array.isArray(authUsers) && authUsers.length > 0;
+      } catch { isAuthed = false; }
+    }
+    const dealSelect = isAuthed ? DEAL_SELECT_AUTH : DEAL_SELECT;
+    const manualSelect = isAuthed ? MANUAL_SELECT_AUTH : MANUAL_SELECT;
 
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '30');
@@ -226,7 +253,7 @@ export async function GET(request) {
 
     const baseDeal = () => supabaseMarketplace
       .from('wholesale_deals')
-      .select(DEAL_SELECT, { count: 'exact' })
+      .select(dealSelect, { count: 'exact' })
       .eq('status', statusToFilter)
       .eq('is_incomplete', false)
       .eq('property_photos.is_featured', true)
@@ -241,7 +268,7 @@ export async function GET(request) {
 
     const baseManual = () => supabaseMarketplace
       .from('properties')
-      .select(MANUAL_SELECT, { count: 'exact' })
+      .select(manualSelect, { count: 'exact' })
       .in('status', ['active', 'published'])
       .eq('property_images.sort_order', 0);
 
